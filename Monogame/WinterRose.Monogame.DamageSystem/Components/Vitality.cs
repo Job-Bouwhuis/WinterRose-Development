@@ -20,6 +20,8 @@ public class Vitality : ObjectComponent
     /// </summary>
     public Armor Armor { get; set; } = new();
 
+    public event Action OnDeath = delegate { };
+
     /// <summary>
     /// Whether or not this can take damage or not.
     /// </summary>
@@ -39,6 +41,11 @@ public class Vitality : ObjectComponent
         }
     }
     private float armorBeforeInvunrable = 0;
+
+    public Vitality()
+    {
+        Health.OnDeath += OnDeath;
+    }
 
     /// <summary>
     /// Calculates the correct damage depending on <see cref="Armor"/>, and deals it to <see cref="Health"/>
