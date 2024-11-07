@@ -12,4 +12,7 @@ public class FireDamage : DamageType
     {
         target.DealDamage(Damage);
     }
+
+    public FireDamage() { }
+    public FireDamage(int BaseDamage) : base(BaseDamage) { }
 }

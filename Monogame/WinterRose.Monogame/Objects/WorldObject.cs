@@ -469,4 +469,16 @@ public class WorldObject
     {
         transform.world.DestroyImmediately(this);
     }
+
+    /// <summary>
+    /// Gets or adds the component of the specified type <typeparamref name="T"/>. If it is created, uses <paramref name="args"/> as the constructor arguments.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    public T AttachOrFetchComponent<T>(params object[] args) where T : ObjectComponent
+    {
+        if (TryFetchComponent(out T component)) return component;
+        return AttachComponent<T>(args);
+    }
 }

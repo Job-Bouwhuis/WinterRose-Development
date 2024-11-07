@@ -7,6 +7,7 @@ namespace WinterRose.Monogame.StatusSystem
 {
     public class StatusEffector : ObjectBehavior
     {
+        [IgnoreInTemplateCreation]
         public List<StatusEffect> effects = [];
 
         /// <summary>
@@ -14,7 +15,7 @@ namespace WinterRose.Monogame.StatusSystem
         /// </summary>
         [Hidden]
         public Vitality Vitals => vitals ??= FetchComponent<Vitality>();
-        [Hidden]
+        [Hidden, IgnoreInTemplateCreation]
         private Vitality vitals;
 
         private void Update()

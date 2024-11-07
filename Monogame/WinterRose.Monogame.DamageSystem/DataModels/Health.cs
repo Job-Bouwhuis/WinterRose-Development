@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
+using WinterRose.Monogame.Weapons;
 using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.Monogame.DamageSystem;
@@ -27,6 +29,7 @@ public class Health
         }
     }
 
+    [IgnoreInTemplateCreation]
     public event Action OnDeath = delegate { };
 
     /// <summary>
@@ -41,12 +44,19 @@ public class Health
 
     private int currentHealth = 1;
 
-    public Health()
-    {
-        // Set a default max health so that it doesnt produce a "devide by zero" error when setting the MaxHealth from external code.
-        AddititiveHealthModifier.SetBaseValue(100);
+    public Health() : this(100) { }
 
-        currentHealth = MaxHealth;
+    public Health(int health)
+    {
+        currentHealth = MaxHealth = health;
+    }
+
+    static Health()
+    {
+        Worlds.WorldTemplateObjectParsers.Add(typeof(Health), (instance, identifier) =>
+        {
+            return $"{nameof(Health)}({((Health)instance).MaxHealth})";
+        });
     }
 
     /// <summary>

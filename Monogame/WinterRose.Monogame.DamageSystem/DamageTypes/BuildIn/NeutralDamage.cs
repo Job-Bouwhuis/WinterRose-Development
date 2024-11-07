@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace WinterRose.Monogame.DamageSystem;
 
-namespace WinterRose.Monogame.DamageSystem.DamageTypes.BuildIn
+public class NeutralDamage : DamageType
 {
-    internal class NeutralDamage : DamageType
+    public override void DealDamage(Vitality target)
     {
-        public override void DealDamage(Vitality target)
-        {
-            target.DealDamage(Damage);
-        }
+        target.DealDamage(Damage);
     }
+
+    public NeutralDamage() { }
+    public NeutralDamage(int BaseDamage) : base(BaseDamage) { }
 }

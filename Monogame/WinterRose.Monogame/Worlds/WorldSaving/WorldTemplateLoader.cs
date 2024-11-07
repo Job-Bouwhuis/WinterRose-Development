@@ -27,159 +27,145 @@ internal sealed class WorldTemplateLoader
     internal WorldTemplateLoader(World world) => this.world = world;
     internal void LoadTemplate(string path)
     {
-        try
+        var sw = Stopwatch.StartNew();
+
+        Regex regex = new(@"object\s+\w+:[\s\S]*?end\s+\w+");
+
+        string fileContent = FileManager.Read(path);
+        fileContent = fileContent.Replace("\t", "");
+        if (fileContent.Length is 0)
+            return;
+
+        int firstObjIndex = fileContent.IndexOf("object");
+        string beforeFirstObject = fileContent[..firstObjIndex];
+        List<string> typeOverrideDefinitions = new();
+        string[] lines = fileContent[..firstObjIndex].Split("\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        lines = lines.Select(x => x.Trim().Replace('\r', '\0')).ToArray();
+
+        foreach (var line in lines)
         {
-            var sw = Stopwatch.StartNew();
-
-            Regex regex = new(@"object\s+\w+:[\s\S]*?end\s+\w+");
-
-            string fileContent = FileManager.Read(path);
-            fileContent = fileContent.Replace("\t", "");
-            if (fileContent.Length is 0)
-                return;
-
-            int firstObjIndex = fileContent.IndexOf("object");
-            string beforeFirstObject = fileContent[..firstObjIndex];
-            List<string> typeOverrideDefinitions = new();
-            string[] lines = fileContent[..firstObjIndex].Split("\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            lines = lines.Select(x => x.Trim().Replace('\r', '\0')).ToArray();
-
-            foreach (var line in lines)
+            if (line.StartsWith("var"))
             {
-                if (line.StartsWith("var"))
-                {
-                    string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    int equalsIndex = parts.ToList().IndexOf("=");
-                    string val = string.Join(' ', parts[(equalsIndex + 1)..]);
-                    variables.Add(new(parts[1], val));
-                }
-                else
-                    typeOverrideDefinitions.Add(line);
+                string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                int equalsIndex = parts.ToList().IndexOf("=");
+                string val = string.Join(' ', parts[(equalsIndex + 1)..]);
+                variables.Add(new(parts[1], val));
             }
-
-            Callback("Loading type search overrides...");
-            var specificDefinitions = WorldTemplateTypeSearchOverride.GetDefinitions(typeOverrideDefinitions.ToArray());
-
-            bool error = specificDefinitions.Any(x => x.Type is null);
-            foreach (var item in specificDefinitions.Where(x => x.Type is null))
-            {
-                var e = new TypeNotFoundException($"Couldnt find the type accosiated with identifyer \"{item.Identifier}\"");
-                e.Source = "WorldTemplateLoader - Loading type definitions";
-                Debug.LogException(e);
-            }
-            if (error)
-                return;
-            Callback("loading objects...");
-
-            var matches = regex.Matches(fileContent);
-
-            foreach ((Match match, int i) in matches.Cast<Match>().Select((x, i) => (x, i)))
-            {
-                if (fileContent[match.Index - 1] == '/')
-                    continue;
-                if(!ParseTemplateObject(match.Value, specificDefinitions, null))
-                {
-                    return;
-                }
-                Callback(MathS.GetPercentage(i, matches.Count, 2).ToString());
-            }
-
-            sw.Stop();
-
-            Console.WriteLine($"loading complete in {sw.Elapsed.TotalMilliseconds}ms");
+            else
+                typeOverrideDefinitions.Add(line);
         }
-        catch (Exception e)
+
+        Callback("Loading type search overrides...");
+        var specificDefinitions = WorldTemplateTypeSearchOverride.GetDefinitions(typeOverrideDefinitions.ToArray());
+
+        bool error = specificDefinitions.Any(x => x.Type is null);
+        foreach (var item in specificDefinitions.Where(x => x.Type is null))
         {
+            var e = new TypeNotFoundException($"Couldnt find the type accosiated with identifyer \"{item.Identifier}\"");
+            e.Source = "WorldTemplateLoader - Loading type definitions";
             Debug.LogException(e);
         }
+        if (error)
+            return;
+        Callback("loading objects...");
+
+        var matches = regex.Matches(fileContent);
+
+        foreach ((Match match, int i) in matches.Cast<Match>().Select((x, i) => (x, i)))
+        {
+            if (fileContent[match.Index - 1] == '/')
+                continue;
+            if (!ParseTemplateObject(match.Value, specificDefinitions, null))
+            {
+                return;
+            }
+            Callback(MathS.GetPercentage(i, matches.Count, 2).ToString());
+        }
+
+        sw.Stop();
+
+        Console.WriteLine($"loading complete in {sw.Elapsed.TotalMilliseconds}ms");
     }
     internal void LoadTemplateultiThread(string path)
     {
-        try
+        var sw = Stopwatch.StartNew();
+
+        Regex regex = new(@"object\s+\w+:[\s\S]*?end\s+\w+");
+        string fileContent = FileManager.Read(path);
+        fileContent = fileContent.Replace("\t", "");
+        if (fileContent.Length is 0)
+            return;
+
+        int firstObjIndex = fileContent.IndexOf("object");
+        string beforeFirstObject = fileContent[..firstObjIndex];
+        List<string> typeOverrideDefinitions = new();
+        string[] lines = fileContent[..firstObjIndex].Split("\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        lines = lines.Select(x => x.Trim().Replace('\r', '\0')).ToArray();
+
+        foreach (var line in lines)
         {
-            var sw = Stopwatch.StartNew();
-
-            Regex regex = new(@"object\s+\w+:[\s\S]*?end\s+\w+");
-            string fileContent = FileManager.Read(path);
-            fileContent = fileContent.Replace("\t", "");
-            if (fileContent.Length is 0)
-                return;
-
-            int firstObjIndex = fileContent.IndexOf("object");
-            string beforeFirstObject = fileContent[..firstObjIndex];
-            List<string> typeOverrideDefinitions = new();
-            string[] lines = fileContent[..firstObjIndex].Split("\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            lines = lines.Select(x => x.Trim().Replace('\r', '\0')).ToArray();
-
-            foreach (var line in lines)
+            if (line.StartsWith("var"))
             {
-                if (line.StartsWith("var"))
-                {
-                    string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    int equalsIndex = parts.ToList().IndexOf("=");
-                    string val = string.Join(' ', parts[(equalsIndex + 1)..]);
-                    variables.Add(new(parts[1], val));
-                }
-                else
-                    typeOverrideDefinitions.Add(line);
+                string[] parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                int equalsIndex = parts.ToList().IndexOf("=");
+                string val = string.Join(' ', parts[(equalsIndex + 1)..]);
+                variables.Add(new(parts[1], val));
             }
-
-            Callback("Loading type search overrides...");
-            var specificDefinitions = WorldTemplateTypeSearchOverride.GetDefinitions(typeOverrideDefinitions.ToArray());
-
-            bool error = specificDefinitions.Any(x => x.Type is null);
-            foreach(var item in specificDefinitions.Where(x => x.Type is null))
-            {
-                var e = new TypeNotFoundException($"Couldnt find the type accosiated with identifyer \"{item.Identifier}\"");
-                e.Source = "WorldTemplateLoader - Loading type definitions";
-                Debug.LogException(e);
-            }
-            if (error)
-                return;
-            Callback("loading objects...");
-
-            var matches = regex.Matches(fileContent);
-
-            List<Task<bool>> tasks = new();
-            ConcurrentStack<WorldObject> objectStack = new();
-
-            foreach (Match match in matches.Cast<Match>())
-            {
-                if (fileContent[match.Index - 1] == '/')
-                    continue;
-                tasks.Add(Task.Run(() => ParseTemplateObject(match.Value, specificDefinitions, objectStack)));
-            }
-
-            while (true)
-            {
-                bool objectLeft = objectStack.TryPeek(out _);
-                bool tasksCompleted = tasks.All(x => x.IsCompleted);
-                if (tasksCompleted && !objectLeft) break;
-
-                if (objectStack.TryPop(out var obj))
-                {
-                    world.InstantiateExact(obj);
-                    Callback(MathS.GetPercentage(world.ObjectCount, matches.Count, 2).ToString());
-                }
-            }
-
-            var unsuccessful = tasks.Where(x => !x.Result);
-
-            var exceptions = tasks.Select(x => x.Exception);
-            if(exceptions.Any(x => x is not null))
-                foreach (var ex in exceptions.Where(x => x is not null))
-                    Debug.LogException(ex!);
-
-            Debug.LogError($"{unsuccessful.Count()} unsuccessful object creations...");
-
-            sw.Stop();
-
-            Callback($"loading complete in {sw.Elapsed.TotalMilliseconds}ms");
+            else
+                typeOverrideDefinitions.Add(line);
         }
-        catch (Exception e)
+
+        Callback("Loading type search overrides...");
+        var specificDefinitions = WorldTemplateTypeSearchOverride.GetDefinitions(typeOverrideDefinitions.ToArray());
+
+        bool error = specificDefinitions.Any(x => x.Type is null);
+        foreach (var item in specificDefinitions.Where(x => x.Type is null))
         {
+            var e = new TypeNotFoundException($"Couldnt find the type accosiated with identifyer \"{item.Identifier}\"");
+            e.Source = "WorldTemplateLoader - Loading type definitions";
             Debug.LogException(e);
         }
+        if (error)
+            return;
+        Callback("loading objects...");
+
+        var matches = regex.Matches(fileContent);
+
+        List<Task<bool>> tasks = new();
+        ConcurrentStack<WorldObject> objectStack = new();
+
+        foreach (Match match in matches.Cast<Match>())
+        {
+            if (fileContent[match.Index - 1] == '/')
+                continue;
+            tasks.Add(Task.Run(() => ParseTemplateObject(match.Value, specificDefinitions, objectStack)));
+        }
+
+        while (true)
+        {
+            bool objectLeft = objectStack.TryPeek(out _);
+            bool tasksCompleted = tasks.All(x => x.IsCompleted);
+            if (tasksCompleted && !objectLeft) break;
+
+            if (objectStack.TryPop(out var obj))
+            {
+                world.InstantiateExact(obj);
+                Callback(MathS.GetPercentage(world.ObjectCount, matches.Count, 2).ToString());
+            }
+        }
+
+        var unsuccessful = tasks.Where(x => !x.Result);
+
+        var exceptions = tasks.Select(x => x.Exception);
+        if (exceptions.Any(x => x is not null))
+            foreach (var ex in exceptions.Where(x => x is not null))
+                Debug.LogException(ex!);
+
+        Debug.LogError($"{unsuccessful.Count()} unsuccessful object creations...");
+
+        sw.Stop();
+
+        Callback($"loading complete in {sw.Elapsed.TotalMilliseconds}ms");
     }
 
     public bool ParseTemplateObject(string objectContent, List<WorldTemplateTypeSearchOverride> typeOverrides, ConcurrentStack<WorldObject> stack)
@@ -192,7 +178,7 @@ internal sealed class WorldTemplateLoader
         string objName = lines[0].TrimStart("object".ToCharArray()).TrimEnd(':').Trim();
         if (lines.Last() != $"end {objName}")
             throw new WinterException("Objects must always end their definition the following \"end {object name}\"").WithStackTrace($"Object name: {objName}");
-        if(objName.Contains(' '))
+        if (objName.Contains(' '))
             throw new WinterException("Object names may not contain spaces").WithStackTrace($"problematic name: '{objName}'");
 
         WorldObject obj = new WorldObject(objName);
@@ -218,7 +204,11 @@ internal sealed class WorldTemplateLoader
                 continue;
             }
             string[] vars = varassign[0].Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            dynamic val = GetAssigningValue(varassign[1], typeOverrides, obj);
+            if (varassign.Length == 2 && vars[1] == "Single")
+            {
+
+            }
+            dynamic val = GetAssigningValue(varassign[1], typeOverrides, obj, vars);
             if (val is Breakout)
                 return false;
 
@@ -241,140 +231,138 @@ internal sealed class WorldTemplateLoader
         variable = null;
         return false;
     }
-    private dynamic GetAssigningValue(string content, List<WorldTemplateTypeSearchOverride> typeOverrides, WorldObject obj)
+    private dynamic GetAssigningValue(string content, List<WorldTemplateTypeSearchOverride> typeOverrides, WorldObject obj, string[] vars)
     {
-        try
+        if (TryGetVariable(content, out WorldTemplateVariable variable))
+            content = variable.Value;
+
+        if (IsPrimitive(content, out dynamic primitive))
         {
-            if (TryGetVariable(content, out WorldTemplateVariable variable))
-                content = variable.Value;
-
-            if (IsPrimitive(content, out dynamic primitive))
-            {
-                return primitive;
-            }
-
-            int typeDefEnd = content.IndexOf("(");
-            if (typeDefEnd == -1) typeDefEnd = content.Length;
-            string typeDef = content[..typeDefEnd].Trim();
-
-            if (typeDef.Contains('.'))
-            {
-                return GetVariable(content, typeOverrides, obj);
-            }
-
-            Type type = SelectType(TypeWorker.FindType(typeDef), typeOverrides, typeDef);
-
-            if (type == null)
-            {
-                var e = new TypeNotFoundException($"Couldnt find the type of name \"{typeDef}\"");
-                e.Source = "WorldTemplateLoader";
-                e.SetStackTrace($"object: {obj.Name}\n\ncontent:\n{content}");
-                Debug.LogException(e);
-                return new Breakout();
-            }
-
-            string rest = content[typeDefEnd..].TrimStart('(').TrimEnd(')');
-            string[] args = rest.Split(',', StringSplitOptions.TrimEntries);
-
-            dynamic instance = GetInstanceOf(type, typeOverrides, obj, args);
-
-            return instance;
+            return primitive;
         }
-        catch (Exception ex)
+
+        int typeDefEnd = content.IndexOf("(");
+        if (typeDefEnd == -1) typeDefEnd = content.Length;
+        string typeDef = content[..typeDefEnd].Trim();
+
+        if (typeDef.Contains('.'))
         {
-            Debug.LogException(ex);
+            return GetVariable(content, typeOverrides, obj);
+        }
+
+        Type type = SelectType(TypeWorker.FindType(typeDef), typeOverrides, typeDef);
+
+        if(type == null)
+        {
+            Type t = CheckEnum(content, obj, vars);
+            if (t != null)
+                return t;
+        }
+
+        if (type == null)
+        {
+            var e = new TypeNotFoundException($"Couldnt find the type of name \"{typeDef}\"");
+            e.Source = "WorldTemplateLoader";
+            e.SetStackTrace($"object: {obj.Name}\n\ncontent:\n{content}");
+            Debug.LogException(e);
             return new Breakout();
         }
+
+        string rest = content[typeDefEnd..].TrimStart('(').TrimEnd(')');
+        string[] args = rest.Split(',', StringSplitOptions.TrimEntries);
+        if (rest is "")
+            args = [];
+        dynamic instance = GetInstanceOf(type, typeOverrides, obj, args);
+
+        return instance;
     }
+
+    private Type CheckEnum(string content, WorldObject obj, string[] vars)
+    {
+        return typeof(Type);
+    }
+
     private bool IsPrimitive(string data, out dynamic primitive)
     {
-        try
+
+        if (data.Contains('(') || data.Contains(')'))
         {
-            if (data.Contains('(') || data.Contains(')'))
+            primitive = null;
+            return false;
+        }
+        if (data.Contains(".."))
+        {
+            int dotdotIndex = data.IndexOf("..");
+            string[] nums = new string[2] { data[..dotdotIndex], data[(dotdotIndex + 1)..] };
+            foreach (int i in nums.Length)
+                nums[i] = nums[i].Trim().TrimStart('.').TrimEnd('.');
+            if (nums.Length != 2)
             {
                 primitive = null;
                 return false;
             }
-            if (data.Contains(".."))
+            try
             {
-                int dotdotIndex = data.IndexOf("..");
-                string[] nums = new string[2] { data[..dotdotIndex], data[(dotdotIndex + 1)..] };
-                foreach (int i in nums.Length)
-                    nums[i] = nums[i].Trim().TrimStart('.').TrimEnd('.');
-                if (nums.Length != 2)
-                {
-                    primitive = null;
-                    return false;
-                }
-                try
-                {
-                    int start = string.IsNullOrWhiteSpace(nums[0]) ? 0 : TypeWorker.CastPrimitive<int>(nums[0]);
-                    int end = string.IsNullOrWhiteSpace(nums[1]) ? 0 : TypeWorker.CastPrimitive<int>(nums[1]);
-                    primitive = new Range(new(start), new(end));
-                    return true;
-                }
-                catch (FailedToCastTypeException)
-                {
-                    primitive = null;
-                    return false;
-                }
-            }
-
-            data = data.Replace('.', ',');
-            primitive = null;
-            if (data.StartsWith('"') && data.EndsWith('"'))
-            {
-                primitive = data.TrimStart('"').TrimEnd('"');
+                int start = string.IsNullOrWhiteSpace(nums[0]) ? 0 : TypeWorker.CastPrimitive<int>(nums[0]);
+                int end = string.IsNullOrWhiteSpace(nums[1]) ? 0 : TypeWorker.CastPrimitive<int>(nums[1]);
+                primitive = new Range(new(start), new(end));
                 return true;
             }
-            if (data.ToLower() is "true" or "false")
+            catch (FailedToCastTypeException)
             {
-                primitive = TypeWorker.CastPrimitive<bool>(data);
-                return true;
+                primitive = null;
+                return false;
             }
+        }
 
-            foreach (char c in data)
-            {
-                if (!(c.IsNumber() || c is ',' or '_' or 'f' or 'd' or 'L' or '-'))
-                    return false;
-            }
-            int index = data.IndexOf('f');
-            if (index is not -1)
-                if (index != data.Length - 1)
-                    return false;
-                else
-                {
-                    primitive = TypeWorker.CastPrimitive<float>(data.TrimEnd('f'));
-                    return true;
-                }
-
-            index = data.IndexOf('d');
-            if (index is not -1)
-                if (index != data.Length - 1)
-                    return false;
-                else
-                {
-                    primitive = TypeWorker.CastPrimitive<double>(data.TrimEnd('d'));
-                    return true;
-                }
-            index = data.IndexOf('L');
-            if (index is not -1)
-                if (index != data.Length - 1)
-                    return false;
-                else
-                {
-                    primitive = TypeWorker.CastPrimitive<long>(data.TrimEnd('L'));
-                    return true;
-                }
-            primitive = TypeWorker.CastPrimitive<int>(data);
+        data = data.Replace('.', ',');
+        primitive = null;
+        if (data.StartsWith('"') && data.EndsWith('"'))
+        {
+            primitive = data.TrimStart('"').TrimEnd('"');
             return true;
         }
-        catch (Exception ex)
+        if (data.ToLower() is "true" or "false")
         {
-            Debug.LogException(ex);
-            primitive = new Breakout();
-            return false;
+            primitive = TypeWorker.CastPrimitive<bool>(data);
+            return true;
         }
+
+        foreach (char c in data)
+        {
+            if (!(c.IsNumber() || c is ',' or '_' or 'f' or 'd' or 'L' or '-'))
+                return false;
+        }
+        int index = data.IndexOf('f');
+        if (index is not -1)
+            if (index != data.Length - 1)
+                return false;
+            else
+            {
+                primitive = TypeWorker.CastPrimitive<float>(data.TrimEnd('f'));
+                return true;
+            }
+
+        index = data.IndexOf('d');
+        if (index is not -1)
+            if (index != data.Length - 1)
+                return false;
+            else
+            {
+                primitive = TypeWorker.CastPrimitive<double>(data.TrimEnd('d'));
+                return true;
+            }
+        index = data.IndexOf('L');
+        if (index is not -1)
+            if (index != data.Length - 1)
+                return false;
+            else
+            {
+                primitive = TypeWorker.CastPrimitive<long>(data.TrimEnd('L'));
+                return true;
+            }
+        primitive = TypeWorker.CastPrimitive<int>(data);
+        return true;
     }
     private dynamic GetVariable(string content, List<WorldTemplateTypeSearchOverride> typeOverrides, WorldObject obj)
     {
@@ -410,7 +398,7 @@ internal sealed class WorldTemplateLoader
         catch (FieldNotFoundException)
         {
             cur = GetValue(content, typeOverrides);
-            if(cur is Breakout)
+            if (cur is Breakout)
             {
 
             }
@@ -420,41 +408,33 @@ internal sealed class WorldTemplateLoader
     }
     private dynamic GetInstanceOf(Type type, List<WorldTemplateTypeSearchOverride> typeOverrides, WorldObject obj, params string[] args)
     {
-        try
-        {
-            if (obj.TryFetchComponent(type, out ObjectComponent? comp))
-                return comp!;
+        if (obj.TryFetchComponent(type, out ObjectComponent? comp))
+            return comp!;
 
-            foreach (var c in type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+        foreach (var c in type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+        {
+            var parameters = c.GetParameters();
+            object?[] castedArgs = ValidateArgs(args, parameters, typeOverrides, obj);
+            if (castedArgs.Length is 1 && castedArgs[0] is Breakout)
             {
-                var parameters = c.GetParameters();
-                object?[] castedArgs = ValidateArgs(args, parameters, typeOverrides, obj);
-                if(castedArgs.Length is 1 && castedArgs[0] is Breakout)
-                {
-                    return castedArgs[0];
-                }
-                if (parameters.Length != castedArgs.Length || castedArgs.Length != args.Length)
-                    goto Continue;
-                foreach (var (arg, i) in parameters.Select((arg, i) => (arg, i)))
-                {
-                    bool b = castedArgs[i].GetType().IsAssignableTo(arg.ParameterType);
-                    bool b2 = arg.ParameterType != castedArgs[i].GetType();
-                    if (!b && b2)
-                        goto Continue;
-                }
-
-                return c.Invoke(castedArgs);
-
-            Continue:
-                continue;
+                return castedArgs[0];
             }
-            return null;
+            if (parameters.Length != castedArgs.Length || castedArgs.Length != args.Length)
+                goto Continue;
+            foreach (var (arg, i) in parameters.Select((arg, i) => (arg, i)))
+            {
+                bool b = castedArgs[i].GetType().IsAssignableTo(arg.ParameterType);
+                bool b2 = arg.ParameterType != castedArgs[i].GetType();
+                if (!b && b2)
+                    goto Continue;
+            }
+
+            return c.Invoke(castedArgs);
+
+Continue:
+            continue;
         }
-        catch (Exception e)
-        {
-            Debug.LogException(e);
-            return new Breakout();
-        }
+        return null;
     }
 
     private object?[] ValidateArgs(string[] args, ParameterInfo[] parameters, List<WorldTemplateTypeSearchOverride> typeOverrides, WorldObject obj)
@@ -495,8 +475,8 @@ internal sealed class WorldTemplateLoader
                         castedArgs[i] = primitive;
                         continue;
                     }
-                    else if(variable.Value.Contains('('))
-                    { 
+                    else if (variable.Value.Contains('('))
+                    {
                         string content = variable.Value;
                         int typeDefEnd = content.IndexOf("(");
                         if (typeDefEnd == -1) typeDefEnd = content.Length;
@@ -533,7 +513,7 @@ internal sealed class WorldTemplateLoader
                 }
 
                 Type t = SelectType(TypeWorker.FindType(arg), typeOverrides, arg);
-                if(t is not null && obj.TryFetchComponent(t, out var comp))
+                if (t is not null && obj.TryFetchComponent(t, out var comp))
                 {
                     castedArgs[i] = comp;
                     continue;
@@ -588,40 +568,32 @@ internal sealed class WorldTemplateLoader
     }
     private dynamic GetValue(string arg, List<WorldTemplateTypeSearchOverride> typeOverrides)
     {
-        try
+        string[] vars = arg.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        dynamic? cur = null;
+        for (int i = 0; i < vars.Length - 1; i++)
         {
-            string[] vars = arg.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string? vari = vars[i];
 
-            dynamic? cur = null;
-            for (int i = 0; i < vars.Length - 1; i++)
+            Type curType = SelectType(TypeWorker.FindType(vari), typeOverrides, vari);
+
+            ReflectionHelper refh;
+            if (cur is null)
             {
-                string? vari = vars[i];
-
-                Type curType = SelectType(TypeWorker.FindType(vari), typeOverrides, vari);
-
-                ReflectionHelper refh;
-                if (cur is null)
-                {
-                    refh = ReflectionHelper.ForType(curType);
-                }
+                refh = ReflectionHelper.ForType(curType);
+            }
+            else
+            {
+                if (cur.GetType() == typeof(Type))
+                    refh = ReflectionHelper.ForType(cur);
                 else
-                {
-                    if (cur.GetType() == typeof(Type))
-                        refh = ReflectionHelper.ForType(cur);
-                    else
-                        refh = ReflectionHelper.ForObject(cur);
-                }
-
-                cur = refh.GetValueFrom(vars[i + 1]);
+                    refh = ReflectionHelper.ForObject(cur);
             }
 
-            return cur;
+            cur = refh.GetValueFrom(vars[i + 1]);
         }
-        catch (Exception ex)
-        {
-            Debug.LogError(ex);
-            return new Breakout();
-        }
+
+        return cur;
     }
     private dynamic? SetVar(WorldObject obj, string[] vars, dynamic value, List<WorldTemplateTypeSearchOverride> typeOverrides)
     {
@@ -647,7 +619,7 @@ internal sealed class WorldTemplateLoader
                 cur = refh.GetValueFrom(vari);
             }
 
-        if(cur is null)
+        if (cur is null)
         {
             object o = obj;
             ReflectionHelper rh = ReflectionHelper.ForObject(ref o);
@@ -661,7 +633,7 @@ internal sealed class WorldTemplateLoader
             rh.SetValue(vars.Last(), value);
             return cur;
         }
-        
+
     }
     public bool ParseComponent(WorldObject obj, string componentData, List<WorldTemplateTypeSearchOverride> typeOverrides)
     {
@@ -671,7 +643,7 @@ internal sealed class WorldTemplateLoader
 
         string typeDef = componentData[..typeDefEnd].Trim();
         Type type = SelectType(TypeWorker.FindType(typeDef), typeOverrides, typeDef);
-        if(type == null)
+        if (type == null)
         {
             var e = new TypeNotFoundException($"Couldnt find the type of name \"{typeDef}\"");
             e.Source = "WorldTemplateLoader";
@@ -685,7 +657,7 @@ internal sealed class WorldTemplateLoader
         dynamic instance = GetInstanceOf(type, typeOverrides, obj, args);
         if (instance is Breakout)
             return false;
-        if(instance is null)
+        if (instance is null)
         {
             var e = new WinterException($"Couldnt create an instance of type \"{type}\"");
             Debug.LogException(e);

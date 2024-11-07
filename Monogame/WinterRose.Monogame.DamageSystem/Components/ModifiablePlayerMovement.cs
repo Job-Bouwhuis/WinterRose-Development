@@ -11,13 +11,15 @@ public class ModyfiablePlayerMovement : ObjectBehavior
         get => AdditiveSpeedModifier.BaseValue;
         set => AdditiveSpeedModifier.SetBaseValue(value);
     }
-    public StaticAdditiveModifier<float> AdditiveSpeedModifier { get; } = new();
+    [IncludeInTemplateCreation]
+    public StaticAdditiveModifier<float> AdditiveSpeedModifier { get; private set; } = new();
 
-    [DefaultArguments(20)]
     public ModyfiablePlayerMovement(int speed)
     {
         BaseSpeed = speed;
     }
+
+    public ModyfiablePlayerMovement() : this(20) { }
 
     private void Update()
     {

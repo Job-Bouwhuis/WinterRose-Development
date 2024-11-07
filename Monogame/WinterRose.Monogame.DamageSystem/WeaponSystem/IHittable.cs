@@ -1,3 +1,5 @@
+using WinterRose.Monogame.DamageSystem;
+
 namespace WinterRose.Monogame.Weapons;
 
 /// <summary>
@@ -10,5 +12,5 @@ public interface IHittable
     /// </summary>
     /// <param name="bullet"></param>
     /// <param name="damage"></param>
-    void OnHit(Projectile bullet, int damage);
+    void OnHit(Projectile bullet, DamageType damage);
 }

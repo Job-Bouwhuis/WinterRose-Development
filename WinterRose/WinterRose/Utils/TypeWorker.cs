@@ -58,8 +58,8 @@ namespace WinterRose
         {
             Type? type = null;
             Assembly? assembly = null;
-            AppDomain.CurrentDomain.GetAssemblies()
-            .Foreach(x => { if (x.FullName.StartsWith(targetAssemblyName)) assembly = x; });
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            assemblies.Foreach(x => { if (x.FullName.StartsWith(targetAssemblyName)) assembly = x; });
             assembly?.GetTypes()
             .Foreach(x => { if (x.Name == typeName) type = x; });
             return type;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpDX;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -74,6 +75,18 @@ public sealed class WorldObjectPrefab : Prefab
     public override void Unload()
     {
         LoadedObject = null;
+    }
+
+    /// <summary>
+    /// Loads the object prefab and returns the object. does not add it to the world.
+    /// </summary>
+    /// <param name="prefabName"></param>
+    /// <returns></returns>
+    public static object Load(string prefabName)
+    {
+        var fab = new WorldObjectPrefab(prefabName);
+        fab.Load();
+        return fab.LoadedObject;
     }
 
     public static implicit operator WorldObject(WorldObjectPrefab prefab) => prefab.LoadedObject;

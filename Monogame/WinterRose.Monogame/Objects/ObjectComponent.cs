@@ -79,6 +79,7 @@ namespace WinterRose.Monogame
         private TimeSpan closeTime;
         internal WorldObject _owner;
 
+        [IgnoreInTemplateCreation]
         internal bool initialized = false;
 
         public ObjectComponent()
@@ -181,7 +182,7 @@ namespace WinterRose.Monogame
         public T AttachOrFetchComponent<T>(params object[] args) where T : ObjectComponent
         {
             if (TryFetchComponent(out T component)) return component;
-            return AttachOrFetchComponent<T>(args);
+            return AttachComponent<T>(args);
         }
 
         /// <summary>

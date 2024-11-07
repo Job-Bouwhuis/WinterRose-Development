@@ -167,8 +167,8 @@ public sealed class WorldTemplateCreator
                 continue;
 
             WorldTemplateTypeSearchOverride typeOverrideDefinition = new(property.PropertyType, property.PropertyType.Name.Replace('`', '_'));
-            if (property.PropertyType.IsGenericType && typeOverrideDefinition.ParseToString == null)
-                throw new InvalidOperationException("Can not use generic types in template creation that do not have special parsing.");
+            if (property.PropertyType.IsGenericType && !typeOverrideDefinition.HasCustomParser)
+                throw new InvalidOperationException("Can not use generic types in template creation that do not have special parsing. See WorldTemplateObjectParsers class to create one!");
 
             if (!typeOverrides.Any(typeOverrideDefinition) && !property.PropertyType.IsGenericType)
                 typeOverrides.Add(typeOverrideDefinition);

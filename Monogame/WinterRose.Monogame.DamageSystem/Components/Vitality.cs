@@ -14,13 +14,16 @@ public class Vitality : ObjectComponent
     /// <summary>
     /// The Health values
     /// </summary>
+    [IncludeInTemplateCreation]
     public Health Health { get; set; } = new();
     /// <summary>
     /// The Armor values
     /// </summary>
+    [IncludeInTemplateCreation]
     public Armor Armor { get; set; } = new();
 
-    public event Action OnDeath = delegate { };
+    [IgnoreInTemplateCreation]
+    public event Action OnDeath { add => Health.OnDeath += value; remove => Health.OnDeath -= value; }
 
     /// <summary>
     /// Whether or not this can take damage or not.
@@ -40,12 +43,8 @@ public class Vitality : ObjectComponent
             Armor.SubtractiveArmorModifier.SetBaseValue(armorBeforeInvunrable);
         }
     }
+    [IgnoreInTemplateCreation]
     private float armorBeforeInvunrable = 0;
-
-    public Vitality()
-    {
-        Health.OnDeath += OnDeath;
-    }
 
     /// <summary>
     /// Calculates the correct damage depending on <see cref="Armor"/>, and deals it to <see cref="Health"/>

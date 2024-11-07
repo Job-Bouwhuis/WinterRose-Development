@@ -2,7 +2,6 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Collections;
 using System.Threading.Tasks;
-using WinterRose.Monogame.Worlds;
 
 #nullable enable
 
@@ -13,40 +12,72 @@ namespace WinterRose.Monogame.Weapons
         public Magazine() { }
         public Magazine(string bulletPrefabName) => BulletPrefab = new WorldObjectPrefab(bulletPrefabName);
 
+        static Magazine()
+        {
+            Worlds.WorldTemplateObjectParsers.Add(typeof(Magazine), (instance, identifier) =>
+            {
+                var mag = (Magazine)instance;
+                if (mag.bulletPrefab == null)
+                    return $"{identifier}()";
+                return $"{identifier}(\"{mag.bulletPrefab.Name}\")";
+            });
+        }
+
         /// <summary>
         /// The maximum amount of bullets that can be stored in the magazine.
         /// </summary>
+        [IncludeInTemplateCreation]
         public int MaxBullets { get; set; } = 30;
 
         /// <summary>
         /// The current amount of bullets in the magazine.
         /// </summary>
+        [IncludeInTemplateCreation]
         public int CurrentBullets { get; set; } = 30;
 
         /// <summary>
         /// The amount of pool of projectiles left when trying to reload
         /// </summary>
+        [IncludeInTemplateCreation]
         public int PoolOfProjectiles { get; set; } = 60;
 
         /// <summary>
         /// The time it takes to reload the magazine in seconds
         /// </summary>
+        [IncludeInTemplateCreation]
         public float ReloadTime { get; set; } = 2.0f;
 
         /// <summary>
         /// The amount of bullets that are fired per shot.
         /// </summary>
+        [IncludeInTemplateCreation]
         public int BulletsPerShot { get; set; } = 1;
 
         /// <summary>
         /// The amount of bullets that are consumed per shot.
         /// </summary>
+        [IncludeInTemplateCreation]
         public int BulletsConsumedPerShot { get; set; } = 1;
 
         /// <summary>
         /// The bullet this magazine shoots
         /// </summary>
-        public WorldObjectPrefab? BulletPrefab { get; set; }
+        [IgnoreInTemplateCreation]
+        public WorldObjectPrefab? BulletPrefab 
+        { 
+            get => bulletPrefab;
+            set
+            {
+                bulletPrefab = value;
+                if (bulletPrefab is null)
+                    return;
+
+                if(bulletPrefab!.LoadedObject is null)
+                {
+                    bulletPrefab.Load();
+                }
+            }
+        }
 
         /// <summary>
         /// Whether the magazine is currently reloading
@@ -55,6 +86,8 @@ namespace WinterRose.Monogame.Weapons
 
         [Show]
         private bool isReloading = false;
+        [IgnoreInTemplateCreation]
+        private WorldObjectPrefab? bulletPrefab;
 
         private void Awake()
         {
@@ -79,7 +112,7 @@ namespace WinterRose.Monogame.Weapons
 
                 foreach(int i in BulletsPerShot)
                 {
-                    WorldObject bullet = BulletPrefab.LoadIn(Universe.CurrentWorld!);
+                    WorldObject bullet = BulletPrefab.LoadIn(world);
                     bullet.transform.position = bulletStartPos;
                     bullet.transform.rotation = bulletStartRotation;
                     bullets[i] = bullet.FetchComponent<Projectile>();

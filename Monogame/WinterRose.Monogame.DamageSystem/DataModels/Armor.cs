@@ -28,6 +28,17 @@ public class Armor
         }
     }
 
+    public Armor() : this(1) { }
+    public Armor(float baseArmor) => BaseArmor = baseArmor;
+
+    static Armor()
+    {
+        Worlds.WorldTemplateObjectParsers.Add(typeof(Armor), (instance, identifier) =>
+        {
+            return $"{nameof(Armor)}({((Armor)instance).BaseArmor.ToString().Replace(',', '.')}f)";
+        });
+    }
+
     /// <summary>
     /// The armor based on current modifiers
     /// </summary>
