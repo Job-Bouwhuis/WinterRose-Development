@@ -9,7 +9,6 @@ namespace WinterRose
     [System.Diagnostics.DebuggerDisplay("{value} > {FromEnd}"), GenerateSerializer]
     public struct IndexF(float value, bool fromEnd)
     {
-        [Serialized]
         public float value { get; set; } = MathF.Abs(value);
         public readonly bool FromEnd => fromEnd;
 

@@ -17,9 +17,6 @@ internal class TestApp : Application
         Hirarchy.Show = true;
         return World.FromTemplate<Level1>();
 
-
-
-
         World w = new World("simworld");
         CameraIndex = 0;
         {

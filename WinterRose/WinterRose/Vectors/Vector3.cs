@@ -18,27 +18,22 @@ namespace WinterRose.Vectors
         /// <summary>
         /// (0,0,0)
         /// </summary>
-        [NotSerialized]
         public static Vector3 Zero { get; } = new Vector3(0, 0, 0);
         /// <summary>
         /// (1,1,1)
         /// </summary>
-        [NotSerialized]
         public static Vector3 One { get; } = new Vector3(1, 1, 1);
         /// <summary>
         /// (0,1,0)
         /// </summary>
-        [NotSerialized]
         public static Vector3 UnitY { get; } = new Vector3(0, 1, 0);
         /// <summary>
         /// (1,0,0)
         /// </summary>
-        [NotSerialized]
         public static Vector3 UnitX { get; } = new Vector3(1, 0, 0);
         /// <summary>
         /// (0,0,1)
         /// </summary>
-        [NotSerialized]
         public static Vector3 UnitZ { get; } = new Vector3(0, 0, 1);
 
         /// <summary>

@@ -7,7 +7,6 @@ using WinterRose;
 using WinterRose.Encryption;
 using WinterRose.WIP.ReflectionTests;
 using System.Reflection;
-using Serializer = WinterRose.Serialization.Version2.SnowSerializer;
 using WinterRose.Networking.TCP;
 using System.Diagnostics.CodeAnalysis;
 using WinterRose.WinterThornScripting;
@@ -609,66 +608,8 @@ HOJ:
     {
     }
 
-
-    public void SerializerV2Tests()
-    {
-        Serializer.Default.WithOptions(options => options.WithSimpleLoggingInterval(1000).WithMaxThreads(8));
-        Serializer.Default.SimpleLogger += x =>
-        {
-            Console.WriteLine(x.ProgressPercentage * 100);
-        };
-
-        if (false)
-        {
-            Vector3 vector = new(1, 2, 3);
-            string serialized = Serializer.Default.Serializer.Serialize(vector).Result;
-            Vector3 deserialized = Serializer.Default.Deserializer.Deserialize<Vector3>(serialized).Result;
-        }
-        else
-        {
-            List<Vector3> vecs = new();
-            10000.Repeat(i => vecs.Add(new Vector3(i, i, i)));
-
-            TimeSpan serTime;
-            TimeSpan deserTime;
-            TimeSpan serLegTime;
-            TimeSpan deserLegTime;
-
-            Stopwatch sw = Stopwatch.StartNew();
-            string serialzied = Serializer.Default.Serialize(vecs).Result;
-            FileManager.Write("yeeto.txt", serialzied, true);
-            serTime = sw.Elapsed;
-            sw.Restart();
-            List<Vector3> deserialzied = Serializer.Default.Deserialize<List<Vector3>>(serialzied).Result;
-            deserTime = sw.Elapsed;
-            sw.Restart();
-            ;
-            //sw.Stop();
-            string serializedLegacy = SnowSerializer.Serialize(vecs, new() { ProgressReporter = x => Console.WriteLine(x.Progress) }).Result;
-            serLegTime = sw.Elapsed;
-            sw.Restart();
-            List<Vector3> deserializedLegacy = SnowSerializer.Deserialize<List<Vector3>>(serializedLegacy, new() { ProgressReporter = x => Console.WriteLine(x.Progress) }).Result;
-            deserLegTime = sw.Elapsed;
-            sw.Stop();
-
-            Console.WriteLine($"Serializing took {serTime.TotalMilliseconds}ms");
-            Console.WriteLine($"Deserializing took {deserTime.TotalMilliseconds}ms");
-            Console.WriteLine($"Serializing Legacy took {serLegTime.TotalMilliseconds}ms");
-            Console.WriteLine($"Deserializing Legacy took {deserLegTime.TotalMilliseconds}ms");
-
-            bool b = IsEqual(vecs, deserialzied);
-            Console.WriteLine($"Is new serializer accurate: {b}");
-            b = IsEqual(vecs, deserializedLegacy);
-            Console.WriteLine($"Is legacy serializer accurate: {b}");
-        }
-    }
-
-
     void ReflectionsTest()
     {
-        //object? obj = ActivatorExtentions.CreateInstanceOf("Vector2", typeof(Vector2).Assembly.FullName);
-
-
         var r = new ReflectionTests();
         Type t = r.GetCustomAssembly();
 
