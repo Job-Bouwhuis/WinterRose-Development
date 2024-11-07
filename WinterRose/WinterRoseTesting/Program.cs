@@ -242,8 +242,6 @@ HOJ:
                 user.Send(message);
             }
         }
-
-
     }
 
     void OnMessageReceivedCLIENT(string message, TCPUser self, TCPClientInfo? sender)
@@ -300,7 +298,6 @@ HOJ:
         Class cc = ThornFactory.Class("test", [funcc]);
         Namespace nss = ThornFactory.Namespace("testt", [cc]);
         scriptt.DefineNamespace(nss);
-
 
         while (true)
         {
@@ -544,16 +541,10 @@ HOJ:
         string serializedResult = SnowSerializer.Serialize(list, settings).Result;
         sw1.Stop();
 
-        //Console.WriteLine("\n\nEncrypting...");
-        //serializedResult = Encryptor.Encrypt(serializedResult, "bokter", "ta@%^fdsfe99ea @\n%", 7, Console.WriteLine, 1000);
-
         Console.WriteLine("\n\nWriting to file...");
         FileManager.Write("SerializedData.txt", serializedResult, true);
 
         string readData = FileManager.Read("SerializedData.txt");
-
-        //Console.WriteLine("\n\nDecrypting...");
-       // readData = Encryptor.Decrypt(readData, "bokter", "ta@%^fdsfe99ea @\n%", 7, Console.WriteLine, 1000);
 
         Console.WriteLine("\n\nDeserializing...");
         Stopwatch sw2 = Stopwatch.StartNew();
@@ -562,7 +553,6 @@ HOJ:
 
         Console.WriteLine($"Serializing took {sw1.ElapsedTicks} ticks ({sw1.ElapsedMilliseconds}ms)");
         Console.WriteLine($"Deserializing took {sw2.ElapsedTicks} ticks ({sw2.ElapsedMilliseconds}ms)");
-
 
         Console.WriteLine($"Original list count: {list.Count}");
         Console.WriteLine($"Deserialized list count: {deserializedResult.Count}");

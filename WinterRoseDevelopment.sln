@@ -22,6 +22,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinterRose.Monogame.DamageSystem", "Monogame\WinterRose.Monogame.DamageSystem\WinterRose.Monogame.DamageSystem.csproj", "{93996497-4E3E-4AE0-9F8D-10B62A39F96D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GAMES", "GAMES", "{3698E784-D6C2-4E02-B209-408C1099476D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TopDownGame", "GAMES\TopDownGame\TopDownGame.csproj", "{C0F3046D-24C8-4302-B646-E30065A83404}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +52,10 @@ Global
 		{93996497-4E3E-4AE0-9F8D-10B62A39F96D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93996497-4E3E-4AE0-9F8D-10B62A39F96D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93996497-4E3E-4AE0-9F8D-10B62A39F96D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0F3046D-24C8-4302-B646-E30065A83404}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0F3046D-24C8-4302-B646-E30065A83404}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0F3046D-24C8-4302-B646-E30065A83404}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0F3046D-24C8-4302-B646-E30065A83404}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -58,6 +66,7 @@ Global
 		{030A6588-9083-4285-82EF-FC0AB96A6C6B} = {CEEC716A-A273-4111-8622-209F54DA8E14}
 		{73644D07-5B61-43A1-BCEE-C41766EAA0FA} = {CEEC716A-A273-4111-8622-209F54DA8E14}
 		{93996497-4E3E-4AE0-9F8D-10B62A39F96D} = {CEEC716A-A273-4111-8622-209F54DA8E14}
+		{C0F3046D-24C8-4302-B646-E30065A83404} = {3698E784-D6C2-4E02-B209-408C1099476D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4476F88-F402-4E67-B4D9-6187D5BAD463}
