@@ -1,0 +1,1 @@
+do raycasting before mocing to check whether a wall is hit -Monogame

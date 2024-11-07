@@ -1,0 +1,65 @@
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using WinterRose.Monogame.Worlds;
+using WinterRose.Monogame;
+using System;
+using System.Collections;
+using WinterRose.Monogame.Servers;
+using System.Net;
+
+namespace WinterRose.Monogame;
+#nullable enable
+
+/// <summary>
+/// Simple top down player controller 
+/// </summary>
+public class TopDownPlayerController : ObjectBehavior
+{
+    [IncludeInTemplateCreation]
+    public float Speed { get; set; } = 410f;
+
+    [IgnoreInTemplateCreation]
+    PhysicsObject physics;
+
+    public TopDownPlayerController(int speed) : this() => this.Speed = speed;
+    public TopDownPlayerController() { }
+
+    private void Awake()
+    {
+        physics = FetchOrAttachComponent<PhysicsObject>();
+    }
+
+    private void Update()
+    {
+        // Calculate the target position based on input and transform.up
+        Vector2 inputDirection = Input.GetNormalizedWASDInput();
+ 
+        // apply acceleration to the physics object based on the input direction to achieve the target velocity. gradually accelerate to the target velocity
+        // and gradually decelerate to 0 velocity when there is no input
+        // and gradually lower the acceleration when the target velocity is reached
+
+
+        // calculate the target velocity based on the input direction and the speed
+        var targetVelocity = inputDirection * Speed;
+
+        // calculate the acceleration needed to achieve the target velocity
+        var acceleration = (targetVelocity - physics.Velocity) / 0.1f;
+
+        // apply the acceleration to the physics object
+        physics.ApplyForce(acceleration);
+
+        if (Input.GetKeyDown(Keys.H))
+        {
+            var obj = world.CreateObject("host");
+            obj.AttachComponent<GameServerHost>("192.168.2.18", 5000, true);
+            obj.AttachComponent<GameServerUser>("192.168.2.18", 5000, true);
+        }
+
+        if (Input.GetKeyDown(Keys.U))
+        {
+            var obj = world.CreateObject("user");
+            obj.AttachComponent<GameServerUser>("192.168.2.18", 5000, true);
+        }
+    }
+}

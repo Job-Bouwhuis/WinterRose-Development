@@ -1,0 +1,28 @@
+namespace test
+{
+    class damncool
+    {
+        function Main
+        {
+            c = new Console();
+            math = new Math();
+            num = 0;
+            max = 1000;
+
+            while num < max
+            {
+                p = math.Percentage(num, max);
+                num = num + 1;
+                
+                rounded = math.RoundBy(p, 2);
+                text = "Percentage: " + rounded + "%";
+                c.WriteLine(text);
+            }
+        }
+
+        function Test
+        {
+            return 10;
+        }
+    }
+}
