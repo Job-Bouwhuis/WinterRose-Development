@@ -10,7 +10,7 @@ namespace WinterRose.Monogame.StatusSystem;
 /// A status effect for the <see cref="StatusEffector"/>
 /// </summary>
 [method: DefaultArguments("New status effect")]
-public abstract class StatusEffect
+public abstract class StatusEffect : ICloneable
 {
     /// <summary>
     /// The description of this effect
@@ -49,4 +49,9 @@ public abstract class StatusEffect
 
     protected internal virtual void Update(StatusEffector effector) { }
     protected internal virtual void StacksUpdated(StatusEffector effector, int lastStacks, int currentStacks) { }
+
+    public virtual object Clone()
+    {
+        return (StatusEffect)MemberwiseClone();
+    }
 }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WinterRose.Monogame.DamageSystem;
 
 namespace WinterRose.Monogame.StatusSystem
@@ -83,12 +81,29 @@ namespace WinterRose.Monogame.StatusSystem
             if (effect.UpdateType == StatusEffectUpdateType.Static)
                 effect.Update(this);
         }
+
+        public void Apply(StatusEffect effect)
+        {
+            if (HasEffect(effect.GetType(), out StatusEffect e))
+            {
+                e.Stacks += effect.Stacks;
+                e.SecondsPerStack = effect.SecondsPerStack;
+                return;
+            }
+
+            effects.Add(effect);
+        }
         /// <summary>
         /// Checks if there exists a effect of type <typeparamref name="T"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns><see langword="true"/> if the effect of type <typeparamref name="T"/> is present, <see langword="false"/> if not</returns>
         public bool HasEffect<T>() => effects.Any(x => x is T);
+        /// <summary>
+        /// Checks if there exists a effect of type <paramref name="effectType"/>
+        /// </summary>
+        /// <returns><see langword="true"/> if the effect of type  is present, <see langword="false"/> if not</returns>
+        public bool HasEffect(Type effectType) => effects.Any(x => x.GetType() == effectType);
         /// <summary>
         /// Checks if there exists a effect of type <typeparamref name="T"/>. And if so, populates <paramref name="effect"/> with it.
         /// </summary>
@@ -97,11 +112,24 @@ namespace WinterRose.Monogame.StatusSystem
         /// <returns><see langword="true"/> if the effect of type <typeparamref name="T"/> is present, <see langword="false"/> if not</returns>
         public bool HasEffect<T>(out T effect) where T : StatusEffect => (effect = GetEffect<T>()) is not null;
         /// <summary>
+        /// Checks if there exists a effect of type <typeparamref name="T"/>. And if so, populates <paramref name="effect"/> with it.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="effect"></param>
+        /// <returns><see langword="true"/> if the effect of type <typeparamref name="T"/> is present, <see langword="false"/> if not</returns>
+        public bool HasEffect(Type effectType, out StatusEffect effect) => (effect = GetEffect(effectType)) is not null;
+        /// <summary>
         /// Gets the effect of type <typeparamref name="T"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns>The effect of type <typeparamref name="T"/>, or <see langword="null"/> if there is no effect found</returns>
         public T? GetEffect<T>() where T : StatusEffect => effects.FirstOrDefault(x => x is T) as T;
+        /// <summary>
+        /// Gets the effect of type <typeparamref name="T"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>The effect of type <typeparamref name="T"/>, or <see langword="null"/> if there is no effect found</returns>
+        public StatusEffect GetEffect(Type effectType) => effects.FirstOrDefault(x => x.GetType() == effectType);
         /// <summary>
         /// Removes the effect of the given type
         /// </summary>

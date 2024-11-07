@@ -128,7 +128,6 @@ public class Response<T> : INotifyCompletion, IClearDisposable
         // remove _continuation to prevent memory leaks
         _continuation = null;
 
-
         // remove _result from memory
         _result = default!;
 

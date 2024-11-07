@@ -39,7 +39,6 @@ public class TCPUser(bool CreateConsoleOnConnect = true) : IClearDisposable
     public bool IsDisposed { get; private set; }
     public bool IsConnected => client.Connected;
 
-
     private TcpClient client;
     private TCPClientInfo selfInfo;
     private NetworkStream serverStream;
