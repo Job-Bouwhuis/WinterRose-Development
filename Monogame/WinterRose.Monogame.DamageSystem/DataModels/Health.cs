@@ -26,6 +26,9 @@ public class Health
             currentHealth = (int)(AddititiveHealthModifier.BaseValue * percentageOfCurrentToMax);
         }
     }
+
+    public event Action OnDeath = delegate { };
+
     /// <summary>
     /// The current health
     /// </summary>
@@ -54,6 +57,9 @@ public class Health
     {
         currentHealth -= damage;
         currentHealth = Math.Max(currentHealth, 0);
+
+        if(currentHealth <= 0)
+            OnDeath();
     }
 
     /// <summary>
