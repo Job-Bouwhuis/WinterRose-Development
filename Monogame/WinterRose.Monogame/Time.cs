@@ -44,7 +44,7 @@ public static class Time
     /// <summary>
     /// The time since the last time a scene was loaded in seconds
     /// </summary>
-    public static float SinceSceneLoad => (float)SinceSceneLoadTimer.Elapsed.TotalSeconds;
+    public static float SinceWorldLoad => (float)SinceSceneLoadTimer.Elapsed.TotalSeconds;
 
     internal static void Update(GameTime gameTime)
     {
