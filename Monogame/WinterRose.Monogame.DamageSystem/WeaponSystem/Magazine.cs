@@ -88,6 +88,8 @@ namespace WinterRose.Monogame.Weapons
         private bool isReloading = false;
         [IgnoreInTemplateCreation]
         private WorldObjectPrefab? bulletPrefab;
+        [IgnoreInTemplateCreation]
+        private int bulletsSpawned = 0;
 
         private void Awake()
         {
@@ -113,6 +115,7 @@ namespace WinterRose.Monogame.Weapons
                 foreach(int i in BulletsPerShot)
                 {
                     WorldObject bullet = BulletPrefab.LoadIn(world);
+                    bullet.Name += "_" + bulletsSpawned++;
                     bullet.transform.position = bulletStartPos;
                     bullet.transform.rotation = bulletStartRotation;
                     bullets[i] = bullet.FetchComponent<Projectile>();

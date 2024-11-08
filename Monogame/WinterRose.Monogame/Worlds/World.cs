@@ -460,7 +460,6 @@ public sealed class World : IEnumerable<WorldObject>
     public WorldObject Duplicate(WorldObject obj, string newName)
     {
         WorldObject result = CreateObject(newName);
-        result._SetTransform(new Transform(result));
         result.transform.position = obj.transform.position;
         result.transform.rotation = obj.transform.rotation;
         result.transform.scale = obj.transform.scale;
