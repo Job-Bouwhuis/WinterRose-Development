@@ -32,21 +32,29 @@ internal class Level1 : WorldTemplate
         gun.transform.parent = player.transform;
         gun.transform.position = new();
 
-        world.CreateObject<SmoothCameraFollow>("cam", player.transform);
-
+        world.CreateObject<SmoothCameraFollow>("cam", player.transform).Speed = 100;
         Application.Current.CameraIndex = 0;
     }
 
     private void CreatePrefabs(World world)
     {
-        var playerp = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
-        playerp.AttachComponent<ModyfiablePlayerMovement>().BaseSpeed = 25;
-        var vitals = playerp.AttachComponent<Vitality>();
+        var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
+        player.AttachComponent<ModyfiablePlayerMovement>().BaseSpeed = 25;
+        var vitals = player.AttachComponent<Vitality>();
         vitals.Health.MaxHealth = 740;
         vitals.Armor.BaseArmor = 0.5f;
-        var effector = playerp.AttachComponent<StatusEffector>();
+        var effector = player.AttachComponent<StatusEffector>();
 
-        WorldObjectPrefab.Create("Player", playerp.owner);
+        WorldObjectPrefab.Create("Player", player.owner);
+
+        var bullet = world.CreateObject<SpriteRenderer>("bullet", 25, 8, Color.Red);
+        bullet.AttachComponent<SquareCollider>();
+        var proj = bullet.AttachComponent<Projectile>();
+        proj.Speed = 800;
+        proj.Damage = new FireDamage() { BaseDamage = 10 };
+        proj.Lifetime = 50;
+        bullet.AttachComponent<DefaultProjectileHitAction>();
+        bullet.owner.CreatePrefab("basicBullet");
 
         var gun = world.CreateObject("Gun");
 

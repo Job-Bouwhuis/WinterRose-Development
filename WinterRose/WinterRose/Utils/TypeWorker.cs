@@ -31,6 +31,32 @@ namespace WinterRose
         }
 
         /// <summary>
+        /// searches for the method that implicitly converts the source type to the target type. Works with generic type conversions.
+        /// 
+        /// </summary>
+        /// <param name="targetType"></param>
+        /// <param name="sourceType"></param>
+        /// <returns></returns>
+        public static MethodInfo? FindImplicitConversionMethod(Type targetType, Type sourceType)
+        {
+            // Check for implicit operators in both the source and target types
+            var conversionMethod = sourceType.GetMethods(BindingFlags.Static | BindingFlags.Public)
+                .FirstOrDefault(m => m.Name == "op_Implicit" &&
+                                     m.ReturnType == targetType &&
+                                     m.GetParameters()[0].ParameterType == sourceType);
+
+            if (conversionMethod == null)
+            {
+                conversionMethod = targetType.GetMethods(BindingFlags.Static | BindingFlags.Public)
+                    .FirstOrDefault(m => m.Name == "op_Implicit" &&
+                                         m.ReturnType == targetType &&
+                                         m.GetParameters()[0].ParameterType == sourceType);
+            }
+
+            return conversionMethod;
+        }
+
+        /// <summary>
         /// the same as Convert.ChangeType(object frrom, object To) except this returns a dynamic instead of an object
         /// </summary>
         /// <param name="from"></param>

@@ -161,19 +161,79 @@ namespace WinterRose.Reflection
         /// <param name="value"></param>
         /// <exception cref="FieldNotFoundException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
-        public void SetValue(string name, object value)
+        public void SetValue(string name, dynamic value)
         {
-            MemberData member = GetMember(name) ?? throw new FieldNotFoundException($"field or property with name '{name}' does not exist");
-            object? obj = this.obj;
+            try
+            {
+                SetFieldValue(name, value);
+                return;
+            }
+            catch { }
+            try
+            {
+                SetPropertyValue(name, value);
+            }
+            catch (FieldNotFoundException)
+            {
+                throw new FieldNotFoundException($"field or property with name '{name}' does not exist");
+            }
+        }
 
-            if (member.IsStatic)
-                member.SetValue(ref nullobj, value);
+        public void SetPropertyValue<T>(string name, T value)
+        {
+            PropertyInfo property = GetProperty(name) ?? throw new FieldNotFoundException($"property with name '{name}' does not exist");
+
+            if (property.GetMethod.IsStatic)
+                property.SetValue(null, value);
             else if (obj is null)
-                throw new InvalidOperationException("Helper was created for type only");
+                throw new Exception("Helper was created for type only");
+
+            // Check if the property type or the value type has a compatible implicit conversion operator
+            MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(property.PropertyType, typeof(T));
+
+            object actualValue = value;
+
+            if (conversionMethod != null)
+            {
+                // Convert the value using the implicit operator if it exists
+                actualValue = conversionMethod.Invoke(null, new object[] { value })!;
+            }
+
+            property.SetValue(obj, actualValue);
+        }
+
+        public void SetFieldValue<T>(string name, T value)
+        {
+            FieldInfo field = GetField(name) ?? throw new FieldNotFoundException($"field with name '{name}' does not exist");
+
+            if (field.IsStatic)
+            {
+                field.SetValue(null, value);
+            }
+            else if (obj is null)
+            {
+                throw new Exception("Helper was created for type only");
+            }
+
+            // Check if the field's type or the value type has a compatible implicit conversion operator
+            MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(field.FieldType, typeof(T));
+
+            object? actualValue = value;
+
+            if (conversionMethod != null)
+            {
+                // Convert the value using the implicit operator if it exists
+                actualValue = conversionMethod.Invoke(null, [value]);
+            }
+
             if (ObjectType.IsByRef)
-                member.SetValue(ref obj, value);
-            member.SetValue(ref obj, value);
-            this.obj = (T)obj!;
+            {
+                field.SetValue(obj, actualValue);
+            }
+            else
+            {
+                field.SetValueDirect(__makeref(obj), actualValue);
+            }
         }
 
         /// <summary>

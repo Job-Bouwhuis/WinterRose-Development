@@ -152,24 +152,57 @@ namespace WinterRose.Reflection
         /// <exception cref="InvalidOperationException"></exception>
         public void SetValue(ref object? obj, object? value)
         {
-            if (!CanWrite)
-                throw new InvalidOperationException("Cannot write to this field or property.");
+            if (fieldsource is not null)
+                SetFieldValue(obj, value);
+            else if (propertysource is not null)
+                SetPropertyValue(obj, value);
+            else
+                throw new Exception("Field or property does not exist with name: " + Name);
+        }
 
-            if (IsStatic)
-                if (MemberType is MemberTypes.Field)
-                    fieldsource?.SetValue(obj, value);
-                else
-                    propertysource?.SetValue(obj, value);
+        public void SetPropertyValue<T>(object? obj, T value)
+        {
+            // Check if the property type or the value type has a compatible implicit conversion operator
+            MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(Type, value.GetType());
 
-            if (MemberType is MemberTypes.Property)
-                propertysource?.SetValue(obj, value);
+            object actualValue = value;
 
-            if (ByRef)
+            if (conversionMethod != null)
             {
-                TypedReference tr = __makeref(obj);
-                fieldsource?.SetValueDirect(tr, value);
+                // Convert the value using the implicit operator if it exists
+                actualValue = conversionMethod.Invoke(null, new object[] { value })!;
             }
-            fieldsource?.SetValue(obj, value);
+
+            if (obj is null && !(Type.IsAbstract && Type.IsSealed))
+                throw new Exception("Reflection helper was created type only.");
+
+            propertysource.SetValue(obj, actualValue);
+        }
+
+        public void SetFieldValue<T>(object obj, T value)
+        {
+            // Check if the field's type or the value type has a compatible implicit conversion operator
+            MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(Type, typeof(T));
+
+            object? actualValue = value;
+
+            if (conversionMethod != null)
+            {
+                // Convert the value using the implicit operator if it exists
+                actualValue = conversionMethod.Invoke(null, [value]);
+            }
+
+            if(obj is null && !(Type.IsAbstract && Type.IsSealed))
+                throw new Exception("Reflection helper was created type only.");
+
+            if (!Type.IsByRef)
+            {
+                fieldsource!.SetValue(obj, actualValue);
+            }
+            else
+            {
+                fieldsource!.SetValueDirect(__makeref(obj), actualValue);
+            }
         }
 
         /// <summary>

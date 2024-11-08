@@ -6,20 +6,20 @@ namespace WinterRose.Monogame;
 
 public class ModyfiablePlayerMovement : ObjectBehavior
 {
-    public float BaseSpeed
+    [IncludeInTemplateCreation]
+    public int BaseSpeed
     {
         get => AdditiveSpeedModifier.BaseValue;
         set => AdditiveSpeedModifier.SetBaseValue(value);
     }
-    [IncludeInTemplateCreation]
-    public StaticAdditiveModifier<float> AdditiveSpeedModifier { get; private set; } = new();
+    public StaticAdditiveModifier<int> AdditiveSpeedModifier { get; private set; } = 20;
 
     public ModyfiablePlayerMovement(int speed)
     {
         BaseSpeed = speed;
     }
 
-    public ModyfiablePlayerMovement() : this(20) { }
+    public ModyfiablePlayerMovement() { }
 
     private void Update()
     {

@@ -1,4 +1,5 @@
-﻿using SharpDX.WIC;
+﻿using SharpDX.Direct3D9;
+using SharpDX.WIC;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -204,15 +205,15 @@ internal sealed class WorldTemplateLoader
                 continue;
             }
             string[] vars = varassign[0].Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (varassign.Length == 2 && vars[1] == "Single")
-            {
-
-            }
             dynamic val = GetAssigningValue(varassign[1], typeOverrides, obj, vars);
+            if(val is Type type && type.IsEnum)
+            {
+                val = GetEnumValue(type, varassign[1]);
+            }
             if (val is Breakout)
                 return false;
 
-            dynamic? endVar = SetVar(obj, vars, val, typeOverrides);
+            SetVar(obj, vars, val, typeOverrides);
         }
         if (stack is not null)
             stack.Push(obj);
@@ -220,6 +221,12 @@ internal sealed class WorldTemplateLoader
             world.InstantiateExact(obj);
         return true;
     }
+
+    private object GetEnumValue(Type type, string v)
+    {
+        return Enum.Parse(type, v);
+    }
+
     private bool TryGetVariable(string identifyer, out WorldTemplateVariable? variable)
     {
         var a = variables.Where(x => x.Identifyer == identifyer);
@@ -250,14 +257,13 @@ internal sealed class WorldTemplateLoader
             return GetVariable(content, typeOverrides, obj);
         }
 
+        Type t = CheckEnum(content, obj, vars, typeOverrides);
+        if (t != null)
+            return t;
+
         Type type = SelectType(TypeWorker.FindType(typeDef), typeOverrides, typeDef);
 
-        if(type == null)
-        {
-            Type t = CheckEnum(content, obj, vars);
-            if (t != null)
-                return t;
-        }
+
 
         if (type == null)
         {
@@ -277,9 +283,12 @@ internal sealed class WorldTemplateLoader
         return instance;
     }
 
-    private Type CheckEnum(string content, WorldObject obj, string[] vars)
+    private Type? CheckEnum(string content, WorldObject obj, string[] vars, List<WorldTemplateTypeSearchOverride> typeOverrides)
     {
-        return typeof(Type);
+        MemberData data = GetMember(out _, vars, typeOverrides, obj);
+        if(data.Type.IsEnum)
+            return data.Type;
+        return null;
     }
 
     private bool IsPrimitive(string data, out dynamic primitive)
@@ -595,10 +604,53 @@ Continue:
 
         return cur;
     }
-    private dynamic? SetVar(WorldObject obj, string[] vars, dynamic value, List<WorldTemplateTypeSearchOverride> typeOverrides)
+    private void SetVar(WorldObject obj, string[] vars, dynamic value, List<WorldTemplateTypeSearchOverride> typeOverrides)
     {
-        dynamic? cur = null;
+        MemberData member = GetMember(out var cur, vars, typeOverrides, obj);
+        member.SetValue(ref cur, value);
+        return;
+        //dynamic? cur = null;
 
+        //Type? t = SelectType(TypeWorker.FindType(vars[0]), typeOverrides, vars[0]);
+        //if (t is not null && obj.HasComponent(t))
+        //{
+        //    cur = obj.FetchComponent(t);
+
+        //    //for (int d = 1; d < vars.Length; d++)
+        //    //{
+        //    //    string? vari = vars[d];
+        //    //    if(cur is null)
+        //    //    ReflectionHelper refh = ReflectionHelper.ForObject(ref obj);
+        //    //}
+        //}
+        //else
+        //    for (int i = 0; i < vars.Length - 1; i++)
+        //    {
+        //        string? vari = vars[i];
+        //        ReflectionHelper refh = ReflectionHelper.ForObject(cur is null ? obj : cur);
+        //        cur = refh.GetValueFrom(vari);
+        //    }
+
+        //if (cur is null)
+        //{
+        //    object o = obj;
+        //    ReflectionHelper rh = ReflectionHelper.ForObject(ref o);
+        //    rh.SetValue(vars.Last(), value);
+        //    return cur;
+        //}
+        //else
+        //{
+        //    object o = cur;
+        //    ReflectionHelper rh = ReflectionHelper.ForObject(ref o);
+        //    rh.SetValue(vars.Last(), value);
+        //    return cur;
+        //}
+    }
+
+    public MemberData GetMember(out dynamic cur, string[] vars, List<WorldTemplateTypeSearchOverride> typeOverrides, WorldObject obj)
+    {
+        cur = null;
+        MemberData result = null;
         Type? t = SelectType(TypeWorker.FindType(vars[0]), typeOverrides, vars[0]);
         if (t is not null && obj.HasComponent(t))
         {
@@ -623,18 +675,17 @@ Continue:
         {
             object o = obj;
             ReflectionHelper rh = ReflectionHelper.ForObject(ref o);
-            rh.SetValue(vars.Last(), value);
-            return cur;
+            cur = o;
+            return rh.GetMember(vars[^1]);
         }
         else
         {
             object o = cur;
             ReflectionHelper rh = ReflectionHelper.ForObject(ref o);
-            rh.SetValue(vars.Last(), value);
-            return cur;
+            return rh.GetMember(vars[^1]);
         }
-
     }
+
     public bool ParseComponent(WorldObject obj, string componentData, List<WorldTemplateTypeSearchOverride> typeOverrides)
     {
         int typeDefEnd = componentData.IndexOf("(");

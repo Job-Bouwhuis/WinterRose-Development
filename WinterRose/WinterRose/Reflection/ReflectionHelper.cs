@@ -162,6 +162,13 @@ namespace WinterRose.Reflection
             return property.GetValue(obj);
         }
 
+        /// <summary>
+        /// Sets the value at the field or property of the given name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="value"></param>
+        /// <exception cref="FieldNotFoundException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public void SetValue(string name, dynamic value)
         {
             try
@@ -190,7 +197,7 @@ namespace WinterRose.Reflection
                 throw new Exception("Helper was created for type only");
 
             // Check if the property type or the value type has a compatible implicit conversion operator
-            MethodInfo? conversionMethod = FindImplicitConversionMethod(property.PropertyType, typeof(T));
+            MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(property.PropertyType, typeof(T));
 
             object actualValue = value;
 
@@ -217,44 +224,25 @@ namespace WinterRose.Reflection
             }
 
             // Check if the field's type or the value type has a compatible implicit conversion operator
-            MethodInfo? conversionMethod = FindImplicitConversionMethod(field.FieldType, typeof(T));
+            MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(field.FieldType, typeof(T));
+
+            object? actualValue = value;
 
             if (conversionMethod != null)
             {
                 // Convert the value using the implicit operator if it exists
-                value = (T)conversionMethod.Invoke(null, new object[] { value })!;
+                actualValue = conversionMethod.Invoke(null, [value]);
             }
 
             if (ObjectType.IsByRef)
             {
-                field.SetValue(obj, value);
+                field.SetValue(obj, actualValue);
             }
             else
             {
-                field.SetValueDirect(__makeref(obj), value);
+                field.SetValueDirect(__makeref(obj), actualValue);
             }
         }
-
-        // Helper method to find an implicit conversion method for generic types
-        private MethodInfo? FindImplicitConversionMethod(Type targetType, Type sourceType)
-        {
-            // Check for implicit operators in both the source and target types
-            var conversionMethod = sourceType.GetMethods(BindingFlags.Static | BindingFlags.Public)
-                .FirstOrDefault(m => m.Name == "op_Implicit" &&
-                                     m.ReturnType == targetType &&
-                                     m.GetParameters()[0].ParameterType == sourceType);
-
-            if (conversionMethod == null)
-            {
-                conversionMethod = targetType.GetMethods(BindingFlags.Static | BindingFlags.Public)
-                    .FirstOrDefault(m => m.Name == "op_Implicit" &&
-                                         m.ReturnType == targetType &&
-                                         m.GetParameters()[0].ParameterType == sourceType);
-            }
-
-            return conversionMethod;
-        }
-
 
         /// <summary>
         /// Gets the type of the field or property of the given name
