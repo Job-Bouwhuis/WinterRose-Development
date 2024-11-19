@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +35,7 @@ public class TCPServer(bool CreateConsoleOnConnect = true) : IClearDisposable
     private Dictionary<Guid, Response<Packet>> pendingResponses = new();
 
     public bool IsDisposed { get; private set; }
+    public Action<ExceptionDispatchInfo> OnError { get; set; }
 
 
     /// <summary>
@@ -116,7 +118,7 @@ public class TCPServer(bool CreateConsoleOnConnect = true) : IClearDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"Send Exception: {ex.Message}\n{ex.GetType().Name}");
-
+            OnError(ExceptionDispatchInfo.Capture(ex));
             lock (connections)
             {
                 connections.RemoveAll(c => c.Client == sender);
@@ -227,6 +229,7 @@ public class TCPServer(bool CreateConsoleOnConnect = true) : IClearDisposable
         {
             if (!IsDisposed)
                 Console.WriteLine($"AcceptClientsAsync Exception: {ex.Message}");
+            OnError(ExceptionDispatchInfo.Capture(ex));
         }
     }
 
@@ -269,7 +272,18 @@ public class TCPServer(bool CreateConsoleOnConnect = true) : IClearDisposable
                     break;
 
                 string? serializedPacket = await reader.ReadLineAsync(cancellationToken);
-                Packet packet = Packet.FromSerialized(serializedPacket);
+                if (serializedPacket is "" or null)
+                    continue;
+                Packet packet;
+                try
+                {
+                    packet = Packet.FromSerialized(serializedPacket);
+                }
+                catch
+                {
+                    continue;
+                }
+
                 packet.Sender = clientInfo;
                 if (packet.Payload == null)
                 {
@@ -284,6 +298,7 @@ public class TCPServer(bool CreateConsoleOnConnect = true) : IClearDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"HandleClientAsync Exception: {ex.Message}");
+            OnError(ExceptionDispatchInfo.Capture(ex));
         }
         finally
         {

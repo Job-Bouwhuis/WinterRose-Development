@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpDX.WIC;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -7,39 +8,39 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Networking.TCP;
 
-namespace WinterRose.Monogame.Servers
+namespace WinterRose.Monogame.Servers;
+
+public class GameServerHost : ObjectComponent
 {
-    internal class GameServerHost : ObjectComponent
+    TCPServer server = new();
+
+    public GameServerHost(string? ip, int host, bool makeConsole)
     {
-        TCPServer server = new TCPServer();
-
-        public GameServerHost(string? ip, int host, bool makeConsole)
+        if (makeConsole)
         {
-            if (makeConsole)
-            {
-                Windows.OpenConsole();
-            }
-            server.OnMessageReceived += Server_OnMessageReceived;
-
-            server.Start(ip ?? IPAddress.Any.ToString(), host);
-
-            ExitHelper.GameClosing += GameClosing;
+            Windows.OpenConsole();
         }
+        server.OnMessageReceived += Server_OnMessageReceived;
 
-        private void Server_OnMessageReceived(string message, TCPClientInfo sender, TCPClientInfo? relayClient)
-        {
-            if (message.StartsWith("Pos "))
-                server.Send(message);
-        }
+        server.Start(ip ?? IPAddress.Any.ToString(), host);
 
-        private void Close()
-        {
-            Windows.CloseConsole();
-        }
+        ExitHelper.GameClosing += GameClosing;
+    }
 
-        private void GameClosing()
-        {
-            server.Dispose();
-        }
+    private void Server_OnMessageReceived(string message, TCPClientInfo sender, TCPClientInfo? relayClient)
+    {
+        if (message.StartsWith("Pos "))
+            server.Send(message);
+    }
+
+    private void Close()
+    {
+        Windows.CloseConsole();
+    }
+
+    private bool GameClosing()
+    {
+        server.Dispose();
+        return false;
     }
 }

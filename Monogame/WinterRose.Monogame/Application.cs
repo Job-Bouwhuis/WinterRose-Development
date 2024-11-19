@@ -187,10 +187,10 @@ public abstract class Application : Game, IDisposable
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="args"></param>
-    protected override void OnExiting(object sender, EventArgs args)
+    protected override void OnExiting(object sender, ExitingEventArgs args)
     {
         MonoUtils.IsStopping = true;
-        ExitHelper.InvokeGameClosingEvent();
+        args.Cancel = ExitHelper.InvokeGameClosingEvent();
     }
 
     /// <summary>

@@ -82,9 +82,10 @@ namespace WinterRose.Monogame.Weapons
         /// <summary>
         /// Whether the magazine is currently reloading
         /// </summary>
+        [IgnoreInTemplateCreation]
         public bool IsReloading => isReloading;
 
-        [Show]
+        [Show, IgnoreInTemplateCreation]
         private bool isReloading = false;
         [IgnoreInTemplateCreation]
         private WorldObjectPrefab? bulletPrefab;
@@ -118,7 +119,7 @@ namespace WinterRose.Monogame.Weapons
                     bullet.Name += "_" + bulletsSpawned++;
                     bullet.transform.position = bulletStartPos;
                     bullet.transform.rotation = bulletStartRotation;
-                    bullets[i] = bullet.FetchComponent<Projectile>();
+                    bullets[i] = bullet.FetchComponent<Projectile>()!;
                     if (bullets[i] is null)
                     {
                         Debug.LogException("Bullet does not have a Projectile component. This is strictly required.");

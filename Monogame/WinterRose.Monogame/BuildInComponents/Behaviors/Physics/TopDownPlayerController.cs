@@ -48,18 +48,5 @@ public class TopDownPlayerController : ObjectBehavior
 
         // apply the acceleration to the physics object
         physics.ApplyForce(acceleration);
-
-        if (Input.GetKeyDown(Keys.H))
-        {
-            var obj = world.CreateObject("host");
-            obj.AttachComponent<GameServerHost>("192.168.2.18", 5000, true);
-            obj.AttachComponent<GameServerUser>("192.168.2.18", 5000, true);
-        }
-
-        if (Input.GetKeyDown(Keys.U))
-        {
-            var obj = world.CreateObject("user");
-            obj.AttachComponent<GameServerUser>("192.168.2.18", 5000, true);
-        }
     }
 }

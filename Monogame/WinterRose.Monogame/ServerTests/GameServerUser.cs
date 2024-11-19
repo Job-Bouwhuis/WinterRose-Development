@@ -3,91 +3,112 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Monogame.Worlds;
 using WinterRose.Networking.TCP;
 
-namespace WinterRose.Monogame.Servers
+namespace WinterRose.Monogame.Servers;
+
+public class GameServerUser : ObjectBehavior
 {
-    internal class GameServerUser : ObjectBehavior
+    private class ObjectPosition
     {
-        TCPUser user = new TCPUser();
-
-        Dictionary<WorldObject, Vector2> objectPositions = []; 
-
-        public GameServerUser(string? ip, int port, bool makeConsole)
+        public ObjectPosition(WorldObject obj, bool newEntry = true)
         {
-            if (makeConsole)
-            {
-                Windows.OpenConsole();
-            }
-            user.OnMessageReceived += User_OnMessageReceived;
-
-            user.Connect(ip ?? IPAddress.Loopback.ToString(), port);
-
-            ExitHelper.GameClosing += GameClosing;
+            Pos = obj.transform.position;
+            NewEntry = newEntry;
         }
 
+        public Vector2 Pos { get; set; } = new Vector2(float.NaN, float.NaN);
+        public bool NewEntry { get; set; } = true;
 
+        public static implicit operator ObjectPosition(WorldObject obj) => new(obj);
+    }
 
-        private void Awake()
+    TCPUser user = new();
+
+    Dictionary<WorldObject, ObjectPosition> objectPositions = [];
+
+    public GameServerUser(string? ip, int port, bool makeConsole)
+    {
+        if (makeConsole)
         {
-            world.Objects.Foreach(x => objectPositions.Add(x, x.transform.position));
+            Windows.OpenConsole();
         }
+        user.OnMessageReceived += User_OnMessageReceived;
 
-        private void User_OnMessageReceived(string message, TCPUser self, TCPClientInfo? sender)
+        user.Connect(ip ?? IPAddress.Loopback.ToString(), port);
+
+        ExitHelper.GameClosing += GameClosing;
+    }
+
+    private void Awake()
+    {
+        world.Objects.Foreach(x => objectPositions.Add(x, x));
+    }
+
+    private void User_OnMessageReceived(string message, TCPUser self, TCPClientInfo? sender)
+    {
+        if (message.StartsWith("Pos "))
         {
-            if (message.StartsWith("Pos "))
+            string[] split = message.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (split.Length == 4)
             {
-                string[] split = message.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-                if (split.Length == 4)
+                string objName = split[1];
+                if (float.TryParse(split[2], out float x) && float.TryParse(split[3], out float y))
                 {
-                    string objName = split[1];
-                    if (float.TryParse(split[2], out float x) && float.TryParse(split[3], out float y))
+
+
+                    var obj = transform.world.Objects.FirstOrDefault(x => x.Name == objName) 
+                        ?? throw new Exception($"Object with name {objName} not found.");
+                    var newPos = new Vector2(x, y);
+
+                    if (obj.transform.position != newPos)
                     {
-                        
+                        Console.WriteLine($"Received position update for {objName} - {x}, {y}");
 
-                        var obj = transform.world.Objects.FirstOrDefault(x => x.Name == objName);
-                        if (obj is null)
-                            throw new Exception($"Object with name {objName} not found.");
-
-                        var newPos = new Vector2(x, y);
-
-                        if(obj.transform.position != newPos)
-                        {
-                            Console.WriteLine($"Received position update for {objName} - {x}, {y}");
-
-                            obj.transform.position = newPos;
-                            objectPositions[obj] = obj.transform.position;
-                        }
+                        obj.transform.position = newPos;
+                        objectPositions[obj] = obj;
                     }
                 }
             }
         }
+    }
 
-        private void Update()
+    private void Update()
+    {
+        world.Objects.Foreach(obj =>
         {
-            foreach (var obj in objectPositions)
+            if (objectPositions.TryGetValue(obj, out ObjectPosition? value))
             {
-                if (obj.Key.transform.position != obj.Value)
-                {   
-                    user.Send($"Pos {obj.Key.Name} {obj.Key.transform.position.X} {obj.Key.transform.position.Y}");
-                    objectPositions[obj.Key] = obj.Key.transform.position;
-                }
+                if (obj.transform.position != value.Pos)
+                    value.NewEntry = true;
+                else
+                    value.NewEntry = false;
+            }
+            else
+                objectPositions[obj] = obj;
+
+        });
+
+        foreach (var obj in objectPositions)
+        {
+            if (obj.Value.NewEntry)
+            {
+                _ = Task.Run(() => user.Send($"Pos {obj.Key.Name} {obj.Key.transform.position.X} {obj.Key.transform.position.Y}"));
+                objectPositions[obj.Key] = obj.Key;
             }
         }
+    }
 
-        private void Close()
-        {
-            Windows.CloseConsole();
-        }
+    private void Close()
+    {
+        Windows.CloseConsole();
+    }
 
-        private void GameClosing()
-        {
-            user.Disconnect();
-            user.Dispose();
-        }
+    private bool GameClosing()
+    {
+        user.Disconnect();
+        user.Dispose();
+        return false;
     }
 }

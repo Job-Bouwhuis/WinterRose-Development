@@ -53,7 +53,7 @@ namespace WinterRose.FileManagement
             }
             else
             {
-                DirectoryInfo info = new DirectoryInfo(pathToSerialize);
+                DirectoryInfo info = new(pathToSerialize);
                 DirectoryData directory = new();
                 var s = SerializePerFile(pathToSerialize, info.Parent.Name, new(FileManager.PathOneUp(pathToSerialize)), settings.Value);
                 settings.Value.Progress?.Invoke($"Done.\nEncrypted folder to '{s}'");
@@ -83,7 +83,7 @@ namespace WinterRose.FileManagement
         }
         private static string SerializeToSingleFile(string PathToSerialize, DirectoryInfo parentDir, DirectorySerializerSettings settings)
         {
-            SerializedDirectory dir = new SerializedDirectory(new DirectoryInfo(PathToSerialize).Attributes.HasFlag(FileAttributes.Hidden));
+            SerializedDirectory dir = new(new DirectoryInfo(PathToSerialize).Attributes.HasFlag(FileAttributes.Hidden));
 
             string a = Path.GetFullPath(PathToSerialize);
             if (PathToSerialize.Contains("../"))
@@ -119,7 +119,7 @@ namespace WinterRose.FileManagement
                 return "";
             }
             //string path = FileManager.PathOneUp(pathToSerialize);
-            DirectoryInfo directoryInfo = new DirectoryInfo(pathToSerialize);
+            DirectoryInfo directoryInfo = new(pathToSerialize);
 
             if (!directoryInfo.Exists)
                 return $"No directory at the requested path: '{pathToSerialize}'";
@@ -140,8 +140,6 @@ namespace WinterRose.FileManagement
             DirectoryInfo newDir = Directory.CreateDirectory(encryptedDirName);
             if (directoryInfo.Attributes.HasFlag(FileAttributes.Hidden))
                 newDir.Attributes |= FileAttributes.Hidden;
-
-
 
             foreach (var dir in directoryInfo.EnumerateDirectories())
             {
@@ -195,7 +193,7 @@ namespace WinterRose.FileManagement
                     dir = archiveDestination.FullName;
                 string encryptedFilePath = Path.Combine(dir, encryptedName + ".WinterArchive");
 
-                StringBuilder fileContent = new StringBuilder();
+                StringBuilder fileContent = new();
                 fileContent.Append("-c=sf <===> ");
                 fileContent.Append(encrypted);
                 FileManager.Write(encryptedFilePath, fileContent, true);
@@ -278,8 +276,8 @@ namespace WinterRose.FileManagement
             if (!Directory.Exists(directory))
                 dir.dirInfo = Directory.CreateDirectory(directory);
 
-            List<Task> directories = new List<Task>();
-            List<Task> files = new List<Task>();
+            List<Task> directories = [];
+            List<Task> files = [];
 
             foreach (var d in dir.directories.Values)
             {
@@ -305,7 +303,7 @@ namespace WinterRose.FileManagement
         public string directoryName;
         public DirectoryInfo dirInfo
         {
-            get => new DirectoryInfo(directoryName);
+            get => new(directoryName);
             set => directoryName = value.Name;
         }
 
@@ -323,7 +321,7 @@ namespace WinterRose.FileManagement
         }
         internal static SerializedDirectory SerializeDirectory(string path)
         {
-            SerializedDirectory result = new SerializedDirectory(new DirectoryInfo(path).Attributes.HasFlag(FileAttributes.Hidden));
+            SerializedDirectory result = new(new DirectoryInfo(path).Attributes.HasFlag(FileAttributes.Hidden));
 
             result.directoryName = WinterUtils.GetDirectoryName(path);
             var directories = Directory.GetDirectories(path);
@@ -337,8 +335,6 @@ namespace WinterRose.FileManagement
         }
         internal static bool DeserializeDirectory(SerializedDirectory data, string destination)
         {
-            //try
-            //{
             foreach (var dir in data.directories.Values)
             {
                 string dirPath = $"{destination}\\{dir.directoryName}";
@@ -357,12 +353,6 @@ namespace WinterRose.FileManagement
                 SerializedFile.DeserializeFile(file, destination);
             }
             return true;
-            //}
-            //catch
-            //{
-            //    throw
-            //}
-
         }
 
         public override string ToString()
@@ -425,20 +415,13 @@ namespace WinterRose.FileManagement
 
         public static bool DeserializeFile(SerializedFile data, string destination)
         {
-            //try
-            //{
             string path = $"{destination}\\{data.fileName}{data.fileExtention}";
             var content = Convert.FromBase64String(data.content);
             File.WriteAllBytes(path, content);
-            FileInfo file = new FileInfo(path);
+            FileInfo file = new(path);
             if (data.isHidden)
                 file.Attributes |= FileAttributes.Hidden;
             return true;
-            // }
-            // catch (Exception e)
-            // {
-            //    throw;
-            // }
         }
 
         public override string ToString()

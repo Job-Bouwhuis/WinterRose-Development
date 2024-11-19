@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose
+namespace WinterRose.Networking
 {
     /// <summary>
     /// Provides methods to check for network availability
@@ -39,9 +41,9 @@ namespace WinterRose
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
             {
                 // discard because of standard reasons
-                if ((ni.OperationalStatus != OperationalStatus.Up) ||
-                    (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback) ||
-                    (ni.NetworkInterfaceType == NetworkInterfaceType.Tunnel))
+                if (ni.OperationalStatus != OperationalStatus.Up ||
+                    ni.NetworkInterfaceType == NetworkInterfaceType.Loopback ||
+                    ni.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
                     continue;
 
                 // this allow to filter modems, serial, etc.
@@ -50,8 +52,8 @@ namespace WinterRose
                     continue;
 
                 // discard virtual cards (virtual box, virtual pc, etc.)
-                if ((ni.Description.IndexOf("virtual", StringComparison.OrdinalIgnoreCase) >= 0) ||
-                    (ni.Name.IndexOf("virtual", StringComparison.OrdinalIgnoreCase) >= 0))
+                if (ni.Description.IndexOf("virtual", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    ni.Name.IndexOf("virtual", StringComparison.OrdinalIgnoreCase) >= 0)
                     continue;
 
                 // discard "Microsoft Loopback Adapter", it will not show as NetworkInterfaceType.Loopback but as Ethernet Card.
@@ -61,6 +63,24 @@ namespace WinterRose
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Gets a local IP address.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static IPAddress GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip;
+                }
+            }
+            throw new Exception("No network adapters with an IPv4 address in the system!");
         }
     }
 }

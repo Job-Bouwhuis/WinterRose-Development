@@ -139,7 +139,7 @@ public sealed class ParticleEmitter : ActiveRenderer
         MaxParticles = maxparticles;
     }
 
-    private void Update()
+    public void Update()
     {
         Debug.Log($"Total particles: {particles.Count}");
         if (AutoEmit)
@@ -222,7 +222,7 @@ public sealed class ParticleEmitter : ActiveRenderer
             lifeTime = random.NextFloat(ParticleLifeTime.Start, ParticleLifeTime.End)
         };
 
-        //Debug.Log(p.velocity);
+        Debug.Log(p.angularVelocity);
         particles.Add(p);
     }
 }

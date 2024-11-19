@@ -64,6 +64,9 @@ public class WorldObject
     /// </summary>
     [IncludeInTemplateCreation]
     public string Flag { get; set; } = "";
+    /// <summary>
+    /// The amount of components the object has
+    /// </summary>
     public int ComponentCount => components.Count;
 
     /// <summary>

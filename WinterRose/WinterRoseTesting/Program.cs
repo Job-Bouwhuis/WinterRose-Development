@@ -14,13 +14,8 @@ using WinterRose.WinterThornScripting.Factory;
 using System.IO.Compression;
 using WinterRose.Plugins;
 using SnowLibraryTesting;
-using WinterRose.Expressions;
 using WinterRose.Networking;
 using WinterRose.Music;
-using WinterRose.WinterThornScripting;
-using WinterRose.SourceGeneration;
-using WinterRose.SourceGeneration.Serialization;
-using WinterRose.WinterThornScripting.Interpreting;
 
 #pragma warning disable aaa
 new Programm().Start();
@@ -46,10 +41,15 @@ internal class Programm
 {
     public void Start()
     {
-        string random = Randomness.RandomString(45);
-        string generatedPassword = Encryptor.Encrypt(random, Randomness.RandomString(10), Randomness.RandomString(100), 27).Replace(" ", "").Replace("\t", "").Replace("\r", "").Replace("\n", "");
-        Windows.Clipboard.WriteString(generatedPassword);
-        Console.WriteLine(generatedPassword);
+        string path = @"C:\Users\jobbo\OneDrive\Bureaublad\The eternal struggle.wav";
+        string path2 = 
+            @"C:\Proton-Sync\My files\Projects\CSharp\Libraries\GIT\WinterRose-Development\" +
+                    @"WinterRose\WinterRoseTesting\CoolComponent1.cs";
+
+        File256 bigfile = new();
+        bigfile.ReadFile(path2);
+
+        bigfile.WriteFile(@"C:\Users\jobbo\OneDrive\Bureaublad\copy.cs");
 
         return;
 
@@ -104,7 +104,7 @@ internal class Programm
     {
 HOJ:
 
-        var ip = NetworkUtils.GetLocalIPAddress();
+        var ip = Network.GetLocalIPAddress();
         Console.WriteLine("This PCs IP: " + ip.ToString());
 
         Console.WriteLine("Host or join?");
@@ -133,7 +133,7 @@ HOJ:
             server = new();
             server.OnMessageReceived += OnMessageReceivedSERVER;
             server.ResponseCommandReceived += OnResponseMessageSERVER;
-            server.Start(NetworkUtils.GetLocalIPAddress(), 8000);
+            server.Start(Network.GetLocalIPAddress(), 8000);
 
             while (true)
             {
@@ -198,7 +198,7 @@ HOJ:
             string ip = Console.ReadLine() ?? "self";
 
             if (ip == "self")
-                ip = NetworkUtils.GetLocalIPAddress().ToString();
+                ip = Network.GetLocalIPAddress().ToString();
 
             user.Connect(ip, 8000);
 
@@ -285,7 +285,7 @@ HOJ:
 
     private static unsafe void WinterThornTests()
     {
-        WinterThorn scriptt = new WinterThorn("Generated", "some generated script", "WinterRose", new(0, 0, 1));
+        WinterThorn scriptt = new("Generated", "some generated script", "WinterRose", new(0, 0, 1));
 
         Block block = ThornFactory.Block();
         block.ParseStatement("x;");
@@ -614,7 +614,7 @@ HOJ:
 
     void ScramblerTests()
     {
-        StringScrambler encrypter = new StringScrambler(new ScramblerSettings(ScrambleConfiguration.I, 0, 0), new ScramblerSettings(ScrambleConfiguration.III, 0, 0), new ScramblerSettings(ScrambleConfiguration.IV, 0, 0));
+        StringScrambler encrypter = new(new ScramblerSettings(ScrambleConfiguration.I, 0, 0), new ScramblerSettings(ScrambleConfiguration.III, 0, 0), new ScramblerSettings(ScrambleConfiguration.IV, 0, 0));
 
         List<Everything> list = new();
         WinterUtils.Repeat(() => list.Add(Everything.Random()), 100000, i => Console.WriteLine(i));
@@ -669,9 +669,9 @@ HOJ:
                 for (var i = 0; i <= combination.Length; i++)
                 {
                     MutableString combi = new();
-                    combi += combination.Slice(0, i);
+                    combi += combination[..i];
                     combi += item;
-                    combi += combination.Slice(i);
+                    combi += combination[i..];
                     newCombinations.Add(combi);
                 }
             }

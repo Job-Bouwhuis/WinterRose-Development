@@ -12,7 +12,7 @@ public static class ExitHelper
     /// <summary>
     /// Gets invoked right before the <see cref="CloseMethod"/> is invoked
     /// </summary>
-    public static event Action GameClosing = delegate { };
+    public static event Func<bool> GameClosing = delegate { return false; };
 
     /// <summary>
     /// Sets the method that is invoked when the game is closed
@@ -37,12 +37,12 @@ public static class ExitHelper
         Console.WriteLine("Bye Bye!");
     }
 
-    internal static void InvokeGameClosingEvent()
+    internal static bool InvokeGameClosingEvent()
     {
-        if (_isClosing) return;
+        if (_isClosing) return false;
         _isClosing = true;
 
-        GameClosing();
+        return GameClosing();
     }
 
     /// <summary>

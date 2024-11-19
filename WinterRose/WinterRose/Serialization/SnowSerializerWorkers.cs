@@ -585,8 +585,12 @@ namespace WinterRose.Serialization
                 }
 
                 //get field info with the name from the serialized data
-                FieldInfo fieldInfo = objectType.GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                PropertyInfo propertyInfo = objectType.GetProperty(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                FieldInfo fieldInfo = 
+                    objectType.GetField(fieldName, 
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                PropertyInfo propertyInfo = 
+                    objectType.GetProperty(fieldName,
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
                 if (fieldInfo == null && propertyInfo == null)
                 {
