@@ -6,6 +6,7 @@ using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem.Tests;
 using WinterRose.Monogame.TerrainGeneration;
 using WinterRose.Monogame.Tests;
+using WinterRose.Monogame.Tests.Scripts;
 using WinterRose.Monogame.UI;
 using WinterRose.Monogame.Worlds;
 
@@ -23,12 +24,14 @@ internal class TestApp : Application
             var player = w.CreateObject("player");
             player.AttachComponent<SpriteRenderer>(50, 50, Color.Yellow);
             player.AttachComponent<TopDownPlayerController>().transform.position = (Vector2)MonoUtils.ScreenCenter;
-            var pc = player.AttachComponent<SquareCollider>();
+            player.AttachComponent<InputRotator>();
             
             w.CreateObject<SmoothCameraFollow>("cam", player.transform);
 
-            var wall = w.CreateObject<TextButton>("button").owner;
-            wall.transform.position = new Vector2(500, 500);
+            var wall = w.CreateObject<SpriteRenderer>("button", 25, 25, Color.Blue).owner;
+            wall.transform.parent = player.transform;
+
+            wall.transform.localPosition = new Vector2(0, 50);
 
             return w;
         }

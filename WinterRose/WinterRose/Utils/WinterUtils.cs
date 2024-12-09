@@ -72,6 +72,20 @@ namespace WinterRose
         }
 
         /// <summary>
+        /// Tries to open a directory with name <paramref name="name"/> inside <paramref name="parent"/>.
+        /// </summary>
+        /// <param name="parent"></param>
+        /// <param name="name"></param>
+        /// <param name="child"></param>
+        /// <returns>True if the child was found and opened, otherwise false </returns>
+        public static bool OpenChildDirectory(this DirectoryInfo parent, string name, out DirectoryInfo child)
+        {
+            string childPath = Path.Combine(parent.FullName, name);
+            child = new DirectoryInfo(childPath);
+            return child.Exists;
+        }
+
+        /// <summary>
         /// Checks whether the given <paramref name="type"/> is an anonymous type
         /// </summary>
         /// <param name="type"></param>

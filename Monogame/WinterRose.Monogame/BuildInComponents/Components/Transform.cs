@@ -91,13 +91,16 @@ namespace WinterRose.Monogame
         {
             get
             {
-                if (parent is null)
+                if (parent == null)
                     return position;
                 return position - parent.transform.position;
             }
             set
             {
-
+                if (parent == null)
+                    position = value;
+                else
+                    position = parent.transform.position + value;
             }
         }
         /// <summary>

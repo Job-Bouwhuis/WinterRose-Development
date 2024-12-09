@@ -64,7 +64,6 @@ public class Text : Renderer
     {
         var size = Size;
         batch.DrawString(Font, text, transform.position + PositionOffset, color, transform.rotation, size / 2, transform.scale, SpriteEffects, LayerDepth);
-        Debug.DrawRectangle(Bounds, Color.Magenta, 1);
     }
 
 }

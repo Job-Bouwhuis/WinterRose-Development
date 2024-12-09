@@ -41,22 +41,6 @@ internal class Programm
 {
     public void Start()
     {
-        string path = @"C:\Users\jobbo\OneDrive\Bureaublad\The eternal struggle.wav";
-        string path2 = 
-            @"C:\Proton-Sync\My files\Projects\CSharp\Libraries\GIT\WinterRose-Development\" +
-                    @"WinterRose\WinterRoseTesting\CoolComponent1.cs";
-
-        File256 bigfile = new();
-        bigfile.ReadFile(path2);
-
-        bigfile.WriteFile(@"C:\Users\jobbo\OneDrive\Bureaublad\copy.cs");
-
-        return;
-
-        Windows.Clipboard.WriteFile(@"D:\Proton-Sync\My files\Projects\CSharp\Libraries\WinterRose - Development\WinterRose\WinterRoseTesting\bin\Debug\net8.0\png.png");
-        string[] copiedFiles = Windows.Clipboard.ReadFiles();
-        ;
-
         WinterThorn script = new(
             """
             namespace Test
@@ -65,7 +49,14 @@ internal class Programm
                 {
                     function Main
                     {
-                       
+                       nums = [1, 2, 3, 4, 5];
+                       num = 5²;
+                       Console.WriteLine(num);
+                    }
+
+                    function Add number a, number b
+                    {
+                        return a + b;
                     }
                 }
             }

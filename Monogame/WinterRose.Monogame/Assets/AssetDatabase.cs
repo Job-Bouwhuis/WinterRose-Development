@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Media;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -144,5 +145,14 @@ public static class AssetDatabase
             value.Unload();
             value.Load();
         }
+    }
+
+    public static bool AssetExists(string assetPath)
+    {
+        assetPath = assetPath.Replace("\\", "/");
+        string[] path = assetPath.Split('/');
+        DirectoryInfo currentDir = ContentFolder.Directory;
+        FileInfo[] files = currentDir.GetFiles(assetPath, SearchOption.AllDirectories);
+        return files.Length > 0;
     }
 }
