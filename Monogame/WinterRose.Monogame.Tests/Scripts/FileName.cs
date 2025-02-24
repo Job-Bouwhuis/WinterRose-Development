@@ -8,9 +8,11 @@ namespace WinterRose.Monogame.Tests.Scripts
 {
     internal class FileName : ObjectBehavior
     {
-        public void Start()
+        protected override void Start()
         {
                 MonoUtils.MainGame.Window.Title = "je dikke moeder";
         }
+
+        protected override void Update() { }
     }
 }

@@ -8,6 +8,7 @@ using System.Text;
 using WinterRose.AnonymousObjectStuff;
 using WinterRose.AnonymousTypes;
 using WinterRose.Encryption;
+using WinterRose.Serialization.Things;
 using static WinterRose.Serialization.SnowSerializer;
 using static WinterRose.Serialization.SnowSerializerHelpers;
 
@@ -26,7 +27,8 @@ namespace WinterRose.Serialization
         /// <param name="depth"></param>
         /// <param name="fieldName"></param>
         /// <returns>A serialized string represetnation of the passed <paramref name="dict"/></returns>
-        public static StringBuilder SerializeDictionary(IDictionary dict, int depth, string fieldName, SerializerSettings settings)
+        public static StringBuilder SerializeDictionary(IDictionary dict, int depth, string fieldName,
+            SerializerSettings settings, SerializeReferenceCache refCache)
         {
             StringBuilder result = new();
             Type[] dicTypes = dict.GetType().GetGenericArguments();
@@ -43,7 +45,7 @@ namespace WinterRose.Serialization
                 }
                 else
                 {
-                    result.Append($"&{depth}{SerializeObject(entry.Key, depth + 1, settings)}");
+                    result.Append($"&{depth}{SerializeObject(entry.Key, depth + 1, settings, refCache)}");
                 }
 
                 if (dicTypes[1] != null && SupportedPrimitives.Contains(dicTypes[1]))
@@ -60,7 +62,7 @@ namespace WinterRose.Serialization
                     if (!(s is NULL))
                         result.Append(s);
                     else
-                        result.Append(SerializeObject(entry.Value, depth + 1, settings));
+                        result.Append(SerializeObject(entry.Value, depth + 1, settings, refCache));
                 }
             }
             return result;
@@ -75,7 +77,8 @@ namespace WinterRose.Serialization
         /// <param name="overrideT"></param>
         /// <returns>A serialized string representation of the passed <paramref name="info"/></returns>
         /// <exception cref="SerializationFailedException"></exception>
-        public static StringBuilder SerializeEvent<T>(T obj, EventInfo info, int depth, Type? overrideT, SerializerSettings settings)
+        public static StringBuilder SerializeEvent<T>(T obj, EventInfo info, int depth, Type? overrideT,
+            SerializerSettings settings, SerializeReferenceCache refCache)
         {
             Type objectType = (overrideT is not null) ? overrideT : obj.GetType();
 
@@ -98,7 +101,7 @@ namespace WinterRose.Serialization
                 return new($"EVENT{depth}null");
 
             foreach (var m in methods)
-                result.Append($"EVENT{depth}{SerializeObject(m, depth + 1, settings)}");
+                result.Append($"EVENT{depth}{SerializeObject(m, depth + 1, settings, refCache)}");
 
             return result;
         }
@@ -112,7 +115,8 @@ namespace WinterRose.Serialization
         /// <param name="depth"></param>
         /// <param name="settings"></param>
         /// <returns>A serialized string representation of the passed <paramref name="value"/></returns>
-        public static StringBuilder SerializeField<T>(T value, string fieldName, Type fieldType, int depth, SerializerSettings settings)
+        public static StringBuilder SerializeField<T>(T value, string fieldName, Type fieldType, int depth,
+            SerializerSettings settings, SerializeReferenceCache refCache)
         {
             if (SupportedPrimitives.Contains(fieldType))
             {
@@ -141,8 +145,8 @@ namespace WinterRose.Serialization
             {
                 var enumerable = (IEnumerable)value;
                 return enumerable is IDictionary dict ?
-                    SerializeDictionary(dict, depth, fieldName, settings) :
-                    SerializeList(enumerable, depth, fieldName, fieldType, settings);
+                    SerializeDictionary(dict, depth, fieldName, settings, refCache) :
+                    SerializeList(enumerable, depth, fieldName, fieldType, settings, refCache);
             }
             if (value.GetType().IsEnum)
             {
@@ -153,10 +157,11 @@ namespace WinterRose.Serialization
             result.Append($"#{depth}{fieldName}|{depth}");
 
             MethodInfo serializeObjectMethod =
-                typeof(SnowSerializerWorkers).GetMethod(nameof(SerializeObject), BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                typeof(SnowSerializerWorkers).GetMethod(nameof(SerializeObject),
+                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
                 .MakeGenericMethod(value.GetType());
 
-            result.Append(serializeObjectMethod.Invoke(null, [value, depth + 1, settings]));
+            result.Append(serializeObjectMethod.Invoke(null, [value, depth + 1, settings, refCache]));
             return result;
         }
         /// <summary>
@@ -167,7 +172,8 @@ namespace WinterRose.Serialization
         /// <param name="fieldName"></param>
         /// <param name="fieldType"></param>
         /// <returns>A serialzied string representation of the passed <paramref name="enumerable"/></returns>
-        public static StringBuilder SerializeList(IEnumerable enumerable, int depth, string fieldName, Type fieldType, SerializerSettings settings)
+        public static StringBuilder SerializeList(IEnumerable enumerable, int depth, string fieldName, Type fieldType,
+            SerializerSettings settings, SerializeReferenceCache refCache)
         {
             StringBuilder result = new();
             result.Append($"#{depth}{fieldName}|{depth}");
@@ -187,7 +193,7 @@ namespace WinterRose.Serialization
                         result.Append(s);
                     else
                     {
-                        StringBuilder serialized = SerializeObject(item, depth + 1, settings);
+                        StringBuilder serialized = SerializeObject(item, depth + 1, settings, refCache);
                         if (serialized.Length > 10)
                         {
                             result.Append($"^{depth}");
@@ -207,7 +213,7 @@ namespace WinterRose.Serialization
         /// <param name="overrideT"></param>
         /// <param name="settings"></param>
         /// <returns>A serialized string represetnation of the passed <paramref name="item"/></returns>
-        public static StringBuilder SerializeObject<T>(T item, int depth, SerializerSettings settings)
+        public static StringBuilder SerializeObject<T>(T item, int depth, SerializerSettings settings, SerializeReferenceCache refCache)
         {
             Type type = typeof(T);
             if (item is IEnumerable)
@@ -230,7 +236,6 @@ namespace WinterRose.Serialization
             {
                 AnonymousObjectReader reader = new AnonymousObjectReader();
                 reader.Read(item);
-
                 return new(reader.Serialize());
             }
 
@@ -287,6 +292,18 @@ namespace WinterRose.Serialization
 
             result.Append($"@{depth}{typeassembly.Base64Encode()}");
 
+            if (settings.CircleReferencesEnabled)
+            {
+                bool newItem = refCache.Map(item, out int key);
+                result.Append('<');
+                if (!newItem)
+                    result.Append('!');
+                result.Append(key).Append('>');
+
+                if (!newItem)
+                    return result;
+            }
+
             foreach (FieldInfo field in fields)
             {
                 result.Append(SerializeField(
@@ -301,7 +318,8 @@ namespace WinterRose.Serialization
                         newSettings.includePrivateFieldsForField = field.CustomAttributes
                     .Any(x => x.AttributeType == typeof(IncludePrivateFieldsForFieldAttribute));
 
-                    })));
+                    }),
+                    refCache));
             }
 
             foreach (PropertyInfo property in properties)
@@ -318,16 +336,18 @@ namespace WinterRose.Serialization
                         newSettings.includePrivateFieldsForField = property.CustomAttributes
                     .Any(x => x.AttributeType == typeof(IncludePrivateFieldsForFieldAttribute));
 
-                    })));
+                    }),
+                    refCache));
             }
 
             foreach (EventInfo @event in events)
-                result.Append(SerializeEvent(item, @event, depth, objectType, settings));
+                result.Append(SerializeEvent(item, @event, depth, objectType, settings, refCache));
 
             return result;
         }
         /// <summary>
-        /// Serializes an 'unusual' type, such as DateTime, TimeSpan, TimeOnly, DateOnly, such types are serialized in a different way than normal types
+        /// Serializes an 'unusual' type, such as DateTime, TimeSpan, TimeOnly, DateOnly, 
+        /// such types are serialized in a different way than normal types
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="item"></param>
@@ -335,11 +355,11 @@ namespace WinterRose.Serialization
         /// <returns>A string representation of the passed <paramref name="item"/></returns>
         public static string SerializeUnusual<T>(T item, int depth)
         {
-            if(CustomSerializers.TryGetValue(item.GetType(), out ICustomSerializer serializer))
+            if (CustomSerializers.TryGetValue(item.GetType(), out CustomSerializer serializer))
             {
                 return serializer.Serialize(item, depth);
             }
-            
+
             return NULL;
         }
 
@@ -353,9 +373,9 @@ namespace WinterRose.Serialization
         /// <param name="listType"></param>
         /// <param name="buffer"></param>
         /// <returns>The deserialized array</returns>
-        public static dynamic DeserializeArray<T>(string data, int depth, Type listType, dynamic buffer, SerializerSettings settings)
+        public static dynamic DeserializeArray<T>(string data, int depth, Type listType, dynamic buffer, SerializerSettings settings, SerializeReferenceCache refCache)
         {
-            DeserializeList<T>(data, depth, listType, buffer, settings);
+            DeserializeList<T>(data, depth, listType, buffer, settings, refCache);
             return buffer.ToArray();
         }
         /// <summary>
@@ -366,7 +386,7 @@ namespace WinterRose.Serialization
         /// <param name="keyType"></param>
         /// <param name="valueType"></param>
         /// <returns>The deserialzied dictionary</returns>
-        public static dynamic DeserializeDictionary(string data, int depth, Type keyType, Type valueType, SerializerSettings settings)
+        public static dynamic DeserializeDictionary(string data, int depth, Type keyType, Type valueType, SerializerSettings settings, SerializeReferenceCache refCache)
         {
             if (data == $"&{depth}null{DICTIONARY_DEFINER}{depth}null")
             {
@@ -386,8 +406,8 @@ namespace WinterRose.Serialization
                 string key = fieldParts[0];
                 string value = fieldParts[1];
 
-                dynamic keyVal = DeserializeField<object>(key, keyType, depth, settings);
-                dynamic valueVal = DeserializeField<object>(value, valueType, depth, settings);
+                dynamic keyVal = DeserializeField<object>(key, keyType, depth, settings, refCache);
+                dynamic valueVal = DeserializeField<object>(value, valueType, depth, settings, refCache);
                 if (keyVal is null)
                 {
                     continue;
@@ -404,7 +424,7 @@ namespace WinterRose.Serialization
         /// <param name="fieldType"></param>
         /// <param name="depth"></param>
         /// <returns>The object that was deserialized</returns>
-        public static dynamic DeserializeField<T>(string value, Type fieldType, int depth, SerializerSettings settings)
+        public static dynamic DeserializeField<T>(string value, Type fieldType, int depth, SerializerSettings settings, SerializeReferenceCache refCache)
         {
             if (value.StartsWith(EMPTYSTRING))
                 return "";
@@ -426,7 +446,7 @@ namespace WinterRose.Serialization
             {
                 Type listType = fieldType.GetGenericArguments().Single();
                 var result = WinterUtils.CreateList(listType);
-                return DeserializeList<T>(value, depth, listType, result, settings);
+                return DeserializeList<T>(value, depth, listType, result, settings, refCache);
             }
 
             //if the field is an array, deserialize the array
@@ -436,14 +456,14 @@ namespace WinterRose.Serialization
 
                 var result = WinterUtils.CreateList(arrayType);
 
-                return DeserializeArray<T>(value, depth, arrayType, result, settings);
+                return DeserializeArray<T>(value, depth, arrayType, result, settings, refCache);
             }
 
             //if the field is a dictionary, deserialize the dictionary
             if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
                 Type[] dicTypes = fieldType.GetGenericArguments();
-                return SnowSerializerWorkers.DeserializeDictionary(value, depth, dicTypes[0], dicTypes[1], settings);
+                return SnowSerializerWorkers.DeserializeDictionary(value, depth, dicTypes[0], dicTypes[1], settings, refCache);
             }
 
             if (fieldType.IsEnum)
@@ -457,7 +477,7 @@ namespace WinterRose.Serialization
             }
 
             //if none of these were selected then try to deserialize it as a class/struct. an error will be thrown should this fail
-            return DeserializeObject<T>(value, depth + 1, fieldType, settings);
+            return DeserializeObject<T>(value, depth + 1, fieldType, settings, refCache);
         }
         /// <summary>
         /// Deserializes the data into a list of the specified type
@@ -468,14 +488,14 @@ namespace WinterRose.Serialization
         /// <param name="listType"></param>
         /// <param name="buffer"></param>
         /// <returns>The deserialized list</returns>
-        public static dynamic DeserializeList<T>(string data, int depth, Type listType, IList buffer, SerializerSettings settings)
+        public static dynamic DeserializeList<T>(string data, int depth, Type listType, IList buffer, SerializerSettings settings, SerializeReferenceCache refCache)
         {
             //split the data into individual items
             string[] values = data.Split($"^{depth}", StringSplitOptions.RemoveEmptyEntries);
 
             foreach (string value in values)
             {
-                object e = DeserializeField<T>(value, listType, depth, settings);
+                object e = DeserializeField<T>(value, listType, depth, settings, refCache);
                 if (e is not null and (not string and not NULL))
                     buffer.Add(e);
             }
@@ -491,7 +511,7 @@ namespace WinterRose.Serialization
         /// <returns>The deserialized object</returns>
         /// <exception cref="DeserializationFailedException"></exception>
         /// <exception cref="FieldNotFoundException"></exception>
-        public static dynamic DeserializeObject<T>(string data, int depth, Type? overrideT, SerializerSettings settings)
+        public static dynamic DeserializeObject<T>(string data, int depth, Type? overrideT, SerializerSettings settings, SerializeReferenceCache refCache)
         {
             Type objectType = overrideT ?? typeof(T);
             List<string> fields = data.Split($"#{depth}", StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -540,6 +560,13 @@ namespace WinterRose.Serialization
             if (objectType.CustomAttributes.Any(x => x.AttributeType == typeof(IncludePrivateFieldsAttribute)))
                 includePrivateFields = true;
 
+            int key;
+            if (fields[0].Contains('!'))
+            {
+                key = int.Parse(fields[0][4..^1]);
+                return refCache.Get(key);
+            }
+
             //create a new instance of the object
             dynamic result;
             try
@@ -552,6 +579,11 @@ namespace WinterRose.Serialization
             }
             if (result is null)
                 throw new DeserializationFailedException("Could not create instance of type " + objectType.FullName);
+
+
+            key = int.Parse(fields[0][3..^1]);
+            refCache.Map(key, ref result);
+            fields.RemoveAt(0);
 
             TypedReference reference = new TypedReference();
             if (!objectType.IsClass)
@@ -576,8 +608,10 @@ namespace WinterRose.Serialization
                     var evnt = objectType.GetEvent(fieldName);
                     foreach (string m in methods)
                     {
-                        EventMethodInfo info = DeserializeObject<EventMethodInfo>(m, depth + 1, typeof(EventMethodInfo), settings);
-                        MethodInfo method = TypeWorker.FindMethod(TypeWorker.FindType(info.typeName, info.typeAssembly.Base64Decode()), info.methodName);
+                        EventMethodInfo info = DeserializeObject<EventMethodInfo>(m, depth + 1,
+                            typeof(EventMethodInfo), settings, refCache);
+                        MethodInfo method = TypeWorker.FindMethod(
+                            TypeWorker.FindType(info.typeName, info.typeAssembly.Base64Decode()), info.methodName);
                         Delegate handler = Delegate.CreateDelegate(evnt.EventHandlerType, null, method);
                         evnt.AddEventHandler(result, handler);
                     }
@@ -585,10 +619,10 @@ namespace WinterRose.Serialization
                 }
 
                 //get field info with the name from the serialized data
-                FieldInfo fieldInfo = 
-                    objectType.GetField(fieldName, 
+                FieldInfo fieldInfo =
+                    objectType.GetField(fieldName,
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                PropertyInfo propertyInfo = 
+                PropertyInfo propertyInfo =
                     objectType.GetProperty(fieldName,
                     BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -603,7 +637,7 @@ namespace WinterRose.Serialization
                 Type fieldType;
                 fieldType = fieldInfo == null ? propertyInfo!.PropertyType : fieldInfo.FieldType;
 
-                value = DeserializeField<T>(fieldValue, fieldType, depth, settings);
+                value = DeserializeField<T>(fieldValue, fieldType, depth, settings, refCache);
                 ;
 
                 if (fieldInfo != null)
@@ -623,7 +657,8 @@ namespace WinterRose.Serialization
 
         }
         /// <summary>
-        /// Deserializes an 'unusual' type, such as DateTime, TimeSpan, TimeOnly, DateOnly, such types are serialized in a different way than normal types
+        /// Deserializes an 'unusual' type, such as DateTime, TimeSpan, TimeOnly, DateOnly, 
+        /// such types are serialized in a different way than normal types
         /// </summary>
         /// <param name="data"></param>
         /// <param name="depth"></param>
@@ -631,7 +666,7 @@ namespace WinterRose.Serialization
         /// <returns>The value that was deserialized</returns>
         public static dynamic DeserializeUnusual(string data, int depth, Type fieldType)
         {
-            if(CustomSerializers.TryGetValue(fieldType, out var result))
+            if (CustomSerializers.TryGetValue(fieldType, out var result))
             {
                 return result.Deserialize(data, depth);
             }

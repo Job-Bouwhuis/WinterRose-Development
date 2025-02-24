@@ -6,13 +6,14 @@ using System.Windows.Forms;
 using WinterRose.Monogame.Attributes;
 using WinterRose.Monogame.Interfaces;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame
 {
     /// <summary>
     /// The transform of a <see cref="WorldObject"/>
     /// </summary>
-    [ComponentLimit]
+    [ComponentLimit, SerializeAs<Transform>]
     public class Transform : ObjectComponent
     {
         private Transform() { }
@@ -240,6 +241,15 @@ namespace WinterRose.Monogame
         public IEnumerator<Transform> GetEnumerator()
         {
             return children.GetEnumerator();
+        }
+
+        /// <summary>
+        /// Adds <paramref name="vec"/> to <see cref="position"/>
+        /// </summary>
+        /// <param name="vec"></param>
+        public void Translate(Vector2 vec)
+        {
+            position += vec;
         }
     }
 }

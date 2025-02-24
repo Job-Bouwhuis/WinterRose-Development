@@ -30,6 +30,8 @@ internal class SatisfyingPropgress : ImGuiLayout
         gui.End();
     }
 
+    protected override void Update() { }
+
     private float Clamp(float v1, float v2, float v3)
     {
         if(v1 < v2)

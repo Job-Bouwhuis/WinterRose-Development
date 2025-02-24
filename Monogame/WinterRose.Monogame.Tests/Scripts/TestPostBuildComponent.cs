@@ -8,7 +8,7 @@ namespace Tests;
 
 public class TestPostBuildComponent : ObjectBehavior
 {
-    private void Update()
+    protected override void Update()
     {
         // if (Input.GetKeyDown(Microsoft.Xna.Framework.Input.Keys.E))
         // {

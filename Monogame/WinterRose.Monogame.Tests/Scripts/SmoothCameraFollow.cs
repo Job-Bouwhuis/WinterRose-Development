@@ -23,13 +23,13 @@ internal class SmoothCameraFolloww : ObjectBehavior
 
     }
 
-    private void Awake()
+    protected override void Awake()
     {
         if (!TryFetchComponent(out cam))
             throw new Exception("SmoothCameraFollow component needs Camera component attached to the same object");
     }
 
-    private void Update()
+    protected override void Update()
     {
         Vector2 targetPos;
         if (Target is not null)

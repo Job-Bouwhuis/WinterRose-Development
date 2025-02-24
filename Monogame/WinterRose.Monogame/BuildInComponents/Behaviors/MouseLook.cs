@@ -19,7 +19,7 @@ namespace WinterRose.Monogame
         /// </summary>
         public bool Snap { get; set; } = false;
 
-        private void Update()
+        protected override void Update()
         {
             Vector2 mousePos = Input.MousePosition;
             mousePos = Transform.ScreenToWorldPos(mousePos, Camera.current);

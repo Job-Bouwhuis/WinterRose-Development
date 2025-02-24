@@ -33,7 +33,7 @@ namespace WinterRose.Monogame
             AnimationController = animation;
         }
 
-        private void Awake()
+        protected override void Awake()
         {
             if(AnimationController is null)
             {
@@ -46,7 +46,7 @@ namespace WinterRose.Monogame
                 Playing = true;
         }
 
-        private void Update()
+        protected override void Update()
         {
             if (!Playing) return;
             if (AnimationController is null)

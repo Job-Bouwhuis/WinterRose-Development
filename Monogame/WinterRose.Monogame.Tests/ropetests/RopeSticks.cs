@@ -27,7 +27,7 @@ namespace WinterRose.Monogame.Tests.ropetests
 
         public float gravity = 0.5f;
 
-        private void Start()
+        protected override void Start()
         {
             //Hirarchy.AllowedForFieldTree.Add(typeof(Stick));
             //Hirarchy.AllowedForFieldTree.Add(typeof(Point));
@@ -56,7 +56,7 @@ namespace WinterRose.Monogame.Tests.ropetests
             points[0].locked = true;
         }
 
-        private void Update()
+        protected override void Update()
         {
             foreach (var point in points)
             {

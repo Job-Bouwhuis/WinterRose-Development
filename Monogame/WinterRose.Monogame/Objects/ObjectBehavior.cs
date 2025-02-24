@@ -14,58 +14,34 @@ namespace WinterRose.Monogame
     /// </summary>
     public abstract class ObjectBehavior : ObjectComponent
     {
+        /// <summary>
+        /// Whether this component wishes to have its <see cref="Update"/> be called in parallel with other types of this component
+        /// <br></br>Can be set by decorating the component with a [<see cref="ParallelBehavior"/>] attribute
+        /// </summary>
+        public bool IsParallel => isParallel ??= GetType().GetCustomAttribute<ParallelBehavior>() != null;
+        private bool? isParallel;
+
         [Show]
         private TimeSpan updateTime = TimeSpan.Zero;
-        private MethodInfo? updateMethod;
 
         /// <summary>
         /// The time it took for the last update call to run from start to finish
         /// </summary>
         public TimeSpan UpdateTime => updateTime;
 
-        public ObjectBehavior()
-        {
-            Initialize();
-        }
-
-        internal override void Initialize()
-        {
-            base.Initialize();
-            string typeName = GetType().Name;
-
-            GetUpdateMethod(GetType());
-
-            Type t = GetType().BaseType;
-            while (updateMethod is null && t != typeof(ObjectComponent) && t != typeof(object))
-                t = GetUpdateMethod(t).BaseType;
-        }
-
-        Type GetUpdateMethod(Type t)
-        {
-            OverrideDefaultMethodNamesAttribute? attr = GetType().GetCustomAttribute<OverrideDefaultMethodNamesAttribute>();
-            if (attr != null)
-                updateMethod = t.GetMethod(attr.Update, MonoUtils.InstanceMemberFindingFlags);
-            else
-                updateMethod = t.GetMethod("Update", MonoUtils.InstanceMemberFindingFlags);
-
-            return t;
-        }
-
         internal void CallUpdate()
         {
-            if (!initialized)
-                Initialize();
             var sw = Stopwatch.StartNew();
-            updateMethod?.Invoke(this, null);
+            Update();
             sw.Stop();
             updateTime = sw.Elapsed;
         }
 
+        protected abstract void Update();
 
         internal override ObjectComponent Clone(WorldObject newOwner)
         {
             ObjectComponent clone = base.Clone(newOwner);
-            updateMethod = null;
             return clone;
         }
     }

@@ -388,7 +388,7 @@ public class PluginCompilationErrorException : WinterException
                 string text = d.Location.SourceTree.GetText().ToString();
                 int classkeyword = text.IndexOf("class");
                 int endofline = text.IndexOf("\r\n", classkeyword);
-                string classname = text.Substring(classkeyword, endofline - classkeyword);
+                string classname = text[classkeyword..endofline];
                 sb.AppendLine($"In {classname}");
                 sb.AppendLine($"Loc: {d.Location.GetLineSpan()}");
                 sb.AppendLine();

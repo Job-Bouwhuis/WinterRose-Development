@@ -6,16 +6,14 @@ using System.Threading.Tasks;
 
 namespace WinterRose.Serialization.BuildInCustomSerialziers
 {
-    internal class GuidSerializer : ICustomSerializer
+    internal class GuidSerializer : CustomSerializer<Guid>
     {
-        public Type SerializerType => typeof(Guid);
-
-        public string Serialize(object obj, int depth)
+        public override string Serialize(object obj, int depth)
         {
             return obj.ToString();
         }
 
-        public object Deserialize(string data, int depth)
+        public override object Deserialize(string data, int depth)
         {
             return Guid.Parse(data);
         }

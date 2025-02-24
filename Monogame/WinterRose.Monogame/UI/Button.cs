@@ -88,7 +88,7 @@ public class Button : ActiveRenderer
 
     private bool once = false;
 
-    private void Awake()
+    protected override void Awake()
     {
         var textSize = text.SizeRaw;
         sprite ??= MonoUtils.CreateTexture((int)(textSize.X + 15), (int)(textSize.Y + 15), "#FFFFFF");
@@ -101,7 +101,7 @@ public class Button : ActiveRenderer
         previousEndColor = colorRange.Points[^1].Color;
     }
 
-    private void Update()
+    protected override void Update()
     {
         Universe.RequestRender = true; 
         Vector2 mousePos = Transform.ScreenToWorldPos(Input.MousePosition, Camera.current);

@@ -18,7 +18,7 @@ public class PhysicsBounds : ObjectComponent
     /// </summary>
     public RectangleF Bounds { get; set; } = new(MonoUtils.WindowResolution.X, MonoUtils.WindowResolution.Y, 0, 0);
 
-    private void Awake()
+    protected override void Awake()
     {
         if (!TryFetchComponent(out physics))
             physics = owner.AttachComponent<PhysicsObject>();

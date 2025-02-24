@@ -9,7 +9,7 @@ namespace WinterRose.Monogame.Tests.Scripts;
 
 internal class tempMover : ObjectBehavior
 {
-    private void Update()
+    protected override void Update()
     {
         transform.position += new Vector2(0, 2f);
     }

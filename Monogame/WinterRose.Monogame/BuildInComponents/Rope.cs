@@ -128,12 +128,12 @@ public class Rope : ActiveRenderer
 
     public Node[] Nodes => [.. nodes];
 
-    private void Awake()
+    protected override void Awake()
     {
         transform.position = nodes[0].CurrentPosition;
     }
 
-    private void Update()
+    protected override void Update()
     {
         foreach (var node in nodes)
         {

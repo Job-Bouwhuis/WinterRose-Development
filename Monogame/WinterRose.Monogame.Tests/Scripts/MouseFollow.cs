@@ -8,7 +8,7 @@ internal class MouseFollow : ObjectBehavior
     public float Speed { get; set; } = 10f;
     [IncludeInTemplateCreation]
     public bool Lerped { get; set; } = true;
-    private void Update()
+    protected override void Update()
     {
         Vector2 targetPos = Transform.ScreenToWorldPos(Input.MousePosition, Camera.current);
 

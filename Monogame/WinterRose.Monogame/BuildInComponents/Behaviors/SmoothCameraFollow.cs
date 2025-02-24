@@ -6,7 +6,7 @@ namespace WinterRose.Monogame;
 /// <summary>
 /// Smoothly follows a target object. Requires a camera component to be attached to the same object.
 /// </summary>
-[RequireComponent<Camera>]
+[RequireComponent<Camera>(AutoAdd = true)]
 public class SmoothCameraFollow : ObjectBehavior
 {
     [IgnoreInTemplateCreation]
@@ -38,13 +38,13 @@ public class SmoothCameraFollow : ObjectBehavior
     /// </summary>
     public SmoothCameraFollow() { }
 
-    private void Awake()
+    protected override void Awake()
     {
         if (!TryFetchComponent(out cam))
             throw new Exception("SmoothCameraFollow component needs Camera component attached to the same object");
     }
 
-    private void Update()
+    protected override void Update()
     {
         Vector2 targetPos;
         if (Target is not null)

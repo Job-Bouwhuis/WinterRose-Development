@@ -62,7 +62,7 @@ namespace WinterRose.Monogame.Weapons
         /// <summary>
         /// The bullet this magazine shoots
         /// </summary>
-        [IgnoreInTemplateCreation]
+        [IgnoreInTemplateCreation, Show]
         public WorldObjectPrefab? BulletPrefab 
         { 
             get => bulletPrefab;
@@ -85,6 +85,12 @@ namespace WinterRose.Monogame.Weapons
         [IgnoreInTemplateCreation]
         public bool IsReloading => isReloading;
 
+
+        [Show, IgnoreInTemplateCreation]
+        public Projectile Bullet => bullet ??= BulletPrefab.LoadedObject.FetchComponent<Projectile>();
+        [Hide, IgnoreInTemplateCreation]
+        private Projectile bullet;
+
         [Show, IgnoreInTemplateCreation]
         private bool isReloading = false;
         [IgnoreInTemplateCreation]
@@ -92,7 +98,7 @@ namespace WinterRose.Monogame.Weapons
         [IgnoreInTemplateCreation]
         private int bulletsSpawned = 0;
 
-        private void Awake()
+        protected void Awake()
         {
             if (BulletPrefab == null)
             {

@@ -90,7 +90,7 @@ namespace WinterRose.Monogame.Thorn
             });
         }
 
-        private void Update()
+        protected override void Update()
         {
             UpdateFunc?.Invoke();
 
@@ -100,17 +100,17 @@ namespace WinterRose.Monogame.Thorn
                 throw new WinterThornExecutionError(ThornError.InvalidType, "WTM-0001", "The 'transform' variable should not be set to something else");
         }
 
-        private void Start()
+        protected override void Start()
         {
             StartFunc?.Invoke();
         }
 
-        private void Awake()
+        protected override void Awake()
         {
             AwakeFunc?.Invoke();
         }
 
-        private void Close()
+        protected override void Close()
         {
             CloseFunc?.Invoke();
         }

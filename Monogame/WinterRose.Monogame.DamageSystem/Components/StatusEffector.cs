@@ -5,20 +5,25 @@ using WinterRose.Monogame.DamageSystem;
 
 namespace WinterRose.Monogame.StatusSystem
 {
+    [RequireComponent<Vitality>(AutoAdd = true)]
     public class StatusEffector : ObjectBehavior
     {
+        public Action<StatusEffector, StatusEffect> OnEffectApplied { get; set; } = delegate { };
+        public Action<StatusEffector, StatusEffect, int, int> OnEffectStacksUpdated { get; set; } = delegate { };
+        public Action<StatusEffector, StatusEffect> OnEffectRemoved { get; set; } = delegate { };
+
         [IgnoreInTemplateCreation]
         public List<StatusEffect> effects = [];
 
         /// <summary>
         /// The <see cref="Vitality"/> component on the owner of this status effector. May be null in edge cases.
         /// </summary>
-        [Hidden]
+        [Hide]
         public Vitality Vitals => vitals ??= FetchComponent<Vitality>();
-        [Hidden, IgnoreInTemplateCreation]
+        [Hide, IgnoreInTemplateCreation]
         private Vitality vitals;
 
-        private void Update()
+        protected override void Update()
         {
             for (int i = 0; i < effects.Count; i++)
             {
@@ -33,10 +38,14 @@ namespace WinterRose.Monogame.StatusSystem
                 {
                     effect.updateStacks = false;
                     effect.StacksUpdated(this, effect.previousStacks, effect.Stacks);
+                    OnEffectStacksUpdated.Invoke(this, effect, effect.previousStacks, effect.Stacks);
                 }
 
                 if(effect.Stacks == 0)
+                {
                     effects.RemoveAt(i);
+                    OnEffectRemoved.Invoke(this, effect);
+                }
             }
         }
         private void HandleEffectTimeout(StatusEffect effect)
@@ -92,7 +101,11 @@ namespace WinterRose.Monogame.StatusSystem
                 return;
             }
 
-            effects.Add(effect);
+            StatusEffect clone = (StatusEffect)effect.Clone();
+            if (clone.Stacks == 0)
+                clone.Stacks = 1;
+            effects.Add(clone);
+            OnEffectApplied.Invoke(this, clone);
         }
         /// <summary>
         /// Checks if there exists a effect of type <typeparamref name="T"/>

@@ -52,6 +52,12 @@ public abstract class StatusEffect : ICloneable
 
     public virtual object Clone()
     {
-        return (StatusEffect)MemberwiseClone();
+        var clone =  (StatusEffect)MemberwiseClone();
+        clone.currentSeconds = 0;
+        clone.previousStacks = 0;
+        clone.updateStacks = false;
+        clone.stacks = stacks;
+        clone.MaxStacks = MaxStacks;
+        return clone;
     }
 }

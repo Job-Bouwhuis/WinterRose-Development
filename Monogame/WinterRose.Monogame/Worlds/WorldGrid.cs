@@ -44,28 +44,31 @@ namespace WinterRose.Monogame.Worlds
         /// <returns></returns>
         public WorldChunk GetChunkAt(Vector2I position)
         {
-            // clamp the position to the nearest chunk
-            position = new Vector2I((int)Math.Floor((float)position.X / ChunkSize) * ChunkSize, (int)Math.Floor((float)position.Y / ChunkSize) * ChunkSize);
-
-            // check if the position is in the dictionary. if so, return the chunk at that position
-            if (chunks.TryGetValue(position, out WorldChunk? value))
-                return value;
-
-            // the position is not directly a chunk position, so we need to check if it is in a chunk
-            // find the chunk that contains the position
-
-            foreach (WorldChunk chunk in chunks.Values)
+            lock(chunks)
             {
-                if (chunk.Contains(position))
-                    return chunk;
+                // clamp the position to the nearest chunk
+                position = new Vector2I((int)Math.Floor((float)position.X / ChunkSize) * ChunkSize, (int)Math.Floor((float)position.Y / ChunkSize) * ChunkSize);
+
+                // check if the position is in the dictionary. if so, return the chunk at that position
+                if (chunks.TryGetValue(position, out WorldChunk? value))
+                    return value;
+
+                // the position is not directly a chunk position, so we need to check if it is in a chunk
+                // find the chunk that contains the position
+
+                foreach (WorldChunk chunk in chunks.Values)
+                {
+                    if (chunk.Contains(position))
+                        return chunk;
+                }
+
+                // The chunk does not exist.
+                // Generate the chunk and return it
+                GenerateChunks(position);
+
+                // Call the method again to return the newly generated chunk
+                return GetChunkAt(position);
             }
-
-            // The chunk does not exist.
-            // Generate the chunk and return it
-            GenerateChunks(position);
-
-            // Call the method again to return the newly generated chunk
-            return GetChunkAt(position);
         }
 
         public WorldChunk? GetChunkAt(int x, int y) => GetChunkAt(new Vector2I(x, y));
@@ -190,12 +193,14 @@ namespace WinterRose.Monogame.Worlds
 
         private void GenerateChunk(Vector2I position)
         {
-            // Check if the chunk at this position already exists
-            if (!chunks.ContainsKey(position))
+            lock(chunks)
             {
-                // If not, create a new chunk and add it to the dictionary
-                WorldChunk newChunk = new WorldChunk(position); // You need to implement this method
-                chunks[position] = newChunk;
+                if (!chunks.ContainsKey(position))
+                {
+                    // If not, create a new chunk and add it to the dictionary
+                    WorldChunk newChunk = new WorldChunk(position); // You need to implement this method
+                    chunks[position] = newChunk;
+                }
             }
         }
 
@@ -217,7 +222,8 @@ namespace WinterRose.Monogame.Worlds
 
                 foreach (var chunk in chunksObjectIsIn)
                 {
-                    // update all chunks that the object is in so that they know about the object, and all chunks that the object was in before, make them forget about the object
+                    // update all chunks that the object is in so that they know about the object,
+                    // and all chunks that the object was in before, make them forget about the object
                     chunk.AddObject(obj.index);
 
                     // Make the object aware of what chunks it is in.
@@ -225,6 +231,8 @@ namespace WinterRose.Monogame.Worlds
                 }
             }
         }
+
+
 
         private bool IsInvalidChunk(WorldChunk chunk)
         {

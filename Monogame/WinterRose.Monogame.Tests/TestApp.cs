@@ -14,7 +14,11 @@ internal class TestApp : Application
 {
     protected override World CreateWorld()
     {
-        MonoUtils.WindowResolution = new(1920, 1080);
+        if (WinterRose.Windows.GetScreenSize().x >= 2560)
+            MonoUtils.WindowResolution = new(1920, 1080);
+        else
+            MonoUtils.WindowResolution = new(1280, 720);
+
         Hirarchy.Show = true;
         return World.FromTemplate<Level1>();
 

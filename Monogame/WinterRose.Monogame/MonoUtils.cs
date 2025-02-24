@@ -14,6 +14,8 @@ using Microsoft.Xna.Framework.Content;
 using System.Diagnostics.CodeAnalysis;
 using WinterRose.WinterThornScripting;
 using WinterRose.Monogame.WinterThornPort;
+using WinterRose.Monogame.TextRendering;
+using System.Text;
 
 namespace WinterRose.Monogame;
 
@@ -81,6 +83,84 @@ public static class MonoUtils
     {
         get => mainGame.Window;
     }
+
+    /// <summary>
+    /// Draws the given <see cref="Text"/> on the screen with the given parameters
+    /// </summary>
+    /// <param name="batch"></param>
+    /// <param name="text">The text to be rendered</param>
+    /// <param name="origin">The origin of the position, normalized between -1 and 1 for both X and Y</param>
+    /// <param name="bounds"></param>
+    /// <param name="alignment"></param>
+    public static void DrawText(this SpriteBatch batch, Text text, Vector2 origin, RectangleF bounds, TextAlignment alignment)
+    {
+        float yOffset = bounds.Top;
+        float maxLineWidth = bounds.Width;
+        float currentLineWidth = 0f;
+
+        // Calculate the base origin point in bounds based on normalized origin values (-1 to 1)
+        Vector2 baseOrigin = new Vector2(
+            bounds.Left + bounds.Width * origin.X,
+            bounds.Top + bounds.Height * origin.Y
+        );
+
+        foreach (Word word in text)
+        {
+            float spaceCharWidth = word.Font.MeasureString(" ").X;
+            float xOffset = 0f;
+            string lineText = new StringBuilder(word.Count)
+                .AppendJoin(string.Empty, word.Select(l => l.Character))
+                .ToString();
+            var lineSize = word.Font.MeasureString(lineText);
+            lineSize.X += spaceCharWidth;
+
+            if (lineText == "\n")
+            {
+                yOffset += lineSize.Y / 2;
+                currentLineWidth = 0f;
+                continue;
+            }
+
+            switch (alignment)
+            {
+                case TextAlignment.Left:
+                    xOffset = bounds.Left + currentLineWidth;
+                    break;
+                case TextAlignment.Center:
+                    xOffset = bounds.Left + (maxLineWidth - lineSize.X) / 2f;
+                    break;
+                case TextAlignment.Right:
+                    xOffset = bounds.Right - lineSize.X;
+                    break;
+            }
+
+            Vector2 drawPosition = new Vector2(xOffset, yOffset) - baseOrigin;
+
+            if (currentLineWidth > 0 && currentLineWidth + lineSize.X > maxLineWidth)
+            {
+                yOffset += lineSize.Y;
+                currentLineWidth = 0f;
+                drawPosition = new Vector2(bounds.Left, yOffset) - baseOrigin;
+            }
+
+            foreach (Letter letter in word)
+            {
+                if (letter.Character != '\0')
+                {
+                    batch.DrawString(
+                        word.Font,
+                        letter.Character.ToString(),
+                        drawPosition,
+                        letter.Color
+                    );
+                    drawPosition.X += word.Font.MeasureString(letter.Character.ToString()).X + 1;
+                }
+            }
+
+            currentLineWidth += lineSize.X + spaceCharWidth;
+        }
+    }
+
 
     /// <summary>
     /// Determines whether the game is running in fullscreen mode
@@ -266,6 +346,7 @@ public static class MonoUtils
     }
 
     public static bool IsStopping { get; internal set; }
+    public static RectangleF WindowBounds => new(WindowResolution.X, WindowResolution.Y, 0, 0);
 
     private static bool _autoUserdomainUpdate = false;
     private static FileSystemWatcher? watcher;

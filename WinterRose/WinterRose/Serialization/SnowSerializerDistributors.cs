@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.FileManagement;
+using WinterRose.Serialization.Things;
 
 namespace WinterRose.Serialization.Distributors
 {
@@ -17,7 +18,7 @@ namespace WinterRose.Serialization.Distributors
     /// </summary>
     public static class SnowSerializerDistributors
     {
-        public static StringBuilder DistributeSerializationData<T>(T item, SerializerSettings? settings)
+        public static StringBuilder DistributeSerializationData<T>(T item, SerializerSettings? settings, SerializeReferenceCache refCache)
         {
             settings ??= new SerializerSettings();
             SerializeAsAttributeINTERNAL? serializeAs = item.GetType().GetCustomAttribute<SerializeAsAttributeINTERNAL>();
@@ -43,12 +44,11 @@ namespace WinterRose.Serialization.Distributors
                 return (StringBuilder)typeof(SnowSerializerDistributors).GetMethod(nameof(DistributeListSerialization), 1, [typeof(IList), typeof(SerializerSettings)])!
                     .MakeGenericMethod(itemType)
                     .Invoke(null, [list, settings])!;
-                //return DistributeListSerialization<T>(list, settings);
             }
 
-            return SnowSerializerWorkers.SerializeObject(item, 0, settings);
+            return SnowSerializerWorkers.SerializeObject(item, 0, settings, refCache);
         }
-        public static StringBuilder DistributeListSerialization<T>(IList list, SerializerSettings? settings)
+        public static StringBuilder DistributeListSerialization<T>(IList list, SerializerSettings? settings, SerializeReferenceCache refCache)
         {
             Type typeofT = typeof(T);
             List<T> items = WinterUtils.CreateList<T>(list);
@@ -73,7 +73,7 @@ namespace WinterRose.Serialization.Distributors
                 partitions.Where(x => x.Count > 0)
                     .ToArray()
                     .Foreach((x, i) =>
-                    tasks.Add(Task.Run(() => DistributeSerializationAsync(x, settings ?? new SerializerSettings()))));
+                    tasks.Add(Task.Run(() => DistributeSerializationAsync(x, settings ?? new SerializerSettings(), refCache))));
 
                 settings?.ProgressReporter?.Invoke(new ProgressReporter(0,
                     $"Running operation on {partitions.Length} {(settings.TheadsToUse == 1 ? "thread" : "threads")} for {items.Count} items." +
@@ -87,7 +87,7 @@ namespace WinterRose.Serialization.Distributors
                 return result;
             }
         }
-        public async static Task<string> DistributeSerializationAsync<T>(List<T> items, SerializerSettings? settings)
+        public async static Task<string> DistributeSerializationAsync<T>(List<T> items, SerializerSettings? settings, SerializeReferenceCache refCache)
         {
             settings ??= new SerializerSettings();
             return await Task.Run(() =>
@@ -95,7 +95,7 @@ namespace WinterRose.Serialization.Distributors
                 StringBuilder result = new();
                 for (int i = 0; i < items.Count; i++)
                 {
-                    result.Append(SnowSerializerWorkers.SerializeObject(items[i], 0, settings));
+                    result.Append(SnowSerializerWorkers.SerializeObject(items[i], 0, settings, refCache));
                     if (settings?.ProgressReporter != null && i % settings.ReportEvery == 0 && i != 0)
                         settings.ProgressReporter.Invoke(
                             new ProgressReporter((float)MathS.GetPercentage(i * settings.TheadsToUse, items.Count * settings.TheadsToUse, 2), $"aproximately {i * settings.TheadsToUse} entries completed from the {items.Count * settings.TheadsToUse}"));
@@ -105,7 +105,7 @@ namespace WinterRose.Serialization.Distributors
             });
         }
 
-        public async static Task<dynamic> DistributeDeserializationAsync<T>(List<string> items, SerializerSettings? settings)
+        public async static Task<dynamic> DistributeDeserializationAsync<T>(List<string> items, SerializerSettings? settings, SerializeReferenceCache refCache)
         {
             Type typeofT = typeof(T);
 
@@ -124,7 +124,7 @@ namespace WinterRose.Serialization.Distributors
                 List<dynamic> result = new List<dynamic>();
                 for (int i = 0; i < items.Count; i++)
                 {
-                    result.Add(SnowSerializerWorkers.DeserializeObject<T>(items[i], 0, objType, settings));
+                    result.Add(SnowSerializerWorkers.DeserializeObject<T>(items[i], 0, objType, settings, refCache));
                     if (settings?.ProgressReporter != null && i % settings.ReportEvery == 0 && i != 0)
                         settings.ProgressReporter.Invoke(
                             new ProgressReporter((float)MathS.GetPercentage(i * settings.TheadsToUse, items.Count * settings.TheadsToUse, 2), $"aproximately {i * settings.TheadsToUse} entries completed from the {items.Count * settings.TheadsToUse}"));
@@ -132,7 +132,7 @@ namespace WinterRose.Serialization.Distributors
                 return result;
             });
         }
-        public static dynamic DistributeDeserializationData<T>(string data, SerializerSettings? settings)
+        public static dynamic DistributeDeserializationData<T>(string data, SerializerSettings? settings, SerializeReferenceCache refCache)
         {
             settings ??= new SerializerSettings();
             Type type = typeof(T);
@@ -163,9 +163,9 @@ namespace WinterRose.Serialization.Distributors
                 //return DistributeDeserializationListData<T>(data, settings);
             }
 
-            return SnowSerializerWorkers.DeserializeObject<T>(data, 0, itemType, settings);
+            return SnowSerializerWorkers.DeserializeObject<T>(data, 0, itemType, settings, refCache);
         }
-        public static List<T> DistributeDeserializationListData<T>(string data, SerializerSettings? settings)
+        public static List<T> DistributeDeserializationListData<T>(string data, SerializerSettings? settings, SerializeReferenceCache refCache)
         {
             Type typeofT = typeof(T);
             settings ??= new SerializerSettings();
@@ -173,7 +173,7 @@ namespace WinterRose.Serialization.Distributors
             items = items.Foreach(x => "@0" + x);
             List<string>[] partitions = items.Partition(settings?.TheadsToUse ?? SnowSerializer.DEFAULT_THREADS_TO_USE);
             List<Task<dynamic>> tasks = new List<Task<dynamic>>();
-            partitions.Where(x => x.Count != 0).Foreach(x => tasks.Add(Task.Run(() => DistributeDeserializationAsync<T>(x, settings))));
+            partitions.Where(x => x.Count != 0).Foreach(x => tasks.Add(Task.Run(() => DistributeDeserializationAsync<T>(x, settings, refCache))));
 
             settings?.ProgressReporter?.Invoke(new ProgressReporter(0,
                 $"Running operation on {partitions.Length} {(settings.TheadsToUse == 1 ? "thread" : "threads")} for {items.Length} items." +

@@ -4,7 +4,7 @@ namespace WinterRose.Monogame.Tests;
 
 internal class ObjectSpawner : ObjectBehavior
 {
-    private void Update()
+    protected override void Update()
     {
         if (Input.GetKeyDown(Keys.Space))
         {

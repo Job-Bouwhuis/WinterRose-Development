@@ -2,6 +2,7 @@
 using System;
 using WinterRose;
 using WinterRose.Monogame;
+using WinterRose.Monogame.Weapons;
 
 namespace WinterRose.Monogame.DamageSystem;
 
@@ -9,7 +10,7 @@ namespace WinterRose.Monogame.DamageSystem;
 /// Vitatly holds <see cref="DamageSystem.Health"/> and <see cref="DamageSystem.Armor"/><br></br>
 /// Use <see cref="DealDamage(int)"/> to deal damage based on this instance its armor value
 /// </summary>
-public class Vitality : ObjectComponent
+public class Vitality : ObjectComponent, IHittable
 {
     /// <summary>
     /// The Health values
@@ -68,4 +69,9 @@ public class Vitality : ObjectComponent
     /// Deals the damage based on the <see cref="DamageType"/> provided
     /// </summary>
     public void TakeDamageFrom<T>() where T : DamageType => ActivatorExtra.CreateInstance<T>().DealDamage(this);
+
+    public void OnHit(Projectile bullet, DamageType damage)
+    {
+        TakeDamageFrom(damage);
+    }
 }

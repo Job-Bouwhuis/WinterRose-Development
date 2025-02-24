@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using WinterRose.Monogame.Attributes;
+using WinterRose.Monogame.Exceptions;
 using WinterRose.Monogame.Internals;
 using WinterRose.Monogame.UI;
 using WinterRose.Monogame.Worlds;
@@ -51,6 +52,11 @@ public class WorldObject
     public bool IsActive { get; set; } = true;
 
     private readonly List<ObjectComponent> components = new();
+    private readonly List<Renderer> renderers = new();
+    private readonly List<ActiveRenderer> activeRenderers = new();
+
+    internal MultipleParallelBehaviorHelper parallelHelper = new();
+
     private readonly List<Action<WorldObject>> StartupBehaviors = new();
     private readonly List<Action<WorldObject>> UpdateBehaviors = new();
     private readonly List<Action<WorldObject, SpriteBatch>> DrawBehaviors = new();
@@ -136,18 +142,22 @@ public class WorldObject
                 if (required.AutoAdd)
                     AttachComponent(required.ComponentType, required.DefaultArguments);
                 else
-                    throw new RequiredComponentException($"component {typeof(T).Name} on object {Name} needs a component of type {required.ComponentType.Name} to be added manually.");
+                    throw new RequiredComponentException($"component '{typeof(T).Name}' on object {Name} needs a component of type " +
+                        $"{required.ComponentType.Name} to be added manually.");
             }
         }
 
         T comp = ActivatorExtra.CreateInstance<T>(args) ?? throw new Exception($"Couldnt create instance of type {typeof(T).Name}");
-        components.Add(comp);
+        AddComponent(comp);
 
         comp._owner = this;
 
         if (comp is Transform t)
         {
-            _transform = t;
+            if (_transform == null)
+                _transform = t;
+            else
+                throw new InvalidOperationException("Cant add a second transform to a world object.");
         }
 
         if (transform is not null && (transform.world?.Initialized ?? false))
@@ -166,7 +176,7 @@ public class WorldObject
     /// <param name="component">the instance of the component to add</param>
     /// <returns><paramref name="component"/></returns>
     /// <exception cref="Exception"></exception>
-    public ObjectComponent AttachComponent(ObjectComponent component)
+    internal ObjectComponent AttachComponent(ObjectComponent component)
     {
         var attr = component.GetType().GetCustomAttribute<ComponentLimitAttribute>();
         int maxComps = attr?.limit ?? -1;
@@ -174,9 +184,29 @@ public class WorldObject
             throw new Exception($"Cant add more than {maxComps} of component type {component.GetType().Name} to a single object.");
 
         component._owner = this;
-        components.Add(component);
+        AddComponent(component);
         return component;
     }
+
+    private void AddComponent(ObjectComponent comp)
+    {
+        if (comp is Renderer renderer)
+            renderers.Add(renderer);
+        components.Add(comp);
+
+        if (comp is ObjectBehavior e)
+        {
+            if (comp is ActiveRenderer r)
+                activeRenderers.Add(r);
+
+            if (e.IsParallel)
+            {
+                parallelHelper.Add(e);
+                Universe.CurrentWorld?.RebuildParallelHelper();
+            }
+        }
+    }
+
     /// <summary>
     /// Fetches the component of type <typeparamref name="T"/>
     /// </summary>
@@ -280,17 +310,9 @@ public class WorldObject
     /// <returns>True if at least one component of each type in <paramref name="componentTypes"/> was found, otherwise false</returns>
     public bool HasComponents(params Type[] componentTypes)
     {
-        MethodInfo tryFetch = GetType().GetMethod(nameof(TryFetchComponent), BindingFlags.Public | BindingFlags.Instance);
-        for (int i = 0; i < componentTypes.Length; i++)
-        {
-            Type? type = componentTypes[i];
-            MethodInfo generic = tryFetch.MakeGenericMethod(type);
-
-            var res = generic.Invoke(this, null);
-            if (res is null)
-                return false;
-        }
-        return true;
+        foreach (var ct in componentTypes)
+            if (TryFetchComponent(ct, out _)) return true;
+        return false;
     }
     /// <summary>
     /// Removes the specified component
@@ -299,10 +321,29 @@ public class WorldObject
     public void RemoveComponent(ObjectComponent component)
     {
         if (component is Transform)
-            return;
+            return; // cant remove transform component
         component.CallClose();
+
         components.Remove(component);
+
+        if (component is Renderer r)
+            renderers.Remove(r);
+        if (component is ActiveRenderer ar)
+            activeRenderers.Remove(ar);
+
+        RebuildParallelHelper();
     }
+
+    private void RebuildParallelHelper()
+    {
+        parallelHelper = new();
+        foreach (var c in components)
+            if (c is ObjectBehavior b && b.IsParallel)
+                parallelHelper.Add(b);
+
+        Universe.CurrentWorld?.RebuildParallelHelper();
+    }
+
     /// <summary>
     /// Removes all the components of type <typeparamref name="T"/>
     /// </summary>
@@ -336,6 +377,7 @@ public class WorldObject
         {
             ObjectComponent? comp = components[i];
             comp.CallClose();
+            comp._owner = null;
         }
 
         components.Clear();
@@ -385,18 +427,22 @@ public class WorldObject
     }
     internal void Update()
     {
-        List<PhysicsObject> physicsobjs = [];
-
+        if (!IsActive) return;
         var sw = Stopwatch.StartNew();
         for (int i = 0; i < components.Count; i++)
         {
-            ObjectComponent? comp = components[i];
-            if (IsActive && comp.Enabled)
+            if (components[i] is not ObjectBehavior comp)
+                continue;
+
+            if (comp.Enabled)
             {
-                if (comp is ObjectBehavior behavior)
-                    behavior.CallUpdate();
-                if (comp is PhysicsObject physicsObject)
-                    physicsObject.UpdatePhysicsSubSteps(Time.SinceLastFrame, 1);
+                if (comp.IsParallel)
+                {
+                    if (parallelHelper.Add(comp))
+                        transform.world?.RebuildParallelHelper();
+                }
+                else
+                    comp.CallUpdate();
             }
         }
 
@@ -411,15 +457,22 @@ public class WorldObject
 
     internal void Render(SpriteBatch batch)
     {
+        if (!IsActive) return;
         var sw = Stopwatch.StartNew();
-        for (int i = 0; i < components.Count; i++)
+        for (int i = 0; i < renderers.Count; i++)
         {
-            ObjectComponent? comp = components[i];
-            if (comp is Renderer renderer && renderer.IsVisible && comp.Enabled)
+            Renderer renderer = renderers[i];
+            if (renderer.IsVisible && renderer.Enabled)
                 renderer.Render(batch);
-            else if (comp is ActiveRenderer activeRenderer && activeRenderer.IsVisible && comp.Enabled)
+        }
+
+        for (int i = 0; i < activeRenderers.Count; i++)
+        {
+            ActiveRenderer activeRenderer = activeRenderers[i];
+            if (activeRenderer.IsVisible && activeRenderer.Enabled)
                 activeRenderer.Render(batch);
         }
+
         DrawBehaviors.Foreach(x => x.Invoke(this, batch));
         sw.Stop();
         drawTime = sw.Elapsed;

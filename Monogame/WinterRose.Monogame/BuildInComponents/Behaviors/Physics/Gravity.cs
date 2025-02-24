@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace WinterRose.Monogame;
 
-public class Gravity : ObjectBehavior
+public class Gravity : ObjectComponent
 {
     PhysicsObject physics;
 
@@ -17,7 +17,7 @@ public class Gravity : ObjectBehavior
     public bool ApplyGravity { get; set; } = true;
 
 
-    private void Awake()
+    protected override void Awake()
     {
         if (!TryFetchComponent(out physics))
             physics = owner.AttachComponent<PhysicsObject>();

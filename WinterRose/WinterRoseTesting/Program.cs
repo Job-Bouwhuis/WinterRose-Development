@@ -16,6 +16,10 @@ using WinterRose.Plugins;
 using SnowLibraryTesting;
 using WinterRose.Networking;
 using WinterRose.Music;
+using System.Net;
+using System.Xml;
+using System;
+using WinterRose.Serialization.Things;
 
 #pragma warning disable aaa
 new Programm().Start();
@@ -30,33 +34,50 @@ class typeincdludetests
     }
 }
 
-internal class testclass
+internal unsafe class TestClass
 {
-    public Guid test = Guid.NewGuid();
+    private Vector2 pos;
 
+    public Vector2* Position
+    {
+        get
+        {
+            fixed (Vector2* e = &pos)
+                return e;
+        }
+    }
+
+    public TestClass()
+    {
+        pos = new Vector2(1, 1);
+    }
 }
 
-[Experimental("aaa")]
 internal class Programm
 {
     public void Start()
     {
+        SerializeReferenceCache cache = new();
+        object o = new
+        {
+            A = 4
+        };
+        Person p = Person.Random();
+        int key = cache[o];
+        int key2 = cache[p];
+        int key3 = cache[p];
+
+        SerializationTests();
+
         WinterThorn script = new(
             """
-            namespace Test
+            namespace Test.Movement
             {
-                class Foo
-                {
-                    function Main
+            	class Move
+            	{
+                    function lmao
                     {
-                       nums = [1, 2, 3, 4, 5];
-                       num = 5²;
-                       Console.WriteLine(num);
-                    }
-
-                    function Add number a, number b
-                    {
-                        return a + b;
+                        Console.WriteLine("test");
                     }
                 }
             }
@@ -64,7 +85,7 @@ internal class Programm
 
         script.GenerateDocumentation(new DirectoryInfo("ThornDocs"));
 
-        Function main = script.GetInstancedClass("Foo", "Test")!.Block.Functions[0];
+        Function main = script.GetInstancedClass("Test.Movement", "Move")!.Block.Functions[0];
         main.Invoke();
     }
 
@@ -83,6 +104,7 @@ internal class Programm
         string decryptkey = "Kryptonye";
 
         string encrypted = Encryptor.Encrypt(m, k, p, 49, Console.WriteLine);
+        Console.WriteLine("\n----\n");
         string decrypted = Encryptor.Decrypt(encrypted, k, p, 49, Console.WriteLine);
 
         FileManager.Write("encrypted.txt", encrypted, true);
@@ -272,7 +294,7 @@ HOJ:
         }
     }
 
-    
+
 
     private static unsafe void WinterThornTests()
     {

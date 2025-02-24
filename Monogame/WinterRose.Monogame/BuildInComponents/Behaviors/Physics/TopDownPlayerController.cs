@@ -25,12 +25,12 @@ public class TopDownPlayerController : ObjectBehavior
     public TopDownPlayerController(int speed) : this() => this.Speed = speed;
     public TopDownPlayerController() { }
 
-    private void Awake()
+    protected override void Awake()
     {
         physics = FetchOrAttachComponent<PhysicsObject>();
     }
 
-    private void Update()
+    protected override void Update()
     {
         // Calculate the target position based on input and transform.up
         Vector2 inputDirection = Input.GetNormalizedWASDInput();

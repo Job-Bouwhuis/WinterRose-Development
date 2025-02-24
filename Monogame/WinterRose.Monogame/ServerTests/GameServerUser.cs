@@ -41,7 +41,7 @@ public class GameServerUser : ObjectBehavior
         ExitHelper.GameClosing += GameClosing;
     }
 
-    private void Awake()
+    protected override void Awake()
     {
         world.Objects.Foreach(x => objectPositions.Add(x, x));
     }
@@ -74,7 +74,7 @@ public class GameServerUser : ObjectBehavior
         }
     }
 
-    private void Update()
+    protected override void Update()
     {
         world.Objects.Foreach(obj =>
         {
@@ -100,7 +100,7 @@ public class GameServerUser : ObjectBehavior
         }
     }
 
-    private void Close()
+    protected override void Close()
     {
         Windows.CloseConsole();
     }

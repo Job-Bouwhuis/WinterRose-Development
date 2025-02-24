@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WinterRose.Monogame.Attributes
+namespace WinterRose.Monogame.Exceptions
 {
     [Serializable]
     internal class RequiredComponentException : Exception

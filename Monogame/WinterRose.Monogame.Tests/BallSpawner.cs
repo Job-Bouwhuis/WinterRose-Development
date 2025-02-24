@@ -16,7 +16,7 @@ internal class BallSpawner : ObjectBehavior
 
     public int ballsPerSpawn = 3;
 
-    private void Update()
+    protected override void Update()
     {
         if (Input.Space)
         {

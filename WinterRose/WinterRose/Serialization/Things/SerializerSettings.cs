@@ -46,6 +46,10 @@ namespace WinterRose.Serialization
         /// The number of how many threads the serializer may use to serialize or deserialize items in a list at once. 1 item per thread will be serialized or deserialized at a time.
         /// </summary>
         public int TheadsToUse { get; set;  }
+        /// <summary>
+        /// whether circle references are enabled, eg if object a has a field for object b, and object b has a reference to object a
+        /// </summary>
+        public bool CircleReferencesEnabled { get; set; } = true;
 
         /// <summary>
         /// Creates a new instance of <see cref="SerializerSettings"/> with the default settings. Automatically detects the number of cores on the machine and sets the number of threads to use to that number.

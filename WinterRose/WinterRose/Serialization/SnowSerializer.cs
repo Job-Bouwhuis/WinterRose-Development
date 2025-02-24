@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using WinterRose.ConsoleExtentions;
 using WinterRose.FileManagement;
 using WinterRose.Serialization.Distributors;
+using WinterRose.Serialization.Things;
 using WinterRose.SourceGeneration;
 using WinterRose.SourceGeneration.Serialization;
 using WinterRose.WIP.TestClasses;
@@ -32,15 +33,15 @@ namespace WinterRose.Serialization
         internal const string EMPTYSTRING = "EMPTYSTRING";
 
         public static Dictionary<Type, RegisteredSerializer> RegisteredSerializers { get; } = new();
-        public static Dictionary<Type, ICustomSerializer> CustomSerializers { get; } = new();
+        public static Dictionary<Type, CustomSerializer> CustomSerializers { get; } = new();
         public static SerializerSettings DefaultSettings { get; set; } = new();
 
         static SnowSerializer()
         {
-            RegisterSerializer();
+            RegisterSerializers();
         }
 
-        private static void RegisterSerializer()
+        private static void RegisterSerializers()
         {
             Type[] serializers = TypeWorker.FindTypesWithAttribute<GeneratedAttribute>();
             foreach (Type serializer in serializers)
@@ -58,14 +59,12 @@ namespace WinterRose.Serialization
                         continue;
                     }
                     RegisteredSerializers.Add(TypeWorker.FindType(attribute.WorkingType)!, new RegisteredSerializer(serializer));
-                }
-                    
-            }
+                }            }
 
-            serializers = TypeWorker.FindTypesWithInterface<ICustomSerializer>();
+            serializers = TypeWorker.FindTypesWithInterface<CustomSerializer>();
             foreach(Type serializer in serializers)
             {
-                ICustomSerializer instance = (ICustomSerializer)ActivatorExtra.CreateInstance(serializer);
+                CustomSerializer instance = (CustomSerializer)ActivatorExtra.CreateInstance(serializer);
                 CustomSerializers.Add(instance.SerializerType, instance);
             }
         }
@@ -79,7 +78,8 @@ namespace WinterRose.Serialization
         public static SerializationResult Serialize<T>(T item, SerializerSettings? settings = null)
         {
             settings ??= DefaultSettings;
-            StringBuilder builder = SnowSerializerDistributors.DistributeSerializationData(item, settings);
+            SerializeReferenceCache cache = new();
+            StringBuilder builder = SnowSerializerDistributors.DistributeSerializationData(item, settings, cache);
             SerializationResult result = new(builder);
 
             return result;
@@ -94,6 +94,7 @@ namespace WinterRose.Serialization
         public static DeserializationResult Deserialize<T>(string item, SerializerSettings? settings = null)
         {
             settings ??= DefaultSettings;
+            SerializeReferenceCache refCache = new();
             dynamic? d = null;
             try
             {
@@ -102,7 +103,7 @@ namespace WinterRose.Serialization
             catch { }
             finally
             {
-                d = SnowSerializerDistributors.DistributeDeserializationData<T>(item, settings);
+                d = SnowSerializerDistributors.DistributeDeserializationData<T>(item, settings, refCache);
             }
             var result = new DeserializationResult(d);
 

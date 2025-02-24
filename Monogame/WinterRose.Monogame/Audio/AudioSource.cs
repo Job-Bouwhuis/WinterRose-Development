@@ -30,7 +30,7 @@ public class AudioSource : ObjectBehavior
         Debug.Log(emitter.DopplerScale, true);
     }
 
-    private void Update()
+    protected override void Update()
     {
         emitter.Position = transform.position.Vector3();
         emitter.Up = transform.up.Vector3();

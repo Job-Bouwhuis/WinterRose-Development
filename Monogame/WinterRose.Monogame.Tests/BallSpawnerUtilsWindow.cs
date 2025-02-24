@@ -6,7 +6,7 @@ internal class BallSpawnerUtilsWindow : ImGuiLayout
 {
     BallSpawner spawner;
 
-    private void Awake()
+    protected override void Awake()
     {
         spawner = FetchComponent<BallSpawner>();
     }
@@ -26,4 +26,6 @@ internal class BallSpawnerUtilsWindow : ImGuiLayout
 
         gui.End();
     }
+
+    protected override void Update() { }
 }

@@ -15,7 +15,7 @@ public class PlayerMovement : ObjectBehavior
     public PlayerMovement(int speed) : this() => this.Speed = speed;
     public PlayerMovement() { }
 
-    private void Update()
+    protected override void Update()
     {
         // Calculate the target position based on input and transform.up
         Vector2 inputDirection = Input.GetNormalizedWASDInput();

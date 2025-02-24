@@ -8,21 +8,21 @@ namespace TopDownGame
     /// </summary>
     internal class TinkerComponent : ObjectBehavior
     {
-        private void Awake()
+        protected override void Awake()
         {
             float deltaTime = Time.SinceLastFrame;
             float allTime = Time.SinceStartup;
             float worldtime = Time.SinceWorldLoad;
         }
 
-        private void Start()
+        protected override void Start()
         {
             transform.position = new Vector2(100, 100);
             transform.rotation = 360; // rotation in degrees
             transform.scale = new Vector2(1, 1);
         }
 
-        private void Update()
+        protected override void Update()
         {
             // called each frame.
 
@@ -45,12 +45,12 @@ namespace TopDownGame
             //.... yes... i dont have life
         }
 
-        private void Close()
+        protected override void Close()
         {
             // called when the object is destroyed
         }
 
-        public override void ResetClone(in ObjectComponent newComponent)
+        protected override void ResetClone(in ObjectComponent newComponent)
         {
             // when the component is being cloned, this method is called
         }

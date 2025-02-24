@@ -10,7 +10,7 @@ namespace WinterRose.Monogame.Tests
     {
         public int test = 0;
 
-        private void Update()
+        protected override void Update()
         {
             
         }

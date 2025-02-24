@@ -90,7 +90,7 @@ public sealed class AnimatedSpriteRenderer : ActiveRenderer
     /// </summary>
     public AnimatedSpriteRenderer() => waitTime = SpriteStepTime;
 
-    private void Update()
+    protected override void Update()
     {
         if (!Loop && CurrentSpriteIndex >= SpriteSheet.SpriteCount)
             return;

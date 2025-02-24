@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using WinterRose.Monogame.StatusSystem;
+using WinterRose.Monogame.Tests;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 
@@ -11,24 +12,13 @@ internal class Level1 : WorldTemplate
     public override void Build(in World world)
     {
         world.Name = "Level 1";
+        WorldGrid.ChunkSize = 8;
+
         var player = world.CreateObject<SpriteRenderer>("Player", 10, 10, Color.Red);
         player.Origin = new(0.5f, 0.5f);
-        player.AttachComponent<ModyfiablePlayerMovement>();
-        var vitals = player.AttachComponent<Vitality>();
-        vitals.Health.MaxHealth = 740;
-        vitals.Armor.BaseArmor = 0.5f;
-        var effector = player.AttachComponent<StatusEffector>();
-        player.owner.AddUpdateBehavior(obj =>
-        {
-            if (Input.SpaceDown)
-            {
-                effector.Apply<FireStatusEffect>(10, 1);
-            }
-        });
-        player.AttachComponent<MouseLook>();
-        var weapon = player.AttachComponent<Weapon>();
-        var mag = player.AttachOrFetchComponent<Magazine>();
-        mag.BulletPrefab = new WorldObjectPrefab("basicBullet");
+        player.AttachComponent<TopDownPlayerController>();
+
+        player.AttachComponent<BallSpawner>(Sprite.Circle(10, Color.Cyan));
 
         world.CreateObject<SmoothCameraFollow>("cam", player.transform);
 

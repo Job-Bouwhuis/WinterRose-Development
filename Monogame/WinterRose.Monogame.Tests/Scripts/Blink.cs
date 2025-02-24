@@ -11,7 +11,7 @@ namespace WinterRose.Monogame.Tests.Scripts
         [IncludeInTemplateCreation]
         public float Distance { get; set; } = 100;
 
-        private void Update()
+        protected override void Update()
         {
             if (Input.GetKeyDown(Microsoft.Xna.Framework.Input.Keys.Space))
             {

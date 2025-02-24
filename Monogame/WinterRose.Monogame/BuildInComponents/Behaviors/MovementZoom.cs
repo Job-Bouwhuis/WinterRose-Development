@@ -17,7 +17,7 @@ namespace WinterRose.Monogame.BuildInComponents.Behaviors
         public float SpeedSimulate { get; set; } = 400;
 
 
-        private void Update()
+        protected override void Update()
         {
             Vector2 inputDirection = Input.GetNormalizedWASDInput();
 

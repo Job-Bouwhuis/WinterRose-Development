@@ -41,7 +41,7 @@ public class AudioConsumer : ObjectBehavior
         instance = this;
     }
 
-    private void Update()
+    protected override void Update()
     {
         listener.Up = transform.up.Vector3();
         listener.Position = transform.position.Vector3();
@@ -51,7 +51,7 @@ public class AudioConsumer : ObjectBehavior
 
     public static implicit operator AudioListener(AudioConsumer listener) => listener.listener;
 
-    private void Close()
+    protected override void Close()
     {
         instance = null;
     }

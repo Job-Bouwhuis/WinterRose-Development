@@ -10,7 +10,7 @@ namespace WinterRose.Monogame.Tests
     {
         [IncludeInTemplateCreation]
         public float Speed { get; set; } = 0.001f;
-        private void Update()
+        protected override void Update()
         {
             // rotate the object 360 degrees per second and scale it on its speed
             transform.rotation += 360f * (float)Time.SinceLastFrame * Speed;

@@ -139,7 +139,7 @@ public sealed class ParticleEmitter : ActiveRenderer
         MaxParticles = maxparticles;
     }
 
-    public void Update()
+    protected override void Update()
     {
         Debug.Log($"Total particles: {particles.Count}");
         if (AutoEmit)

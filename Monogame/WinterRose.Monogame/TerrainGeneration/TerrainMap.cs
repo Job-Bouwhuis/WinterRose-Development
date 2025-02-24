@@ -32,17 +32,17 @@ namespace WinterRose.Monogame.TerrainGeneration
             }
         }
 
-        private List<Chunk> chunks; // List to store chunk information
-        private int seed; // Seed for generating consistent noise
-        private float frequency; // Frequency for Perlin noise
-        private float bias; // Bias for noise values
-        private float colorNoiseIntensity; // Intensity of color noise
-        private TerrainGenerator terrainGenerator; // Instance of TerrainGenerator
+        private List<Chunk> chunks;
+        private int seed;
+        private float frequency;
+        private float bias;
+        private float colorNoiseIntensity;
+        private TerrainGenerator terrainGenerator;
 
         public const int CHUNK_SIZE = 1000;
-        public int Width { get; private set; } // Width of the map in chunks
-        public int Height { get; private set; } // Height of the map in chunks
-        public int ChunkGenerationDistance { get; set; } = 2; // How many chunks away from the player to stop generating new chunks
+        public int Width { get; private set; }
+        public int Height { get; private set; } 
+        public int ChunkGenerationDistance { get; set; } = 2; 
 
         public TerrainMap(GraphicsDevice graphicsDevice, int initialWidth, int initialHeight, int seed, float frequency, float bias, float colorNoiseIntensity, Vector2 startingPosition)
         {
@@ -55,7 +55,6 @@ namespace WinterRose.Monogame.TerrainGeneration
             terrainGenerator = new TerrainGenerator(graphicsDevice);
             chunks = new List<Chunk>();
 
-            // Initialize the map with the specified dimensions
             InitializeChunks(initialWidth, initialHeight, startingPosition);
         }
 
@@ -65,7 +64,6 @@ namespace WinterRose.Monogame.TerrainGeneration
             {
                 for (int y = 0; y < height; y++)
                 {
-                    // Calculate the actual position based on starting position
                     int chunkX = (int)startingPosition.X + x;
                     int chunkY = (int)startingPosition.Y + y;
 
@@ -79,76 +77,47 @@ namespace WinterRose.Monogame.TerrainGeneration
 
         public void Resize(int width, int height)
         {
-            // Calculate new half-width and half-height for centering
             int halfWidth = width / 2;
             int halfHeight = height / 2;
 
-            // Adjust chunks list by adding or removing chunks as needed
             List<Chunk> newChunks = new List<Chunk>();
 
-            // Create new chunks based on the new dimensions
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
-                    int chunkX = x; // Only positive positions are considered
+                    int chunkX = x;
                     int chunkY = y;
 
-                    // Check if the chunk already exists
                     Chunk? existingChunk = chunks.Find(c => c.position == new Vector2(chunkX, chunkY));
                     if (existingChunk != null)
                     {
-                        // Retain the existing chunk if it exists
                         newChunks.Add(existingChunk);
                     }
                     else
                     {
-                        // Create a new chunk if it doesn't exist
                         newChunks.Add(new Chunk(chunkX, chunkY, null!, this));
                     }
                 }
             }
 
-            // Update the chunks list with the new chunks
             chunks = newChunks;
 
-            // Update Width and Height properties
             Width = width;
             Height = height;
 
-            // Regenerate the map for the newly added chunks
             GenerateMap();
         }
 
-        //private void GenerateMap()
-        //{
-        //    for (int i = 0; i < chunks.Count; i++)
-        //    {
-        //        Chunk? chunk = chunks[i];
-        //        // Calculate offsets for Perlin noise generation
-        //        int offsetX = (int)(chunk.position.X * CHUNK_SIZE);
-        //        int offsetY = (int)(chunk.position.Y * CHUNK_SIZE);
-
-        //        if(i % 100 == 0)
-        //            Console.WriteLine($"{i} / {chunks.Count}");
-
-        //        // Generate and assign the texture for the chunk
-        //        chunk.Texture = terrainGenerator.CreateSubSprite(CHUNK_SIZE, CHUNK_SIZE, frequency, bias, colorNoiseIntensity, offsetX, offsetY, seed);
-        //    }
-        //}
-
         private void GenerateMap()
         {
-            // Use Parallel.For to process chunks in parallel
             Parallel.For(0, chunks.Count,i =>
             {
                 Chunk chunk = chunks[i];
 
-                // Calculate offsets for Perlin noise generation
                 int offsetX = (int)(chunk.position.X * CHUNK_SIZE);
                 int offsetY = (int)(chunk.position.Y * CHUNK_SIZE);
 
-                // Generate and assign the texture for the chunk
                 chunk.Texture = terrainGenerator.CreateSubSprite(CHUNK_SIZE, CHUNK_SIZE, frequency, bias, colorNoiseIntensity, offsetX, offsetY, seed);
             });
         }
@@ -156,7 +125,6 @@ namespace WinterRose.Monogame.TerrainGeneration
 
         public Sprite GetTexture(int chunkX, int chunkY)
         {
-            // Check for the chunk in the list
             foreach (var chunk in chunks)
             {
                 if (chunk.position == new Vector2(chunkX, chunkY))

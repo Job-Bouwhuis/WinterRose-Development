@@ -6,4 +6,6 @@ internal class WorldTemplateWriter : ImGuiLayout
     {
         
     }
+
+    protected override void Update() { }
 }

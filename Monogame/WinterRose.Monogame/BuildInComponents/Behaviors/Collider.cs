@@ -11,6 +11,7 @@ namespace WinterRose.Monogame
     /// <summary>
     /// A base class for all colliders
     /// </summary>
+    [ParallelBehavior]
     public abstract class Collider : ObjectBehavior
     {
         /// <summary>
@@ -45,7 +46,7 @@ namespace WinterRose.Monogame
             Bounds = new Rectangle();
         }
 
-        private void Update()
+        protected override void Update()
         {
             Bounds = Bounds with
             {

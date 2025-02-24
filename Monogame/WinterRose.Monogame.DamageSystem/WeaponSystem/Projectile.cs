@@ -8,6 +8,7 @@ using WinterRose.StaticValueModifiers;
 namespace WinterRose.Monogame.Weapons;
 
 [RequireComponent<Collider>(AutoAdd = false)]
+[ParallelBehavior]
 public class Projectile : ObjectBehavior
 {
     /// <summary>
@@ -51,6 +52,11 @@ public class Projectile : ObjectBehavior
     /// </summary>
     [IncludeInTemplateCreation]
     public StaticCombinedModifier<float> Force { get; set; } = 0.0f;
+    /// <summary>
+    /// The chance this bullet has to apply a status effect. if greater than 100, guaranteed 1 with a chance to apply 2, greater than 200 guaranteed 2, with chance of 3
+    /// </summary>
+    [IncludeInTemplateCreation]
+    public int StatusChance { get; set; }
 
     [Show]
     private float currentTime = 0;
@@ -66,8 +72,9 @@ public class Projectile : ObjectBehavior
     [Show, IgnoreInTemplateCreation]
     private List<IProjectileHitAction> hitActions = new();
 
-    public override void ResetClone(in ObjectComponent newComponent)
+    protected override void ResetClone(in ObjectComponent newComponent)
     {
+        base.ResetClone(newComponent);
         Projectile clone = (Projectile)newComponent;
         clone.Speed = (StaticCombinedModifier<float>)Speed.Clone();
         clone.Lifetime = (StaticCombinedModifier<float>)Lifetime.Clone();
@@ -76,12 +83,13 @@ public class Projectile : ObjectBehavior
         clone.SplashDamageFalloff = (StaticCombinedModifier<float>)SplashDamageFalloff.Clone();
         clone.Spread = (StaticCombinedModifier<float>)Spread.Clone();
         clone.Force = (StaticCombinedModifier<float>)Force.Clone();
+        clone.hitActions = [];
+        clone.physics = null;
+        clone.creationTime = 0;
+        clone.currentTime = 0;
+        clone.direction = new();
     }
 
-    /// <summary>
-    /// Initializes the bullet for use.
-    /// </summary>
-    /// <param name="direction"></param>
     public void Fire()
     {
         _ = owner;
@@ -94,10 +102,8 @@ public class Projectile : ObjectBehavior
         creationTime = Time.SinceStartup;
     }
 
-    // Start is called before the first frame update
-    void Start()
+    protected override void Start()
     {
-        _ = owner;
         physics = AttachOrFetchComponent<PhysicsObject>();
 
         if (TryFetchComponent<Collider>(out var col))
@@ -107,10 +113,8 @@ public class Projectile : ObjectBehavior
         actions.Foreach(hitActions.Add);
     }
 
-    // Update is called once per frame
-    void Update()
+    protected override void Update()
     {
-        _ = this.owner;
         currentTime += Time.SinceLastFrame;
         if (currentTime > Lifetime)
         {
@@ -122,11 +126,8 @@ public class Projectile : ObjectBehavior
 
     private void OnCollisionEnter(CollisionInfo collision)
     {
-        if(collision.other.TryFetchComponent(out Projectile p))
-        {
-            // if the object is a projectile, don't do anything
-            return;
-        }
+        if(collision.other.HasComponent<Projectile>())
+            return; // if the object is a projectile, don't do anything
 
         foreach (var action in hitActions)
             action.OnHit(this, collision.other.owner, collision.CollisionSide);

@@ -60,14 +60,14 @@ public sealed class TextButton : ObjectBehavior
 
     private bool once = false;
 
-    private void Awake()
+    protected override void Awake()
     {
         text.color = Color.White;
         colorRange = new([new ColorRangePoint(ButtonTints.Normal, 0), new ColorRangePoint(ButtonTints.Normal, 1)]);
         previousEndColor = colorRange.Points[^1].Color;
     }
 
-    private void Update()
+    protected override void Update()
     {
         Universe.RequestRender = true;
         Vector2 mousePos = Transform.ScreenToWorldPos(Input.MousePosition, Camera.current);

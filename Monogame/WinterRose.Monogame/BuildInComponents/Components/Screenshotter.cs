@@ -14,14 +14,14 @@ public class Screenshotter : ObjectBehavior
     }
     private Screenshotter() { }
 
-    private void Awake()
+    protected override void Awake()
     {
         cam = FetchComponent<Camera>();
         if (cam is null)
             throw new Exception("Component of type Screenshotter requires a camera to be on the same object.");
     }
 
-    private void Update()
+    protected override void Update()
     {
         if (!Input.GetKeyDown(screenshotKey))
             return;

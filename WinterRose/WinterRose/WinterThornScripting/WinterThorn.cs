@@ -157,7 +157,7 @@ public class WinterThorn
     /// <param name="typeName"></param>
     /// <param name="namespaceName"></param>
     /// <returns></returns>
-    public Class? GetClass(string typeName, string namespaceName)
+    public Class? GetClass(string namespaceName, string typeName)
     {
         foreach (var ns in Namespaces)
         {
@@ -180,9 +180,9 @@ public class WinterThorn
     /// <param name="namespaceName"></param>
     /// <param name="args"></param>
     /// <returns></returns>
-    public Class? GetInstancedClass(string typeName, string namespaceName, params Variable[] args)
+    public Class? GetInstancedClass(string namespaceName, string typeName, params Variable[] args)
     {
-        Class? c = GetClass(typeName, namespaceName);
+        Class? c = GetClass(namespaceName, typeName);
         return c?.CreateInstance(args);
     }
 
@@ -392,7 +392,7 @@ public class WinterThorn
                 return numVar;
             }
             else if (numVar.Type != VariableType.Number)
-                throw new WinterThornExecutionError(ThornError.InvalidType, "WR-365", "Parameter num must be a number or class that implements a 'Get number index' function");
+                throw new WinterThornExecutionError(ThornError.InvalidType, "WR-365", "Parameter num must be a number or class that implements 'function Get number index'");
             if (stepsVar.Type != VariableType.Number)
                 throw new WinterThornExecutionError(ThornError.InvalidType, "WR-365", "Parameter steps must be a number");
 
@@ -429,7 +429,7 @@ public class WinterThorn
                     }
                     return toStringFunc.Invoke();
                 }
-                return var.Value?.ToString()!;
+                return var.Value?.ToString() ?? "null";
             }
         };
 

@@ -52,7 +52,7 @@ namespace WinterRose.Monogame
         [IgnoreInTemplateCreation]
         public bool right = false;
 
-        private void Awake()
+        protected override void Awake()
         {
             if(TryFetchComponent<Renderer>(out var renderer))
             {
@@ -60,7 +60,6 @@ namespace WinterRose.Monogame
                 if (renderer is SpriteRenderer sp)
                     HitboxOffset = (Vector2I)(sp.Origin * (Vector2I)Bounds.Size);
             }
-
         }
 
         /// <summary>
@@ -90,17 +89,13 @@ namespace WinterRose.Monogame
                     side |= CollisionSide.Bottom;
 
                 if (left || right || top || bottom)
-                {
                     collisions.Add(new CollisionInfo(this, other, pastColliders.Any(x => x.other == other) ? CollisionType.Stay : CollisionType.Enter, side));
-                }
             }
 
             foreach (var col in pastColliders)
             {
                 if (!collisions.Any(x => x.other == col.other))
-                {
                     collisions.Add(new(this, col.other, CollisionType.Exit, CollisionSide.None));
-                }
             }
             pastColliders = collisions.Where(x => x.type != CollisionType.Exit).ToList();
             return collisions;

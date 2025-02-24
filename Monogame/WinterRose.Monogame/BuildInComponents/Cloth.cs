@@ -151,7 +151,7 @@ public class Cloth : ActiveRenderer
                 node.ApplyForce(force);
     }
 
-    private void Update()
+    protected override void Update()
     {
         foreach (var row in nodesGrid)
             foreach (var node in row)

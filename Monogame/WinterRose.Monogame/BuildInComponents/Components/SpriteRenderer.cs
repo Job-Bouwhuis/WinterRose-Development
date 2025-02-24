@@ -71,18 +71,12 @@ public sealed class SpriteRenderer : Renderer
     /// <summary>
     /// Creates a new empty <see cref="SpriteRenderer"/>
     /// </summary>
-    public SpriteRenderer()
-    {
-        Sprite = new(1, 1, Color.Transparent);
-    }
+    public SpriteRenderer() => Sprite = new(1, 1, Color.Transparent);
     /// <summary>
     /// Creates a new <see cref="SpriteRenderer"/> with <paramref name="tex"/> as the texture to draw
     /// </summary>
     /// <param name="tex">The texture this <see cref="SpriteRenderer"/> will draw</param>
-    public SpriteRenderer(Sprite tex) : this()
-    {
-        this.tex = tex;
-    }
+    public SpriteRenderer(Sprite tex) => this.tex = tex;
     /// <summary>
     /// Creates a new <see cref="SpriteRenderer"/> where the sprite will be loaded from your content folder
     /// </summary>

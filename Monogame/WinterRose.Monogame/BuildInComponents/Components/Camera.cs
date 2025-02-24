@@ -18,13 +18,13 @@ public sealed class Camera : ObjectComponent
     /// <summary>
     /// The index of the camera in the world.
     /// </summary>
-    [Hidden]
+    [Hide]
     public int CameraIndex { get; internal set; } = -1;
 
     /// <summary>
     /// The camera that is currently being used to render the world. If there is no camera being used, this will be null
     /// </summary>
-    [Hidden]
+    [Hide]
     public static Camera? current
     {
         get
@@ -38,7 +38,7 @@ public sealed class Camera : ObjectComponent
     /// <summary>
     /// The bounds of the camera. This is the size of the render target. Set to (0, 0) to use the window size
     /// </summary>
-    [Hidden]
+    [Hide]
     public Vector2I Bounds
     {
         get => renderTarget == null ? MonoUtils.WindowResolution : new(renderTarget.Bounds.Width, renderTarget.Bounds.Height);
@@ -57,29 +57,29 @@ public sealed class Camera : ObjectComponent
     /// <summary>
     /// Gets the top left corner of the camera in world space
     /// </summary>
-    [Hidden]
+    [Hide]
     public Vector2 TopLeft => Transform.ScreenToWorldPos(new(0, 0), this);
     /// <summary>
     /// The top right corner of the camera in world space
     /// </summary>
-    [Hidden]
+    [Hide]
     public Vector2 TopRight => Transform.ScreenToWorldPos(new(MonoUtils.WindowResolution.X, 0), this);
     /// <summary>
     /// The bottom left corner of the camera in world space
     /// </summary>
-    [Hidden]
+    [Hide]
     public Vector2 BottomLeft => Transform.ScreenToWorldPos(new(0, MonoUtils.WindowResolution.Y), this);
     /// <summary>
     /// The bottom right corner of the camera in world space
     /// </summary>
-    [Hidden]
+    [Hide]
     public Vector2 BottomRight => Transform.ScreenToWorldPos(MonoUtils.WindowResolution, this);
 
     public SpriteSortMode SpriteSorting { get; set; } = SpriteSortMode.FrontToBack;
     /// <summary>
     /// Copies the current frame into a new texture for you to use in whatever way you see fit. Perhaps save it?
     /// </summary>
-    [Hidden, DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    [Hide, DebuggerBrowsable(DebuggerBrowsableState.Never)]
     public Texture2D Screenshot
     {
         get
@@ -93,7 +93,7 @@ public sealed class Camera : ObjectComponent
         }
     }
 
-    [Hidden]
+    [Hide]
     private Matrix TransformMatrix
     {
         get
@@ -103,14 +103,14 @@ public sealed class Camera : ObjectComponent
         }
     }
 
-    [Hidden]
+    [Hide]
     [IgnoreInTemplateCreation] private SpriteBatch batch;
-    [Hidden]
+    [Hide]
     [IgnoreInTemplateCreation] private RenderTarget2D renderTarget;
-    [Hidden]
+    [Hide]
     [IgnoreInTemplateCreation] private Matrix trMatrix;
 
-    private void Awake()
+    protected override void Awake()
     {
         batch = new(MonoUtils.Graphics);
         var (x, y) = Bounds;

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace WinterRose.Monogame;
 
+[ParallelBehavior]
 public class CircleCollider : Collider
 {
     public float Radius { get; set; }
@@ -24,7 +25,7 @@ public class CircleCollider : Collider
 
     public PhysicsObject? physics => owner.FetchComponent<PhysicsObject>();
 
-    private void Awake()
+    protected override void Awake()
     {
         if (Radius == 0)
             Radius = 1;

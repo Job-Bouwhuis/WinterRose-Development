@@ -1,5 +1,7 @@
 using Microsoft.Xna.Framework;
 using System.Linq;
+using System;
+using WinterRose.Monogame.ModdingSystem;
 
 #nullable enable
 
@@ -8,7 +10,7 @@ namespace WinterRose.Monogame.Weapons;
 /// <summary>
 /// A weapon that can shoot projectiles.
 /// </summary>
-[RequireComponent<Magazine>]
+[RequireComponent<Magazine>(AutoAdd = true)]
 public class Weapon : ObjectBehavior
 {
     /// <summary>
@@ -34,7 +36,17 @@ public class Weapon : ObjectBehavior
     /// <summary>
     /// The current fire mode of the weapon
     /// </summary>
-    public WeaponFireingMode CurrentFiringMode => currentFireMode; 
+    public WeaponFireingMode CurrentFiringMode
+    {
+        get => currentFireMode;
+        set
+        {
+            if (AvailableFireingMode.HasFlag(value))
+                currentFireMode = value;
+            else
+                throw new Exception("Weapon cant have this firing mode: " + value.ToString());
+        }
+    } 
 
     /// <summary>
     /// The amount of times the gun fires on burst mode
@@ -45,7 +57,6 @@ public class Weapon : ObjectBehavior
     /// The magazine of the weapon
     /// </summary>
     public Magazine Magazine { get; private set; }
-
 
     [Show]
     private float fireRateTimer = 0.0f;
@@ -59,17 +70,31 @@ public class Weapon : ObjectBehavior
     [Show]
     WeaponFireingMode currentFireMode = WeaponFireingMode.Single;
 
-    private void Awake()
+    [Show]
+    public ModContainer<Weapon> ModContainer { get; } = new();
+
+    protected override void Awake()
     {
         if (!TryFetchComponent(out Magazine mag))
             Debug.LogError("Magazine is null on weapon " + owner.Name);
 
         Magazine = mag;
+        ModContainer.ApplyAllMods(this);
     }
 
     // Update is called once per frame
-    void Update()
+    protected override void Update()
     {
+        if(Input.GetKeyDown(Microsoft.Xna.Framework.Input.Keys.T))
+        {
+            ModContainer.UnapplyAllMods(this);
+        }
+
+        if (Input.GetKeyDown(Microsoft.Xna.Framework.Input.Keys.Y))
+        {
+            ModContainer.ApplyAllMods(this);
+        }
+
         // Handle reloading
         Reload();
 

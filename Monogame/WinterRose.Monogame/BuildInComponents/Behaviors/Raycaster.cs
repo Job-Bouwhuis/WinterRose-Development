@@ -29,7 +29,7 @@ namespace WinterRose.Monogame
 
         private Vector2 hitPoint = new(float.NaN);
 
-        private void Awake()
+        protected override void Awake()
         {
             IsVisible = false;
         }
@@ -47,11 +47,11 @@ namespace WinterRose.Monogame
             DrawTime = sw.Elapsed;
         }
 
-        public bool Raycast(Vector2 origin, Vector2 direction, float maxDistance, float epsilon, out RaycastHit hit)
+        public bool Raycast(Vector2 origin, Vector2 direction, float maxDistance, float stepSize, out RaycastHit hit)
         {
             lastDir = direction;
             MaxDistance = maxDistance;
-            StepSize = epsilon;
+            StepSize = stepSize;
 
             float totalDistance = 0;
 
@@ -65,7 +65,7 @@ namespace WinterRose.Monogame
                     // calculate distance remaining to the max distance
                     float remainingDistance = maxDistance - totalDistance;
                     // calculate the distance from the start to the hit point
-                    float distance = totalDistance - epsilon;
+                    float distance = totalDistance - stepSize;
                     // calculate the normal of the hit point
                     Vector2 normal = Vector2.Normalize(currentPosition - origin);
 
@@ -81,7 +81,7 @@ namespace WinterRose.Monogame
                     return true;
                 }
 
-                totalDistance += epsilon;
+                totalDistance += stepSize;
             }
             hit = new();
             return false; // No collision within maxDistance
@@ -89,18 +89,25 @@ namespace WinterRose.Monogame
 
         private bool CheckCollision(Vector2 position)
         {
-            // find all spriterenderers in the world
-            // and check if the position is inside any of them
-
             foreach (var obj in CurrentWorldObjects)
             {
-                if (obj.TryFetchComponent(out SpriteRenderer? sr))
+                if (!obj.IsActive)
+                    continue;
+
+                if (obj == owner)
+                    continue; // skip self
+
+                foreach (Transform child in transform)
+                    if (child.parent == obj.transform)
+                        goto Continue;
+
+                if (obj.TryFetchComponent(out SpriteRenderer sr))
                 {
-                    if (sr.owner == owner)
-                        continue;
-                    if (sr.Bounds.Contains(position))
+                    if (sr.IsVisible && sr.Enabled && sr.Bounds.Contains(position))
                         return true;
                 }
+
+Continue:;
             }
 
             return false;

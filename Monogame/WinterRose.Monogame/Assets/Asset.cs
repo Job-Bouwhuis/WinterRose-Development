@@ -34,7 +34,7 @@ public abstract class Asset
     /// <summary>
     /// The file that is associated with this asset.
     /// </summary>
-    [Hidden]
+    [Hide]
     public AssetDatabaseFile File { get; internal set; }
 
     /// <summary>

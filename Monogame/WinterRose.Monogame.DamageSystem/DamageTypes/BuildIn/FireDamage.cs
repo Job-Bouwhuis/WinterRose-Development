@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Monogame.StatusSystem;
 
 namespace WinterRose.Monogame.DamageSystem;
 
@@ -13,6 +14,8 @@ public class FireDamage : DamageType
         target.DealDamage(Damage);
     }
 
-    public FireDamage() { }
-    public FireDamage(int BaseDamage) : base(BaseDamage) { }
+    public FireDamage(int BaseDamage) : base(BaseDamage) 
+    {
+        ConnectedStatusEffect = new FireStatusEffect(this);
+    }
 }

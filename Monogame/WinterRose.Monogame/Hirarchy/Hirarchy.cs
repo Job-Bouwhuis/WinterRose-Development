@@ -1001,7 +1001,7 @@ namespace WinterRose.Monogame
                 return;
             }
             var publics = obj.GetType().GetFields(bindingAttr: BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy)
-                .Where(x => x.GetCustomAttributes<HiddenAttribute>().Count() == 0);
+                .Where(x => x.GetCustomAttributes<HideAttribute>().Count() == 0);
 
             var privates = obj.GetType().GetFields(bindingAttr: BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy)
                 .Where(x => x.GetCustomAttributes<ShowAttribute>().Count() != 0).ToArray();
@@ -1021,7 +1021,7 @@ namespace WinterRose.Monogame
             }
 
             var publics = obj.GetType().GetProperties(bindingAttr: BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy)
-                .Where(x => x.GetCustomAttributes<HiddenAttribute>().Count() == 0);
+                .Where(x => x.GetCustomAttributes<HideAttribute>().Count() == 0);
 
             var privates = obj.GetType().GetProperties(bindingAttr: BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy)
                 .Where(x => x.GetCustomAttributes<ShowAttribute>().Count() != 0).ToArray();

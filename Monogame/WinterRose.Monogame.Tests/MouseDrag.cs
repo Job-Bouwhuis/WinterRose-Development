@@ -10,7 +10,7 @@ namespace WinterRose.Monogame.Tests
     internal class MouseDrag : ObjectBehavior
     {
         Vector2 lastMousePos = new();
-        private void Update()
+        protected override void Update()
         {
             Vector2 mousePos = Transform.ScreenToWorldPos(Input.MousePosition, null);
 

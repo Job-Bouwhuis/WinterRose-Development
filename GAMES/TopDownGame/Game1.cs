@@ -1,27 +1,21 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using System.Diagnostics;
-using TopDownGame.Levels;
-using WinterRose;
+﻿using TopDownGame.Levels;
 using WinterRose.Monogame;
 using WinterRose.Monogame.Worlds;
 
-namespace TopDownGame
+namespace TopDownGame;
+
+public class Game1 : Application
 {
-    public class Game1 : Application
+    protected override World CreateWorld()
     {
-        protected override World CreateWorld()
-        {
-            Hirarchy.Show = true;
+        Hirarchy.Show = true;
 
-            // als fyschieke scherm 2k of meer is, maak game window 1920 x 1080. anders maak hem 1280 x 720
-            if (WinterRose.Windows.GetScreenSize().x >= 2560)
-                MonoUtils.WindowResolution = new(1920, 1080);
-            else
-                MonoUtils.WindowResolution = new(1280, 720);
+        // als fyschieke scherm 2k of meer is, maak game window 1920 x 1080. anders maak hem 1280 x 720
+        if (WinterRose.Windows.GetScreenSize().x >= 2560)
+            MonoUtils.WindowResolution = new(1920, 1080);
+        else
+            MonoUtils.WindowResolution = new(1280, 720);
 
-            return World.FromTemplate<Level1>();
-        }
+        return World.FromTemplate<Level1>();
     }
 }

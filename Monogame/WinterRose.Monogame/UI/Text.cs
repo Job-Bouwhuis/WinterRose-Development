@@ -37,7 +37,7 @@ public class Text : Renderer
     /// </summary>
     public Vector2 SizeRaw => Font.MeasureString(text);
 
-    [Hidden]
+    [Hide]
     public override TimeSpan DrawTime { get; protected set; }
     /// <summary>
     /// The sprite effects used when rendering the text

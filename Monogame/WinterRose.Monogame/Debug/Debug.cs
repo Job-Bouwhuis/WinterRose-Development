@@ -255,7 +255,7 @@ public static class Debug
     internal static void RenderDrawRequests(SpriteBatch batch)
     {
         foreach (var request in DebugDrawRequests)
-            request.Draw(batch);
+            request?.Draw(batch);
         DebugDrawRequests.Clear();
     }
 

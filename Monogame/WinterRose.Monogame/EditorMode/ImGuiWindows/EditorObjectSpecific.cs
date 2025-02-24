@@ -127,7 +127,7 @@ namespace WinterRose.Monogame.EditorMode
                             {
 
                             }
-                            if (member.HasAttribute<HiddenAttribute>() || (!member.IsPublic && !member.HasAttribute<ShowAttribute>()))
+                            if (member.HasAttribute<HideAttribute>() || (!member.IsPublic && !member.HasAttribute<ShowAttribute>()))
                                 return;
                             var value = member.GetValue(cc);
                             componentValueEdits.Add(value?.ToString());
@@ -156,7 +156,7 @@ namespace WinterRose.Monogame.EditorMode
                 //if (member.Name is "world" or "Chunk" or "owner")
                 //    continue;
 
-                if (!member.IsPublic && !member.HasAttribute<ShowAttribute>() || member.HasAttribute<HiddenAttribute>())
+                if (!member.IsPublic && !member.HasAttribute<ShowAttribute>() || member.HasAttribute<HideAttribute>())
                     continue;
 
                 try

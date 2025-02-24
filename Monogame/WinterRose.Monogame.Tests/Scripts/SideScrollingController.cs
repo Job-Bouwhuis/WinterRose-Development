@@ -25,7 +25,7 @@ internal class SideScrollingController : ObjectBehavior
     PhysicsObject physics;
     Raycaster raycaster;
 
-    private void Awake()
+    protected override void Awake()
     {
         grav = FetchOrAttachComponent<Gravity>();
         physics = FetchOrAttachComponent<PhysicsObject>();
@@ -33,7 +33,7 @@ internal class SideScrollingController : ObjectBehavior
         raycaster.IsVisible = true;
     }
 
-    private void Update()
+    protected override void Update()
     {
         if (Input.GetKey(Space) && grounded)
         {

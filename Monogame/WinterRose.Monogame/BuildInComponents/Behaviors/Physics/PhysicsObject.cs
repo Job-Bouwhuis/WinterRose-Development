@@ -1,9 +1,11 @@
 ﻿using Microsoft.Xna.Framework;
+using SharpDX.Direct3D11;
 using System;
 
 namespace WinterRose.Monogame;
 
-public sealed class PhysicsObject : ObjectComponent
+[ParallelBehavior]
+public sealed class PhysicsObject : ObjectBehavior
 {
     public Vector2 Velocity { get; set; }
     public Vector2 Acceleration { get; set; }
@@ -52,15 +54,23 @@ public sealed class PhysicsObject : ObjectComponent
         ApplyForce(new Vector2(0, force));
     }
 
-    internal void UpdatePhysicsSubSteps(float deltaTime, int subSteps = 1)
+    protected override void Awake()
     {
-        for (int i = 0; i < subSteps; i++)
-        {
-            PhysicsUpdate(deltaTime / subSteps);
-        }
+        PhysicsUpdate += PhysicsUpdateSelf;
+    }
 
+    protected override void Update()
+    {
+        for (int i = 0; i < Physics.Substeps; i++)
+        {
+            PhysicsUpdate(Time.SinceLastFrame / Physics.Substeps);
+        }
+    }
+
+    private void PhysicsUpdateSelf(float delta)
+    {
         // Apply the acceleration to the velocity
-        Velocity += Acceleration * deltaTime;
+        Velocity += Acceleration * delta;
 
         // Apply drag to the acceleration
         Acceleration *= Drag;
@@ -74,15 +84,12 @@ public sealed class PhysicsObject : ObjectComponent
         {
             Velocity = Vector2.Zero;
         }
-        if(Acceleration == Vector2.Zero)
+        if (Acceleration == Vector2.Zero)
         {
             Velocity *= Drag;
         }
 
-        // Apply gravity but only let it go as fast as its terminal velocity
-
-
         // Apply the velocity to the position
-        transform.position += Velocity * deltaTime;
+        transform.position += Velocity * delta;
     }
 }

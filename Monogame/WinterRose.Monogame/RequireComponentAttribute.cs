@@ -34,7 +34,7 @@ namespace WinterRose.Monogame.Internals
         /// <summary>
         /// Whether or not to automatically add the component
         /// </summary>
-        public bool AutoAdd { get; set; } = true;
+        public bool AutoAdd { get; set; } = false;
     }
 }
 

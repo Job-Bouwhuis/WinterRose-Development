@@ -80,25 +80,25 @@ public class Polygon : Renderer
 
         }
     }
-}
 
-public struct PolygonPoint
-{
-    public Vector2 Point { get; set; }
-    public Color Color { get; set; }
-
-    public readonly float X => Point.X;
-    public readonly float Y => Point.Y;
-
-    public PolygonPoint(Vector2 point, Color color)
+    public struct PolygonPoint
     {
-        Point = point;
-        Color = color;
+        public Vector2 Point { get; set; }
+        public Color Color { get; set; }
+
+        public readonly float X => Point.X;
+        public readonly float Y => Point.Y;
+
+        public PolygonPoint(Vector2 point, Color color)
+        {
+            Point = point;
+            Color = color;
+        }
+
+        public PolygonPoint(Vector2 point) : this(point, Color.White) { }
+
+        public static implicit operator PolygonPoint(Vector2 point) => new(point);
+        public static implicit operator Vector2(PolygonPoint point) => point.Point;
+
     }
-
-    public PolygonPoint(Vector2 point) : this(point, Color.White) { }
-
-    public static implicit operator PolygonPoint(Vector2 point) => new(point);
-    public static implicit operator Vector2(PolygonPoint point) => point.Point;
-
 }

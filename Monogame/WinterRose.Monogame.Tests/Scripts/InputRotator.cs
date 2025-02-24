@@ -6,7 +6,7 @@ internal class InputRotator : ObjectBehavior
 {
     public float Speed { get; set; } = 70;
 
-    private void Update()
+    protected override void Update()
     {
         if(Input.GetKey(Keys.Q)) 
             transform.rotation -= Speed * Time.SinceLastFrame;

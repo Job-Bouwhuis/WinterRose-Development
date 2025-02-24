@@ -6,7 +6,12 @@ namespace WinterRose.Monogame;
 
 public class Physics
 {
-    public static Vector2 Gravity { get; set; } = new(1, 9.81f);
+    /// <summary>
+    /// The amount of substep calculations to do when preforming physics calculations. default 4
+    /// </summary>
+    public static int Substeps { get; set; } = 4;
+
+    public static Vector2 Gravity { get; set; } = new(0, 9.81f);
 
     public static List<Collider> OverlapCircle(Vector2 position, float radius)
     {

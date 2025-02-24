@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -30,12 +31,12 @@ namespace WinterRose.Monogame
         /// <summary>
         /// The <see cref="WorldObject"/> on which this component is attached
         /// </summary>
-        [Hidden]
+        [Hide]
         public WorldObject owner => _owner;
         /// <summary>
         /// The <see cref="Transform"/> of <see cref="owner"/>
         /// </summary>
-        [Hidden]
+        [Hide]
         public Transform transform => owner.transform;
         /// <summary>
         /// Whether this component is enabled or not
@@ -45,7 +46,7 @@ namespace WinterRose.Monogame
         /// <summary>
         /// The chunk in which <see cref="owner"/> is located (based on the origin position of the object)
         /// </summary>
-        [Hidden]
+        [Hide]
         public WorldChunk Chunk
         {
             get
@@ -65,12 +66,9 @@ namespace WinterRose.Monogame
         /// <summary>
         /// Gets the value from <see cref="Universe.CurrentWorld"/>. this exists to make life easier
         /// </summary>
-        [Hidden]
+        [Hide]
         public World world => Universe.CurrentWorld;
 
-        private MethodInfo? awakeMethod;
-        private MethodInfo? startMethod;
-        private MethodInfo? closeMethod;
         [Show]
         private TimeSpan awakeTime;
         [Show]
@@ -79,58 +77,28 @@ namespace WinterRose.Monogame
         private TimeSpan closeTime;
         internal WorldObject _owner;
 
-        [IgnoreInTemplateCreation]
-        internal bool initialized = false;
-
-        public ObjectComponent()
-        {
-            Initialize();
-        }
-
-        internal virtual void Initialize()
-        {
-            OverrideDefaultMethodNamesAttribute? attr = GetType().GetCustomAttribute<OverrideDefaultMethodNamesAttribute>();
-            Type t = GetType();
-
-            if (attr != null)
-            {
-                awakeMethod = t.GetMethod(attr.Awake, MonoUtils.InstanceMemberFindingFlags);
-                startMethod = t.GetMethod(attr.Start, MonoUtils.InstanceMemberFindingFlags);
-                closeMethod = t.GetMethod(attr.Close, MonoUtils.InstanceMemberFindingFlags);
-            }
-            else
-            {
-                awakeMethod = t.GetMethod("Awake", MonoUtils.InstanceMemberFindingFlags);
-                startMethod = t.GetMethod("Start", MonoUtils.InstanceMemberFindingFlags);
-                closeMethod = t.GetMethod("Close", MonoUtils.InstanceMemberFindingFlags);
-            }
-            initialized = true;
-        }
+        protected virtual void Awake() { }
+        protected virtual void Start() { }
+        protected virtual void Close() { }
 
         internal void CallAwake()
         {
-            if (!initialized)
-                Initialize();
             var sw = Stopwatch.StartNew();
-            awakeMethod?.Invoke(this, null);
+            Awake();
             sw.Stop();
             awakeTime = sw.Elapsed;
         }
         internal void CallStart()
         {
-            if (initialized)
-                Initialize();
             var s = Stopwatch.StartNew();
-            startMethod?.Invoke(this, null);
+            Start();
             s.Stop();
             startTime = s.Elapsed;
         }
         internal void CallClose()
         {
-            if (initialized)
-                Initialize();
             var sw = Stopwatch.StartNew();
-            closeMethod?.Invoke(this, null);
+            Close();
             sw.Stop();
             closeTime = sw.Elapsed;
         }
@@ -217,12 +185,6 @@ namespace WinterRose.Monogame
             return shallowClone;
         }
 
-        public virtual void ResetClone(in ObjectComponent newComponent)
-        {
-            newComponent.awakeMethod = null;
-            newComponent.closeMethod = null;
-            newComponent.startMethod = null;
-            newComponent.initialized = false;
-        }
+        protected virtual void ResetClone(in ObjectComponent newComponent) { }
     }
 }

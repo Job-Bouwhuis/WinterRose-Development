@@ -40,22 +40,14 @@ public sealed class World : IEnumerable<WorldObject>
     /// <summary>
     /// The amount of objects in this world
     /// </summary>
-    public int ObjectCount
-    {
-        get
-        {
-            if(objects.Any(x => x.Name.Contains("Editor Camera (DO NOT DELETE)")))
-            {
-                return objects.Count - 2;
-            }
-            return objects.Count;
-        }
-    }
+    public int ObjectCount => objects.Count;
     /// <summary>
     /// Gets whether the world has been initialized
     /// </summary>
     public bool Initialized { get; internal set; }
     public int ComponentCount => objects.Sum(x => x.ComponentCount);
+
+    private MultipleParallelBehaviorHelper parallelHelper = new();
 
     /// <summary>
     /// The grid of chunks for this world
@@ -64,34 +56,30 @@ public sealed class World : IEnumerable<WorldObject>
 
     // the list of all objects in this world
     private List<WorldObject> objects = [];
-    public List<WorldObject> Objects
-    {
-        get
-        {
-            return objects.Where(x => x.Name is not "Editor Camera (DO NOT DELETE)" and not "Debug Object (DO NOT DELETE)").ToList();
-        }
-    } 
-    // a list of all objects to be destroyed at the end of the update
+    /// <summary>
+    /// All objects in this world
+    /// </summary>
+    public List<WorldObject> Objects => [.. objects];
+    /// <summary>
+    /// a list of all objects to be destroyed at the end of the update
+    /// </summary>
     private readonly List<WorldObject> ToDestroy = [];
 
     // the total time it took to update and draw the world
     private TimeSpan totalDrawTime = TimeSpan.Zero;
     private TimeSpan totalUpdateTime = TimeSpan.Zero;
 
-    // Used for calculating updates and draws per second
     private float time;
     private int updatesPerSecond;
     private int updates;
     private int drawsPerSecond;
     private int draws;
 
-    ParallelOptions options = new() { MaxDegreeOfParallelism = Environment.ProcessorCount };
-
     bool runOnce = true;
 
-    // Used for rendering the world if there is no camera in the world or the camera index is -1
     private Vector2I lastScreenBounds;
     RenderTarget2D renderTarget;
+    internal bool rebuildParallelHelper;
 
     /// <summary>
     /// Creates a new empty world
@@ -131,10 +119,10 @@ public sealed class World : IEnumerable<WorldObject>
             loader.LoadTemplateultiThread(templatePath);
         else
             loader.LoadTemplate(templatePath);
+
         foreach (var obj in objects)
-        {
             obj.PostTemplateLoad();
-        }
+
         Initialized = true;
     }
     /// <summary>
@@ -273,27 +261,34 @@ public sealed class World : IEnumerable<WorldObject>
             runOnce = false;
         }
 
+        if (rebuildParallelHelper)
+        {
+            parallelHelper.Dispose();
+            parallelHelper = new();
+        }
+
         updates++;
         var sw = Stopwatch.StartNew();
 
-
-        //Parallel.For(0, objects.Count, options, i =>
-        //{
-        //    WorldObject? obj = objects[i];
-
-        //    WorldChunkGrid.UpdateObjectChunkPosition(obj);
-        //    if (obj.IsActive)
-        //        obj.Update();
-        //});
-
         if (!Editor.Opened)
+        {
             for (int i = 0; i < objects.Count; i++)
             {
                 WorldObject? obj = objects[i];
 
                 if (obj.IsActive)
                     obj.Update();
+                if (rebuildParallelHelper)
+                {
+                    parallelHelper += obj.parallelHelper;
+                }
             }
+
+            parallelHelper.Execute();
+
+            if (rebuildParallelHelper)
+                rebuildParallelHelper = false;
+        }
 
         WorldChunkGrid.UpdateObjectChunkPositions(objects);
 
@@ -304,10 +299,15 @@ public sealed class World : IEnumerable<WorldObject>
 
             objects.Remove(obj);
 
-            UpdateCameraIndexes();
 
             WorldChunkGrid.Remove(obj);
         }
+        if(ToDestroy.Count > 0)
+        {
+            UpdateCameraIndexes();
+            rebuildParallelHelper = true;
+        }
+
         ToDestroy.Clear();
 
         sw.Stop();
@@ -519,4 +519,6 @@ public sealed class World : IEnumerable<WorldObject>
     {
         objects.Add(obj);
     }
+
+    internal void RebuildParallelHelper() => rebuildParallelHelper = true;
 }

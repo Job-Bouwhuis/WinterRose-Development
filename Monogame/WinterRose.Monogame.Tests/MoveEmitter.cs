@@ -17,13 +17,13 @@ namespace WinterRose.Monogame.Tests
 
         public int burstEmit = 1000;
 
-        private void Awake()
+        protected override void Awake()
         {
             startPoint = transform.position.Y;
             emitter = FetchComponent<ParticleEmitter>();
         }
 
-        private void Update()
+        protected override void Update()
         {
             time += Time.SinceLastFrame;
             var sin = MathF.Sin(time * frequency);

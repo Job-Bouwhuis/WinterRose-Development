@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
 	<UseWindowsForms>false</UseWindowsForms>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -13,7 +13,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Authors>WinterRose</Authors>
     <Company>SnowyAnomaly</Company>
-    <Version>1.0.332</Version>
+    <Version>1.0.334</Version>
     <PackageId>WinterRose</PackageId>
     <Title>WinterRose</Title>
     <Product>WinterRose</Product>

@@ -1,32 +1,33 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using WinterRose.Monogame;
 using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.Monogame;
 
-public class ModyfiablePlayerMovement : ObjectBehavior
+public class ModifiablePlayerMovement : ObjectBehavior
 {
     [IncludeInTemplateCreation]
-    public int BaseSpeed
+    public float BaseSpeed
     {
-        get => AdditiveSpeedModifier.BaseValue;
-        set => AdditiveSpeedModifier.SetBaseValue(value);
+        get => SpeedModifier.BaseValue;
+        set => SpeedModifier.BaseValue = value;
     }
-    public StaticAdditiveModifier<int> AdditiveSpeedModifier { get; private set; } = 20;
+    public StaticCombinedModifier<float> SpeedModifier { get; private set; } = 20;
 
-    public ModyfiablePlayerMovement(int speed)
+    public ModifiablePlayerMovement(float speed)
     {
         BaseSpeed = speed;
     }
 
-    public ModyfiablePlayerMovement() { }
+    public ModifiablePlayerMovement() { }
 
-    private void Update()
+    protected override void Update()
     {
         // Calculate the target position based on input and transform.up
         Vector2 inputDirection = Input.GetNormalizedWASDInput();
 
         // Move the player towards the target position
-        transform.position += inputDirection * AdditiveSpeedModifier.Value;
+        transform.position += inputDirection * SpeedModifier.Value;
     }
 }
