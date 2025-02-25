@@ -1,7 +1,0 @@
-v = Microsoft.Xna.Framework.Vector2
-
-var castleTex = "Castle"
-
-object player:
-	SpriteRenderer(castleTex)
-end player

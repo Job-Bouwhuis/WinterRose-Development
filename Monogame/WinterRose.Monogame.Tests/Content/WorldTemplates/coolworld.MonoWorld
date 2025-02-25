@@ -1,7 +1,0 @@
-vec = Microsoft.Xna.Framework.Vector2
-Color = Microsoft.Xna.Framework.Color
-
-object blok:
-	SpriteRenderer(50, 50, "#FF0000")
-	TopDownPlayerController
-end blok
