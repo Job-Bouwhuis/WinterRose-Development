@@ -1,0 +1,16 @@
+SpriteRenderer = WinterRose.Monogame.SpriteRenderer
+Sprite = WinterRose.Monogame.Sprite
+Vector2 = Microsoft.Xna.Framework.Vector2
+Single = System.Single
+
+
+
+
+object Path:
+	SpriteRenderer
+	SpriteRenderer.tex = Sprite(1, 1, "FFFFFFFF")
+	SpriteRenderer.origin = Vector2(0.5f, 0.5f)
+	SpriteRenderer.LayerDepth = 0,5f
+end Path
+
+

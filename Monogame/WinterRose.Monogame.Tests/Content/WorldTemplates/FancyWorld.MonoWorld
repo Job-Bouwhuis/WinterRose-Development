@@ -1,0 +1,8 @@
+vec = Microsoft.Xna.Framework.Vector2
+Color = Microsoft.Xna.Framework.Color
+
+object uuuuuuuhh:
+	SpriteRenderer(50, 50, Color.Blue)
+	transform.position = vec(100f, 100f)
+	PlayerMovement(500)
+end uuuuuuuhh

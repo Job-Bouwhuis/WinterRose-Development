@@ -1,0 +1,54 @@
+namespace Test.Movement
+{
+	variables
+	{
+		console;
+		input;
+		globalSpeedMultiplier = 5;
+	}
+
+	class Move
+	{
+		function Update
+		{
+			if input == null
+			{
+			    input = new Input();
+			}
+			if console == null
+			{
+			    console = new Console();
+			}
+
+			vec = new Vector2();
+
+			if input.GetKey("W")
+			{
+			    y = transform.position.y;
+				vec.y = y - 1 * globalSpeedMultiplier;
+			}
+			if input.GetKey("A")
+			{
+				x = transform.position.x;
+				vec.x = x - 1 * globalSpeedMultiplier;
+			}
+			if input.GetKey("D")
+			{
+				x = transform.position.x;
+				vec.x = x + 1 * globalSpeedMultiplier;
+			}
+			if input.GetKey("S")
+			{
+				y = transform.position.y;
+				vec.y = y + 1 * globalSpeedMultiplier;
+			}
+
+			if input.GetKey("E")
+			{
+			    
+			}
+
+			transform.position = vec;
+		}
+	}
+}

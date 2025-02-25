@@ -1,0 +1,7 @@
+Vector2 = Microsoft.Xna.Framework.Vector2
+Color = Microsoft.Xna.Framework.Color
+
+object player:
+	SpriteRenderer(50, 50, "#0000FF")
+	transform.position = Vector2(100f, 100f)
+end player
