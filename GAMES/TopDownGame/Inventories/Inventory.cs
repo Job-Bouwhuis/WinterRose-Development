@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TopDownGame.Inventories;
 
-public class Inventory
+public sealed class Inventory
 {
     
 }

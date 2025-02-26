@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -35,6 +36,18 @@ public abstract class Application : Game, IDisposable
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
         Current = this;
+
+#if DEBUG
+
+        FileInfo fontFile = new("../../../Content/bin/Windows/Font.xnb");
+        if(fontFile.Exists)
+        {
+            if (File.Exists("Content/Font.xnb"))
+                File.Delete("Content/Font.xnb");
+            fontFile.CopyTo("Content/Font.xnb");
+        }
+
+#endif
     }
     private bool initialized = false;
 

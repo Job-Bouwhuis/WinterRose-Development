@@ -14,6 +14,24 @@ namespace WinterRose.Monogame.Weapons;
 public class Weapon : ObjectBehavior
 {
     /// <summary>
+    /// The name of this weapon
+    /// </summary>
+    [field: Show]
+    public string Name { get; set; }
+
+    /// <summary>
+    /// The description of this weapon
+    /// </summary>
+    [field: Hide]
+    public string Description { get; set; }
+
+    /// <summary>
+    /// The rarity of this weapon
+    /// </summary>
+    [field: Show]
+    public Rarity Rarity { get; set; }
+
+    /// <summary>
     /// The fire rate of the weapon (how many bullets per second)
     /// </summary>
     [field: Show]

@@ -40,19 +40,19 @@ internal class Level1 : WorldTemplate
 
         var player = world.CreateObject(new WorldObjectPrefab("Player"));
 
-        //var gun = world.CreateObject(new WorldObjectPrefab("SMG"));
-        //gun.FetchComponent<Weapon>().AvailableFireingMode = WeaponFireingMode.Auto;
-        //gun.FetchComponent<Weapon>().CurrentFiringMode = WeaponFireingMode.Auto;
+        var gun = world.CreateObject(new WorldObjectPrefab("SMG"));
+        gun.FetchComponent<Weapon>().AvailableFireingMode = WeaponFireingMode.Auto;
+        gun.FetchComponent<Weapon>().CurrentFiringMode = WeaponFireingMode.Auto;
 
-        //Mod<Weapon> mod = new("Hard Hitter", "Increases damage of the weapon");
-        //mod.AddAttribute<WeaponDamageMod>();
+        Mod<Weapon> mod = new("Hard Hitter", "Increases damage of the weapon");
+        mod.AddAttribute<WeaponDamageMod>();
 
-        //var container = gun.FetchComponent<Weapon>().ModContainer;
-        //container.TotalModCapacity = 100;
-        //container.AddMod(mod);
+        var container = gun.FetchComponent<Weapon>().ModContainer;
+        container.TotalModCapacity = 100;
+        container.AddMod(mod);
 
-        //gun.transform.parent = player.transform;
-        //gun.transform.position = new();
+        gun.transform.parent = player.transform;
+        gun.transform.position = new();
 
         world.CreateObject<SmoothCameraFollow>("cam", player.transform).Speed = 8;
 
@@ -64,6 +64,10 @@ internal class Level1 : WorldTemplate
         //boxhealth.Armor.BaseArmor = 0.9f;
         box.AttachComponent<DestroyOnDeath>();
         box.AttachComponent<StatusEffector>();
+        box.AddDrawBehavior((obj, batch) =>
+        {
+            batch.DrawString(MonoUtils.DefaultFont, "The quick brown fox jumps over the lazy dog", obj.transform.position - new Vector2(0, 50), Color.White);
+        });
 
         Application.Current.CameraIndex = 0;
     }
