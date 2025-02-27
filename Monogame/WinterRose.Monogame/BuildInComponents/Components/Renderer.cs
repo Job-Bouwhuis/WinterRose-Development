@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using System;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame;
 
@@ -11,10 +12,12 @@ public abstract class Renderer : ObjectComponent
     /// <summary>
     /// Whether the renderer should render its contents
     /// </summary>
+    [IncludeInTemplateCreation, IncludeWithSerialization]
     public bool IsVisible { get; set; } = true;
     /// <summary>
     /// The bounds of this renderer
     /// </summary>
+    [IncludeInTemplateCreation, IncludeWithSerialization]
     public abstract RectangleF Bounds { get; }
 
     /// <summary>

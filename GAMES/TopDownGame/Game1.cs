@@ -1,4 +1,6 @@
-﻿using TopDownGame.Items;
+﻿using Microsoft.Xna.Framework;
+using TopDownGame.Inventories;
+using TopDownGame.Items;
 using TopDownGame.Levels;
 using WinterRose.Monogame;
 using WinterRose.Monogame.Weapons;
@@ -32,4 +34,9 @@ public class Game1 : Application
 
         return world;
     }
+}
+
+public class GenericTest<T>
+{
+    public T data;
 }

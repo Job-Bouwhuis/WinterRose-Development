@@ -8,12 +8,14 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame
 {
     /// <summary>
     /// Defines that te derived class is a component. provides callback methods for when the component is created, enabled, en being destroyed
     /// </summary>
+    [IncludePrivateFields]
     public abstract class ObjectComponent
     {
         /// <summary>
@@ -70,10 +72,13 @@ namespace WinterRose.Monogame
         public World world => Universe.CurrentWorld;
 
         [Show]
+        [ExcludeFromSerialization]
         private TimeSpan awakeTime;
         [Show]
+        [ExcludeFromSerialization]
         private TimeSpan startTime;
         [Show]
+        [ExcludeFromSerialization]
         private TimeSpan closeTime;
         internal WorldObject _owner;
 

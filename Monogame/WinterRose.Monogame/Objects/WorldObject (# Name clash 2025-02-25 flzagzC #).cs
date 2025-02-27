@@ -11,18 +11,20 @@ using WinterRose.Monogame.Internals;
 using WinterRose.Monogame.UI;
 using WinterRose.Monogame.Worlds;
 using WinterRose.Reflection;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame;
 
 /// <summary>
 /// An object that exists within a <see cref="Worlds.World"/>
 /// </summary>
-[DebuggerDisplay("WorldObject: {Name}")]
+[DebuggerDisplay("WorldObject: {Name}"), IncludePrivateFields]
 public class WorldObject
 {
     /// <summary>
     /// The name of this object
     /// </summary>
+    [IncludeWithSerialization]
     public string Name
     {
         get
@@ -55,10 +57,14 @@ public class WorldObject
     private readonly List<Renderer> renderers = new();
     private readonly List<ActiveRenderer> activeRenderers = new();
 
+    [ExcludeFromSerialization]
     internal MultipleParallelBehaviorHelper parallelHelper = new();
 
+    [ExcludeFromSerialization]
     private readonly List<Action<WorldObject>> StartupBehaviors = new();
+    [ExcludeFromSerialization]
     private readonly List<Action<WorldObject>> UpdateBehaviors = new();
+    [ExcludeFromSerialization]
     private readonly List<Action<WorldObject, SpriteBatch>> DrawBehaviors = new();
 
     private string name;
@@ -68,7 +74,7 @@ public class WorldObject
     /// <summary>
     /// A flag that can be used to identify this object. e.g. "Player", "Enemy", "Projectile"
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeInTemplateCreation, IncludeWithSerialization]
     public string Flag { get; set; } = "";
     /// <summary>
     /// The amount of components the object has
@@ -84,13 +90,17 @@ public class WorldObject
     /// <summary>
     /// The index in the list of objects found in <see cref="World.objects"/>
     /// </summary>
+    [ExcludeFromSerialization]
     internal int index = -1;
 
+    [ExcludeFromSerialization]
     private int lastComponentCount = 0;
 
     [Show]
+    [ExcludeFromSerialization]
     private TimeSpan updateTime;
     [Show]
+    [ExcludeFromSerialization]
     private TimeSpan drawTime;
 
 

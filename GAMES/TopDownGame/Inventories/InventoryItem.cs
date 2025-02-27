@@ -7,6 +7,7 @@ using TopDownGame.Items;
 using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Monogame.Weapons;
+using WinterRose.Serialization;
 
 namespace TopDownGame.Inventories;
 

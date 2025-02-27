@@ -274,7 +274,7 @@ namespace WinterRose.Serialization
             List<PropertyInfo> properties = new List<PropertyInfo>();
             foreach (var field in fieldsTemp)
             {
-                if (!field.GetCustomAttributes().Any(x => x.GetType() == typeof(ExcludeFromSerializationAttribute)))
+                if (!field.GetCustomAttributes().Any(x => x.GetType() == typeof(ExcludeFromSerializationAttribute)) && !field.Name.Contains('<'))
                     fields.Add(field);
             }
             foreach (var property in propertiesTemp)
@@ -285,7 +285,8 @@ namespace WinterRose.Serialization
                     break;
                 }
                 if (property.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
-                    properties.Add(property);
+                    if(property.CanWrite) // properties that cant be written to will be ignored always.
+                        properties.Add(property);
             }
             var events = GetAllClassEvents(item, includePrivateFields);
 
@@ -303,6 +304,18 @@ namespace WinterRose.Serialization
                 typeassembly = $"{objectType.Name}--{objectType.Namespace}--{objectType.Assembly.GetName().FullName}";
 
             result.Append($"@{depth}{typeassembly.Base64Encode()}");
+
+            Type[] generics = objectType.GetGenericArguments();
+            if (generics.Length > 0 && !objectType.IsAssignableTo(typeof(IEnumerable)))
+            {
+                result.Append('[');
+                for (int i = 0; i < generics.Length; i++)
+                {
+                    if (i > 0) result.Append(';');
+                    result.Append($"{generics[i].Name}--{generics[i].Namespace}--{generics[i].Assembly.GetName().FullName}".Base64Encode());
+                }
+                result.Append(']');
+            }
 
             if (settings.CircleReferencesEnabled)
             {
@@ -356,8 +369,10 @@ namespace WinterRose.Serialization
                     refCache));
             }
 
-            foreach (EventInfo @event in events)
-                result.Append(SerializeEvent(item, @event, depth, objectType, settings, refCache));
+            // events removed from serialization
+
+            //foreach (EventInfo @event in events)
+            //    result.Append(SerializeEvent(item, @event, depth, objectType, settings, refCache));
 
             return result;
         }
@@ -442,6 +457,10 @@ namespace WinterRose.Serialization
         /// <returns>The object that was deserialized</returns>
         public static dynamic DeserializeField<T>(string value, Type fieldType, int depth, SerializerSettings settings, SerializeReferenceCache refCache)
         {
+            if(typeof(T).Name.Contains("ObjectComponent"))
+            {
+
+            }
             if (value.StartsWith(EMPTYSTRING))
                 return "";
             if (value.StartsWith(NULL))
@@ -530,6 +549,11 @@ namespace WinterRose.Serialization
         public static dynamic DeserializeObject<T>(string data, int depth, Type? overrideT, SerializerSettings settings, SerializeReferenceCache refCache)
         {
             Type objectType = overrideT ?? typeof(T);
+            SerializeAsAttributeINTERNAL? serializeAs = objectType.GetCustomAttribute<SerializeAsAttributeINTERNAL>();
+  
+            if (serializeAs is not null)
+                objectType = serializeAs.Type;
+
             List<string> fields = data.Split($"#{depth}", StringSplitOptions.RemoveEmptyEntries).ToList();
             bool includePrivateFields = false;
 
@@ -564,8 +588,9 @@ namespace WinterRose.Serialization
 
 
             Type type = typeof(T);
-            if (typeof(T).IsAssignableTo(typeof(IEnumerable)))
-                type = typeof(T).GetGenericArguments()[0];
+            if (objectType.IsAssignableTo(typeof(IEnumerable)))
+                if((serializeAs is not null && serializeAs.Type != typeof(IEnumerable)) ^ true)
+                    type = typeof(T).GetGenericArguments()[0];
             ;
             if (RegisteredSerializers.TryGetValue(type, out RegisteredSerializer? serializer))
             {
@@ -605,13 +630,12 @@ namespace WinterRose.Serialization
                 fields.RemoveAt(0);
             }
 
-            TypedReference reference = new TypedReference();
+            TypedReference reference = new();
             if (!objectType.IsClass)
                 reference = __makeref(result);
             if (fields.Count is 0)
                 return result;
 
-            //loop through the fields and set the values
             foreach (var fieldData in fields)
             {
                 object value;

@@ -110,7 +110,7 @@ namespace WinterRose.Serialization.Distributors
             Type typeofT = typeof(T);
 
             Type objType = typeofT;
-            if(objType.IsAssignableTo(typeof(IEnumerable)))
+            if (objType.IsAssignableTo(typeof(IEnumerable)))
             {
                 if (objType.IsArray)
                     objType = objType.GetElementType();
@@ -139,21 +139,20 @@ namespace WinterRose.Serialization.Distributors
             SerializeAsAttributeINTERNAL? serializeAs = type.GetCustomAttribute<SerializeAsAttributeINTERNAL>();
             if (serializeAs is not null)
                 type = serializeAs.Type;
-
             Type itemType;
             try
             {
                 if (typeof(T).IsArray)
                     itemType = type.GetElementType();
-                else
+                else if (typeof(T).IsAssignableTo(typeof(IEnumerable)) || typeof(T).IsAssignableTo(typeof(IList)))
                     itemType = type.GetGenericArguments().First();
             }
             catch
             {
-                itemType = type;
+                
             }
 
-
+            itemType = type;
 
             if (type == WinterUtils.CreateList(itemType).GetType())
             {

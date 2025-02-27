@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.IsolatedStorage;
 using System.Reflection;
 using WinterRose;
 
@@ -112,8 +113,9 @@ namespace WinterRose.Serialization
         /// <returns>The type that was extraced</returns>
         public static Type ExtractType(List<string> data, int depth)
         {
-            if (data[0].Contains("!"))
+            if (data[0].Contains('!'))
                 return typeof(Type);
+
             data[0] = data[0].TrimStart('@');
             string depthString = depth.ToString();
             foreach (char c in depthString)
@@ -122,10 +124,29 @@ namespace WinterRose.Serialization
             int indexOfHook = data[0].IndexOf('<');
             bool circleReferenceEnabled = indexOfHook != -1;
             string? hookString = null;
-            if(circleReferenceEnabled)
+            if (circleReferenceEnabled)
             {
                 hookString = data[0][indexOfHook..(data[0].Length)];
                 data[0] = data[0][0..(indexOfHook)];
+            }
+
+            int genericStart = data[0].IndexOf('[');
+            Type[]? genericTypes = null;
+            if (genericStart != -1)
+            {
+                int genericsEnd = data[0].IndexOf(']');
+                genericStart++;
+
+                string[] genericTypesString = data[0][genericStart..genericsEnd].Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+                data[0] = data[0][0..(genericStart-1)];
+
+                genericTypes = new Type[genericTypesString.Length];
+                for(int i = 0; i < genericTypes.Length; i++)
+                {
+                    string[] typeData = genericTypesString[i].Base64Decode().Split("--");
+                    genericTypes[i] = TypeWorker.FindType(typeData[0], typeData[2], typeData[1]);
+                }
             }
 
             string info = data[0].Trim().TrimStart('\0').TrimEnd('\0').Base64Decode();
@@ -135,13 +156,18 @@ namespace WinterRose.Serialization
 
             string[] typeassembly = info.Split("--", StringSplitOptions.RemoveEmptyEntries);
             if (typeassembly.Length == 1)
-            {
                 return ExtractType(info, depth);
-            }
+
+            Type result;
             if (typeassembly.Length == 3)
-                return TypeWorker.FindType(typeassembly[0], typeassembly[2], typeassembly[1]);
+                result = TypeWorker.FindType(typeassembly[0], typeassembly[2], typeassembly[1]);
             else
-                return TypeWorker.FindType(typeassembly[0], typeassembly[1]);
+                result = TypeWorker.FindType(typeassembly[0], typeassembly[1]);
+
+            if (genericTypes is null)
+                return result;
+
+            return result.MakeGenericType(genericTypes);
         }
         /// <summary>
         /// Extracts the type from the serialzied data
