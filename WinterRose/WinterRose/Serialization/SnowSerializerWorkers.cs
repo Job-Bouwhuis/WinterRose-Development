@@ -215,11 +215,25 @@ namespace WinterRose.Serialization
         /// <returns>A serialized string represetnation of the passed <paramref name="item"/></returns>
         public static StringBuilder SerializeObject<T>(T item, int depth, SerializerSettings settings, SerializeReferenceCache refCache)
         {
-            Type type = typeof(T);
+            SerializeAsAttributeINTERNAL? serializeAs = item.GetType().GetCustomAttribute<SerializeAsAttributeINTERNAL>();
+            Type objectType = typeof(T);
             if (item is IEnumerable)
-                type = typeof(T).GetGenericArguments()[0];
+            {
+                if(serializeAs != null)
+                {
+                    if (serializeAs.Type == typeof(IEnumerable))
+                        objectType = typeof(T).GetGenericArguments()[0];
+                    else
+                        objectType = serializeAs.Type;
+                }
+                else
+                    objectType = typeof(T).GetGenericArguments()[0];
+            }
+            else
+                item.GetType();
+
             ;
-            if (RegisteredSerializers.TryGetValue(type, out RegisteredSerializer? serializer))
+            if (RegisteredSerializers.TryGetValue(objectType, out RegisteredSerializer? serializer))
             {
                 dynamic instance = serializer.GetInstance();
                 return instance.Serialize(item, settings, depth);
@@ -238,8 +252,6 @@ namespace WinterRose.Serialization
                 reader.Read(item);
                 return new(reader.Serialize());
             }
-
-            Type objectType = /*(overrideT is not null) ? overrideT : */item.GetType();
 
             bool includePrivateFields = false;
             if (objectType.CustomAttributes.Any(x => x.AttributeType == typeof(IncludePrivateFieldsAttribute)))
@@ -297,7 +309,11 @@ namespace WinterRose.Serialization
                 bool newItem = refCache.Map(item, out int key);
                 result.Append('<');
                 if (!newItem)
+                {
+                    result.Clear();
+                    result.Append($"@{depth}<");
                     result.Append('!');
+                }
                 result.Append(key).Append('>');
 
                 if (!newItem)
@@ -561,11 +577,12 @@ namespace WinterRose.Serialization
                 includePrivateFields = true;
 
             int key;
-            if (fields[0].Contains('!'))
-            {
-                key = int.Parse(fields[0][4..^1]);
-                return refCache.Get(key);
-            }
+            if (settings.CircleReferencesEnabled)
+                if (fields[0].Contains('!'))
+                {
+                    key = int.Parse(fields[0][4..^1]);
+                    return refCache.Get(key);
+                }
 
             //create a new instance of the object
             dynamic result;
@@ -581,9 +598,12 @@ namespace WinterRose.Serialization
                 throw new DeserializationFailedException("Could not create instance of type " + objectType.FullName);
 
 
-            key = int.Parse(fields[0][3..^1]);
-            refCache.Map(key, ref result);
-            fields.RemoveAt(0);
+            if (settings.CircleReferencesEnabled)
+            {
+                key = int.Parse(fields[0][3..^1]);
+                refCache.Map(key, ref result);
+                fields.RemoveAt(0);
+            }
 
             TypedReference reference = new TypedReference();
             if (!objectType.IsClass)

@@ -7,9 +7,9 @@ namespace WinterRose.Serialization
     /// <summary>
     /// Holds the result of deserializing using the <see cref="SnowSerializer"/>
     /// </summary>
-    public readonly struct DeserializationResult
+    public readonly struct DeserializationResult<T>
     {
-        private readonly dynamic? result;
+        private readonly T? result;
         /// <summary>
         /// Gets whether the deserialization produced a value or not. if it did not produce a value, the deserialization failed
         /// </summary>
@@ -24,7 +24,7 @@ namespace WinterRose.Serialization
         /// <summary>
         /// Gets the result for this deserialization operation. If the deserialization failed, this will be null
         /// </summary>
-        public dynamic Result
+        public T Result
         {
             get
             {
@@ -44,6 +44,8 @@ namespace WinterRose.Serialization
             }
         }
 
+        public static implicit operator T(DeserializationResult<T> result) => result.Result;
+
         /// <summary>
         /// Useless to use on your own.
         /// </summary>
@@ -53,10 +55,10 @@ namespace WinterRose.Serialization
         }
 
         /// <summary>
-        /// Creates a new <see cref="DeserializationResult"/> with the given result
+        /// Creates a new <see cref="DeserializationResult{T}"/> with the given result
         /// </summary>
         /// <param name="result"></param>
-        public DeserializationResult(dynamic result)
+        public DeserializationResult(T result)
         {
             this.result = result;
         }

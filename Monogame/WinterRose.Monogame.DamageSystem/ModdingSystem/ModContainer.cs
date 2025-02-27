@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.ModdingSystem;
 
@@ -10,6 +11,7 @@ namespace WinterRose.Monogame.ModdingSystem;
 /// A container for mods for an object
 /// </summary>
 /// <typeparam name="T">The modifiable type</typeparam>
+[IncludePrivateFields]
 public class ModContainer<T> where T : class
 {
     [Show]
@@ -18,6 +20,7 @@ public class ModContainer<T> where T : class
     /// <summary>
     /// The total capacity of mods this container can hold
     /// </summary>
+    [IncludeWithSerialization]
     public int TotalModCapacity { get; set; }
 
     /// <summary>

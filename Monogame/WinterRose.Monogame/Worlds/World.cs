@@ -9,17 +9,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using WinterRose.Monogame.EditorMode;
 using WinterRose.Monogame.UI;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.Worlds;
 
 /// <summary>
 /// A world where objects can be placed, updated, and rendered using various <see cref="ObjectComponent"/> or <see cref="ObjectBehavior"/>
 /// </summary>
+[SerializeAs<World>, IncludePrivateFields]
 public sealed class World : IEnumerable<WorldObject>
 {
     /// <summary>
     /// The name of the world
     /// </summary>
+    [IncludeWithSerialization]
     public string Name { get; set; }
     /// <summary>
     /// The amount of times per second the world is updated
@@ -47,6 +50,7 @@ public sealed class World : IEnumerable<WorldObject>
     public bool Initialized { get; internal set; }
     public int ComponentCount => objects.Sum(x => x.ComponentCount);
 
+    [ExcludeFromSerialization]
     private MultipleParallelBehaviorHelper parallelHelper = new();
 
     /// <summary>
@@ -69,16 +73,25 @@ public sealed class World : IEnumerable<WorldObject>
     private TimeSpan totalDrawTime = TimeSpan.Zero;
     private TimeSpan totalUpdateTime = TimeSpan.Zero;
 
+    [ExcludeFromSerialization]
     private float time;
+    [ExcludeFromSerialization]
     private int updatesPerSecond;
+    [ExcludeFromSerialization]
     private int updates;
+    [ExcludeFromSerialization]
     private int drawsPerSecond;
+    [ExcludeFromSerialization]
     private int draws;
 
+    [ExcludeFromSerialization]
     bool runOnce = true;
 
+    [ExcludeFromSerialization]
     private Vector2I lastScreenBounds;
+    [ExcludeFromSerialization]
     RenderTarget2D renderTarget;
+    [ExcludeFromSerialization]
     internal bool rebuildParallelHelper;
 
     /// <summary>

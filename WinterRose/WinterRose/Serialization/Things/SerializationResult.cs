@@ -27,6 +27,9 @@ namespace WinterRose.Serialization
         /// </summary>
         public SerializationResult() => throw new InvalidOperationException("This struct should not be constructed by a end user.");
         internal SerializationResult(StringBuilder? result) => this.result = result;
+
+        public static implicit operator string(SerializationResult result) => result.Result;
+
         /// <summary>
         /// Gets the result of the serialization as a string
         /// </summary>

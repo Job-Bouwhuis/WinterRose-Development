@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame;
 
@@ -14,6 +15,7 @@ public abstract class Asset
     /// <summary>
     /// The name of the asset.
     /// </summary>
+    [IncludeWithSerialization]
     public string Name { get; internal set; }
     /// <summary>
     /// Creates a new <see cref="Asset"/> with the specified name.

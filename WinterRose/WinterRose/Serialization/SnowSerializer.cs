@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
@@ -91,11 +92,11 @@ namespace WinterRose.Serialization
         /// <typeparam name="T"></typeparam>
         /// <param name="item"></param>
         /// <returns></returns>
-        public static DeserializationResult Deserialize<T>(string item, SerializerSettings? settings = null)
+        public static DeserializationResult<T> Deserialize<T>(string item, SerializerSettings? settings = null)
         {
             settings ??= DefaultSettings;
             SerializeReferenceCache refCache = new();
-            dynamic? d = null;
+            T resultItem;
             try
             {
                 item = item.Base64Decode();
@@ -103,9 +104,9 @@ namespace WinterRose.Serialization
             catch { }
             finally
             {
-                d = SnowSerializerDistributors.DistributeDeserializationData<T>(item, settings, refCache);
+                resultItem = (T)SnowSerializerDistributors.DistributeDeserializationData<T>(item, settings, refCache);
             }
-            var result = new DeserializationResult(d);
+            var result = new DeserializationResult<T>(resultItem);
 
             return result;
         }

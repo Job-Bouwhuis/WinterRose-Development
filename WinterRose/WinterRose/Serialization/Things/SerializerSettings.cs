@@ -22,12 +22,12 @@ namespace WinterRose.Serialization
         /// States that the serialzier should include the type of the object in the serialzied string<br></br>
         /// This is used to deserialize the object if it uses inheritance and the serializer is requested to deserialzie to a base class
         /// </summary>
-        public bool IncludeType { get; set; }
+        public bool IncludeType { get; set; } = false;
         /// <summary>
         /// States that the serializer should ignore when a field is not found in the class. This is useful when you want to deserialize an older version of a class that has fields that are no longer used<br></br>
         /// Note that the data for the field will not be deserialized and will be lost
         /// </summary>
-        public bool IgnoreNotFoundFields { get; set; }
+        public bool IgnoreNotFoundFields { get; set; } = false;
 
         /// <summary>
         /// Tells the serializer to stress the CPU as much as it possibly can. This can hurt the speed of the operation on lower end machines
@@ -49,15 +49,12 @@ namespace WinterRose.Serialization
         /// <summary>
         /// whether circle references are enabled, eg if object a has a field for object b, and object b has a reference to object a
         /// </summary>
-        public bool CircleReferencesEnabled { get; set; } = true;
+        public bool CircleReferencesEnabled { get; set; } = false;
 
         /// <summary>
         /// Creates a new instance of <see cref="SerializerSettings"/> with the default settings. Automatically detects the number of cores on the machine and sets the number of threads to use to that number.
         /// </summary>
-        public SerializerSettings()
-        {
-            TheadsToUse = Environment.ProcessorCount;
-        }
+        public SerializerSettings() => TheadsToUse = Environment.ProcessorCount;
 
         public static SerializerSettings CreateFrom(SerializerSettings settings, Action<SerializerSettings>? fineTuneSettings = null)
         {
@@ -68,6 +65,8 @@ namespace WinterRose.Serialization
                 LudicrusMode = settings.LudicrusMode,
                 ReportEvery = settings.ReportEvery,
                 ProgressReporter = settings.ProgressReporter,
+                AssumeObjectIsAnonymous = settings.AssumeObjectIsAnonymous,
+                CircleReferencesEnabled = settings.CircleReferencesEnabled
             };
 
             if (fineTuneSettings is not null)

@@ -112,12 +112,26 @@ namespace WinterRose.Serialization
         /// <returns>The type that was extraced</returns>
         public static Type ExtractType(List<string> data, int depth)
         {
+            if (data[0].Contains("!"))
+                return typeof(Type);
             data[0] = data[0].TrimStart('@');
             string depthString = depth.ToString();
             foreach (char c in depthString)
                 data[0] = data[0].TrimStart(c);
+
+            int indexOfHook = data[0].IndexOf('<');
+            bool circleReferenceEnabled = indexOfHook != -1;
+            string? hookString = null;
+            if(circleReferenceEnabled)
+            {
+                hookString = data[0][indexOfHook..(data[0].Length)];
+                data[0] = data[0][0..(indexOfHook)];
+            }
+
             string info = data[0].Trim().TrimStart('\0').TrimEnd('\0').Base64Decode();
             data.RemoveAt(0);
+            if (circleReferenceEnabled)
+                data.Insert(0, $"@{depth}{hookString}");
 
             string[] typeassembly = info.Split("--", StringSplitOptions.RemoveEmptyEntries);
             if (typeassembly.Length == 1)

@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using System.Linq;
 using System;
 using WinterRose.Monogame.ModdingSystem;
+using WinterRose.Serialization;
 
 #nullable enable
 
@@ -10,7 +11,7 @@ namespace WinterRose.Monogame.Weapons;
 /// <summary>
 /// A weapon that can shoot projectiles.
 /// </summary>
-[RequireComponent<Magazine>(AutoAdd = true)]
+[RequireComponent<Magazine>(AutoAdd = true), IncludeAllProperties]
 public class Weapon : ObjectBehavior
 {
     /// <summary>

@@ -17,4 +17,8 @@ internal class WeaponItem : InventoryItem<Weapon>
     public override string Description => Item.Description;
 
     public override Rarity Rarity => Item.Rarity;
+
+    public override int StackLimit => 1;
+
+    protected override void ConfigureClone(InventoryItem<Weapon> clone) { } // no configuration needed. the base clone is enough
 }

@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Collections;
 using System.Threading.Tasks;
+using WinterRose.Serialization;
 
 #nullable enable
 
@@ -26,43 +27,43 @@ namespace WinterRose.Monogame.Weapons
         /// <summary>
         /// The maximum amount of bullets that can be stored in the magazine.
         /// </summary>
-        [IncludeInTemplateCreation]
+        [IncludeInTemplateCreation, IncludeWithSerialization]
         public int MaxBullets { get; set; } = 30;
 
         /// <summary>
         /// The current amount of bullets in the magazine.
         /// </summary>
-        [IncludeInTemplateCreation]
+        [IncludeInTemplateCreation, IncludeWithSerialization]
         public int CurrentBullets { get; set; } = 30;
 
         /// <summary>
         /// The amount of pool of projectiles left when trying to reload
         /// </summary>
-        [IncludeInTemplateCreation]
+        [IncludeInTemplateCreation, IncludeWithSerialization]
         public int PoolOfProjectiles { get; set; } = 60;
 
         /// <summary>
         /// The time it takes to reload the magazine in seconds
         /// </summary>
-        [IncludeInTemplateCreation]
+        [IncludeInTemplateCreation, IncludeWithSerialization]
         public float ReloadTime { get; set; } = 2.0f;
 
         /// <summary>
         /// The amount of bullets that are fired per shot.
         /// </summary>
-        [IncludeInTemplateCreation]
+        [IncludeInTemplateCreation, IncludeWithSerialization]
         public int BulletsPerShot { get; set; } = 1;
 
         /// <summary>
         /// The amount of bullets that are consumed per shot.
         /// </summary>
-        [IncludeInTemplateCreation]
+        [IncludeInTemplateCreation, IncludeWithSerialization]
         public int BulletsConsumedPerShot { get; set; } = 1;
 
         /// <summary>
         /// The bullet this magazine shoots
         /// </summary>
-        [IgnoreInTemplateCreation, Show]
+        [IgnoreInTemplateCreation, Show, IncludeWithSerialization]
         public WorldObjectPrefab? BulletPrefab 
         { 
             get => bulletPrefab;
@@ -85,7 +86,6 @@ namespace WinterRose.Monogame.Weapons
         [IgnoreInTemplateCreation]
         public bool IsReloading => isReloading;
 
-
         [Show, IgnoreInTemplateCreation]
         public Projectile Bullet => bullet ??= BulletPrefab.LoadedObject.FetchComponent<Projectile>();
         [Hide, IgnoreInTemplateCreation]
@@ -98,7 +98,7 @@ namespace WinterRose.Monogame.Weapons
         [IgnoreInTemplateCreation]
         private int bulletsSpawned = 0;
 
-        protected void Awake()
+        protected override void Awake()
         {
             if (BulletPrefab == null)
             {
@@ -163,7 +163,7 @@ namespace WinterRose.Monogame.Weapons
             isReloading = false;
         }
 
-        private void Close()
+        protected override void Close()
         {
             isReloading = false;
         }

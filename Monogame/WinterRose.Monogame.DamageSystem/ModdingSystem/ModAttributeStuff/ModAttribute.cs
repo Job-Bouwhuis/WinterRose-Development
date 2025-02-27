@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.ModdingSystem;
 public abstract class ModAttribute<T>
@@ -15,6 +16,7 @@ public abstract class ModAttribute<T>
     /// <summary>
     /// What it does expressed in text. eg: "+50% Damage"
     /// </summary>
+    [IncludeWithSerialization]
     public abstract string EffectString { get; }
     /// <summary>
     /// The type of moddable this attribute is valid on

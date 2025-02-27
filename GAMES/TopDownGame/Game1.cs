@@ -1,6 +1,9 @@
-﻿using TopDownGame.Levels;
+﻿using TopDownGame.Items;
+using TopDownGame.Levels;
 using WinterRose.Monogame;
+using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Serialization;
 
 namespace TopDownGame;
 
@@ -16,6 +19,17 @@ public class Game1 : Application
         else
             MonoUtils.WindowResolution = new(1280, 720);
 
-        return World.FromTemplate<Level1>();
+        World world = World.FromTemplate<Level1>();
+
+        SerializerSettings settings = new()
+        {
+            IncludeType = true,
+            CircleReferencesEnabled = true
+        };
+
+        string serialied = SnowSerializer.Serialize(world, settings);
+        World deserialized = SnowSerializer.Deserialize<World>(serialied, settings).Result;
+
+        return world;
     }
 }
