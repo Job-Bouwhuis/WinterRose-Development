@@ -43,8 +43,6 @@ public static class AssetDatabase
         if (Assets.ContainsKey(data.Name))
             throw new Exception($"Asset {data.Name} already declared");
 
-        data.File = ContentFolder.GetFile(data.Name);
-
         data.Save();
 
         Assets.Add(data.Name, data);

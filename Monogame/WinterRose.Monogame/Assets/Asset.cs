@@ -27,17 +27,25 @@ public abstract class Asset
     {
         Name = name;
 
-        if(AssetDatabase.Assets.ContainsKey(name))
-            throw new Exception($"Asset {name} already declared");
-
-        File = AssetDatabase.ContentFolder.GetFile(name);
+        if (string.IsNullOrWhiteSpace(name))
+            return;
     }
 
     /// <summary>
     /// The file that is associated with this asset.
     /// </summary>
     [Hide]
-    public AssetDatabaseFile File { get; internal set; }
+    public AssetDatabaseFile File
+    {
+        get
+        {
+            if (file != null)
+                return file;
+
+             return file = AssetDatabase.ContentFolder.GetFile(Name);
+        }
+    }
+    private AssetDatabaseFile file;
 
     /// <summary>
     /// When overriden, loads the asset from the file.

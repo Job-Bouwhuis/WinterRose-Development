@@ -60,12 +60,14 @@ namespace WinterRose.Serialization
                         continue;
                     }
                     RegisteredSerializers.Add(TypeWorker.FindType(attribute.WorkingType)!, new RegisteredSerializer(serializer));
-                }            }
+                }            
+            }
 
-            serializers = TypeWorker.FindTypesWithInterface<CustomSerializer>();
+            serializers = TypeWorker.FindTypesWithBase<CustomSerializer>();
             foreach(Type serializer in serializers)
             {
                 CustomSerializer instance = (CustomSerializer)ActivatorExtra.CreateInstance(serializer);
+                if (instance != null)
                 CustomSerializers.Add(instance.SerializerType, instance);
             }
         }

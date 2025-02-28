@@ -15,7 +15,6 @@ namespace WinterRose.Monogame
     /// <summary>
     /// Defines that te derived class is a component. provides callback methods for when the component is created, enabled, en being destroyed
     /// </summary>
-    [IncludePrivateFields]
     public abstract class ObjectComponent
     {
         /// <summary>
@@ -34,7 +33,11 @@ namespace WinterRose.Monogame
         /// The <see cref="WorldObject"/> on which this component is attached
         /// </summary>
         [Hide]
-        public WorldObject owner => _owner;
+        public WorldObject owner
+        {
+            get => _owner;
+            private set => _owner = value;
+        }
         /// <summary>
         /// The <see cref="Transform"/> of <see cref="owner"/>
         /// </summary>
@@ -43,6 +46,7 @@ namespace WinterRose.Monogame
         /// <summary>
         /// Whether this component is enabled or not
         /// </summary>
+        [IncludeWithSerialization]
         public bool Enabled { get; set; } = true;
 
         /// <summary>
@@ -72,18 +76,26 @@ namespace WinterRose.Monogame
         public World world => Universe.CurrentWorld;
 
         [Show]
-        [ExcludeFromSerialization]
         private TimeSpan awakeTime;
         [Show]
-        [ExcludeFromSerialization]
         private TimeSpan startTime;
         [Show]
-        [ExcludeFromSerialization]
         private TimeSpan closeTime;
+
+        [IncludeWithSerialization]
         internal WorldObject _owner;
 
+        /// <summary>
+        /// Called when the object is enabled
+        /// </summary>
         protected virtual void Awake() { }
+        /// <summary>
+        /// Called at the start of the scene
+        /// </summary>
         protected virtual void Start() { }
+        /// <summary>
+        /// Called when the object gets destroyed
+        /// </summary>
         protected virtual void Close() { }
 
         internal void CallAwake()

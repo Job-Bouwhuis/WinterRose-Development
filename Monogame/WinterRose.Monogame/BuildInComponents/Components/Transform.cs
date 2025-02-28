@@ -13,7 +13,7 @@ namespace WinterRose.Monogame
     /// <summary>
     /// The transform of a <see cref="WorldObject"/>
     /// </summary>
-    [ComponentLimit, SerializeAs<Transform>]
+    [ComponentLimit, IncludePrivateFields, SerializeAs<Transform>]
     public class Transform : ObjectComponent
     {
         private Transform() { }
@@ -122,6 +122,9 @@ namespace WinterRose.Monogame
                 Universe.RequestRender = true;
             }
         }
+        /// <summary>
+        /// The rotation in radians instead of degrees
+        /// </summary>
         public float rotationRad
         {
             get { return MathS.ToRadians(rotation); }

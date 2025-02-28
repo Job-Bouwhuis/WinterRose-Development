@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Encryption;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame;
 
@@ -14,6 +15,10 @@ namespace WinterRose.Monogame;
 /// </summary>
 public sealed class WorldObjectPrefab : Prefab
 {
+    /// <summary>
+    /// For serializing
+    /// </summary>
+    private WorldObjectPrefab() : base("") { }
     public WorldObjectPrefab(string name) : base(name) { }
 
     public WorldObjectPrefab(string name, WorldObject obj, bool immediateAutoSave = true) : this(name)
@@ -90,4 +95,19 @@ public sealed class WorldObjectPrefab : Prefab
     }
 
     public static implicit operator WorldObject(WorldObjectPrefab prefab) => prefab.LoadedObject;
+}
+
+public class WorldObjectPrefabSerializer : CustomSerializer<WorldObjectPrefab>
+{
+    public override object Deserialize(string data, int depth)
+    {
+        var fab = new WorldObjectPrefab(data);
+        return fab;
+    }
+    public override string Serialize(object obj, int depth)
+    {
+        WorldObjectPrefab fab = (WorldObjectPrefab)obj;
+        fab.Save();
+        return fab.Name;
+    }
 }

@@ -150,6 +150,10 @@ namespace WinterRose.Serialization
             }
 
             string info = data[0].Trim().TrimStart('\0').TrimEnd('\0').Base64Decode();
+            if (info.Contains("ObjectBehavior"))
+            {
+
+            }
             data.RemoveAt(0);
             if (circleReferenceEnabled)
                 data.Insert(0, $"@{depth}{hookString}");

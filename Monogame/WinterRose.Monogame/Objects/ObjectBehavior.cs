@@ -37,6 +37,9 @@ namespace WinterRose.Monogame
             updateTime = sw.Elapsed;
         }
 
+        /// <summary>
+        /// Called each frame
+        /// </summary>
         protected abstract void Update();
 
         internal override ObjectComponent Clone(WorldObject newOwner)

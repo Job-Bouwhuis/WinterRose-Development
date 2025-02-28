@@ -26,13 +26,13 @@ public class Game1 : Application
         SerializerSettings settings = new()
         {
             IncludeType = true,
-            CircleReferencesEnabled = true
+            CircleReferencesEnabled = true,
         };
 
-        string serialied = SnowSerializer.Serialize(world, settings);
+        string serialied = SnowSerializer.Serialize(world, settings);   
         World deserialized = SnowSerializer.Deserialize<World>(serialied, settings).Result;
 
-        return world;
+        return deserialized;
     }
 }
 

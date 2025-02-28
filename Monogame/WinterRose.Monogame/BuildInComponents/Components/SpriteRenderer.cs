@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame;
 
@@ -12,11 +13,13 @@ public sealed class SpriteRenderer : Renderer
     /// <summary>
     /// Gets the sprite selected for this SpriteRenderer
     /// </summary>
+    [IncludeWithSerialization]
     public Sprite Sprite { get => tex; set => tex = value; }
 
     /// <summary>
     /// The draw origin of this sprite, values between 0 and 1 are considered inside the bounds of the sprite. values outside 0 and 1 are accepted
     /// </summary>
+    [IncludeWithSerialization]
     public Vector2 Origin
     {
         get => origin;
@@ -55,14 +58,18 @@ public sealed class SpriteRenderer : Renderer
     /// <summary>
     /// The <see cref="SpriteEffects"/> used when rendering the sprite
     /// </summary>
+    [IncludeWithSerialization]
     public SpriteEffects Effects { get; set; } = SpriteEffects.None;
     /// <summary>
     /// Layerdepth, used to determain what render element should be drawn in front of another
     /// </summary>
-    [IncludeInTemplateCreation] public float LayerDepth { get; set; } = 0.5f;
+    [IncludeInTemplateCreation]
+    [IncludeWithSerialization] 
+    public float LayerDepth { get; set; } = 0.5f;
     /// <summary>
     /// The tint color of the sprite
     /// </summary>
+    [IncludeWithSerialization]
     public Color Tint { get; set; } = Color.White;
 
     private Sprite tex;

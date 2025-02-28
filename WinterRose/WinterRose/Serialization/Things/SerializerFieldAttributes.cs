@@ -17,13 +17,13 @@ namespace WinterRose.Serialization
     /// <summary>
     /// Makes sure that when serializing or deserializing this field will always be ignore
     /// </summary>
-    [AttributeUsage(AttributeTargets.Field)]
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class ExcludeFromSerializationAttribute : Attribute { }
 
     /// <summary>
     /// Tells the serializer to include this property when handling its declaring class
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class IncludeWithSerializationAttribute : Attribute { }
 
     /// <summary>

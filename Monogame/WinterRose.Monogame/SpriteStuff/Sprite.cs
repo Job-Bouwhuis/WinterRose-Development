@@ -122,13 +122,10 @@ public class Sprite
             {
                 return Path.GetFileNameWithoutExtension(x.Name) == targetName;
             });
-            if(file is null)
-            {
-                file = fileInfos.FirstOrDefault(x =>
+            file ??= fileInfos.FirstOrDefault(x =>
                 {
                     return Path.GetFileName(x.Name) == targetName;
                 });
-            }
 
             if (file is not null && file.Exists)
             {
@@ -155,7 +152,6 @@ public class Sprite
             }
             catch
             {
-                throw new Exception("Could not load texture from the data provided. \n" + data);
             }
         }
     }

@@ -194,7 +194,7 @@ namespace WinterRose.Serialization
                     else
                     {
                         StringBuilder serialized = SerializeObject(item, depth + 1, settings, refCache);
-                        if (serialized.Length > 10)
+                        if (serialized.Length > 2)
                         {
                             result.Append($"^{depth}");
                             result.Append(serialized);
@@ -230,9 +230,8 @@ namespace WinterRose.Serialization
                     objectType = typeof(T).GetGenericArguments()[0];
             }
             else
-                item.GetType();
+                objectType = item.GetType();
 
-            ;
             if (RegisteredSerializers.TryGetValue(objectType, out RegisteredSerializer? serializer))
             {
                 dynamic instance = serializer.GetInstance();
@@ -267,15 +266,21 @@ namespace WinterRose.Serialization
                 return result;
             }
 
-            var fieldsTemp = GetAllClassFields(item, includePrivateFields);
-            var propertiesTemp = GetAllClassProperties(item, includePrivateFields);
+            var fieldsTemp = GetAllClassFields(item, true);
+            var propertiesTemp = GetAllClassProperties(item, true);
 
             List<FieldInfo> fields = new List<FieldInfo>();
             List<PropertyInfo> properties = new List<PropertyInfo>();
             foreach (var field in fieldsTemp)
             {
+                if(field.IsPrivate && field.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
+                {
+                    fields.Add(field);
+                    continue;
+                }
                 if (!field.GetCustomAttributes().Any(x => x.GetType() == typeof(ExcludeFromSerializationAttribute)) && !field.Name.Contains('<'))
                     fields.Add(field);
+
             }
             foreach (var property in propertiesTemp)
             {
@@ -285,7 +290,8 @@ namespace WinterRose.Serialization
                     break;
                 }
                 if (property.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
-                    if(property.CanWrite) // properties that cant be written to will be ignored always.
+                    if(property.CanWrite // properties that cant be written to will be ignored always.
+                        && !property.GetCustomAttributes().Any(x => x.GetType() == typeof(ExcludeFromSerializationAttribute))) 
                         properties.Add(property);
             }
             var events = GetAllClassEvents(item, includePrivateFields);
@@ -302,6 +308,11 @@ namespace WinterRose.Serialization
             }
             else
                 typeassembly = $"{objectType.Name}--{objectType.Namespace}--{objectType.Assembly.GetName().FullName}";
+
+            if(typeassembly.Contains("ObjectComponent"))
+            {
+
+            }
 
             result.Append($"@{depth}{typeassembly.Base64Encode()}");
 
@@ -457,10 +468,6 @@ namespace WinterRose.Serialization
         /// <returns>The object that was deserialized</returns>
         public static dynamic DeserializeField<T>(string value, Type fieldType, int depth, SerializerSettings settings, SerializeReferenceCache refCache)
         {
-            if(typeof(T).Name.Contains("ObjectComponent"))
-            {
-
-            }
             if (value.StartsWith(EMPTYSTRING))
                 return "";
             if (value.StartsWith(NULL))
@@ -525,6 +532,7 @@ namespace WinterRose.Serialization
         /// <returns>The deserialized list</returns>
         public static dynamic DeserializeList<T>(string data, int depth, Type listType, IList buffer, SerializerSettings settings, SerializeReferenceCache refCache)
         {
+            Type t = typeof(T);
             //split the data into individual items
             string[] values = data.Split($"^{depth}", StringSplitOptions.RemoveEmptyEntries);
 
@@ -579,6 +587,7 @@ namespace WinterRose.Serialization
                     Type extracted = ExtractType(fields, depth);
                     if (objectType != extracted && extracted != null)
                         objectType = extracted;
+
                 }
             }
             else if (fields[0] == $"@{depth}")
