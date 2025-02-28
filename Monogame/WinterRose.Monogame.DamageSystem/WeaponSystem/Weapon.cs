@@ -18,43 +18,51 @@ public class Weapon : ObjectBehavior
     /// The name of this weapon
     /// </summary>
     [field: Show]
+    [IncludeWithSerialization]
     public string Name { get; set; }
 
     /// <summary>
     /// The description of this weapon
     /// </summary>
     [field: Hide]
+    [IncludeWithSerialization]
     public string Description { get; set; }
 
     /// <summary>
     /// The rarity of this weapon
     /// </summary>
     [field: Show]
+    [IncludeWithSerialization]
     public Rarity Rarity { get; set; }
 
     /// <summary>
     /// The fire rate of the weapon (how many bullets per second)
     /// </summary>
     [field: Show]
+    [IncludeWithSerialization]
     public float FireRate { get; set; } = 10.0f;
 
     /// <summary>
     /// The transform to take the rotation from when creating a new bullet. when null uses the rotation value of the owner of this component
     /// </summary>
+    [IncludeWithSerialization]
     public Transform? RotationInheritor = null;
 
     /// <summary>
     /// The transform to take the position from when creating a new bullet. when null uses the position of the owner of this component
     /// </summary>
+    [IncludeWithSerialization]
     public Transform? PositionInheritor = null;
 
     /// <summary>
     /// The type of fire mode the weapon has
     /// </summary>
+    [IncludeWithSerialization]
     public WeaponFireingMode AvailableFireingMode { get; set; } = WeaponFireingMode.Single;
     /// <summary>
     /// The current fire mode of the weapon
     /// </summary>
+    [IncludeWithSerialization]
     public WeaponFireingMode CurrentFiringMode
     {
         get => currentFireMode;
@@ -65,16 +73,18 @@ public class Weapon : ObjectBehavior
             else
                 throw new Exception("Weapon cant have this firing mode: " + value.ToString());
         }
-    } 
+    }
 
     /// <summary>
     /// The amount of times the gun fires on burst mode
     /// </summary>
+    [IncludeWithSerialization]
     public int BurstAmount { get; set; } = 3;
 
     /// <summary>
     /// The magazine of the weapon
     /// </summary>
+    [IncludeWithSerialization]
     public Magazine Magazine { get; private set; }
 
     [Show]
@@ -90,6 +100,7 @@ public class Weapon : ObjectBehavior
     WeaponFireingMode currentFireMode = WeaponFireingMode.Single;
 
     [Show]
+    [IncludeWithSerialization]
     public ModContainer<Weapon> ModContainer { get; } = new();
 
     protected override void Awake()

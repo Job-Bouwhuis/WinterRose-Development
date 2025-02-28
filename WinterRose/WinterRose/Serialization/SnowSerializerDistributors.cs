@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -41,9 +42,11 @@ namespace WinterRose.Serialization.Distributors
                 foreach (dynamic i in enumerable)
                     list.Add(i);
 
-                return (StringBuilder)typeof(SnowSerializerDistributors).GetMethod(nameof(DistributeListSerialization), 1, [typeof(IList), typeof(SerializerSettings)])!
+                return (StringBuilder)typeof(SnowSerializerDistributors).GetMethod(nameof(DistributeListSerialization),
+                    1,
+                    [typeof(IList), typeof(SerializerSettings), typeof(SerializeReferenceCache)])!
                     .MakeGenericMethod(itemType)
-                    .Invoke(null, [list, settings])!;
+                    .Invoke(null, [list, settings, refCache])!;
             }
 
             return SnowSerializerWorkers.SerializeObject(item, 0, settings, refCache);
@@ -139,26 +142,26 @@ namespace WinterRose.Serialization.Distributors
             SerializeAsAttributeINTERNAL? serializeAs = type.GetCustomAttribute<SerializeAsAttributeINTERNAL>();
             if (serializeAs is not null)
                 type = serializeAs.Type;
-            Type itemType;
-            try
+            Type itemType = typeof(object);
+
+            if (typeof(T).IsArray)
+                itemType = type.GetElementType();
+            else
             {
-                if (typeof(T).IsArray)
-                    itemType = type.GetElementType();
+                if (serializeAs is not null && (serializeAs.Type.IsAssignableTo(typeof(IEnumerable)) || serializeAs.Type.IsAssignableTo(typeof(IList))))
+                    itemType = type;
                 else if (typeof(T).IsAssignableTo(typeof(IEnumerable)) || typeof(T).IsAssignableTo(typeof(IList)))
                     itemType = type.GetGenericArguments().First();
-            }
-            catch
-            {
-                
+                else
+                    itemType = type;
             }
 
-            itemType = type;
 
             if (type == WinterUtils.CreateList(itemType).GetType())
             {
-                return typeof(SnowSerializerDistributors).GetMethod(nameof(DistributeDeserializationListData), 1, [typeof(string), typeof(SerializerSettings)])!
+                return typeof(SnowSerializerDistributors).GetMethod(nameof(DistributeDeserializationListData), 1, [typeof(string), typeof(SerializerSettings), typeof(SerializeReferenceCache)])!
                     .MakeGenericMethod(itemType)
-                    .Invoke(null, [data, settings])!;
+                    .Invoke(null, [data, settings, refCache])!;
                 //return DistributeDeserializationListData<T>(data, settings);
             }
 

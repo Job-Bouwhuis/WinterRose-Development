@@ -31,6 +31,7 @@ public abstract class InventoryItem<T> : IInventoryProperties
     /// <summary>
     /// The storage of what this item carries.
     /// </summary>
+    [IncludeWithSerialization]
     public abstract T Item { get; set; }
 
     /// <summary>
