@@ -129,4 +129,6 @@ public sealed class SpriteRenderer : Renderer
     {
         return new(Origin.X * tex.Width, Origin.Y * tex.Height);
     }
+
+    public void destroyImmediately() => owner.DestroyImmediately();
 }

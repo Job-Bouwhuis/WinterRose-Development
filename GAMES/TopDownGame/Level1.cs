@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using SharpDX.Direct3D9;
-using System.Diagnostics;
 using System.Linq.Expressions;
 using TopDownGame.Player;
 using WinterRose;
@@ -33,14 +32,18 @@ internal class Level1 : WorldTemplate
         _ = new Vitality().Equals(this);
         _ = new WorldObject().Equals(this);
 
-        if (!AssetDatabase.AssetExists("Player"))
-            CreatePrefabs(world);
-
         world.Name = "Level 1";
 
-        var player = world.CreateObject(new WorldObjectPrefab("Player"));
+        var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
+        player.AttachComponent<ModifiablePlayerMovement>(5);
+        player.AttachComponent<PlayerSprint>();
+        var effector = player.AttachComponent<StatusEffector>();
+        player.AttachComponent<Dash>();
+        var vitals = player.AttachComponent<Vitality>();
+        vitals.Health.MaxHealth = 2500;
+        vitals.Armor.BaseArmor = 0.97f;
 
-        var gun = world.CreateObject(new WorldObjectPrefab("SMG"));
+        var gun = CreateSMG(world).owner;
         gun.FetchComponent<Weapon>().AvailableFireingMode = WeaponFireingMode.Auto;
         gun.FetchComponent<Weapon>().CurrentFiringMode = WeaponFireingMode.Auto;
 
@@ -66,108 +69,91 @@ internal class Level1 : WorldTemplate
         box.AttachComponent<StatusEffector>();
         box.AddDrawBehavior((obj, batch) =>
         {
-            batch.DrawString(MonoUtils.DefaultFont, "The quick brown fox jumps over the lazy dog", obj.transform.position - new Vector2(0, 50), Color.White);
+            Text text = "The quick brown fox jumps over the lazy dog";
+            batch.DrawText(text, new(), text.CalculateBounds(obj.transform.position), TextAlignment.Left);
+            Debug.DrawRectangle(text.CalculateBounds(obj.transform.position), Color.Red, 1);
         });
 
         Application.Current.CameraIndex = 0;
     }
 
-    private void CreatePrefabs(World world)
+    Weapon CreatePistol(World world)
     {
-        var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
-        player.AttachComponent<ModifiablePlayerMovement>().BaseSpeed = 5;
-        player.AttachComponent<PlayerSprint>();
-        player.AttachComponent<Dash>();
-        var vitals = player.AttachComponent<Vitality>();
-        vitals.Health.MaxHealth = 2500;
-        vitals.Armor.BaseArmor = 0.97f;
-        var effector = player.AttachComponent<StatusEffector>();
+        var bullet = world.CreateObject<SpriteRenderer>("PistolBullet", 25, 8, Color.Red);
+        bullet.AttachComponent<SquareCollider>();
+        var proj = bullet.AttachComponent<Projectile>();
+        proj.Speed = 1600;
+        proj.Damage = new FireDamage(100);
+        proj.Lifetime = 5;
+        proj.StatusChance = 40;
+        bullet.AttachComponent<DefaultProjectileHitAction>();
+        bullet.owner.Flag = "Bullet";
+        bullet.owner.CreatePrefab("PistolBullet");
 
-        WorldObjectPrefab.Create("Player", player.owner);
+        var gun = world.CreateObject("Pistol");
+        gun.AttachComponent<SpriteRenderer>(35, 15, Color.Yellow);
+        var weapon = gun.AttachComponent<Weapon>();
+        var mag = gun.AttachOrFetchComponent<Magazine>();
+        mag.BulletPrefab = new WorldObjectPrefab("PistolBullet");
+        mag.MaxBullets = 9;
+        mag.PoolOfProjectiles = 9 * 6;
+        gun.AttachComponent<MouseLook>();
+        gun.CreatePrefab("Pistol");
 
-        CreatePistol();
-        CreateSMG();
-        CreateFlameThrower();
+        return weapon;
+    }
+    Weapon CreateSMG(World world)
+    {
+        var bullet = world.CreateObject<SpriteRenderer>("SMGBullet", 25, 8, Color.Red);
+        bullet.AttachComponent<SquareCollider>();
+        var proj = bullet.AttachComponent<Projectile>();
+        proj.Speed = 1600;
+        proj.Damage = new FireDamage(10);
+        proj.Lifetime = 5;
+        proj.Spread = .01f;
+        bullet.AttachComponent<DefaultProjectileHitAction>();
+        bullet.owner.Flag = "Bullet";
+        bullet.owner.CreatePrefab("SMGBullet");
+        world.DestroyImmediately(bullet.owner);
 
-        if (Debugger.IsAttached)
-        {
-            WinterRose.Windows.MessageBox("Game must restart after creating prefabs.", "Attention");
-            MonoUtils.RestartApp();
-        }
+        var gun = world.CreateObject("SMG");
+        gun.AttachComponent<SpriteRenderer>(35, 15, Color.Orange);
+        var weapon = gun.AttachComponent<Weapon>();
+        weapon.AvailableFireingMode = WeaponFireingMode.Auto | WeaponFireingMode.Burst | WeaponFireingMode.Single;
+        weapon.CurrentFiringMode = WeaponFireingMode.Auto;
+        var mag = gun.AttachOrFetchComponent<Magazine>();
+        mag.BulletPrefab = new WorldObjectPrefab("SMGBullet");
+        mag.MaxBullets = 25;
+        gun.AttachComponent<MouseLook>();
+        gun.CreatePrefab("SMG");
+        return weapon;
+    }
+    Weapon CreateFlameThrower(World world)
+    {
+        var bullet = world.CreateObject<SpriteRenderer>("FlamePart", 25, 8, Color.Red);
+        bullet.AttachComponent<SquareCollider>();
+        var proj = bullet.AttachComponent<Projectile>();
+        proj.Speed = 270;
+        proj.Damage = new FireDamage(1);
+        proj.Lifetime = 1.3f;
+        proj.Spread = .5f;
+        bullet.AttachComponent<DefaultProjectileHitAction>();
+        bullet.owner.Flag = "Bullet";
+        bullet.owner.CreatePrefab("FlamePart");
 
-        void CreatePistol()
-        {
-            var bullet = world.CreateObject<SpriteRenderer>("PistolBullet", 25, 8, Color.Red);
-            bullet.AttachComponent<SquareCollider>();
-            var proj = bullet.AttachComponent<Projectile>();
-            proj.Speed = 1600;
-            proj.Damage = new FireDamage(100);
-            proj.Lifetime = 5;
-            proj.StatusChance = 40;
-            bullet.AttachComponent<DefaultProjectileHitAction>();
-            bullet.owner.Flag = "Bullet";
-            bullet.owner.CreatePrefab("PistolBullet");
-
-            var gun = world.CreateObject("Pistol");
-            gun.AttachComponent<SpriteRenderer>(35, 15, Color.Yellow);
-            var weapon = gun.AttachComponent<Weapon>();
-            var mag = gun.AttachOrFetchComponent<Magazine>();
-            mag.BulletPrefab = new WorldObjectPrefab("PistolBullet");
-            mag.MaxBullets = 9;
-            mag.PoolOfProjectiles = 9 * 6;
-            gun.AttachComponent<MouseLook>();
-            gun.CreatePrefab("Pistol");
-        }
-        void CreateSMG()
-        {
-            var bullet = world.CreateObject<SpriteRenderer>("SMGBullet", 25, 8, Color.Red);
-            bullet.AttachComponent<SquareCollider>();
-            var proj = bullet.AttachComponent<Projectile>();
-            proj.Speed = 1600;
-            proj.Damage = new FireDamage(10);
-            proj.Lifetime = 5;
-            proj.Spread = .01f;
-            bullet.AttachComponent<DefaultProjectileHitAction>();
-            bullet.owner.Flag = "Bullet";
-            bullet.owner.CreatePrefab("SMGBullet");
-
-            var gun = world.CreateObject("SMG");
-            gun.AttachComponent<SpriteRenderer>(35, 15, Color.Orange);
-            var weapon = gun.AttachComponent<Weapon>();
-            weapon.AvailableFireingMode = WeaponFireingMode.Auto | WeaponFireingMode.Burst | WeaponFireingMode.Single;
-            weapon.CurrentFiringMode = WeaponFireingMode.Auto;
-            var mag = gun.AttachOrFetchComponent<Magazine>();
-            mag.BulletPrefab = new WorldObjectPrefab("SMGBullet");
-            mag.MaxBullets = 25;
-            gun.AttachComponent<MouseLook>();
-            gun.CreatePrefab("SMG");
-        }
-        void CreateFlameThrower()
-        {
-            var bullet = world.CreateObject<SpriteRenderer>("FlamePart", 25, 8, Color.Red);
-            bullet.AttachComponent<SquareCollider>();
-            var proj = bullet.AttachComponent<Projectile>();
-            proj.Speed = 270;
-            proj.Damage = new FireDamage(1);
-            proj.Lifetime = 1.3f;
-            proj.Spread = .5f;
-            bullet.AttachComponent<DefaultProjectileHitAction>();
-            bullet.owner.Flag = "Bullet";
-            bullet.owner.CreatePrefab("FlamePart");
-
-            var gun = world.CreateObject("FlameThrower");
-            gun.AttachComponent<SpriteRenderer>(35, 15, Color.Orange);
-            var weapon = gun.AttachComponent<Weapon>();
-            weapon.AvailableFireingMode = WeaponFireingMode.Auto;
-            weapon.CurrentFiringMode = WeaponFireingMode.Auto;
-            weapon.FireRate = 45;
-            var mag = gun.AttachOrFetchComponent<Magazine>();
-            mag.BulletPrefab = new WorldObjectPrefab("FlamePart");
-            mag.MaxBullets = 500;
-            mag.PoolOfProjectiles = 5000;
-            mag.BulletsPerShot = 2;
-            gun.AttachComponent<MouseLook>();
-            gun.CreatePrefab("FlameThrower");
-        }
+        var gun = world.CreateObject("FlameThrower");
+        gun.AttachComponent<SpriteRenderer>(35, 15, Color.Orange);
+        var weapon = gun.AttachComponent<Weapon>();
+        weapon.AvailableFireingMode = WeaponFireingMode.Auto;
+        weapon.CurrentFiringMode = WeaponFireingMode.Auto;
+        weapon.FireRate = 45;
+        var mag = gun.AttachOrFetchComponent<Magazine>();
+        mag.BulletPrefab = new WorldObjectPrefab("FlamePart");
+        mag.MaxBullets = 500;
+        mag.PoolOfProjectiles = 5000;
+        mag.BulletsPerShot = 2;
+        gun.AttachComponent<MouseLook>();
+        gun.CreatePrefab("FlameThrower");
+        return weapon;
     }
 }

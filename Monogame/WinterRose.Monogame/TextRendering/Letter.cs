@@ -12,7 +12,7 @@ public class Letter
     {
         get
         {
-            if(randomColors)
+            if (randomColors)
             {
                 Random r = new Random();
                 return new Color(r.Next(0, 255), r.Next(0, 255), r.Next(255, 255));
@@ -24,8 +24,9 @@ public class Letter
             randomColors = false;
             color = value;
         }
-    }
-    private Color color;
+    } 
+
+    private Color color = Color.White;
     public bool isSpace()
     {
         return Character == ' ';

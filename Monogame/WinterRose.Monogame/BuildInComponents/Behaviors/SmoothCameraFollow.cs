@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame;
 
@@ -15,13 +16,13 @@ public class SmoothCameraFollow : ObjectBehavior
     /// <summary>
     /// The transform of the target object to follow.
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeInTemplateCreation, IncludeWithSerialization]
     public Transform Target { get; set; }
 
     /// <summary>
     /// The speed at which the camera follows the target.
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeInTemplateCreation, IncludeWithSerialization]
     public float Speed { get; set; } = 10f;
 
     /// <summary>

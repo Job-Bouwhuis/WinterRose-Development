@@ -1,14 +1,22 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
-using System.Diagnostics;
+using System.CodeDom.Compiler;
+using System.IO;
+using System.Text.Json.Serialization;
+using System.Windows.Forms.Design;
 using TopDownGame.Inventories;
 using TopDownGame.Items;
 using TopDownGame.Levels;
 using WinterRose;
+using WinterRose.Encryption;
+using WinterRose.FileManagement;
 using WinterRose.Monogame;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Plugins;
 using WinterRose.Serialization;
+using WinterRose.SourceGeneration.Serialization;
+using WinterRose.WIP.TestClasses;
 
 namespace TopDownGame;
 
@@ -16,25 +24,6 @@ public class Game1 : Application
 {
     protected override World CreateWorld()
     {
-        WinterRose.Windows.MyHandle.MakeCritical();
-        Process.GetCurrentProcess().Kill();
-
-        int n = 1000000;
-        while (n != 1)
-        {
-            if(n % 2 == 0)
-            {
-                n /= 2;
-            }
-            else
-            {
-                n = (n * 3) + 1;
-            }
-            Console.WriteLine(n);
-        }
-        Console.ReadLine();
-        Environment.Exit(0);
-
 
         Hirarchy.Show = true;
 
@@ -44,16 +33,25 @@ public class Game1 : Application
         else
             MonoUtils.WindowResolution = new(1280, 720);
 
-        World world = World.FromTemplate<Level1>();
-
         SerializerSettings settings = new()
         {
             IncludeType = true,
             CircleReferencesEnabled = true,
         };
 
-        string serialied = SnowSerializer.Serialize(world, settings);   
-        World deserialized = SnowSerializer.Deserialize<World>(serialied, settings).Result;
+        const string path = "Content/Worlds/Level1.SerializedWorld";
+        FileInfo file = new FileInfo(path);
+
+        if (!file.Exists)
+        {
+            World world = World.FromTemplate<Level1>();
+            string serialized = SnowSerializer.Serialize(world, settings);
+            FileManager.Write(path, serialized, true);
+            return world;
+        }
+        string e = FileManager.Read(path);
+
+        World deserialized = SnowSerializer.Deserialize<World>(e, settings).Result;
 
         return deserialized;
     }

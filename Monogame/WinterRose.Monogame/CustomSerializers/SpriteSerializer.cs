@@ -14,7 +14,7 @@ internal class SpriteSerializer : CustomSerializer<Sprite>
         if(data.Contains("GeneratedTextureData"))
         {
             int sepIndex = data.IndexOf('|') + 2;
-            data = data[sepIndex..(data.Length - 1)];
+            data = data[sepIndex..data.Length];
             var generatedData = SnowSerializerWorkers.DeserializeField<GeneratedTextureData>(data, 
                 typeof(GeneratedTextureData), depth + 1, new(), new()) as GeneratedTextureData;
             return new Sprite(generatedData);

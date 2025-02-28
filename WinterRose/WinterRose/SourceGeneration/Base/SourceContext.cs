@@ -9,7 +9,7 @@ namespace WinterRose.SourceGeneration;
 
 public sealed class SourceContext
 {
-    public bool ProduceFile { get; set; } = false;
+    public bool ProduceFile { get; set; } = true;
     public string? FileContent { get; set; } = null;
     public List<SyntaxTree> SyntaxTrees { get; private set; } = [];
 

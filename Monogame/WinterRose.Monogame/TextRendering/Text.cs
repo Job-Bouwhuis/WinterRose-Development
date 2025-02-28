@@ -1,6 +1,9 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.Xna.Framework;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using WinterRose.CrystalScripting.Legacy.Interpreting.Exceptions;
 
 namespace WinterRose.Monogame.TextRendering;
@@ -60,6 +63,13 @@ public class Text : ICollection<Word>
     public int Count => words.Count;
     public bool IsReadOnly => false;
 
+    public RectangleF CalculateBounds(Vector2 pos)
+    {
+        string stringRep = ToString();
+        var size = words[0].Font.MeasureString(stringRep);
+        return new(size.X, size.Y, pos.X, pos.Y);
+    }
+
     public void EnableRandomLetterColor()
     {
         words.ForEach(word => word.EnableRandomLetterColor());
@@ -74,5 +84,19 @@ public class Text : ICollection<Word>
     IEnumerator IEnumerable.GetEnumerator() => words.GetEnumerator();
 
     public static implicit operator Text(string s) => new Text(s);
+
+    public override string ToString()
+    {
+        StringBuilder result = new StringBuilder();
+
+        foreach (var word in words)
+        {
+            foreach (var letter in word)
+                result.Append(letter);
+            result.Append(' ');
+        }
+
+        return result.ToString().Trim();
+    }
 }
 

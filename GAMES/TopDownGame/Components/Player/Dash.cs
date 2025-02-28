@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Input;
 using WinterRose.Monogame;
 using WinterRose.Monogame.StatusSystem;
+using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 namespace TopDownGame.Player;
@@ -8,8 +9,11 @@ namespace TopDownGame.Player;
 [RequireComponent<StatusEffector>]
 internal class Dash : ObjectBehavior
 {
+    [IncludeWithSerialization]
     public StaticCombinedModifier<float> DashDistance { get; } = new() { BaseValue = 450f };
+    [IncludeWithSerialization]
     public StaticCombinedModifier<float> DashCooldown { get; } = new() { BaseValue = 5f };
+    [IncludeWithSerialization]
     public Keys DashKey { get; set; } = Keys.Space;
 
     private StatusEffector effector;

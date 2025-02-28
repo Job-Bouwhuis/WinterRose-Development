@@ -59,7 +59,6 @@ public sealed class WorldObjectPrefab : Prefab
         WorldTemplateLoader loader = new(tempWorld);
 
         loader.LoadTemplate(File.File.FullName);
-
         LoadedObject = tempWorld.Objects.First();
     }
 

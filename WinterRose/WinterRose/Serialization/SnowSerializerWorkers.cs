@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using WinterRose.AnonymousObjectStuff;
@@ -124,8 +125,13 @@ namespace WinterRose.Serialization
                 string end;
                 if (value is null)
                     end = NULL;
-                else if (value is string and "")
-                    end = EMPTYSTRING;
+                else if (value is string s)
+                {
+                    if (value is "")
+                        end = EMPTYSTRING;
+                    else
+                        end = s.Base64Encode();
+                }
                 else
                     end = value.ToString();
                 return new StringBuilder(start).Append(end);
@@ -219,7 +225,7 @@ namespace WinterRose.Serialization
             Type objectType = typeof(T);
             if (item is IEnumerable)
             {
-                if(serializeAs != null)
+                if (serializeAs != null)
                 {
                     if (serializeAs.Type == typeof(IEnumerable))
                         objectType = typeof(T).GetGenericArguments()[0];
@@ -273,7 +279,7 @@ namespace WinterRose.Serialization
             List<PropertyInfo> properties = new List<PropertyInfo>();
             foreach (var field in fieldsTemp)
             {
-                if(field.IsPrivate && field.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
+                if (field.IsPrivate && field.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
                 {
                     fields.Add(field);
                     continue;
@@ -290,8 +296,8 @@ namespace WinterRose.Serialization
                     break;
                 }
                 if (property.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
-                    if(property.CanWrite // properties that cant be written to will be ignored always.
-                        && !property.GetCustomAttributes().Any(x => x.GetType() == typeof(ExcludeFromSerializationAttribute))) 
+                    if (property.CanWrite // properties that cant be written to will be ignored always.
+                        && !property.GetCustomAttributes().Any(x => x.GetType() == typeof(ExcludeFromSerializationAttribute)))
                         properties.Add(property);
             }
             var events = GetAllClassEvents(item, includePrivateFields);
@@ -309,7 +315,7 @@ namespace WinterRose.Serialization
             else
                 typeassembly = $"{objectType.Name}--{objectType.Namespace}--{objectType.Assembly.GetName().FullName}";
 
-            if(typeassembly.Contains("ObjectComponent"))
+            if (typeassembly.Contains("ObjectComponent"))
             {
 
             }
@@ -472,6 +478,8 @@ namespace WinterRose.Serialization
                 return "";
             if (value.StartsWith(NULL))
                 return null;
+            if (fieldType == typeof(string))
+                return value.Base64Decode();
             //if the field is a primitive, set the value
             if (SupportedPrimitives.Contains(fieldType))
                 return TypeWorker.TryCastPrimitive(value, fieldType, out dynamic result) ? result : null;
@@ -558,7 +566,7 @@ namespace WinterRose.Serialization
         {
             Type objectType = overrideT ?? typeof(T);
             SerializeAsAttributeINTERNAL? serializeAs = objectType.GetCustomAttribute<SerializeAsAttributeINTERNAL>();
-  
+
             if (serializeAs is not null)
                 objectType = serializeAs.Type;
 
@@ -598,7 +606,7 @@ namespace WinterRose.Serialization
 
             Type type = typeof(T);
             if (objectType.IsAssignableTo(typeof(IEnumerable)))
-                if((serializeAs is not null && serializeAs.Type != typeof(IEnumerable)) ^ true)
+                if ((serializeAs is not null && serializeAs.Type != typeof(IEnumerable)) ^ true)
                     type = typeof(T).GetGenericArguments()[0];
             ;
             if (RegisteredSerializers.TryGetValue(type, out RegisteredSerializer? serializer))

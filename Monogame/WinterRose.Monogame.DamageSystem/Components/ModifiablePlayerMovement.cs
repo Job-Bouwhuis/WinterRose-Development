@@ -1,23 +1,19 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using WinterRose.Monogame;
+using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.Monogame;
 
 public class ModifiablePlayerMovement : ObjectBehavior
 {
-    [IncludeInTemplateCreation]
-    public float BaseSpeed
-    {
-        get => SpeedModifier.BaseValue;
-        set => SpeedModifier.BaseValue = value;
-    }
+    [IncludeInTemplateCreation, IncludeWithSerialization]
     public StaticCombinedModifier<float> SpeedModifier { get; private set; } = 20;
 
     public ModifiablePlayerMovement(float speed)
     {
-        BaseSpeed = speed;
+        SpeedModifier = speed;
     }
 
     public ModifiablePlayerMovement() { }
