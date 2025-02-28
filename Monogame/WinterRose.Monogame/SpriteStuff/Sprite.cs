@@ -196,6 +196,12 @@ public class Sprite
         TexturePath = texture.Name;
     }
 
+    internal Sprite(GeneratedTextureData generatedData)
+    {
+        GeneratedTextureData = generatedData;
+        Name = generatedData.Name;
+    }
+
     private void LoadFromBase64(string data)
     {
         data = data.Replace('♥', '=');
@@ -213,6 +219,8 @@ public class Sprite
     {
         try
         {
+            if (s.texture == null && s.GeneratedTextureData != null)
+                s.texture = s.GeneratedTextureData.MakeTexture();
             return s.texture;
         }
         catch (NullReferenceException)

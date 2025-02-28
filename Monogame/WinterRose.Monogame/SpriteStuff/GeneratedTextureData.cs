@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace WinterRose.Monogame;
 
@@ -30,4 +32,24 @@ internal class GeneratedTextureData
     {
         return MonoUtils.CreateTexture(Width, Height, Pixels);
     }
+
+    internal static GeneratedTextureData Create(Color color, int width, int height)
+    {
+        GeneratedTextureData data = new GeneratedTextureData
+        {
+            Name = $"Generated_{color}_{width}x{height}",
+            Width = width,
+            Height = height,
+            Pixels = new uint[width * height]
+        };
+
+        uint packedColor = (uint)color.PackedValue;
+        for (int i = 0; i < data.Pixels.Length; i++)
+        {
+            data.Pixels[i] = packedColor;
+        }
+
+        return data;
+    }
+
 }
