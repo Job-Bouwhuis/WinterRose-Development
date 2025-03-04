@@ -15,6 +15,12 @@ namespace WinterRose.Monogame;
 /// </summary>
 public sealed class WorldObjectPrefab : Prefab
 {
+    private static SerializerSettings serializerSettings = new()
+    {
+        IncludeType = true,
+        CircleReferencesEnabled = true
+    };
+
     /// <summary>
     /// For serializing
     /// </summary>
@@ -55,11 +61,8 @@ public sealed class WorldObjectPrefab : Prefab
     /// </summary>
     public override void Load()
     {
-        World tempWorld = new("temp world");
-        WorldTemplateLoader loader = new(tempWorld);
-
-        loader.LoadTemplate(File.File.FullName);
-        LoadedObject = tempWorld.Objects.First();
+        string content = File.ReadContent();
+        LoadedObject = SnowSerializer.Deserialize<WorldObject>(content, serializerSettings);
     }
 
     /// <summary>
@@ -67,9 +70,7 @@ public sealed class WorldObjectPrefab : Prefab
     /// </summary>
     public override void Save()
     {
-        WorldTemplateCreator creator = new();
-        string templateData = creator.CreateSaveOf(LoadedObject);
-
+        string templateData = SnowSerializer.Serialize(LoadedObject, serializerSettings);
         File.WriteContent(templateData, true);
     }
 

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Monogame.StatusSystem;
+using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 #nullable enable
@@ -31,11 +32,13 @@ public abstract class DamageType : ICloneable
     /// <summary>
     /// The icon of this damage type. Can be null if not set.
     /// </summary>
+    [IncludeWithSerialization]
     public Sprite? Icon { get; set; }
 
     /// <summary>
     /// The modifiers that dictate the actual damage
     /// </summary>
+    [IncludeWithSerialization]
     public StaticCombinedModifier<int> DamageModifier { get; } = new();
 
     public DamageType() => BaseDamage = 5;
@@ -52,6 +55,7 @@ public abstract class DamageType : ICloneable
     /// <summary>
     /// The status effect this damage type is linked to, if any. (null if none)
     /// </summary>
+    [IncludeWithSerialization]
     public StatusEffect? ConnectedStatusEffect { get; set; }
 
     /// <summary>

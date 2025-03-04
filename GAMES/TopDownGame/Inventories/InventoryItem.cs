@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TopDownGame.Inventories.Base;
-using TopDownGame.Items;
 using WinterRose;
 using WinterRose.Monogame;
-using WinterRose.Monogame.Weapons;
 using WinterRose.Serialization;
 
 namespace TopDownGame.Inventories;
@@ -34,6 +28,11 @@ public abstract class InventoryItem<T> : IInventoryItem
     /// </summary>
     [IncludeWithSerialization]
     public abstract T Item { get; set; }
+    /// <summary>
+    /// The amount of this item kind is inventory item represents
+    /// </summary>
+    [IncludeWithSerialization]
+    public int Count { get; set; } = 0;
 
     /// <summary>
     /// The name of the item
@@ -43,20 +42,14 @@ public abstract class InventoryItem<T> : IInventoryItem
     /// The description of the item
     /// </summary>
     public abstract string Description { get; }
-
     /// <summary>
     /// The items rarity
     /// </summary>
     public abstract Rarity Rarity { get; }
-
     /// <summary>
-    /// The amount of items in a single stack there is allowed to be. -1 to have a virtualy infinite stack limit
+    /// The amount of items in a single stack there is allowed to be.
     /// </summary>
     public abstract int StackLimit { get; }
-    /// <summary>
-    /// The amount of this item kind is inventory item represents
-    /// </summary>
-    public int Count { get; set; } = 0;
 
     /// <summary>
     /// Splits the InventoryItem instances into two, where the one returned has <paramref name="count"/> items, and the remaining are left in the orignal
@@ -74,7 +67,6 @@ public abstract class InventoryItem<T> : IInventoryItem
         clone.Count = count;
         return clone;
     }
-
     /// <summary>
     /// Adds the given <paramref name="item"/> to the this stack
     /// </summary>
@@ -82,24 +74,7 @@ public abstract class InventoryItem<T> : IInventoryItem
     /// <returns>null if all items were able to be stacked into this instance. 
     /// or returns the reference to <paramref name="item"/> when there are items left over, and need to be stacked into the next item instance. 
     /// Or to create a new instance</returns>
-    public IInventoryItem? AddToStack(IInventoryItem item)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        if (item.Count == 0) return null;
-        if (Count == StackLimit) return item;
-
-        if(item.Count + Count > StackLimit)
-        {
-            int remaining = item.Count + Count - StackLimit;
-            item.Count = remaining;
-            Count = StackLimit;
-            return item;
-        }
-
-        Count += item.Count;
-        return null;
-    }
-
+    public IInventoryItem? AddToStack(IInventoryItem item) => _AddToStack(item);
     /// <summary>
     /// Makes an exact copy of this InventoryItem instance.
     /// </summary>
@@ -111,9 +86,26 @@ public abstract class InventoryItem<T> : IInventoryItem
         ConfigureClone(clone);
         return clone;
     }
-
     protected abstract void ConfigureClone(InventoryItem<T> clone);
-    IInventoryItem? IInventoryItem.AddToStack(IInventoryItem item) => throw new NotImplementedException();
+    IInventoryItem? IInventoryItem.AddToStack(IInventoryItem item) => _AddToStack(item);
+
+    private IInventoryItem _AddToStack(IInventoryItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item.Count == 0) return null;
+        if (Count == StackLimit) return item;
+
+        if (item.Count + Count > StackLimit)
+        {
+            int remaining = item.Count + Count - StackLimit;
+            item.Count = remaining;
+            Count = StackLimit;
+            return item;
+        }
+
+        Count += item.Count;
+        return null;
+    }
 }
 
 /// <summary>

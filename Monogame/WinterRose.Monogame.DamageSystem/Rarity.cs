@@ -6,8 +6,11 @@ namespace WinterRose.Monogame;
 
 public sealed class Rarity
 {
+    [Hide]
     public int Level { get; private set; }
+    [Show]
     public string Name { get; private set; }
+    [Hide]
     public Color Color { get; private set; }
 
     private Rarity() { }

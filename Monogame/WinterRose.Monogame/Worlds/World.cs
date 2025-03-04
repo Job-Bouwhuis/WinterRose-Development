@@ -534,4 +534,16 @@ public sealed class World : IEnumerable<WorldObject>
     }
 
     internal void RebuildParallelHelper() => rebuildParallelHelper = true;
+    /// <summary>
+    /// Searches for an object with the given <see cref="WorldObject.Flag"/>
+    /// </summary>
+    /// <param name="targetFlag"></param>
+    /// <returns></returns>
+    public WorldObject? FindObjectWithFlag(string targetFlag)
+    {
+        foreach(var obj in objects)
+            if (obj.Flag == targetFlag)
+                return obj;
+        return null;
+    }
 }

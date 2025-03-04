@@ -19,26 +19,7 @@ public class Game1 : Application
         else
             MonoUtils.WindowResolution = new(1280, 720);
 
-        SerializerSettings serializerSettings = new()
-        {
-            IncludeType = true,
-            CircleReferencesEnabled = true,
-        };
-
-        const string path = "Content/Worlds/Level1.SerializedWorld";
-        FileInfo file = new FileInfo(path);
-        file.Delete();
-        if (!file.Exists)
-        {
-            World world = World.FromTemplate<Level1>();
-            string serialized = SnowSerializer.Serialize(world, serializerSettings);
-            FileManager.Write(path, serialized, true);
-            return world;
-        }
-        string e = FileManager.Read(path);
-
-        World deserialized = SnowSerializer.Deserialize<World>(e, serializerSettings).Result;
-
-        return deserialized;
+        World world = World.FromTemplate<Level1>();
+        return world;
     }
 }

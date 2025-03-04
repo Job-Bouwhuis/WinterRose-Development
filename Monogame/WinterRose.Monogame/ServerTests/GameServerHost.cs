@@ -33,14 +33,5 @@ public class GameServerHost : ObjectComponent
             server.Send(message);
     }
 
-    private void Close()
-    {
-        Windows.CloseConsole();
-    }
-
-    private bool GameClosing()
-    {
-        server.Dispose();
-        return false;
-    }
+    private void GameClosing() => server.Dispose();
 }

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Monogame.Worlds;
@@ -21,6 +22,15 @@ namespace WinterRose.Monogame;
 public abstract class Application : Game, IDisposable
 {
     public static Application Current { get; private set; }
+
+    /// <summary>
+    /// Shortcut route to <see cref="ExitHelper.GameClosing"/>
+    /// </summary>
+    public static event Action GameClosing
+    {
+        add => ExitHelper.GameClosing += value; 
+        remove => ExitHelper.GameClosing -= value;
+    }
 
     /// <summary>
     /// The camera index that will be requested to render its view to the window. <br></br>
@@ -203,7 +213,7 @@ public abstract class Application : Game, IDisposable
     protected override void OnExiting(object sender, ExitingEventArgs args)
     {
         MonoUtils.IsStopping = true;
-        args.Cancel = ExitHelper.InvokeGameClosingEvent();
+        ExitHelper.InvokeOnClose();
     }
 
     /// <summary>

@@ -4,7 +4,7 @@ using WinterRose.Monogame.StatusSystem;
 using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
-namespace TopDownGame.Player;
+namespace TopDownGame.Players;
 
 [RequireComponent<StatusEffector>]
 internal class Dash : ObjectBehavior

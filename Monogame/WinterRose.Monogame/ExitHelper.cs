@@ -12,16 +12,13 @@ public static class ExitHelper
     /// <summary>
     /// Gets invoked right before the <see cref="CloseMethod"/> is invoked
     /// </summary>
-    public static event Func<bool> GameClosing = delegate { return false; };
+    public static event Action GameClosing = delegate { };
 
     /// <summary>
     /// Sets the method that is invoked when the game is closed
     /// </summary>
     /// <param name="closeMethod"></param>
-    public static void SetCloseMethod(Action closeMethod)
-    {
-        CloseMethod = closeMethod;
-    }
+    public static void SetCloseMethod(Action closeMethod) => CloseMethod = closeMethod;
 
     /// <summary>
     /// Closes the game after invoking the <see cref="GameClosing"/> event
@@ -37,19 +34,10 @@ public static class ExitHelper
         Console.WriteLine("Bye Bye!");
     }
 
-    internal static bool InvokeGameClosingEvent()
-    {
-        if (_isClosing) return false;
-        _isClosing = true;
-
-        return GameClosing();
-    }
-
     /// <summary>
-    /// Force closes the game with code -3. This does not invoke the <see cref="GameClosing"/> event
+    /// This does not invoke the <see cref="GameClosing"/> event
     /// </summary>
-    public static void ForceCloseGame()
-    {
-        Environment.Exit(-3);
-    }
+    public static void ForceCloseGame(int errorCode = 0) => Environment.Exit(errorCode);
+
+    internal static void InvokeOnClose() => GameClosing();
 }

@@ -38,7 +38,7 @@ public static class AssetDatabase
     /// <param name="data"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public static Asset DeclareAsset<T>(T data) where T : Asset
+    public static T DeclareAsset<T>(T data) where T : Asset
     {
         if (Assets.ContainsKey(data.Name))
             throw new Exception($"Asset {data.Name} already declared");
@@ -152,5 +152,13 @@ public static class AssetDatabase
         DirectoryInfo currentDir = ContentFolder.Directory;
         FileInfo[] files = currentDir.GetFiles(assetPath, SearchOption.AllDirectories);
         return files.Length > 0;
+    }
+
+    public static T GetOrDeclareAsset<T>(string name, params object[] otherArguments) where T : Asset
+    {
+        if (AssetExists(name))
+            return LoadAsset<T>(name);
+
+        return DeclareAsset(ActivatorExtra.CreateInstance<T>([name, .. otherArguments]));
     }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using WinterRose;
 using WinterRose.Monogame.DamageSystem;
+using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.Monogame.Weapons;
@@ -14,48 +15,48 @@ public class Projectile : ObjectBehavior
     /// <summary>
     /// The speed of the bullet.
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeWithSerialization]
     public StaticCombinedModifier<float> Speed { get; set; } = 10.0f;
 
     /// <summary>
     /// The damage the bullet deals.
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeWithSerialization]
     public DamageType Damage { get; set; } = new NeutralDamage();
 
     /// <summary>
     /// The lifetime of the bullet in seconds.
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeWithSerialization]
     public StaticCombinedModifier<float> Lifetime { get; set; } = 1.0f;
 
     /// <summary>
     /// The splash radius of the bullet (may be 0 for no splash)
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeWithSerialization]
     public StaticCombinedModifier<float> SplashRadius { get; set; } = 0.0f;
 
     /// <summary>
     /// The damage falloff for the splash radius (if the splash radius is 0, this value is not used
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeWithSerialization]
     public StaticCombinedModifier<float> SplashDamageFalloff { get; set; } = 0.0f;
 
     /// <summary>
     /// The spread the bullet has (in a circle)
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeWithSerialization]
     public StaticCombinedModifier<float> Spread { get; set; } = 0.0f;
 
     /// <summary>
     /// The force the bullet applies to objects it hits
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeWithSerialization]
     public StaticCombinedModifier<float> Force { get; set; } = 0.0f;
     /// <summary>
     /// The chance this bullet has to apply a status effect. if greater than 100, guaranteed 1 with a chance to apply 2, greater than 200 guaranteed 2, with chance of 3
     /// </summary>
-    [IncludeInTemplateCreation]
+    [IncludeWithSerialization]
     public int StatusChance { get; set; }
 
     [Show]

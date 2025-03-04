@@ -92,7 +92,7 @@ public class Text : ICollection<Word>
         foreach (var word in words)
         {
             foreach (var letter in word)
-                result.Append(letter);
+                result.Append(letter.Character);
             result.Append(' ');
         }
 

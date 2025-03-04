@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.StatusSystem;
 
@@ -10,24 +11,29 @@ namespace WinterRose.Monogame.StatusSystem;
 /// A status effect for the <see cref="StatusEffector"/>
 /// </summary>
 [method: DefaultArguments("New status effect")]
-public abstract class StatusEffect : ICloneable
+public abstract class StatusEffect() : ICloneable
 {
     /// <summary>
     /// The description of this effect
     /// </summary>
+    [IncludeWithSerialization]
     public abstract string Description { get; }
     /// <summary>
     /// When <see cref=""/>
     /// </summary>
+    [IncludeWithSerialization]
     public abstract StatusEffectUpdateType UpdateType { get; }
 
+    [IncludeWithSerialization]
     public abstract StatusEffectType EffectType { get; }
 
     /// <summary>
     /// The icon of this status effect. Can be null if not set.
     /// </summary>
+    [IncludeWithSerialization]
     public Sprite Icon { get; set; }
 
+    [IncludeWithSerialization]
     public int MaxStacks { get; set; } = 10;
     public int Stacks
     {
@@ -42,11 +48,13 @@ public abstract class StatusEffect : ICloneable
     internal int previousStacks = 0;
     internal bool updateStacks = false;
 
+    [IncludeWithSerialization]
     public float SecondsPerStack { get; set; } = 1f;
     [Show]
     protected internal float currentSeconds;
     private int stacks = 1;
 
+    [IncludeWithSerialization]
     public bool RemoveAllStacksOntimeout { get; set; } = false;
 
     protected internal virtual void Update(StatusEffector effector) { }
@@ -60,6 +68,8 @@ public abstract class StatusEffect : ICloneable
         clone.updateStacks = false;
         clone.stacks = stacks;
         clone.MaxStacks = MaxStacks;
+        clone.RemoveAllStacksOntimeout = RemoveAllStacksOntimeout;
+        clone.SecondsPerStack = SecondsPerStack;
         return clone;
     }
 }

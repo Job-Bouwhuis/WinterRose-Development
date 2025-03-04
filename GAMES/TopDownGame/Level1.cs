@@ -1,27 +1,17 @@
 ﻿using Microsoft.Xna.Framework;
-using SharpDX.Direct3D9;
-using System.Linq.Expressions;
-using TopDownGame.Player;
-using WinterRose;
+using TopDownGame.Components.Players;
+using TopDownGame.Drops;
+using TopDownGame.Items;
+using TopDownGame.Players;
+using TopDownGame.Resources;
 using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem;
 using WinterRose.Monogame.ModdingSystem;
-using WinterRose.Monogame.Servers;
 using WinterRose.Monogame.StatusSystem;
-using WinterRose.Monogame.TextRendering;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
-using WinterRose.Networking;
 
 namespace TopDownGame.Levels;
-
-//Text t = "the quick brown fox jumps\nover the lazy dog.";
-//t.EnableRandomLetterColor();
-//t[2].SetAllColor(Color.Yellow);
-//player.AddDrawBehavior((obj, batch) =>
-//{
-//    batch.DrawText(t, new(0.5f), new(MonoUtils.WindowResolution.X, MonoUtils.WindowResolution.Y, 0, 0), TextAlignment.Left);
-//});
 
 [WorldTemplate]
 internal class Level1 : WorldTemplate
@@ -35,6 +25,7 @@ internal class Level1 : WorldTemplate
         world.Name = "Level 1";
 
         var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
+        player.AttachComponent<Player>("Dajuska");
         player.AttachComponent<ModifiablePlayerMovement>(5);
         player.AttachComponent<PlayerSprint>();
         var effector = player.AttachComponent<StatusEffector>();
@@ -42,6 +33,7 @@ internal class Level1 : WorldTemplate
         var vitals = player.AttachComponent<Vitality>();
         vitals.Health.MaxHealth = 2500;
         vitals.Armor.BaseArmor = 0.97f;
+        player.owner.Flag = "Player";
 
         var gun = CreateSMG(world).owner;
         gun.FetchComponent<Weapon>().AvailableFireingMode = WeaponFireingMode.Auto;
@@ -64,15 +56,15 @@ internal class Level1 : WorldTemplate
         var renderer = box.AttachComponent<SpriteRenderer>(200, 50, Color.Blue);
         box.AttachComponent<SquareCollider>(renderer);
         var boxhealth = box.AttachComponent<Vitality>();
-        //boxhealth.Armor.BaseArmor = 0.9f;
         box.AttachComponent<DestroyOnDeath>();
         box.AttachComponent<StatusEffector>();
-        box.AddDrawBehavior((obj, batch) =>
-        {
-            Text text = "The quick brown fox jumps over the lazy dog";
-            batch.DrawText(text, new(), text.CalculateBounds(obj.transform.position), TextAlignment.Left);
-            Debug.DrawRectangle(text.CalculateBounds(obj.transform.position), Color.Red, 1);
-        });
+
+        var itemObject = world.CreateObject<SpriteRenderer>("item", 50, 50, new Color(0, 255, 0));
+        itemObject.transform.position = new Vector2(500, 500);
+        ResourceItem item = new();
+        item.Item = new Flesh();
+        item.Count = 1;
+        itemObject.owner.AttachComponent<ItemDrop>(item);
 
         Application.Current.CameraIndex = 0;
     }

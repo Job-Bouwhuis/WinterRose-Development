@@ -3,7 +3,7 @@
 using WinterRose.Monogame;
 using WinterRose.StaticValueModifiers;
 
-namespace TopDownGame.Player;
+namespace TopDownGame.Players;
 
 /// <summary>
 /// Boostst the movement of the <see cref="ModifiablePlayerMovement"/> when holding a key

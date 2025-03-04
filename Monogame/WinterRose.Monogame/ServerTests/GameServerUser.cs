@@ -105,10 +105,9 @@ public class GameServerUser : ObjectBehavior
         Windows.CloseConsole();
     }
 
-    private bool GameClosing()
+    private void GameClosing()
     {
         user.Disconnect();
         user.Dispose();
-        return false;
     }
 }

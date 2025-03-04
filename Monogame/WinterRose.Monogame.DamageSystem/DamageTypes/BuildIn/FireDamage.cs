@@ -14,6 +14,8 @@ public class FireDamage : DamageType
         target.DealDamage(Damage);
     }
 
+    private FireDamage() { } // for serialization
+
     public FireDamage(int BaseDamage) : base(BaseDamage) 
     {
         ConnectedStatusEffect = new FireStatusEffect(this);

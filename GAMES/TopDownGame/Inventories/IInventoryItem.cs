@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WinterRose.Monogame;
-using WinterRose.Monogame.Weapons;
 
 namespace TopDownGame.Inventories.Base;
 /// <summary>
@@ -12,11 +7,16 @@ namespace TopDownGame.Inventories.Base;
 /// </summary>
 public interface IInventoryItem
 {
+    [Hide]
     Type ItemType { get; }
+    [Show]
     string Name { get; }
     string Description { get; }
+    [Show]
     Rarity Rarity { get; }
+    [Show]
     int StackLimit { get; }
+    [Show]
     int Count { get; set; }
 
     IInventoryItem? AddToStack(IInventoryItem item);
