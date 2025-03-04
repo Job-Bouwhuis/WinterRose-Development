@@ -1,12 +1,7 @@
-﻿using Microsoft.Xna.Framework;
-using System.ComponentModel.DataAnnotations;
-using System.IO;
-using System.Linq;
-using TopDownGame.Items;
+﻿using System.IO;
 using TopDownGame.Levels;
 using WinterRose.FileManagement;
 using WinterRose.Monogame;
-using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 using WinterRose.Serialization;
 
@@ -32,7 +27,7 @@ public class Game1 : Application
 
         const string path = "Content/Worlds/Level1.SerializedWorld";
         FileInfo file = new FileInfo(path);
-
+        file.Delete();
         if (!file.Exists)
         {
             World world = World.FromTemplate<Level1>();
@@ -46,9 +41,4 @@ public class Game1 : Application
 
         return deserialized;
     }
-}
-
-public class GenericTest<T>
-{
-    public T data;
 }

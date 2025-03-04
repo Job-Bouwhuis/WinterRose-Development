@@ -8,13 +8,13 @@ namespace TopDownGame.Inventories;
 
 public sealed class Inventory(string assetName) : Asset(assetName)
 {
-    private List<IInventoryProperties> items = [];
+    private List<IInventoryItem> items = [];
 
-    public void AddItem(IInventoryProperties item)
+    public void AddItem(IInventoryItem item)
     {
         ArgumentNullException.ThrowIfNull(item);
 
-        foreach (IInventoryProperties i in items)
+        foreach (IInventoryItem i in items)
         {
             if (i.ItemType != item.ItemType)
                 continue;

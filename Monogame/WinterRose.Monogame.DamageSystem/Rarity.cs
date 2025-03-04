@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Security.Policy;
 
-namespace WinterRose.Monogame.Weapons;
+namespace WinterRose.Monogame;
 
 public sealed class Rarity
 {

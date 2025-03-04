@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.StaticValueModifiers;
@@ -22,6 +23,7 @@ public class StaticCombinedModifier<T> : ICloneable where T : INumber<T>
     /// <summary>
     /// The base value for this combined modifier
     /// </summary>
+    [IncludeWithSerialization]
     public T BaseValue
     {
         get => AdditiveModifier.BaseValue;

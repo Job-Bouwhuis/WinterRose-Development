@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose;
+using WinterRose.Serialization;
 
 namespace WinterRose.StaticValueModifiers;
 
@@ -27,6 +28,7 @@ public abstract class StaticModifier<T> : ICloneable
     /// <summary>
     /// The base value of the modifier
     /// </summary>
+    [IncludeWithSerialization]
     public T BaseValue { get => baseValue; set => SetBaseValue(value); }
     T baseValue;
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TopDownGame.Inventories.Base;
 using TopDownGame.Items;
 using WinterRose;
 using WinterRose.Monogame;
@@ -15,7 +16,7 @@ namespace TopDownGame.Inventories;
 /// An item in the <see cref="Inventory"/>
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public abstract class InventoryItem<T> : IInventoryProperties
+public abstract class InventoryItem<T> : IInventoryItem
 {
     [Hide, IgnoreInTemplateCreation]
     Type itemType;
@@ -49,7 +50,7 @@ public abstract class InventoryItem<T> : IInventoryProperties
     public abstract Rarity Rarity { get; }
 
     /// <summary>
-    /// The amount of items in a single stack there is allowed to be.
+    /// The amount of items in a single stack there is allowed to be. -1 to have a virtualy infinite stack limit
     /// </summary>
     public abstract int StackLimit { get; }
     /// <summary>
@@ -81,7 +82,7 @@ public abstract class InventoryItem<T> : IInventoryProperties
     /// <returns>null if all items were able to be stacked into this instance. 
     /// or returns the reference to <paramref name="item"/> when there are items left over, and need to be stacked into the next item instance. 
     /// Or to create a new instance</returns>
-    public IInventoryProperties? AddToStack(IInventoryProperties item)
+    public IInventoryItem? AddToStack(IInventoryItem item)
     {
         ArgumentNullException.ThrowIfNull(item);
         if (item.Count == 0) return null;
@@ -112,7 +113,7 @@ public abstract class InventoryItem<T> : IInventoryProperties
     }
 
     protected abstract void ConfigureClone(InventoryItem<T> clone);
-    IInventoryProperties? IInventoryProperties.AddToStack(IInventoryProperties item) => throw new NotImplementedException();
+    IInventoryItem? IInventoryItem.AddToStack(IInventoryItem item) => throw new NotImplementedException();
 }
 
 /// <summary>
