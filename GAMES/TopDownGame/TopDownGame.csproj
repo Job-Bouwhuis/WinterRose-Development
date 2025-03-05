@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Monogame\WinterRose.Monogame.DamageSystem\WinterRose.Monogame.DamageSystem.csproj" />
     <ProjectReference Include="..\..\Monogame\WinterRose.Monogame\WinterRose.Monogame.csproj" />
+    <ProjectReference Include="..\..\WinterRose.Monogame.Modding\WinterRose.Monogame.Modding.csproj" />
     <ProjectReference Include="..\..\WinterRose\WinterRose\WinterRose.csproj" />
   </ItemGroup>
   <Target Name="RestoreDotnetTools" BeforeTargets="Restore">

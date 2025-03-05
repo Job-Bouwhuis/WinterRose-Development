@@ -7,7 +7,7 @@ namespace WinterRose.Monogame
     /// Tells the engine that this <see cref="ObjectBehavior"/> or <see cref="ObjectComponent"/> depends on the component/behavior of type <typeparamref name="T"/>
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
     public class RequireComponentAttribute<T> : RequireComponentAttribute
     {
         /// <summary>

@@ -21,7 +21,6 @@ public abstract class ModAttribute<T>
     /// <summary>
     /// The type of moddable this attribute is valid on
     /// </summary>
-    [Hide]
     public Type Type => typeof(T);
 
     /// <summary>

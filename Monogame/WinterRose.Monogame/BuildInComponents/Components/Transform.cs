@@ -32,49 +32,32 @@ namespace WinterRose.Monogame
             {
                 if (value == _position) return;
 
-                var delta = value - _position; // Calculate the change in position
+                var delta = value - _position;
 
                 IPositionChangedCallback[] callbacks = owner.FetchComponents<IPositionChangedCallback>();
                 SquareCollider? col = FetchComponent<SquareCollider>();
-                if (col is not null && col.Enabled)
+                if (col is not null && col.Enabled && col.ResolveOverlaps)
                 {
                     foreach (var collider in col.pastColliders)
                     {
                         if (collider.other == col)
                             continue;
 
-                        // Check for collisions on different sides
                         if (collider.CollisionSide.HasFlag(CollisionSide.Left))
-                        {
                             if (delta.X < 0)
-                            {
                                 delta.X = 0.2f;
-                            }
-                        }
 
                         if (collider.CollisionSide.HasFlag(CollisionSide.Right))
-                        {
                             if (delta.X > 0)
-                            {
                                 delta.X = -0.2f;
-                            }
-                        }
 
                         if (collider.CollisionSide.HasFlag(CollisionSide.Top))
-                        {
                             if (delta.Y < 0)
-                            {
                                 delta.Y = 0;
-                            }
-                        }
 
                         if (collider.CollisionSide.HasFlag(CollisionSide.Bottom))
-                        {
                             if (delta.Y > 0)
-                            {
                                 delta.Y = 0;
-                            }
-                        }
                     }
                 }
 

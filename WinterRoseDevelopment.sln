@@ -46,6 +46,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.SilkEngine.Tests
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SilkEngine", "SilkEngine", "{19A0AC95-7859-4E04-9367-152D5F5D3016}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.Monogame.Modding", "WinterRose.Monogame.Modding\WinterRose.Monogame.Modding.csproj", "{A539355D-7CEE-4038-BB62-EB8BDDAE1315}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -104,6 +106,10 @@ Global
 		{E14D78F9-08CA-4135-A395-F52744D73EF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E14D78F9-08CA-4135-A395-F52744D73EF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E14D78F9-08CA-4135-A395-F52744D73EF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A539355D-7CEE-4038-BB62-EB8BDDAE1315}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A539355D-7CEE-4038-BB62-EB8BDDAE1315}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A539355D-7CEE-4038-BB62-EB8BDDAE1315}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A539355D-7CEE-4038-BB62-EB8BDDAE1315}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -122,6 +128,7 @@ Global
 		{6612FD4D-B8B6-4E5F-BEF2-65E33A3E7938} = {6FCE2900-03D1-47A6-BBC8-F5FA059D64FA}
 		{4EDF208C-9051-4AF1-97FA-44D6794560A5} = {19A0AC95-7859-4E04-9367-152D5F5D3016}
 		{E14D78F9-08CA-4135-A395-F52744D73EF8} = {19A0AC95-7859-4E04-9367-152D5F5D3016}
+		{A539355D-7CEE-4038-BB62-EB8BDDAE1315} = {CEEC716A-A273-4111-8622-209F54DA8E14}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4476F88-F402-4E67-B4D9-6187D5BAD463}

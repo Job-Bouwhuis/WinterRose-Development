@@ -10,8 +10,7 @@ namespace WinterRose.Monogame.ModdingSystem;
 [IncludeAllProperties]
 public class Mod<T> where T : class
 {
-    [Show]
-    private readonly List<ModAttribute<T>> attributes = new();
+    public List<ModAttribute<T>> attributes { get; private set; } = new();
 
     public Mod(string name, string description)
     {
@@ -43,10 +42,11 @@ public class Mod<T> where T : class
         attributes.Add(attribute);
     }
 
-    public void AddAttribute<TAttribute>() where TAttribute : ModAttribute<T>
+    public TAttribute AddAttribute<TAttribute>() where TAttribute : ModAttribute<T>
     {
         var instance = ActivatorExtra.CreateInstance<TAttribute>();
         AddAttribute(instance);
+        return instance;
     }
 
     /// <summary>
@@ -84,6 +84,16 @@ public class Mod<T> where T : class
     {
         var effectSummary = string.Join(",\n", attributes.Select(a => a.EffectString));
         return $"{Name} ({ModPoints} Points): {effectSummary}";
+    }
+
+    public TAttribute? GetAttribute<TAttribute>() where TAttribute : ModAttribute<T>
+    {
+        foreach (var attribute in attributes)
+        {
+            if (attribute is TAttribute a)
+                return a;
+        }
+        return null;
     }
 }
 

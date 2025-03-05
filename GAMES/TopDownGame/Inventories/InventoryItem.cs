@@ -32,7 +32,7 @@ public abstract class InventoryItem<T> : IInventoryItem
     /// The amount of this item kind is inventory item represents
     /// </summary>
     [IncludeWithSerialization]
-    public int Count { get; set; } = 0;
+    public virtual int Count { get; set; } = 0;
 
     /// <summary>
     /// The name of the item

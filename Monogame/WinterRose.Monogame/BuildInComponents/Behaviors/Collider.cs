@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame
 {
@@ -26,6 +27,12 @@ namespace WinterRose.Monogame
         /// Invoked when the collider stays in a collision
         /// </summary>
         public event Action<CollisionInfo> OnCollisionStay = delegate { };
+
+        /// <summary>
+        /// Whether or not the collider should allow overlapping or not
+        /// </summary>
+        [IncludeWithSerialization]
+        public bool ResolveOverlaps { get; set; } = true;
 
         /// <summary>
         /// The hitbox of the collider

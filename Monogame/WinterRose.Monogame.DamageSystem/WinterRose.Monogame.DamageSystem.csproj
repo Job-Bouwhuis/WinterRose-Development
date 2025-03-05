@@ -17,6 +17,7 @@
     <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.1.303" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\WinterRose.Monogame.Modding\WinterRose.Monogame.Modding.csproj" />
     <ProjectReference Include="..\WinterRose.Monogame\WinterRose.Monogame.csproj" />
   </ItemGroup>
   <Target Name="RestoreDotnetTools" BeforeTargets="Restore">

@@ -1,9 +1,11 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 using TopDownGame.Components.Players;
 using TopDownGame.Drops;
 using TopDownGame.Items;
 using TopDownGame.Players;
 using TopDownGame.Resources;
+using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem;
 using WinterRose.Monogame.ModdingSystem;
@@ -25,7 +27,6 @@ internal class Level1 : WorldTemplate
         world.Name = "Level 1";
 
         var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
-        player.AttachComponent<Player>("Dajuska");
         player.AttachComponent<ModifiablePlayerMovement>(5);
         player.AttachComponent<PlayerSprint>();
         var effector = player.AttachComponent<StatusEffector>();
@@ -34,6 +35,7 @@ internal class Level1 : WorldTemplate
         vitals.Health.MaxHealth = 2500;
         vitals.Armor.BaseArmor = 0.97f;
         player.owner.Flag = "Player";
+        player.AttachComponent<Player>("Test");
 
         var gun = CreateSMG(world).owner;
         gun.FetchComponent<Weapon>().AvailableFireingMode = WeaponFireingMode.Auto;
@@ -41,6 +43,7 @@ internal class Level1 : WorldTemplate
 
         Mod<Weapon> mod = new("Hard Hitter", "Increases damage of the weapon");
         mod.AddAttribute<WeaponDamageMod>();
+        mod.GetAttribute<WeaponDamageMod>().DamageBoost = 5;
 
         var container = gun.FetchComponent<Weapon>().ModContainer;
         container.TotalModCapacity = 100;
@@ -59,14 +62,33 @@ internal class Level1 : WorldTemplate
         box.AttachComponent<DestroyOnDeath>();
         box.AttachComponent<StatusEffector>();
 
-        var itemObject = world.CreateObject<SpriteRenderer>("item", 50, 50, new Color(0, 255, 0));
-        itemObject.transform.position = new Vector2(500, 500);
-        ResourceItem item = new();
-        item.Item = new Flesh();
-        item.Count = 1;
-        itemObject.owner.AttachComponent<ItemDrop>(item);
+
+        // Spawning multiple items in a circle
+        int itemCount = 1000;
+        Vector2 center = new Vector2(500, 500);
+        float spawnRadius = 1000;
+
+        for (int i = 0; i < itemCount; i++)
+        {
+            Vector2 spawnPos = center + RandomPointInCircle(spawnRadius);
+
+            var itemObject = world.CreateObject<SpriteRenderer>("item", 5, 5, new Color(0, 255, 0));
+            itemObject.transform.position = spawnPos;
+
+            ResourceItem item = new();
+            item.Item = new Flesh();
+            item.Count = 1;
+            itemObject.owner.AttachComponent<ItemDrop>(item);
+        }
 
         Application.Current.CameraIndex = 0;
+    }
+
+    public static Vector2 RandomPointInCircle(float radius)
+    {
+        float angle = new Random().NextFloat(0, MathF.PI * 2);
+        float distance = MathF.Sqrt(new Random().NextFloat(0, 1)) * radius;
+        return new Vector2(MathF.Cos(angle) * distance, MathF.Sin(angle) * distance);
     }
 
     Weapon CreatePistol(World world)
@@ -97,12 +119,13 @@ internal class Level1 : WorldTemplate
     Weapon CreateSMG(World world)
     {
         var bullet = world.CreateObject<SpriteRenderer>("SMGBullet", 25, 8, Color.Red);
-        bullet.AttachComponent<SquareCollider>();
+        var collider = bullet.AttachComponent<SquareCollider>();
+        collider.ResolveOverlaps = false;
         var proj = bullet.AttachComponent<Projectile>();
         proj.Speed = 1600;
         proj.Damage = new FireDamage(10);
         proj.Lifetime = 5;
-        proj.Spread = .01f;
+        proj.Spread = .1f;
         bullet.AttachComponent<DefaultProjectileHitAction>();
         bullet.owner.Flag = "Bullet";
         bullet.owner.CreatePrefab("SMGBullet");

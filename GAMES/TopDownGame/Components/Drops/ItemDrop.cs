@@ -19,7 +19,7 @@ namespace TopDownGame.Drops;
 internal class ItemDrop : ObjectBehavior
 {
     public string TargetFlag { get; set; } = "Player";
-    public float PickupDistance { get; set; } = 50;
+    public float PickupDistance { get; set; } = 25;
     public float FlyTowardsTargetDistance { get; set; } = 300;
     public float FlySpeed { get; set; } = 200;
     public required IInventoryItem Item { get; init; }
@@ -53,10 +53,14 @@ internal class ItemDrop : ObjectBehavior
             return;
         }
 
-        if(distance <= FlyTowardsTargetDistance)
+        if (distance <= FlyTowardsTargetDistance)
         {
             var direction = -(transform.position - target.transform.position).Normalized();
-            transform.Translate(FlySpeed * Time.SinceLastFrame * direction);
+
+            float closenessFactor = 1 + (FlyTowardsTargetDistance - distance) / PickupDistance;
+
+            transform.Translate(FlySpeed * Time.SinceLastFrame * direction * closenessFactor);
         }
+
     }
 }

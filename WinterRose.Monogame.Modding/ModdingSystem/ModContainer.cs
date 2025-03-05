@@ -14,8 +14,10 @@ namespace WinterRose.Monogame.ModdingSystem;
 [IncludePrivateFields]
 public class ModContainer<T> where T : class
 {
-    [Show]
-    private readonly List<Mod<T>> mods = new();
+    /// <summary>
+    /// The mods that are in this container
+    /// </summary>
+    public List<Mod<T>> Mods { get; private set; } = new();
 
     /// <summary>
     /// The total capacity of mods this container can hold
@@ -26,7 +28,7 @@ public class ModContainer<T> where T : class
     /// <summary>
     /// Gets the current number of mod points used
     /// </summary>
-    public int CurrentModPoints => mods.Sum(mod => mod.ModPoints);
+    public int CurrentModPoints => Mods.Sum(mod => mod.ModPoints);
 
     /// <summary>
     /// Adds a mod to the container if capacity allows
@@ -37,7 +39,7 @@ public class ModContainer<T> where T : class
     {
         if (CurrentModPoints + mod.ModPoints > TotalModCapacity) return false;
 
-        mods.Add(mod);
+        Mods.Add(mod);
         return true;
     }
 
@@ -46,7 +48,7 @@ public class ModContainer<T> where T : class
     /// </summary>
     public void RemoveMod(Mod<T> mod)
     {
-        mods.Remove(mod);
+        Mods.Remove(mod);
     }
 
     /// <summary>
@@ -55,7 +57,7 @@ public class ModContainer<T> where T : class
     public void ApplyAllMods(T target)
     {
         ArgumentNullException.ThrowIfNull(target);
-        foreach (var mod in mods)
+        foreach (var mod in Mods)
             mod.Apply(target);
     }
 
@@ -65,7 +67,7 @@ public class ModContainer<T> where T : class
     public void UnapplyAllMods(T target)
     {
         ArgumentNullException.ThrowIfNull(target);
-        foreach (var mod in mods)
+        foreach (var mod in Mods)
             mod.Unapply(target);
     }
 
@@ -74,7 +76,7 @@ public class ModContainer<T> where T : class
     /// </summary>
     public override string ToString()
     {
-        return string.Join("\n", mods.Select(mod => mod.ToString()));
+        return string.Join("\n", Mods.Select(mod => mod.ToString()));
     }
 }
 
