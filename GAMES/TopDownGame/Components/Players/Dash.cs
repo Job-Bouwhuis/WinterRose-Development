@@ -39,7 +39,6 @@ internal class Dash : ObjectBehavior
             transform.Translate(dir * DashDistance);
             mayDash = false;
             effector.Apply<DashCooldownEffect>(1, DashCooldown.Value);
-            effector.Apply<FireStatusEffect>(1, 0.5f);
         }
     }
 

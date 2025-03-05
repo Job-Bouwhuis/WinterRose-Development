@@ -23,7 +23,7 @@ public sealed class AssetDatabaseFile
     /// <returns></returns>
     public string ReadContent()
     {
-        return FileManager.Read(File.FullName);
+        return FileManager.Read(File.FullName.Replace("\n", "").Replace("\r", ""));
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ public sealed class AssetDatabaseFile
     /// <param name="override"></param>
     public void WriteContent(string content, bool @override = false)
     {
-        FileManager.WriteLine(File.FullName, content, @override);
+        FileManager.WriteLine(File.FullName.Replace("\n", "").Replace("\r", ""), content, @override);
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ public sealed class AssetDatabaseFile
     /// <returns></returns>
     public IEnumerator<(string, int)> GetNumberedEnumerator()
     {
-        return FileManager.EnumerateNumberedLines(File.FullName);
+        return FileManager.EnumerateNumberedLines(File.FullName.Replace("\n", "").Replace("\r", ""));
     }
 
     /// <summary>
@@ -51,6 +51,6 @@ public sealed class AssetDatabaseFile
     /// <returns></returns>
     public IEnumerator<string> GetEnumerator()
     {
-        return FileManager.EnumerateLines(File.FullName);
+        return FileManager.EnumerateLines(File.FullName.Replace("\n", "").Replace("\r", ""));
     }
 }

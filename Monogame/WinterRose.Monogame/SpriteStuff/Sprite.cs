@@ -41,6 +41,39 @@ public class Sprite
     [ExcludeFromSerialization] private Texture2D? texture;
     private string? texturePath;
 
+    /// <summary>
+    /// Gets the width of this sprite
+    /// </summary>
+    public int Width => texture?.Width ?? 0;
+    /// <summary>
+    /// Gets the height of this sprite
+    /// </summary>
+    public int Height => texture?.Height ?? 0;
+    /// <summary>
+    /// Gets the dimention of this Sprite
+    /// </summary>
+    public Vector2I spriteSize => new(Width, Height);
+    /// <summary>
+    /// Get the center of the sprite
+    /// </summary>
+    public Vector2 Center => new(Width / 2, Height / 2);
+    /// <summary>
+    /// Returns the bounds of the texture, or a new <see cref="Rectangle"/> if there is no texture assigned to this <see cref="Sprite"/>
+    /// </summary>
+    public RectangleF Bounds
+    {
+        get
+        {
+            var res =  texture?.Bounds;
+            if (res is not null)
+                return (RectangleF)res;
+            if (GeneratedTextureData is not null)
+                return new(GeneratedTextureData.Width, GeneratedTextureData.Height, 0, 0);
+
+            return RectangleF.Zero;
+        }
+    }
+
     internal bool IsExternalTexture { get; private set; } = false;
     internal GeneratedTextureData? GeneratedTextureData;
     internal Sprite(Texture2D texture, string name)
@@ -200,6 +233,7 @@ public class Sprite
     {
         GeneratedTextureData = generatedData;
         Name = generatedData.Name;
+        texture = generatedData.MakeTexture();
     }
 
     private void LoadFromBase64(string data)
@@ -229,45 +263,6 @@ public class Sprite
         }
     }
     public static implicit operator Sprite(Texture2D tex) => new(tex, "default") { TexturePath = tex.Name };
-
-    /// <summary>
-    /// Gets the width of this sprite
-    /// </summary>
-    public int Width
-    {
-        get => texture?.Width ?? 0;
-    }
-    /// <summary>
-    /// Gets the height of this sprite
-    /// </summary>
-    public int Height
-    {
-        get => texture?.Height ?? 0;
-    }
-    /// <summary>
-    /// Gets the dimention of this Sprite
-    /// </summary>
-    public Vector2I spriteSize
-    {
-        get => new(Width, Height);
-    }
-    /// <summary>
-    /// Get the center of the sprite
-    /// </summary>
-    public Vector2 Center
-    {
-        get => new(Width / 2, Height / 2);
-    }
-    /// <summary>
-    /// Returns the bounds of the texture, or a new <see cref="Rectangle"/> if there is no texture assigned to this <see cref="Sprite"/>
-    /// </summary>
-    public RectangleF Bounds
-    {
-        get
-        {
-            return texture?.Bounds ?? RectangleF.Zero;
-        }
-    }
 
     /// <summary>
     /// Gets the pixel data of this sprite

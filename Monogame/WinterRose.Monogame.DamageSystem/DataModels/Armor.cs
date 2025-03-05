@@ -58,5 +58,5 @@ public class Armor
     /// <param name="value">The raw damage value that is received.</param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public int CalculateReducedArmor(int rawDamage) => (int)Math.Round(rawDamage * CurrentArmor, 0, MidpointRounding.AwayFromZero);
+    public int CalculateReducedDamage(int rawDamage) => (int)Math.Round(rawDamage * CurrentArmor, 0, MidpointRounding.AwayFromZero);
 }

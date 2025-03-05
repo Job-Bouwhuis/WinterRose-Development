@@ -14,6 +14,11 @@ internal class ResourceItem : InventoryItem<Resource>
     public override Rarity Rarity => Item.Rarity;
     public override int Count { get => Item.Amount; set => Item.Amount = value; }
     public override int StackLimit => Item.Timeout is null ? int.MaxValue : 1;
+    public override Sprite ItemSprite 
+    { 
+        get => Item.ResourceSprite; 
+        set => Item.ResourceSprite = value;
+    }
 
     protected override void ConfigureClone(InventoryItem<Resource> clone) => clone.Item = Item;
 }

@@ -11,5 +11,5 @@ internal class Flesh : Resource
     public override string Name => nameof(Flesh);
     public override string Description => "Flesh ripped off by a weapon from an enemy";
     public override Rarity Rarity => Constants.CommonRarity;
-    
+    public override Sprite ResourceSprite { get; set; }
 }

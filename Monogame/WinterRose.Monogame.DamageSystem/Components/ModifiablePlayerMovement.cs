@@ -9,12 +9,9 @@ namespace WinterRose.Monogame;
 public class ModifiablePlayerMovement : ObjectBehavior
 {
     [IncludeInTemplateCreation, IncludeWithSerialization]
-    public StaticCombinedModifier<float> SpeedModifier { get; private set; } = 20;
+    public StaticCombinedModifier<float> SpeedModifier { get; private set; } = 200;
 
-    public ModifiablePlayerMovement(float speed)
-    {
-        SpeedModifier = speed;
-    }
+    public ModifiablePlayerMovement(float speed) => SpeedModifier = speed;
 
     public ModifiablePlayerMovement() { }
 
@@ -24,6 +21,6 @@ public class ModifiablePlayerMovement : ObjectBehavior
         Vector2 inputDirection = Input.GetNormalizedWASDInput();
 
         // Move the player towards the target position
-        transform.position += inputDirection * SpeedModifier.Value;
+        transform.position += inputDirection * SpeedModifier.Value * Time.deltaTime;
     }
 }

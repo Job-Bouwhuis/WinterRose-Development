@@ -32,14 +32,6 @@ namespace TopDownGame.Components.Loot
             return AssetDatabase.LoadAsset<LootTable>(name);
         }
 
-        [IncludeAllProperties]
-        public class LootChance(float weight, IInventoryItem item)
-        {
-            public float Weight { get; set; } = weight;
-            public IInventoryItem Item { get; set; } = item;
-            private LootChance() : this(0, null) {} // for serialization    
-        }
-
         public IInventoryItem Generate()
         {
             if (Table.Count == 0)

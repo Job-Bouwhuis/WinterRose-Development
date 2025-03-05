@@ -63,6 +63,14 @@ public sealed class Inventory : Asset
         CircleReferencesEnabled = true
     };
     public override void Load() => Items = SnowSerializer.Deserialize<Inventory>(File.ReadContent(), inventorySaveSettings).Result.Items;
-    public override void Save() => File.WriteContent(SnowSerializer.Serialize(this, inventorySaveSettings).Result, true);
-    public override void Unload() => Items.Clear();
+    public override void Save()
+    {
+        ValidateItemStacks();
+        File.WriteContent(SnowSerializer.Serialize(this, inventorySaveSettings).Result, true);
+    }
+    public override void Unload()
+    {
+        Save();
+        Items.Clear();
+    }
 }

@@ -8,6 +8,9 @@ using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.Monogame.Weapons;
 
+/// <summary>
+/// it go brrrrrr
+/// </summary>
 [RequireComponent<Collider>(AutoAdd = false)]
 [ParallelBehavior]
 public class Projectile : ObjectBehavior
@@ -54,7 +57,9 @@ public class Projectile : ObjectBehavior
     [IncludeWithSerialization]
     public StaticCombinedModifier<float> Force { get; set; } = 0.0f;
     /// <summary>
-    /// The chance this bullet has to apply a status effect. if greater than 100, guaranteed 1 with a chance to apply 2, greater than 200 guaranteed 2, with chance of 3
+    /// The chance this bullet has to apply a status effect. 
+    /// if greater than 100, guaranteed 1 with a chance to apply 2, 
+    /// greater than 200 guaranteed 2, with chance of 3
     /// </summary>
     [IncludeWithSerialization]
     public int StatusChance { get; set; }

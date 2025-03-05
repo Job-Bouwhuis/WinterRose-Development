@@ -38,16 +38,28 @@ internal class ItemDrop : ObjectBehavior
         Universe.CurrentWorld.Instantiate(obj);
     }
 
+    public static void Create(Vector2 pos, IInventoryItem item, World world)
+    {
+        WorldObject obj = WorldObject.CreateNew("ItemDrop_" + item.Name);
+        obj.transform.position = pos;
+        Sprite sprite = item.ItemSprite;
+        sprite ??= noTextureItemPlaceholder;
+        obj.AttachComponent<SpriteRenderer>(sprite);
+        var result = obj.AttachComponent<ItemDrop>(item);
+        world.Instantiate(obj);
+    }
+
     protected override void Awake()
     { 
         target = transform.world.FindObjectWithFlag(TargetFlag);
 
         if (target == null)
-            throw new InvalidOperationException("No object with {TargetFlag} found in the world!");
+            throw new InvalidOperationException($"No object with {TargetFlag} found in the world!");
 
         if(!target.HasComponent<Player>())
-            throw new InvalidOperationException("Object with {TargetFlag} does not have component Player");
+            throw new InvalidOperationException($"Object with {TargetFlag} does not have component Player");
 
+        // set scale to something that makes items always same size lmao
     }
 
     protected override void Update()

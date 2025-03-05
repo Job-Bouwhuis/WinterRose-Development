@@ -57,6 +57,7 @@ public class StaticCombinedModifier<T> : ICloneable where T : INumber<T>
     public void RemoveAdditive(int key)
     {
         AdditiveModifier.Remove(key);
+        MultiplicativeModifier.SetBaseValue(AdditiveModifier.Value);
     }
 
     /// <summary>

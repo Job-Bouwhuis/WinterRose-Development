@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame
 {
@@ -67,12 +68,17 @@ namespace WinterRose.Monogame
         /// </summary>
         public int collisions => pastColliders.Count;
 
+        [IncludeWithSerialization]
+        public List<string> IgnoredFlags { get; set; } = [];
+
         protected override List<CollisionInfo> CheckCollision(List<Collider> colliders)
         {
             List<CollisionInfo> collisions = new List<CollisionInfo>();
             foreach (var other in colliders)
             {
                 if (other == this) continue;
+                if (IgnoredFlags.Contains(other.owner.Flag))
+                    continue;
                 right = IsTouchingLeft(other);
                 left = IsTouchingRight(other);
                 bottom = IsTouchingTop(other);
@@ -97,7 +103,6 @@ namespace WinterRose.Monogame
                 if (!collisions.Any(x => x.other == col.other))
                     collisions.Add(new(this, col.other, CollisionType.Exit, CollisionSide.None));
             }
-            pastColliders = collisions.Where(x => x.type != CollisionType.Exit).ToList();
             return collisions;
         }
 
@@ -164,6 +169,13 @@ namespace WinterRose.Monogame
                 Bounds.Bottom > other.Bounds.Bottom &&
                 Bounds.Right > other.Bounds.Left &&
                 Bounds.Left < other.Bounds.Right;
+        }
+
+        internal override ObjectComponent Clone(WorldObject newOwner)
+        {
+            SquareCollider clone = base.Clone(newOwner) as SquareCollider;
+            clone.IgnoredFlags = [.. IgnoredFlags];
+            return clone;
         }
     }
 }

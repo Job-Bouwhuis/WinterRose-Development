@@ -51,7 +51,7 @@ public class Vitality : ObjectComponent, IHittable
     /// Calculates the correct damage depending on <see cref="Armor"/>, and deals it to <see cref="Health"/>
     /// </summary>
     /// <param name="damage"></param>
-    public void DealDamage(int damage) => Health.DealDamage(Armor.CalculateReducedArmor(damage));
+    public void DealDamage(int damage) => Health.DealDamage(Armor.CalculateReducedDamage(damage));
 
     /// <summary>
     /// Deals the damage and ignores the armor. the exact damage amount is dealt to this entity

@@ -512,6 +512,7 @@ public sealed class World : IEnumerable<WorldObject>
         result.transform.position = obj.transform.position;
         result.transform.rotation = obj.transform.rotation;
         result.transform.scale = obj.transform.scale;
+        result.Flag = obj.Flag;
 
         foreach (var comp in obj.FetchComponents())
         {

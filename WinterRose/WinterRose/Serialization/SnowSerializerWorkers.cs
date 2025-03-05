@@ -130,7 +130,7 @@ namespace WinterRose.Serialization
                     if (value is "")
                         end = EMPTYSTRING;
                     else
-                        end = s.Base64Encode();
+                        end = s;
                 }
                 else
                     end = value.ToString();
@@ -284,9 +284,20 @@ namespace WinterRose.Serialization
                     fields.Add(field);
                     continue;
                 }
-                if (!field.GetCustomAttributes().Any(x => x.GetType() == typeof(ExcludeFromSerializationAttribute)) && !field.Name.Contains('<'))
+                Attribute? att = objectType.GetCustomAttribute<IncludeWithSerializationAttribute>();
+                if (att is not null
+                    && !field.Name.Contains('<'))
+                {
                     fields.Add(field);
-
+                    continue;
+                }
+                att = field.GetCustomAttribute<ExcludeFromSerializationAttribute>();
+                if (att is null
+                    && !field.Name.Contains('<'))
+                {
+                    fields.Add(field);
+                    continue;
+                }
             }
             foreach (var property in propertiesTemp)
             {
@@ -295,7 +306,8 @@ namespace WinterRose.Serialization
                     properties = new List<PropertyInfo>(propertiesTemp);
                     break;
                 }
-                if (property.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
+                if (objectType.GetCustomAttribute<IncludeAllPropertiesAttribute>() is not null
+                    || property.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
                     if (property.CanWrite // properties that cant be written to will be ignored always.
                         && !property.GetCustomAttributes().Any(x => x.GetType() == typeof(ExcludeFromSerializationAttribute)))
                         properties.Add(property);
@@ -310,15 +322,12 @@ namespace WinterRose.Serialization
             else if (objectType.Name == "Nullable`1")
             {
                 Type t = objectType.GetGenericArguments().First();
-                typeassembly = $"@{depth}{$"{t.Name}--{t.Namespace}--{t.Assembly.GetName().FullName}".Base64Encode()}";
+                typeassembly = $"@{depth}{$"{t.Name}--{t.Namespace}--" +
+                    $"{t.Assembly.GetName().FullName}".Base64Encode()}";
             }
             else
-                typeassembly = $"{objectType.Name}--{objectType.Namespace}--{objectType.Assembly.GetName().FullName}";
-
-            if (typeassembly.Contains("ObjectComponent"))
-            {
-
-            }
+                typeassembly = $"{objectType.Name}--{objectType.Namespace}--" +
+                    $"{objectType.Assembly.GetName().FullName}";
 
             result.Append($"@{depth}{typeassembly.Base64Encode()}");
 
@@ -334,7 +343,8 @@ namespace WinterRose.Serialization
                 result.Append(']');
             }
 
-            if (settings.CircleReferencesEnabled)
+            // structs should not be cached
+            if (settings.CircleReferencesEnabled && (objectType.IsClass || objectType.IsInterface))
             {
                 bool newItem = refCache.Map(item, out int key);
                 result.Append('<');
@@ -353,24 +363,28 @@ namespace WinterRose.Serialization
             foreach (FieldInfo field in fields)
             {
                 result.Append(SerializeField(
-                    field.GetValue(item),
-                    field.Name,
-                    field.FieldType,
-                    depth,
-                    SerializerSettings.CreateFrom(settings, newSettings =>
-                    {
-                        newSettings.includePropertiesForField = field.CustomAttributes
-                    .Any(x => x.AttributeType == typeof(IncludePropertiesForFieldAttribute));
-                        newSettings.includePrivateFieldsForField = field.CustomAttributes
-                    .Any(x => x.AttributeType == typeof(IncludePrivateFieldsForFieldAttribute));
+                field.GetValue(item),
+                field.Name,
+                field.FieldType,
+                depth,
+                SerializerSettings.CreateFrom(settings, newSettings =>
+                {
+                    newSettings.includePropertiesForField = field.CustomAttributes
+                .Any(x => x.AttributeType == typeof(IncludePropertiesForFieldAttribute));
+                    newSettings.includePrivateFieldsForField = field.CustomAttributes
+                .Any(x => x.AttributeType == typeof(IncludePrivateFieldsForFieldAttribute));
 
-                    }),
-                    refCache));
+                }),
+                refCache));
             }
 
             foreach (PropertyInfo property in properties)
             {
-                result.Append(SerializeField(
+                string s = result.ToString();
+
+                if (property.Name == "IgnoredFlags") ;
+
+                StringBuilder temp = SerializeField(
                     property.GetValue(item),
                     property.Name,
                     property.PropertyType,
@@ -383,7 +397,9 @@ namespace WinterRose.Serialization
                     .Any(x => x.AttributeType == typeof(IncludePrivateFieldsForFieldAttribute));
 
                     }),
-                    refCache));
+                    refCache);
+
+                result.Append(temp);
             }
 
             // events removed from serialization
@@ -479,7 +495,7 @@ namespace WinterRose.Serialization
             if (value.StartsWith(NULL))
                 return null;
             if (fieldType == typeof(string))
-                return value.Base64Decode();
+                return value;
             //if the field is a primitive, set the value
             if (SupportedPrimitives.Contains(fieldType))
                 return TypeWorker.TryCastPrimitive(value, fieldType, out dynamic result) ? result : null;
@@ -540,15 +556,16 @@ namespace WinterRose.Serialization
         /// <returns>The deserialized list</returns>
         public static dynamic DeserializeList<T>(string data, int depth, Type listType, IList buffer, SerializerSettings settings, SerializeReferenceCache refCache)
         {
-            Type t = typeof(T);
-            //split the data into individual items
             string[] values = data.Split($"^{depth}", StringSplitOptions.RemoveEmptyEntries);
 
             foreach (string value in values)
             {
                 object e = DeserializeField<T>(value, listType, depth, settings, refCache);
-                if (e is not null and (not string and not NULL))
-                    buffer.Add(e);
+                if (e is not null)
+                    if (e is string and NULL)
+                        continue;
+                    else
+                        buffer.Add(e);
             }
             return buffer;
         }
@@ -640,7 +657,8 @@ namespace WinterRose.Serialization
                 throw new DeserializationFailedException("Could not create instance of type " + objectType.FullName);
 
 
-            if (settings.CircleReferencesEnabled)
+            if (settings.CircleReferencesEnabled 
+                && (objectType.IsClass || objectType.IsInterface))
             {
                 key = int.Parse(fields[0][3..^1]);
                 refCache.Map(key, ref result);

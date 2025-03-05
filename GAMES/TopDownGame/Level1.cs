@@ -31,7 +31,8 @@ internal class Level1 : WorldTemplate
         world.Name = "Level 1";
 
         var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
-        player.AttachComponent<ModifiablePlayerMovement>(5);
+        player.AttachComponent<SquareCollider>().IgnoredFlags.Add("PlayerBullet");
+        player.AttachComponent<ModifiablePlayerMovement>();
         player.AttachComponent<PlayerSprint>();
         var effector = player.AttachComponent<StatusEffector>();
         player.AttachComponent<Dash>();
@@ -46,8 +47,7 @@ internal class Level1 : WorldTemplate
         gun.FetchComponent<Weapon>().CurrentFiringMode = WeaponFireingMode.Auto;
 
         Mod<Weapon> mod = new("Hard Hitter", "Increases damage of the weapon");
-        mod.AddAttribute<WeaponDamageMod>();
-        mod.GetAttribute<WeaponDamageMod>().DamageBoost = 5;
+        mod.AddAttribute<WeaponDamageMod>().DamageBoost = 5;
 
         var container = gun.FetchComponent<Weapon>().ModContainer;
         container.TotalModCapacity = 100;
@@ -91,9 +91,9 @@ internal class Level1 : WorldTemplate
         //Time.Timescale = 0.1f;
 
         // Spawning multiple items in a circle
-        int itemCount = 1000;
+        int itemCount = 100; 
         Vector2 center = new Vector2(500, 500);
-        float spawnRadius = 400;
+        float spawnRadius = 1000;
 
         for (int i = 0; i < itemCount; i++)
         {
@@ -111,14 +111,9 @@ internal class Level1 : WorldTemplate
                 col = new Color(255, 150, 255);
                 item.Item = new Crystal();
             }
-
-            var itemObject = world.CreateObject<SpriteRenderer>("item", 5, 5, col);
-            itemObject.transform.position = spawnPos;
-
-
-
             item.Count = 1;
-            itemObject.owner.AttachComponent<ItemDrop>(item);
+
+            ItemDrop.Create(spawnPos, item, world);
         }
 
         Application.Current.CameraIndex = 0;
@@ -134,14 +129,16 @@ internal class Level1 : WorldTemplate
     Weapon CreatePistol(World world)
     {
         var bullet = world.CreateObject<SpriteRenderer>("PistolBullet", 25, 8, Color.Red);
-        bullet.AttachComponent<SquareCollider>();
+        var collider = bullet.AttachComponent<SquareCollider>();
+        collider.IgnoredFlags.Add("Player");
+        collider.ResolveOverlaps = false;
         var proj = bullet.AttachComponent<Projectile>();
         proj.Speed = 1600;
         proj.Damage = new FireDamage(100);
         proj.Lifetime = 5;
         proj.StatusChance = 40;
         bullet.AttachComponent<DefaultProjectileHitAction>();
-        bullet.owner.Flag = "Bullet";
+        bullet.owner.Flag = "PlayerBullet";
         bullet.owner.CreatePrefab("PistolBullet");
 
         var gun = world.CreateObject("Pistol");
@@ -160,14 +157,16 @@ internal class Level1 : WorldTemplate
     {
         var bullet = world.CreateObject<SpriteRenderer>("SMGBullet", 25, 8, Color.Red);
         var collider = bullet.AttachComponent<SquareCollider>();
+        collider.IgnoredFlags.Add("Player");
         collider.ResolveOverlaps = false;
         var proj = bullet.AttachComponent<Projectile>();
         proj.Speed = 1600;
         proj.Damage = new FireDamage(10);
         proj.Lifetime = 5;
         proj.Spread = .1f;
+        proj.StatusChance = 50;
         bullet.AttachComponent<DefaultProjectileHitAction>();
-        bullet.owner.Flag = "Bullet";
+        bullet.owner.Flag = "PlayerBullet";
         bullet.owner.CreatePrefab("SMGBullet");
         world.DestroyImmediately(bullet.owner);
 
@@ -186,14 +185,16 @@ internal class Level1 : WorldTemplate
     Weapon CreateFlameThrower(World world)
     {
         var bullet = world.CreateObject<SpriteRenderer>("FlamePart", 25, 8, Color.Red);
-        bullet.AttachComponent<SquareCollider>();
+        var collider = bullet.AttachComponent<SquareCollider>();
+        collider.IgnoredFlags.Add("Player");
+        collider.ResolveOverlaps = false;
         var proj = bullet.AttachComponent<Projectile>();
         proj.Speed = 270;
         proj.Damage = new FireDamage(1);
         proj.Lifetime = 1.3f;
         proj.Spread = .5f;
         bullet.AttachComponent<DefaultProjectileHitAction>();
-        bullet.owner.Flag = "Bullet";
+        bullet.owner.Flag = "PlayerBullet";
         bullet.owner.CreatePrefab("FlamePart");
 
         var gun = world.CreateObject("FlameThrower");

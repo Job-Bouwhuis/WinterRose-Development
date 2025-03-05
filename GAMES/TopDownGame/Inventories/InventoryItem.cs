@@ -12,9 +12,9 @@ namespace TopDownGame.Inventories;
 /// <typeparam name="T"></typeparam>
 public abstract class InventoryItem<T> : IInventoryItem
 {
-    [Hide, IgnoreInTemplateCreation]
+    [Hide, ExcludeFromSerialization]
     protected Type itemType;
-    [Hide, IgnoreInTemplateCreation]
+    [Hide, ExcludeFromSerialization]
     public virtual Type ItemType => itemType ??= typeof(T);
 
     public InventoryItem() { }
@@ -46,7 +46,7 @@ public abstract class InventoryItem<T> : IInventoryItem
     /// The items rarity
     /// </summary>
     public abstract Rarity Rarity { get; }
-    public Sprite ItemSprite { get; set; }
+    public virtual Sprite ItemSprite { get; set; }
     /// <summary>
     /// The amount of items in a single stack there is allowed to be.
     /// </summary>

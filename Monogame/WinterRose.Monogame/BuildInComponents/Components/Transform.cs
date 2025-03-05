@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using WinterRose.Monogame.Attributes;
 using WinterRose.Monogame.Interfaces;
@@ -140,6 +141,7 @@ namespace WinterRose.Monogame
             }
         }
 
+        [IncludeWithSerialization]
         private Transform? _parent;
         public Transform? parent
         {
@@ -160,10 +162,14 @@ namespace WinterRose.Monogame
         /// </summary>
         public bool HasChildren => children.Count is not 0;
 
+        [IncludeWithSerialization]
         private List<Transform> children = new();
 
+        [IncludeWithSerialization]
         private Vector2 _position;
+        [IncludeWithSerialization]
         private float _rotation;
+        [IncludeWithSerialization]
         private Vector2 _scale = new(1, 1);
 
         /// <summary>
