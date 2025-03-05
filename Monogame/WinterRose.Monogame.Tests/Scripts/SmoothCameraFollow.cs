@@ -43,6 +43,6 @@ internal class SmoothCameraFolloww : ObjectBehavior
                            targetPos.Y - (cam.transform.position.Y - (cam.Bounds.Y / 100000)));
 
         // make the camera position lerp to the target position
-        transform.position += relativePos * (Speed * (float)Time.SinceLastFrame);
+        transform.position += relativePos * (Speed * (float)Time.deltaTime);
     }
 }

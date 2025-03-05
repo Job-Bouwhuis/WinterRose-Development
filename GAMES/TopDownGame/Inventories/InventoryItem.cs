@@ -13,9 +13,9 @@ namespace TopDownGame.Inventories;
 public abstract class InventoryItem<T> : IInventoryItem
 {
     [Hide, IgnoreInTemplateCreation]
-    Type itemType;
+    protected Type itemType;
     [Hide, IgnoreInTemplateCreation]
-    public Type ItemType => itemType ??= typeof(T);
+    public virtual Type ItemType => itemType ??= typeof(T);
 
     public InventoryItem() { }
     protected InventoryItem(InventoryItem<T> original)
@@ -46,10 +46,34 @@ public abstract class InventoryItem<T> : IInventoryItem
     /// The items rarity
     /// </summary>
     public abstract Rarity Rarity { get; }
+    public Sprite ItemSprite { get; set; }
     /// <summary>
     /// The amount of items in a single stack there is allowed to be.
     /// </summary>
     public abstract int StackLimit { get; }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not IInventoryItem item)
+            return false;
+        return Equals(item);
+    }
+    public bool Equals(IInventoryItem item)
+    {
+        if (item is null)
+            return false;
+
+        if (!GetType().Equals(item.GetType()))
+            return false;
+
+        if (!ItemType.Equals(item.ItemType))
+            return false;
+
+        if (Name != item.Name)
+            return false;
+
+        return true;
+    }
 
     /// <summary>
     /// Splits the InventoryItem instances into two, where the one returned has <paramref name="count"/> items, and the remaining are left in the orignal

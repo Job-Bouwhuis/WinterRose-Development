@@ -35,7 +35,7 @@ public class Cloth : ActiveRenderer
 
             // Introduce damping factor
             Vector2 velocity = (CurrentPosition - PreviousPosition) * Damping;
-            Vector2 newPosition = CurrentPosition + velocity + Acceleration * Time.SinceLastFrame * Time.SinceLastFrame;
+            Vector2 newPosition = CurrentPosition + velocity + Acceleration * Time.deltaTime * Time.deltaTime;
 
             PreviousPosition = CurrentPosition;
             CurrentPosition = newPosition;

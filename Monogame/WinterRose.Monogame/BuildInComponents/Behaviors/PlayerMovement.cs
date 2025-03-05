@@ -23,6 +23,6 @@ public class PlayerMovement : ObjectBehavior
         var target = transform.position + (inputDirection.X * localUp + inputDirection.Y * new Vector2(-localUp.Y, localUp.X));
 
         // Move the player towards the target position
-        transform.position += Vector2.Lerp(transform.position, target, Speed * Time.SinceLastFrame);
+        transform.position += Vector2.Lerp(transform.position, target, Speed * Time.deltaTime);
     }
 }

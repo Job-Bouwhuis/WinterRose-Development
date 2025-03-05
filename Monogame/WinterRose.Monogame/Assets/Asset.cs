@@ -42,7 +42,7 @@ public abstract class Asset
             if (file != null)
                 return file;
 
-             return file = AssetDatabase.ContentFolder.GetFile(Name);
+             return file = AssetDatabase.ContentFolder.GetFile(Name, GetType());
         }
     }
     private AssetDatabaseFile file;

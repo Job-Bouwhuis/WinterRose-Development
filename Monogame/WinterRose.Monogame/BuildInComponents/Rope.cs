@@ -35,7 +35,7 @@ public class Rope : ActiveRenderer
 
             // Introduce damping factor
             Vector2 velocity = (CurrentPosition - PreviousPosition) * Damping;
-            Vector2 newPosition = CurrentPosition + velocity + Acceleration * Time.SinceLastFrame * Time.SinceLastFrame;
+            Vector2 newPosition = CurrentPosition + velocity + Acceleration * Time.deltaTime * Time.deltaTime;
 
             // Ensure CurrentPosition is valid
             if (CurrentPosition.X is float.NaN)

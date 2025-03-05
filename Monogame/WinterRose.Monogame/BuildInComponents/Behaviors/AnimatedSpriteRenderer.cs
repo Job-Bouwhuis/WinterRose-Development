@@ -109,7 +109,7 @@ public sealed class AnimatedSpriteRenderer : ActiveRenderer
             waitTime = 0;
         }
         else
-            waitTime += Time.SinceLastFrame;
+            waitTime += Time.deltaTime;
     }
     public override void Render(SpriteBatch batch)
     {

@@ -1,5 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using TopDownGame.Components.Drops;
+using TopDownGame.Components.Loot;
 using TopDownGame.Components.Players;
 using TopDownGame.Drops;
 using TopDownGame.Items;
@@ -20,6 +22,8 @@ internal class Level1 : WorldTemplate
 {
     public override void Build(in World world)
     {
+        WorldGrid.ChunkSize = 48;
+
         // internal type loading of the 'WinterRose.Monogame' and 'WinterRose.Monogame.DamageSystem'  types
         _ = new Vitality().Equals(this);
         _ = new WorldObject().Equals(this);
@@ -52,6 +56,13 @@ internal class Level1 : WorldTemplate
         gun.transform.parent = player.transform;
         gun.transform.position = new();
 
+        LootTable table = new("box");
+        table.Add([
+            new(.5f, new ResourceItem() { Item = new Crystal()}),
+            new(.5f, new ResourceItem() { Item = new Flesh()})]);
+
+        table.Save();
+
         world.CreateObject<SmoothCameraFollow>("cam", player.transform).Speed = 8;
 
         var box = world.CreateObject("box");
@@ -60,23 +71,52 @@ internal class Level1 : WorldTemplate
         box.AttachComponent<SquareCollider>(renderer);
         var boxhealth = box.AttachComponent<Vitality>();
         box.AttachComponent<DestroyOnDeath>();
+        box.AttachComponent<DropOnDeath>().LootTable = LootTable.WithName("box");
         box.AttachComponent<StatusEffector>();
 
+        //var itemObject = world.CreateObject<SpriteRenderer>("item", 5, 5, new Color(255, 150, 255));
+        //itemObject.transform.position = new Vector2(500, 500);
+        //ResourceItem item = new();
+        //item.Item = new Flesh();
+        //item.Count = 1;
+        //itemObject.AttachComponent<ItemDrop>(item);
+
+        //var itemObject2 = world.CreateObject<SpriteRenderer>("item", 5, 5, new Color(255, 150, 255));
+        //itemObject2.transform.position = new Vector2(530, 500);
+        //ResourceItem item2 = new();
+        //item2.Item = new Flesh();
+        //item2.Count = 1;
+        //itemObject2.AttachComponent<ItemDrop>(item2);
+
+        //Time.Timescale = 0.1f;
 
         // Spawning multiple items in a circle
         int itemCount = 1000;
         Vector2 center = new Vector2(500, 500);
-        float spawnRadius = 1000;
+        float spawnRadius = 400;
 
         for (int i = 0; i < itemCount; i++)
         {
             Vector2 spawnPos = center + RandomPointInCircle(spawnRadius);
 
-            var itemObject = world.CreateObject<SpriteRenderer>("item", 5, 5, new Color(0, 255, 0));
+            ResourceItem item = new();
+            Color col;
+            if (Random.Shared.NextDouble() > .5)
+            {
+                item.Item = new Flesh();
+                col = new Color(255, 80, 80);
+            }
+            else
+            {
+                col = new Color(255, 150, 255);
+                item.Item = new Crystal();
+            }
+
+            var itemObject = world.CreateObject<SpriteRenderer>("item", 5, 5, col);
             itemObject.transform.position = spawnPos;
 
-            ResourceItem item = new();
-            item.Item = new Flesh();
+
+
             item.Count = 1;
             itemObject.owner.AttachComponent<ItemDrop>(item);
         }

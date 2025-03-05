@@ -1,10 +1,13 @@
-﻿using TopDownGame.Inventories;
+﻿using System;
+using TopDownGame.Inventories;
 using TopDownGame.Resources;
 using WinterRose.Monogame;
+using WinterRose.Serialization;
 
 namespace TopDownGame.Items;
 internal class ResourceItem : InventoryItem<Resource>
 {
+    public override Type ItemType => Item.GetType();
     public override Resource Item { get; set; }
     public override string Name => Item.Name;
     public override string Description => Item.Description;

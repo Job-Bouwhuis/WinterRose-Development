@@ -144,7 +144,7 @@ public class Timer
         {
             if (timer.IsRunning && !timer.IsPaused)
             {
-                timer.currentTime += Time.SinceLastFrame;
+                timer.currentTime += Time.deltaTime;
 
                 if (timer.currentTime >= timer.Duration)
                 {

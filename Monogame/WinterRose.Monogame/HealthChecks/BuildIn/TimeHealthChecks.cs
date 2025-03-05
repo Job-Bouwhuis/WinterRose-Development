@@ -12,7 +12,7 @@ namespace WinterRose.Monogame.HealthChecks.BuildIn
         {
             try
             {
-                _ = Time.SinceLastFrame;
+                _ = Time.deltaTime;
                 return HealthStatus.Healthy;
             }
             catch (Exception e)

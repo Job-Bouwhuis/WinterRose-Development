@@ -10,7 +10,7 @@ namespace TopDownGame
     {
         protected override void Awake()
         {
-            float deltaTime = Time.SinceLastFrame;
+            float deltaTime = Time.deltaTime;
             float allTime = Time.SinceStartup;
             float worldtime = Time.SinceWorldLoad;
         }

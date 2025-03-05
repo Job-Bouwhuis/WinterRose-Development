@@ -60,10 +60,20 @@ public sealed class World : IEnumerable<WorldObject>
 
     // the list of all objects in this world
     private List<WorldObject> objects = [];
+    private ConcurrentBag<NewObj> nextToSpawn = [];
     /// <summary>
     /// All objects in this world
     /// </summary>
-    public List<WorldObject> Objects => [.. objects];
+    public List<WorldObject> Objects
+    {
+        get
+        {
+            lock(objects)
+            {
+                return [.. objects];
+            }
+        }
+    }
     /// <summary>
     /// a list of all objects to be destroyed at the end of the update
     /// </summary>
@@ -184,6 +194,13 @@ public sealed class World : IEnumerable<WorldObject>
     /// </summary>
     public void WakeWorld()
     {
+        while (nextToSpawn.TryTake(out var newObj))
+        {
+            objects.Add(newObj.obj);
+            if (newObj.configure is not null)
+                newObj.configure(newObj.obj);
+        }
+
         foreach (var obj in objects)
             obj.WakeObject();
         foreach (var obj in objects)
@@ -232,8 +249,11 @@ public sealed class World : IEnumerable<WorldObject>
     internal int UpdateCameraIndexes()
     {
         int index = 0;
-        foreach (var obj in objects)
+        for (int i = 0; i < objects.Count; i++)
         {
+            WorldObject? obj = objects[i];
+            if (obj is null || obj.IsDestroyed)
+                continue;
             if (obj.TryFetchComponent<Camera>(out var cam))
             {
                 cam.CameraIndex = index;
@@ -274,6 +294,19 @@ public sealed class World : IEnumerable<WorldObject>
             runOnce = false;
         }
 
+        while(nextToSpawn.TryTake(out var newObj))
+        {
+            WorldObject o = Duplicate(newObj.obj, newObj.obj.Name);
+            if (newObj.configure is not null)
+                newObj.configure(o);
+            if(Initialized)
+            {
+                o.WakeObject();
+                o.StartObject();
+            }
+        }
+        
+
         if (rebuildParallelHelper)
         {
             parallelHelper.Dispose();
@@ -288,7 +321,8 @@ public sealed class World : IEnumerable<WorldObject>
             for (int i = 0; i < objects.Count; i++)
             {
                 WorldObject? obj = objects[i];
-
+                if (obj is null || obj.IsDestroyed)
+                    continue;
                 if (obj.IsActive)
                     obj.Update();
                 if (rebuildParallelHelper)
@@ -326,7 +360,7 @@ public sealed class World : IEnumerable<WorldObject>
         sw.Stop();
         totalUpdateTime = sw.Elapsed;
 
-        time += Time.SinceLastFrame;
+        time += Time.deltaTime;
         if (time > 1)
         {
             updatesPerSecond = updates;
@@ -347,6 +381,8 @@ public sealed class World : IEnumerable<WorldObject>
         for (int i = 0; i < objects.Count; i++)
         {
             WorldObject? obj = objects[i];
+            if (obj is null || obj.IsDestroyed)
+                continue;
             if (obj.TryFetchComponent<T>(out var res))
                 list.Add(res!);
         }
@@ -504,8 +540,11 @@ public sealed class World : IEnumerable<WorldObject>
     }
     private void RenderWorld(SpriteBatch batch)
     {
-        foreach (var obj in objects)
+        for (int i = 0; i < objects.Count; i++)
         {
+            WorldObject? obj = objects[i];
+            if (obj is null || obj.IsDestroyed)
+                continue;
             obj.Render(batch);
         }
 
@@ -546,4 +585,11 @@ public sealed class World : IEnumerable<WorldObject>
                 return obj;
         return null;
     }
+
+    public void Instantiate(WorldObject obj, Action<WorldObject> configureObj = null)
+    {
+        nextToSpawn.Add(new(obj, configureObj));
+    }
+
+    private record NewObj(WorldObject obj, Action<WorldObject>? configure);
 }

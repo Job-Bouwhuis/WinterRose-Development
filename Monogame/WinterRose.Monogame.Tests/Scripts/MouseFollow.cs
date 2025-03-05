@@ -14,7 +14,7 @@ internal class MouseFollow : ObjectBehavior
 
         if (Lerped)
             // lerp the position to the target position according to the speed
-            transform.position = Vector2.Lerp(transform.position, targetPos, Speed * (float)Time.SinceLastFrame);
+            transform.position = Vector2.Lerp(transform.position, targetPos, Speed * (float)Time.deltaTime);
         else
             transform.position = targetPos;
     }

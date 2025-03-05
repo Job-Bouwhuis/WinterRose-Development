@@ -77,7 +77,7 @@ namespace WinterRose.Monogame.Animations
             if (Paused)
                 return 2;
 
-            AnimationTime += Time.SinceLastFrame;
+            AnimationTime += Time.deltaTime;
 
             if (CurrentKeyIndex >= Keys.Count)
                 if (Loop)

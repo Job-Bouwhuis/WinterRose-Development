@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using TopDownGame.Inventories.Base;
 using WinterRose;
 using WinterRose.Monogame;
@@ -11,10 +13,12 @@ namespace TopDownGame.Inventories;
 public sealed class Inventory : Asset
 {
     [Show, IncludeWithSerialization]
-    private List<IInventoryItem> items = [];
+    public List<IInventoryItem> Items { get; private set; } = [];
 
+    [ExcludeFromSerialization]
+    private ConcurrentBag<IInventoryItem> toBeAdded = [];
     /// <summary>
-    /// Creates a new Inventory asset
+    /// Creates a new Inventory asset. <br></br>Call <see cref="ValidateItemStacks"/> somewhere on the main thread game loop so that no duplicate item stacks remain
     /// </summary>
     /// <param name="assetName"></param>
     [DefaultArguments("")] // for serialization
@@ -25,24 +29,31 @@ public sealed class Inventory : Asset
     public void AddItem(IInventoryItem item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        foreach (IInventoryItem i in items)
-        {
-            if (i.ItemType != item.ItemType)
-                continue;
+        toBeAdded.Add(item);
+    }
 
-            while (item != null)
+    public void ValidateItemStacks()
+    { 
+        while(toBeAdded.TryTake(out IInventoryItem? newItem))
+        {
+            foreach (IInventoryItem existingItem in Items)
             {
-                var itm = item;
-                item = i.AddToStack(itm);
-            }
-            break;
-        }
+                if (existingItem.ItemType != newItem.ItemType)
+                    continue;
+                if (existingItem.Name != newItem.Name)
+                    continue;
 
-        if (item != null)
-        {
-            if (item.Count is 0)
-                return;
-            items.Add(item);
+                while (newItem != null)
+                    newItem = existingItem.AddToStack(newItem);
+                break;
+            }
+
+            if (newItem != null)
+            {
+                if (newItem.Count is 0)
+                    return;
+                Items.Add(newItem);
+            }
         }
     }
 
@@ -51,7 +62,7 @@ public sealed class Inventory : Asset
         IncludeType = true,
         CircleReferencesEnabled = true
     };
-    public override void Load() => items = SnowSerializer.Deserialize<Inventory>(File.ReadContent(), inventorySaveSettings).Result.items;
+    public override void Load() => Items = SnowSerializer.Deserialize<Inventory>(File.ReadContent(), inventorySaveSettings).Result.Items;
     public override void Save() => File.WriteContent(SnowSerializer.Serialize(this, inventorySaveSettings).Result, true);
-    public override void Unload() => items.Clear();
+    public override void Unload() => Items.Clear();
 }

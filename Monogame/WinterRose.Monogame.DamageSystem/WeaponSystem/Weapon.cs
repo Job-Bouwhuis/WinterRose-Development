@@ -134,7 +134,7 @@ public class Weapon : ObjectBehavior
         /// handle firerate timeout. Do not continue if the firerate is not ready
         if (fireRateTimer > 0.0f)
         {
-            fireRateTimer -= Time.SinceLastFrame;
+            fireRateTimer -= Time.deltaTime;
             return;
         }
 

@@ -51,6 +51,7 @@ public class WorldObject
     /// <summary>
     /// Whether this object is active or not
     /// </summary>
+    [IncludeWithSerialization]
     public bool IsActive { get; set; } = true;
 
     private readonly List<ObjectComponent> components = new();
@@ -72,6 +73,18 @@ public class WorldObject
     private Transform _transform;
 
     /// <summary>
+    /// Creates a new ready to use object.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    public static WorldObject CreateNew(string name)
+    {
+        WorldObject newObj = new(name);
+        newObj._SetTransform(newObj.AttachComponent<Transform>());
+        return newObj;
+    }
+
+    /// <summary>
     /// A flag that can be used to identify this object. e.g. "Player", "Enemy", "Projectile"
     /// </summary>
     [IncludeInTemplateCreation, IncludeWithSerialization]
@@ -84,8 +97,14 @@ public class WorldObject
     /// <summary>
     /// The chunk position this object is in
     /// </summary>
+    [ExcludeFromSerialization]
     public ObjectChunkData ChunkPositionData { get; internal set; }
+    [ExcludeFromSerialization]
     public bool IsDestroyed { get; internal set; }
+    /// <summary>
+    /// A shortcut to <see cref="Universe.CurrentWorld"/>
+    /// </summary>
+    public World world => transform.world;
 
     /// <summary>
     /// The index in the list of objects found in <see cref="World.objects"/>
@@ -113,19 +132,22 @@ public class WorldObject
 
     /// <summary>
     /// Adds a new startup behavior to this object. it is called when the object is started<br></br>
-    /// This is different than a component on the object, this is just a function that has no relation to this object other than being called from it
+    /// This is different than a component on the object, this is just a function that has no relation to this object other than being called from it.
+    /// <br></br> NOTE: This is not saved.
     /// </summary>
     /// <param name="d"></param>
     public void AddStartupBehavior(Action<WorldObject> d) => StartupBehaviors.Add(d);
     /// <summary>
     /// Adds a new update behavior to this object. it is called when the object is updated<br></br>
     /// This is different than a component on the object, this is just a function that has no relation to this object other than being called from it
+    /// <br></br> NOTE: This is not saved.
     /// </summary>
     /// <param name="d"></param>
     public void AddUpdateBehavior(Action<WorldObject> d) => UpdateBehaviors.Add(d);
     /// <summary>
     /// Adds a new draw behavior to this object. it is called when the object is drawn<br></br>
     /// This is different than a component on the object, this is just a function that has no relation to this object other than being called from it
+    /// <br></br> NOTE: This is not saved.
     /// </summary>
     /// <param name="d"></param>
     public void AddDrawBehavior(Action<WorldObject, SpriteBatch> d) => DrawBehaviors.Add(d);

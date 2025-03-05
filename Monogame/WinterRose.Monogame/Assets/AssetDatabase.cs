@@ -62,7 +62,7 @@ public static class AssetDatabase
     {
         if (!Assets.ContainsKey(name))
         {
-            AssetDatabaseFile file = ContentFolder.GetFile(name);
+            AssetDatabaseFile file = ContentFolder.GetFile<T>(name);
 
             T asset = ActivatorExtra.CreateInstance<T>(name);
 
@@ -148,11 +148,20 @@ public static class AssetDatabase
     public static bool AssetExists(string assetPath)
     {
         assetPath = assetPath.Replace("\\", "/");
-        string[] path = assetPath.Split('/');
+        string assetName = Path.GetFileNameWithoutExtension(assetPath);
+
         DirectoryInfo currentDir = ContentFolder.Directory;
-        FileInfo[] files = currentDir.GetFiles(assetPath, SearchOption.AllDirectories);
-        return files.Length > 0;
+        FileInfo[] files = currentDir.GetFiles("*", SearchOption.AllDirectories);
+
+        foreach (var file in files)
+        {
+            if (Path.GetFileNameWithoutExtension(file.Name).Equals(assetName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
+
 
     public static T GetOrDeclareAsset<T>(string name, params object[] otherArguments) where T : Asset
     {
@@ -160,5 +169,30 @@ public static class AssetDatabase
             return LoadAsset<T>(name);
 
         return DeclareAsset(ActivatorExtra.CreateInstance<T>([name, .. otherArguments]));
+    }
+
+    public static bool AssetExistsOfType<T>(string name, T assetType) where T : Asset
+    {
+        string fileName = name + '.' + typeof(T).Name;
+        if (File.Exists(fileName))
+            return true;
+        return false;
+    }
+
+    public static bool AssetExistsOfType(string name, Type assetType) 
+    {
+        string fileName = name + '.' + assetType.Name;
+        fileName = fileName.Replace("\\", "/");
+
+        DirectoryInfo currentDir = ContentFolder.Directory;
+        FileInfo[] files = currentDir.GetFiles("*", SearchOption.AllDirectories);
+
+        foreach (var file in files)
+        {
+            if (file.Name.Equals(fileName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 }

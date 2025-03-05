@@ -30,7 +30,13 @@ public static class Time
     /// <summary>
     /// The time since the last frame in seconds
     /// </summary>
-    public static float SinceLastFrame =>(float)time.ElapsedGameTime.TotalSeconds;
+    public static float deltaTime =>(float)time.ElapsedGameTime.TotalSeconds * Timescale;
+
+    /// <summary>
+    /// The time since the last frame in seconds, unscaled by <see cref="Timescale"/>
+    /// </summary>
+    public static float unscaledDeltaTime => (float)time.ElapsedGameTime.TotalSeconds;
+
     /// <summary>
     /// The time since application startup in seconds
     /// </summary>
@@ -45,6 +51,8 @@ public static class Time
     /// The time since the last time a scene was loaded in seconds
     /// </summary>
     public static float SinceWorldLoad => (float)SinceSceneLoadTimer.Elapsed.TotalSeconds;
+
+    public static float Timescale { get; set; } = 1;
 
     internal static void Update(GameTime gameTime)
     {

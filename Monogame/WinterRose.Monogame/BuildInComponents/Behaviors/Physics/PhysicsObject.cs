@@ -63,7 +63,7 @@ public sealed class PhysicsObject : ObjectBehavior
     {
         for (int i = 0; i < Physics.Substeps; i++)
         {
-            PhysicsUpdate(Time.SinceLastFrame / Physics.Substeps);
+            PhysicsUpdate(Time.deltaTime / Physics.Substeps);
         }
     }
 

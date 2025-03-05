@@ -46,7 +46,7 @@ public class AnimationWaitKey : AnimationKey
     /// </summary>
     public override void KeyStep()
     {
-        currentTime += Time.SinceLastFrame;
+        currentTime += Time.deltaTime;
     }
 
     /// <summary>

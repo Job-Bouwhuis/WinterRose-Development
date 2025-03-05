@@ -55,14 +55,34 @@ public sealed class AssetDatabaseFolder
     /// <param name="name">The name of the file to search for</param>
     /// <returns></returns>
     /// <exception cref="FileNotFoundException"></exception>
-    public AssetDatabaseFile GetFile(string name)
+    public AssetDatabaseFile GetFile<T>(string name) where T : Asset
     {
-        FileInfo info = Directory.GetFiles().FirstOrDefault(x => x.Name == name);
+        string fileName = name + '.' + typeof(T).Name;
+        FileInfo info = Directory.GetFiles().FirstOrDefault(x => x.Name == fileName);
         if (info is null)
             if (CreateItemIfMissing)
-                info = new FileInfo(Path.Combine(Directory.FullName, name));
+                info = new FileInfo(Path.Combine(Directory.FullName, fileName));
             else
-                throw new FileNotFoundException($"File {name} not found");
+                throw new FileNotFoundException($"File {fileName} not found");
+
+        return new AssetDatabaseFile(this, info);
+    }
+
+    /// <summary>
+    /// Gets a file in this folder
+    /// </summary>
+    /// <param name="name">The name of the file to search for</param>
+    /// <returns></returns>
+    /// <exception cref="FileNotFoundException"></exception>
+    public AssetDatabaseFile GetFile(string name, Type t)
+    {
+        string fileName = name + '.' + t.Name;
+        FileInfo info = Directory.GetFiles().FirstOrDefault(x => x.Name == fileName);
+        if (info is null)
+            if (CreateItemIfMissing)
+                info = new FileInfo(Path.Combine(Directory.FullName, fileName));
+            else
+                throw new FileNotFoundException($"File {fileName} not found");
 
         return new AssetDatabaseFile(this, info);
     }

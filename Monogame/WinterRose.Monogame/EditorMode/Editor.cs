@@ -109,7 +109,7 @@ public static class Editor
 
         if (input != Vector2.Zero)
         {
-            editorCamera!.transform.position += input * actualCamSpeed * Time.SinceLastFrame;
+            editorCamera!.transform.position += input * actualCamSpeed * Time.deltaTime;
         }
     }
 

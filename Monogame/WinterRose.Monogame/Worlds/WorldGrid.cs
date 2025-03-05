@@ -211,6 +211,8 @@ namespace WinterRose.Monogame.Worlds
 
             foreach (WorldObject obj in objects)
             {
+                if (obj is null || obj.IsDestroyed)
+                    continue;
                 if (obj.index == -1)
                     obj.index = objects.IndexOf(obj);
                 var objSize = GetObjectSize(obj);

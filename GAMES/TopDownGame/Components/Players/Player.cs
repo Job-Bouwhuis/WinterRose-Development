@@ -13,7 +13,7 @@ using WinterRose.Monogame.Weapons;
 namespace TopDownGame.Components.Players
 {
     [RequireComponent<Vitality>]
-    public class Player : ObjectComponent
+    public class Player : ObjectBehavior
     {
         /// <summary>
         /// The players inventory
@@ -55,5 +55,7 @@ namespace TopDownGame.Components.Players
         {
             Vitality = FetchComponent<Vitality>()!;
         }
+
+        protected override void Update() => Inventory.ValidateItemStacks();
     }
 }

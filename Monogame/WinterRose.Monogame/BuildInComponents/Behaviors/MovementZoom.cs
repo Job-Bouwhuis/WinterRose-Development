@@ -31,11 +31,11 @@ namespace WinterRose.Monogame.BuildInComponents.Behaviors
 
                     targetZoom = Math.Clamp(targetZoom, MaxZoomOut, 1f);
 
-                    Camera.current.Zoom = MathS.Lerp(Camera.current.Zoom, targetZoom, 2 * Time.SinceLastFrame);
+                    Camera.current.Zoom = MathS.Lerp(Camera.current.Zoom, targetZoom, 2 * Time.deltaTime);
                 }
                 else
                 {
-                    Camera.current.Zoom = Math.Clamp(MathS.Lerp(Camera.current.Zoom, 1f, ZoomInSpeed * Time.SinceLastFrame), 0, 1);
+                    Camera.current.Zoom = Math.Clamp(MathS.Lerp(Camera.current.Zoom, 1f, ZoomInSpeed * Time.deltaTime), 0, 1);
                 }
             }
         }

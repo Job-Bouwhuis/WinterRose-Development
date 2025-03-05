@@ -9,8 +9,8 @@ internal class InputRotator : ObjectBehavior
     protected override void Update()
     {
         if(Input.GetKey(Keys.Q)) 
-            transform.rotation -= Speed * Time.SinceLastFrame;
+            transform.rotation -= Speed * Time.deltaTime;
         if (Input.GetKey(Keys.E))
-            transform.rotation += Speed * Time.SinceLastFrame;
+            transform.rotation += Speed * Time.deltaTime;
     }
 }

@@ -107,7 +107,7 @@ public class Button : ActiveRenderer
         Vector2 mousePos = Transform.ScreenToWorldPos(Input.MousePosition, Camera.current);
         isHovering = Bounds.Contains(mousePos);
         if (currentColorFraction < 1)
-            currentColorFraction += Time.SinceLastFrame * ColorFadeSpeed;
+            currentColorFraction += Time.deltaTime * ColorFadeSpeed;
         if(currentColorFraction > 1)
             currentColorFraction = 1;
 

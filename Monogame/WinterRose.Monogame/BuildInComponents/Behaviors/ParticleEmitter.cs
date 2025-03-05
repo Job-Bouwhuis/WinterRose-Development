@@ -148,7 +148,7 @@ public sealed class ParticleEmitter : ActiveRenderer
 
         for (int i = 0; i < particles.Count; i++)
         {
-            particles[i].Update(Time.SinceLastFrame);
+            particles[i].Update(Time.deltaTime);
         }
     }
     private void RemoveDeadParticles()
@@ -164,7 +164,7 @@ public sealed class ParticleEmitter : ActiveRenderer
     }
     private void EmitParticles()
     {
-        time += Time.SinceLastFrame;
+        time += Time.deltaTime;
 
         float timeBetweenParticles = 1f / EmissionRate;
 

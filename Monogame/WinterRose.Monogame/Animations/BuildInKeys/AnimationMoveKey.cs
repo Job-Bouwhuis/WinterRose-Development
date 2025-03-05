@@ -37,11 +37,11 @@ public sealed class AnimationMoveKey : AnimationKey
     public override void KeyStep()
     {
         // smoothly move to end without using Vector2.Lerp
-        currentTime += Time.SinceLastFrame;
+        currentTime += Time.deltaTime;
         if (currentTime is 0)
             return;
         ;
-        lerpProgress += Time.SinceLastFrame / Animation.AnimationLength;
+        lerpProgress += Time.deltaTime / Animation.AnimationLength;
         transform.position = Vector2.Lerp(Start, End, Math.Clamp(lerpProgress, 0, 1));
     }
 

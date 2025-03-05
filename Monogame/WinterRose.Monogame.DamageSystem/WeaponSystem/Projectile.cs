@@ -116,7 +116,7 @@ public class Projectile : ObjectBehavior
 
     protected override void Update()
     {
-        currentTime += Time.SinceLastFrame;
+        currentTime += Time.deltaTime;
         if (currentTime > Lifetime)
         {
             Destroy(owner);

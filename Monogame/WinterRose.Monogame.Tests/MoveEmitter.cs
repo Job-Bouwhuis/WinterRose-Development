@@ -25,7 +25,7 @@ namespace WinterRose.Monogame.Tests
 
         protected override void Update()
         {
-            time += Time.SinceLastFrame;
+            time += Time.deltaTime;
             var sin = MathF.Sin(time * frequency);
             var amped = sin * amplitude;
             var posed = startPoint + amped;

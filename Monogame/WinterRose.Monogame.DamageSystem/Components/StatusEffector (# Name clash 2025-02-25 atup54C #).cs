@@ -50,7 +50,7 @@ namespace WinterRose.Monogame.StatusSystem
         }
         private void HandleEffectTimeout(StatusEffect effect)
         {
-            effect.currentSeconds += Time.SinceLastFrame;
+            effect.currentSeconds += Time.deltaTime;
             if (effect.currentSeconds > effect.SecondsPerStack)
             {
 

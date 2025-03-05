@@ -64,7 +64,7 @@ namespace WinterRose.Monogame.Tests.ropetests
                 {
                     Vector2 beforePosChange = point.position;
                     point.position += point.position - point.previousPosition;
-                    point.position += Vector2.UnitY * gravity * Time.SinceLastFrame * Time.SinceLastFrame;
+                    point.position += Vector2.UnitY * gravity * Time.deltaTime * Time.deltaTime;
                     point.previousPosition = beforePosChange;
                 }
             }
