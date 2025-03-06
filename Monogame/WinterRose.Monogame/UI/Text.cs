@@ -12,7 +12,7 @@ namespace WinterRose.Monogame.UI;
 /// <summary>
 /// Text that can be rendered in the game world
 /// </summary>
-public class Text : Renderer
+public class Text : UIRenderer
 {
     public string text { get; set; }
     public Color color { get; set; }
@@ -37,8 +37,6 @@ public class Text : Renderer
     /// </summary>
     public Vector2 SizeRaw => Font.MeasureString(text);
 
-    [Hide]
-    public override TimeSpan DrawTime { get; protected set; }
     /// <summary>
     /// The sprite effects used when rendering the text
     /// </summary>

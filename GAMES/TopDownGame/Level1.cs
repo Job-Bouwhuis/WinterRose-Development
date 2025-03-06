@@ -1,10 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
-using TopDownGame.Components.Drops;
-using TopDownGame.Components.Loot;
-using TopDownGame.Components.Players;
 using TopDownGame.Drops;
 using TopDownGame.Items;
+using TopDownGame.Loot;
 using TopDownGame.Players;
 using TopDownGame.Resources;
 using WinterRose;

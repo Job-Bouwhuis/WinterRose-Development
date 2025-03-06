@@ -12,7 +12,7 @@ using WinterRose.Monogame.Worlds;
 namespace WinterRose.Monogame.UI;
 
 [RequireComponent<Text>()]
-public class Button : ActiveRenderer
+public class Button : UIRenderer
 {
     /// <summary>
     /// The text element for this button

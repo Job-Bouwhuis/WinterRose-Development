@@ -11,7 +11,7 @@ using WinterRose.Monogame.Worlds;
 namespace WinterRose.Monogame.UI;
 
 [RequireComponent<Text>]
-public sealed class TextButton : ObjectBehavior
+public sealed class TextButton : UIRenderer
 {
     /// <summary>
     /// The text element for this button

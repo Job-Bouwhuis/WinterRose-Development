@@ -1,7 +1,7 @@
 ﻿using TopDownGame.Inventories.Base;
 using WinterRose.Serialization;
 
-namespace TopDownGame.Components.Loot
+namespace TopDownGame.Loot
 {
     [IncludeAllProperties]
     public class LootChance(float weight, IInventoryItem item)

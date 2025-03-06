@@ -8,7 +8,7 @@ using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Serialization;
 
-namespace TopDownGame.Components.Loot
+namespace TopDownGame.Loot
 {
     [method: DefaultArguments("")]
     internal class LootTable(string name) : Asset(name)

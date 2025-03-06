@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TopDownGame.Components.Loot;
-using TopDownGame.Drops;
 using TopDownGame.Inventories.Base;
+using TopDownGame.Loot;
 using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem;
 
-namespace TopDownGame.Components.Drops
+namespace TopDownGame.Drops
 {
     [RequireComponent<Vitality>]
     class DropOnDeath : ObjectComponent

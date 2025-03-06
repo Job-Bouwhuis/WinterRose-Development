@@ -10,7 +10,7 @@ using WinterRose.Monogame.DamageSystem;
 using WinterRose.Monogame.ModdingSystem;
 using WinterRose.Monogame.Weapons;
 
-namespace TopDownGame.Components.Players
+namespace TopDownGame.Players
 {
     [RequireComponent<Vitality>]
     public class Player : ObjectBehavior

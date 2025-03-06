@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
-using TopDownGame.Components.Players;
 using TopDownGame.Inventories.Base;
+using TopDownGame.Players;
 using WinterRose.Monogame;
 using WinterRose.Monogame.Worlds;
 
