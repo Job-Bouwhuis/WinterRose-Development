@@ -47,6 +47,8 @@ public sealed class TextButton : UIRenderer
         Clicked = Color.Yellow
     };
 
+    public override RectangleF Bounds => text.Bounds;
+
     [Show]
     private bool isHovering = false;
     [Show]
@@ -114,5 +116,10 @@ public sealed class TextButton : UIRenderer
         }
 
         text.color = colorRange.GetColor(currentColorFraction);
+    }
+
+    public override void Render(SpriteBatch batch)
+    {
+
     }
 }

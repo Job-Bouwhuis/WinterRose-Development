@@ -28,7 +28,7 @@ public abstract class Application : Game, IDisposable
     /// </summary>
     public static event Action GameClosing
     {
-        add => ExitHelper.GameClosing += value; 
+        add => ExitHelper.GameClosing += value;
         remove => ExitHelper.GameClosing -= value;
     }
 
@@ -50,7 +50,7 @@ public abstract class Application : Game, IDisposable
 #if DEBUG
 
         FileInfo fontFile = new("../../../Content/bin/Windows/Font.xnb");
-        if(fontFile.Exists)
+        if (fontFile.Exists)
         {
             if (File.Exists("Content/Font.xnb"))
                 File.Delete("Content/Font.xnb");
@@ -113,11 +113,6 @@ public abstract class Application : Game, IDisposable
     /// <param name="gameTime"></param>
     protected override void Update(GameTime gameTime)
     {
-        if (!initialized)
-        {
-            initialized = true;
-            Universe.CurrentWorld = CreateWorld();
-        }
         Universe.Update(gameTime);
     }
     /// <summary>
@@ -166,7 +161,10 @@ public abstract class Application : Game, IDisposable
         ExitHelper.SetCloseMethod(Exit);
 
         Style.ApplyDefault();
+
         base.Initialize();
+        initialized = true;
+        Universe.CurrentWorld = CreateWorld();
     }
 
     /// <summary>

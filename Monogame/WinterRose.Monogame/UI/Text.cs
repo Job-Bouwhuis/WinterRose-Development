@@ -64,4 +64,5 @@ public class Text : UIRenderer
         batch.DrawString(Font, text, transform.position + PositionOffset, color, transform.rotation, size / 2, transform.scale, SpriteEffects, LayerDepth);
     }
 
+    protected override void Update() { }
 }

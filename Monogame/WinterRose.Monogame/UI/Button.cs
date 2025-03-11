@@ -63,10 +63,6 @@ public class Button : UIRenderer
             transform.position.Y - sprite.Bounds.Height / 2);
 
     /// <summary>
-    /// The time it took for the button to draw its sprite
-    /// </summary>
-    public override TimeSpan DrawTime { get; protected set; }
-    /// <summary>
     /// The layer depth used when rendering the button (a value between 0 and 1)
     /// </summary>
     public float LayerDepth { get; set; } = 0.5f;
@@ -150,17 +146,13 @@ public class Button : UIRenderer
 
     public override void Render(SpriteBatch batch)
     {
-        Stopwatch sw = Stopwatch.StartNew();
-
         // calculate center of sprite based on sprite size and scale
         Vector2 size = new(sprite.Bounds.Width * transform.scale.X, sprite.Bounds.Height * transform.scale.Y);
         Vector2 center = new(size.X / 2, size.Y / 2);
 
         //Color selectedColor = isClicked ? ButtonTints.Clicked : isHovering ? ButtonTints.Hover : ButtonTints.Normal;
 
-        batch.Draw(sprite, transform.position, null, colorRange.GetColor(currentColorFraction), 0, center, transform.scale, SpriteEffects, LayerDepth);
-
-        sw.Stop();
-        DrawTime = sw.Elapsed;
+        batch.Draw(sprite, transform.position, null, colorRange.GetColor(currentColorFraction),
+            0, center, transform.scale, SpriteEffects, LayerDepth);
     }
 }

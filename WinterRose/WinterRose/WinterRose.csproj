@@ -46,6 +46,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="tmp\**" />
+    <EmbeddedResource Remove="tmp\**" />
+    <None Remove="tmp\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="WIP\Int256_Int128Copy.cs" />
   </ItemGroup>
 
@@ -65,10 +71,6 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="tmp\" />
   </ItemGroup>
 
 </Project>

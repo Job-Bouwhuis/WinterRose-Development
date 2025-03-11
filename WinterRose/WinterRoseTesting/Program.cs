@@ -8,7 +8,6 @@ using WinterRose.Encryption;
 using WinterRose.WIP.ReflectionTests;
 using System.Reflection;
 using WinterRose.Networking.TCP;
-using System.Diagnostics.CodeAnalysis;
 using WinterRose.WinterThornScripting;
 using WinterRose.WinterThornScripting.Factory;
 using System.IO.Compression;
@@ -546,6 +545,8 @@ HOJ:
         string serializedResult = SnowSerializer.Serialize(list, settings).Result;
         sw1.Stop();
 
+        Console.WriteLine("ites naar de console"); 
+
         Console.WriteLine("\n\nWriting to file...");
         FileManager.Write("SerializedData.txt", serializedResult, true);
 
@@ -579,7 +580,6 @@ HOJ:
             }
             return true;
         }
-
     }
 
     void Copydir(DirectoryInfo dir, DirectoryInfo to, ref int fileshandled)
