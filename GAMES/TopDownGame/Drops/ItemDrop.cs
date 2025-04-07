@@ -14,6 +14,7 @@ namespace TopDownGame.Drops;
 internal class ItemDrop : ObjectBehavior
 {
     private bool combined = false;
+    private static int count = 0;
 
     public string TargetFlag { get; set; } = "Player";
     public float PickupDistance { get; set; } = 25;
@@ -40,7 +41,7 @@ internal class ItemDrop : ObjectBehavior
 
     public static void Create(Vector2 pos, IInventoryItem item, World world)
     {
-        WorldObject obj = WorldObject.CreateNew("ItemDrop_" + item.Name);
+        WorldObject obj = WorldObject.CreateNew("ItemDrop_" + item.Name + "_" + ++count);
         obj.transform.position = pos;
         Sprite sprite = item.ItemSprite;
         sprite ??= noTextureItemPlaceholder;

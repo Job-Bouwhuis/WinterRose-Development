@@ -12,6 +12,6 @@ namespace TopDownGame.Resources
         public override string Name => nameof(Crystal);
         public override string Description => "Its shiny!";
         public override Rarity Rarity => Constants.CommonRarity;
-        public override Sprite ResourceSprite { get; set; } = new Sprite("Content/crystal.png");
+        public override Sprite ResourceSprite { get; set; } //= new Sprite("Content/crystal.png");
     }
 }

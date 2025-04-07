@@ -1,11 +1,26 @@
-﻿using WinterRose.Monogame;
+﻿using Microsoft.Xna.Framework;
+using WinterRose.Monogame;
 
 namespace TopDownGame.Enemies.Movement;
 
-internal class IdleMovement(string name) : AIMovement(name)
+internal class IdleMovement() : AIMovement("idle")
 {
-    public override void Move(Transform transform, float speed, float deltaTime)
+    public override void Move()
     {
-        // does nothing. AI is idle / stationary
+        if(Vector2.Distance(Controller.Target.transform.position,
+            Controller.transform.position) < Controller.VisionRange)
+        {
+            Controller.SetMovement("chase");
+        }
+    }
+
+    public override void TransitionIn(AIMovement current)
+    {
+        
+    }
+
+    public override void TransitionOut(AIMovement next)
+    {
+        
     }
 }

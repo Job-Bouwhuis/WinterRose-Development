@@ -5,14 +5,6 @@ using WinterRose.Monogame;
 using WinterRose.Plugins;
 using windows = WinterRose.Windows;
 
-Type[] assets = TypeWorker.FindTypesWithBase<Asset>();
-
-foreach (Type t in assets)
-{
-    var asset = (Asset)ActivatorExtra.CreateInstance(t);
-    if (asset != null)
-        asset.Save();
-}
 
 try
 {

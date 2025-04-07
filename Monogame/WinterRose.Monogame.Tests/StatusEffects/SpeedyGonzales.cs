@@ -15,6 +15,8 @@ internal class SpeedyGonzales : StatusEffect
 
     public float SpeedBuff { get; set; } = 200f;
 
+    public override StatusEffectType EffectType => StatusEffectType.Neutral;
+
     private float speedBeforeBuff = 0f;
 
     int key = 0;

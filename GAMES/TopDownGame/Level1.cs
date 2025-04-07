@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using TopDownGame.Drops;
+using TopDownGame.Enemies;
+using TopDownGame.Enemies.Movement;
 using TopDownGame.Items;
 using TopDownGame.Loot;
 using TopDownGame.Players;
@@ -26,6 +28,8 @@ internal class Level1 : WorldTemplate
         _ = new Vitality().Equals(this);
         _ = new WorldObject().Equals(this);
 
+        //Rope r = world.CreateObject<Rope>("rope", new Vector2(100, 100), new Vector2(200, 100), 1, 0.2f);
+        
         world.Name = "Level 1";
 
         var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
@@ -40,6 +44,8 @@ internal class Level1 : WorldTemplate
         player.owner.Flag = "Player";
         player.AttachComponent<Player>("Test");
 
+        MonoUtils.TargetFramerate = 144;
+
         var gun = CreateSMG(world).owner;
         gun.FetchComponent<Weapon>().AvailableFireingMode = WeaponFireingMode.Auto;
         gun.FetchComponent<Weapon>().CurrentFiringMode = WeaponFireingMode.Auto;
@@ -47,9 +53,9 @@ internal class Level1 : WorldTemplate
         Mod<Weapon> mod = new("Hard Hitter", "Increases damage of the weapon");
         mod.AddAttribute<WeaponDamageMod>().DamageBoost = 5;
 
-        var container = gun.FetchComponent<Weapon>().ModContainer;
-        container.TotalModCapacity = 100;
-        container.AddMod(mod);
+        var modContainer = gun.FetchComponent<Weapon>().ModContainer;
+        modContainer.TotalModCapacity = 100;
+        modContainer.AddMod(mod);
 
         gun.transform.parent = player.transform;
         gun.transform.position = new();
@@ -63,14 +69,20 @@ internal class Level1 : WorldTemplate
 
         world.CreateObject<SmoothCameraFollow>("cam", player.transform).Speed = 8;
 
-        var box = world.CreateObject("box");
-        box.transform.position = new(500, 100);
-        var renderer = box.AttachComponent<SpriteRenderer>(200, 50, Color.Blue);
-        box.AttachComponent<SquareCollider>(renderer);
-        var boxhealth = box.AttachComponent<Vitality>();
-        box.AttachComponent<DestroyOnDeath>();
-        box.AttachComponent<DropOnDeath>().LootTable = LootTable.WithName("box");
-        box.AttachComponent<StatusEffector>();
+        var enemy = world.CreateObject("enemy");
+        enemy.transform.position = new(400, 50);
+        var renderer = enemy.AttachComponent<SpriteRenderer>(50, 50, Color.Blue);
+        enemy.AttachComponent<SquareCollider>(renderer);
+        var boxhealth = enemy.AttachComponent<Vitality>();
+        enemy.AttachComponent<DestroyOnDeath>();
+        enemy.AttachComponent<DropOnDeath>().LootTable = LootTable.WithName("box");
+        enemy.AttachComponent<StatusEffector>();
+        var mc = enemy.AttachComponent<AIMovementController>();
+        mc.AddMovement<IdleMovement>();
+        mc.AddMovement<ChasePlayer>();
+        mc.AddMovement<EvadePlayer>();
+        mc.Target = player.transform;
+        enemy.CreatePrefab("Enemy");
 
         //var itemObject = world.CreateObject<SpriteRenderer>("item", 5, 5, new Color(255, 150, 255));
         //itemObject.transform.position = new Vector2(500, 500);
@@ -89,7 +101,7 @@ internal class Level1 : WorldTemplate
         //Time.Timescale = 0.1f;
 
         // Spawning multiple items in a circle
-        int itemCount = 100; 
+        int itemCount = 0; 
         Vector2 center = new Vector2(500, 500);
         float spawnRadius = 1000;
 
