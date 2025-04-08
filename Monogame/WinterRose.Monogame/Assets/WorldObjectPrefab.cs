@@ -87,7 +87,7 @@ public sealed class WorldObjectPrefab : Prefab
     /// </summary>
     /// <param name="prefabName"></param>
     /// <returns></returns>
-    public static object Load(string prefabName)
+    public static WorldObject Load(string prefabName)
     {
         var fab = new WorldObjectPrefab(prefabName);
         fab.Load();

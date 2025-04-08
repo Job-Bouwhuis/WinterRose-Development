@@ -10,13 +10,21 @@ using WinterRose.Serialization;
 
 namespace TopDownGame.Loot
 {
-    [method: DefaultArguments("")]
-    internal class LootTable(string name) : Asset(name)
+    /// <summary>
+    /// Represents a loot table that defines possible item drops and their chances.
+    /// Use <see cref="WithName(string)"/> to retrieve a specific loot table by name.
+    /// </summary>
+    internal class LootTable<T> : Asset where T : class
     {
         [IncludeWithSerialization]
-        public List<LootChance> Table { get; private set; } = [];
+        public List<LootChance<T>> Table { get; private set; } = [];
 
-        public override void Load() => Table = SnowSerializer.Deserialize<LootTable>(File.ReadContent(),
+        [DefaultArguments("")]
+        private LootTable(string name) : base(name)
+        {
+        }
+
+        public override void Load() => Table = SnowSerializer.Deserialize<LootTable<T>>(File.ReadContent(),
                 new() { IncludeType = true }).Result.Table;
 
         public override void Unload() => Table.Clear();
@@ -24,15 +32,15 @@ namespace TopDownGame.Loot
         public override void Save() => File.WriteContent(SnowSerializer.Serialize(this,
                 new() { IncludeType = true }), true);
 
-        public static LootTable WithName(string name)
+        public static LootTable<T> WithName(string name)
         {
-            if (!AssetDatabase.AssetExistsOfType(name, typeof(LootTable)))
-                return new LootTable(name);
+            if (!AssetDatabase.AssetExistsOfType(name, typeof(LootTable<T>)))
+                return new LootTable<T>(name);
 
-            return AssetDatabase.LoadAsset<LootTable>(name);
+            return AssetDatabase.LoadAsset<LootTable<T>>(name);
         }
 
-        public IInventoryItem Generate()
+        public T Generate()
         {
             if (Table.Count == 0)
                 return null;
@@ -59,11 +67,11 @@ namespace TopDownGame.Loot
             IInventoryItem[] items = new IInventoryItem[count];
 
             for (int i = 0; i < count; i++)
-                items[i] = Generate();
+                items[i] = (IInventoryItem)Generate();
 
             return items;
         }
 
-        internal void Add(params ReadOnlySpan<LootChance> loot) => Table.AddRange(loot);
+        internal void Add(params ReadOnlySpan<LootChance<T>> loot) => Table.AddRange(loot);
     }
 }

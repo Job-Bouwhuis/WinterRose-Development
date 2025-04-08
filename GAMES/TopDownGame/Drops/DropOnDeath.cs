@@ -7,13 +7,15 @@ using TopDownGame.Inventories.Base;
 using TopDownGame.Loot;
 using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem;
+using WinterRose.Serialization;
 
 namespace TopDownGame.Drops
 {
     [RequireComponent<Vitality>]
     class DropOnDeath : ObjectComponent
     {
-        public LootTable LootTable { get; set; }
+        [IncludeWithSerialization]
+        public LootTable<IInventoryItem> LootTable { get; set; }
 
         protected override void Awake()
         {

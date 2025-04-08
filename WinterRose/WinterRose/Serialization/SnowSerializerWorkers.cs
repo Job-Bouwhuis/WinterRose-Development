@@ -246,7 +246,7 @@ namespace WinterRose.Serialization
 
             bool asAnonymous = typeof(T).IsAnonymousType();
             if (settings.AssumeObjectIsAnonymous && !asAnonymous)
-                if (typeof(T) == typeof(object))
+                if (objectType == typeof(object))
                     asAnonymous = true;
             if (typeof(T) == typeof(Anonymous))
                 asAnonymous = true;
@@ -592,7 +592,7 @@ namespace WinterRose.Serialization
 
             bool asAnonymous = typeof(T).IsAnonymousType();
             if (settings.AssumeObjectIsAnonymous && !asAnonymous)
-                if (typeof(T) == typeof(object))
+                if (objectType == typeof(object))
                     asAnonymous = true;
             if (typeof(T) == typeof(Anonymous))
                 asAnonymous = true;

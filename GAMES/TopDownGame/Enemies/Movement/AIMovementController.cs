@@ -24,7 +24,7 @@ public sealed class AIMovementController : ObjectBehavior
     public required Transform Target { get; set; }
 
     [IncludeWithSerialization]
-    public float VisionRange { get; set; } = 600;
+    public float VisionRange { get; set; } = 200;
 
     [IncludeWithSerialization]
     public float EvadeDistance { get; set; } = 150;

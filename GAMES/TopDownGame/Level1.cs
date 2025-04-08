@@ -3,6 +3,7 @@ using System;
 using TopDownGame.Drops;
 using TopDownGame.Enemies;
 using TopDownGame.Enemies.Movement;
+using TopDownGame.Inventories.Base;
 using TopDownGame.Items;
 using TopDownGame.Loot;
 using TopDownGame.Players;
@@ -60,45 +61,36 @@ internal class Level1 : WorldTemplate
         gun.transform.parent = player.transform;
         gun.transform.position = new();
 
-        LootTable table = new("box");
+        LootTable<IInventoryItem> table = LootTable<IInventoryItem>.WithName("box");
         table.Add([
-            new(.5f, new ResourceItem() { Item = new Crystal()}),
-            new(.5f, new ResourceItem() { Item = new Flesh()})]);
+            new LootChance<IInventoryItem>(.5f, new ResourceItem() { Item = new Crystal()}),
+            new LootChance<IInventoryItem>(.5f, new ResourceItem() { Item = new Flesh()})]);
 
         table.Save();
 
         world.CreateObject<SmoothCameraFollow>("cam", player.transform).Speed = 8;
 
-        var enemy = world.CreateObject("enemy");
-        enemy.transform.position = new(400, 50);
-        var renderer = enemy.AttachComponent<SpriteRenderer>(50, 50, Color.Blue);
-        enemy.AttachComponent<SquareCollider>(renderer);
-        var boxhealth = enemy.AttachComponent<Vitality>();
-        enemy.AttachComponent<DestroyOnDeath>();
-        enemy.AttachComponent<DropOnDeath>().LootTable = LootTable.WithName("box");
-        enemy.AttachComponent<StatusEffector>();
-        var mc = enemy.AttachComponent<AIMovementController>();
-        mc.AddMovement<IdleMovement>();
-        mc.AddMovement<ChasePlayer>();
-        mc.AddMovement<EvadePlayer>();
-        mc.Target = player.transform;
-        enemy.CreatePrefab("Enemy");
+        //var enemy = world.CreateObject("enemy");
+        //enemy.transform.position = new(400, 50);
+        //var renderer = enemy.AttachComponent<SpriteRenderer>(50, 50, Color.Blue);
+        //enemy.AttachComponent<SquareCollider>(renderer);
+        //var boxhealth = enemy.AttachComponent<Vitality>();
+        //enemy.AttachComponent<DestroyOnDeath>();
+        //enemy.AttachComponent<DropOnDeath>().LootTable = LootTable<IInventoryItem>.WithName("box");
+        //enemy.AttachComponent<StatusEffector>();
+        //var mc = enemy.AttachComponent<AIMovementController>();
+        //mc.AddMovement<IdleMovement>();
+        //mc.AddMovement<ChasePlayer>();
+        //mc.AddMovement<EvadePlayer>();
+        //mc.Target = player.transform;
+        //enemy.CreatePrefab("Enemy");
 
-        //var itemObject = world.CreateObject<SpriteRenderer>("item", 5, 5, new Color(255, 150, 255));
-        //itemObject.transform.position = new Vector2(500, 500);
-        //ResourceItem item = new();
-        //item.Item = new Flesh();
-        //item.Count = 1;
-        //itemObject.AttachComponent<ItemDrop>(item);
-
-        //var itemObject2 = world.CreateObject<SpriteRenderer>("item", 5, 5, new Color(255, 150, 255));
-        //itemObject2.transform.position = new Vector2(530, 500);
-        //ResourceItem item2 = new();
-        //item2.Item = new Flesh();
-        //item2.Count = 1;
-        //itemObject2.AttachComponent<ItemDrop>(item2);
-
-        //Time.Timescale = 0.1f;
+        world.Instantiate(WorldObjectPrefab.Load("enemy"),
+            obj =>
+            {
+                obj.transform.position = new Vector2(200, 200);
+                obj.FetchComponent<AIMovementController>()!.Target = player.transform;
+            });
 
         // Spawning multiple items in a circle
         int itemCount = 0; 

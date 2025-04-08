@@ -1,13 +1,17 @@
 ﻿using TopDownGame.Inventories.Base;
+using WinterRose.CrystalScripting.Legacy.Interpreting.Exceptions;
 using WinterRose.Serialization;
 
 namespace TopDownGame.Loot
 {
     [IncludeAllProperties]
-    public class LootChance(float weight, IInventoryItem item)
+    public class LootChance<T>(float weight, T item) where T : class
     {
-        public float Weight { get; set; } = weight;
-        public IInventoryItem Item { get; set; } = item;
-        private LootChance() : this(0, null) { } // for serialization    
+        [IncludeWithSerialization]
+        public T Item { get; private set; } = item;
+        [IncludeWithSerialization]
+        public float Weight { get; private set; } = weight;
+
+        private LootChance() : this(0, null!) { } // for serialization
     }
 }
