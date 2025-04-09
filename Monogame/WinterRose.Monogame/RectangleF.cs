@@ -118,6 +118,14 @@ namespace WinterRose.Monogame
             Y = 0;
         }
 
+        public RectangleF(Vector2 location, Vector2I size) : this()
+        {
+            X = location.X;
+            Y = location.Y;
+            Width = size.X;
+            Height = size.Y;
+        }
+
         /// <summary>
         /// Implicitly converts a <see cref="Rectangle"/> to a <see cref="RectangleF"/>
         /// </summary>

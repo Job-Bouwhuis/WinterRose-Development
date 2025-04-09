@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System.Collections.Generic;
 using System.Diagnostics;
 using WinterRose.Monogame.Worlds;
 
@@ -134,7 +135,8 @@ public sealed class Camera : ObjectComponent
         trMatrix = (pos * zoomMatrix) * Matrix.CreateTranslation(Bounds.X / 2, Bounds.Y / 2, 0);
     }
 
-    internal RenderTarget2D GetCameraView(System.Action<SpriteBatch> renderMethod)
+    internal (RenderTarget2D view, List<WorldObject> UIObjects) 
+        GetCameraView(System.Func<SpriteBatch, List<WorldObject>> renderMethod)
     {
         MonoUtils.Graphics.SetRenderTarget(renderTarget);
 
@@ -144,11 +146,11 @@ public sealed class Camera : ObjectComponent
             blendState: BlendState.AlphaBlend,
             samplerState: SamplerState.PointClamp);
 
-        renderMethod(batch);
+        var uiObjs = renderMethod(batch);
         batch.End();
 
         MonoUtils.Graphics.SetRenderTarget(null);
-        return renderTarget;
+        return (renderTarget, uiObjs);
     }
 
     internal void BeginWorldSpaceSpriteBatch(SpriteBatch batch)

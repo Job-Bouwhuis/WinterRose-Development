@@ -12,6 +12,15 @@ namespace TopDownGame.Loot
         [IncludeWithSerialization]
         public float Weight { get; private set; } = weight;
 
+        public float MinDrops { get; set; } = 1;
+        public float MaxDrops { get; set; } = 1;
+
         private LootChance() : this(0, null!) { } // for serialization
+        public LootChance(float weight, T item,  float minDrops, float maxDrops)
+            : this(weight, item)
+        {
+            MinDrops = minDrops;
+            MaxDrops = maxDrops;
+        }
     }
 }

@@ -54,6 +54,9 @@ public class WorldObject
     [IncludeWithSerialization]
     public bool IsActive { get; set; } = true;
 
+    internal bool IsUIRoot => isUIRoot ??= components.Any(x => x is UICanvas);
+    private bool? isUIRoot = null;
+
     private readonly List<ObjectComponent> components = new();
     private readonly List<Renderer> renderers = new();
     private readonly List<ActiveRenderer> activeRenderers = new();
@@ -222,6 +225,7 @@ public class WorldObject
 
     private void AddComponent(ObjectComponent comp)
     {
+        isUIRoot = null;
         if (comp is Renderer renderer)
             renderers.Add(renderer);
         components.Add(comp);
@@ -354,6 +358,7 @@ public class WorldObject
     {
         if (component is Transform)
             return; // cant remove transform component
+        isUIRoot = null;
         component.CallClose();
 
         components.Remove(component);
@@ -384,6 +389,7 @@ public class WorldObject
     {
         if (typeof(T) == typeof(Transform))
             return;
+        isUIRoot = null;
         var col = components.Where(x => x is T).ToArray();
         for (int i = 0; i < col.Length; i++)
         {
@@ -416,15 +422,6 @@ public class WorldObject
         _transform = null;
     }
 
-
-    internal void PostTemplateLoad()
-    {
-        for (int i = 0; i < components.Count; i++)
-        {
-            ObjectComponent? comp = components[i];
-            comp._owner = this;
-        }
-    }
     internal void WakeObject()
     {
         for (int i = 0; i < components.Count; i++)

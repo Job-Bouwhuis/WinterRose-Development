@@ -64,13 +64,10 @@ public static class Input
         }
         catch (InvalidOperationException)
         {
-            UpdateState();
+            UpdateState(); // very very sometimes it fails for one try, this recusive retry  makes it
+            // work after 1 or 2 retries. never had it happen fail more than twice in a row.
+            // this has been extensively tested. so leave it. its save
         }
-        catch (Exception)
-        {
-            throw;
-        }
-
     }
     /// <summary>
     /// gets if the specified key is pressed on this frame

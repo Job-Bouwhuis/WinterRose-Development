@@ -11,8 +11,8 @@ using WinterRose.Monogame.Worlds;
 
 namespace WinterRose.Monogame.UI;
 
-[RequireComponent<Text>()]
-public class Button : UIRenderer
+[RequireComponent<Text>(AutoAdd = true)]
+public class Button : ActiveRenderer
 {
     /// <summary>
     /// The text element for this button
@@ -70,6 +70,7 @@ public class Button : UIRenderer
     /// The sprite effects used when rendering the button
     /// </summary>
     public SpriteEffects SpriteEffects { get; set; }
+    public override TimeSpan DrawTime { get; protected set; }
 
     [Show]
     private bool isHovering = false;
@@ -146,6 +147,8 @@ public class Button : UIRenderer
 
     public override void Render(SpriteBatch batch)
     {
+        Stopwatch w = Stopwatch.StartNew();
+
         // calculate center of sprite based on sprite size and scale
         Vector2 size = new(sprite.Bounds.Width * transform.scale.X, sprite.Bounds.Height * transform.scale.Y);
         Vector2 center = new(size.X / 2, size.Y / 2);
@@ -154,5 +157,8 @@ public class Button : UIRenderer
 
         batch.Draw(sprite, transform.position, null, colorRange.GetColor(currentColorFraction),
             0, center, transform.scale, SpriteEffects, LayerDepth);
+
+        w.Stop();
+        DrawTime = w.Elapsed;
     }
 }

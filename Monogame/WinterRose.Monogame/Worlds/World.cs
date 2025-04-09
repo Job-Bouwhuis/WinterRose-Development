@@ -68,7 +68,7 @@ public sealed class World : IEnumerable<WorldObject>
     {
         get
         {
-            lock(objects)
+            lock (objects)
             {
                 return [.. objects];
             }
@@ -121,6 +121,7 @@ public sealed class World : IEnumerable<WorldObject>
         Initialized = true;
         WorldChunkGrid = new WorldGrid(this);
     }
+    [Obsolete("Will be removed at one point in the future")]
     /// <summary>
     /// Creates a new world from a template file
     /// </summary>
@@ -130,6 +131,8 @@ public sealed class World : IEnumerable<WorldObject>
     /// <param name="callback"></param>
     public World(string name, FilePath templatePath, bool multiThread = false, Action<string>? callback = null) : this(name)
     {
+        throw new InvalidOperationException("Old template usage has been made obsolete.");
+
         Initialized = false;
         if (!templatePath.HasExtention(".world"))
             templatePath /= ".world";
@@ -142,9 +145,6 @@ public sealed class World : IEnumerable<WorldObject>
             loader.LoadTemplateultiThread(templatePath);
         else
             loader.LoadTemplate(templatePath);
-
-        foreach (var obj in objects)
-            obj.PostTemplateLoad();
 
         Initialized = true;
     }
@@ -294,18 +294,18 @@ public sealed class World : IEnumerable<WorldObject>
             runOnce = false;
         }
 
-        while(nextToSpawn.TryTake(out var newObj))
+        while (nextToSpawn.TryTake(out var newObj))
         {
             WorldObject o = Duplicate(newObj.obj, newObj.obj.Name);
             if (newObj.configure is not null)
                 newObj.configure(o);
-            if(Initialized)
+            if (Initialized)
             {
                 o.WakeObject();
                 o.StartObject();
             }
         }
-        
+
 
         if (rebuildParallelHelper)
         {
@@ -349,7 +349,7 @@ public sealed class World : IEnumerable<WorldObject>
 
             WorldChunkGrid.Remove(obj);
         }
-        if(ToDestroy.Count > 0)
+        if (ToDestroy.Count > 0)
         {
             UpdateCameraIndexes();
             rebuildParallelHelper = true;
@@ -435,7 +435,7 @@ public sealed class World : IEnumerable<WorldObject>
     /// <param name="batch"></param>
     /// <param name="cameraIndex"></param>
     /// <returns></returns>
-    public RenderTarget2D Render(SpriteBatch batch, int cameraIndex)
+    public (RenderTarget2D world, RenderTarget2D? UI) Render(SpriteBatch batch, int cameraIndex)
     {
         draws++;
         var sw = Stopwatch.StartNew();
@@ -444,27 +444,60 @@ public sealed class World : IEnumerable<WorldObject>
             var cameras = FindComponents<Camera>();
             if (cameraIndex is -1 || cameras.Length is 0)
             {
-                RenderTarget2D target = GetRenderTarget();
-                MonoUtils.Graphics.SetRenderTarget(target);
+                RenderTarget2D targetWorld = GetRenderTarget();
+                MonoUtils.Graphics.SetRenderTarget(targetWorld);
 
                 Universe.StartNoCameraSpritebatch(batch);
-                RenderWorld(batch);
+                var objs = RenderWorld(batch);
+
+                batch.End();
+
+                RenderTarget2D targetUI = GetRenderTarget();
+                MonoUtils.Graphics.SetRenderTarget(targetUI);
+                MonoUtils.Graphics.Clear(new Color(0, 0, 0, 0));
+
+                batch.Begin();
+
+                foreach (var obj in objs)
+                    obj.Render(batch);
+
                 batch.End();
 
                 MonoUtils.Graphics.SetRenderTarget(null);
-                return target;
+                return (targetWorld, targetUI);
             }
             else
                 renderTarget = null;
 
             Camera cam = cameras[cameraIndex];
 
-            RenderTarget2D camView = cam.GetCameraView(RenderWorld);
+            var (camView, UIObjects) = cam.GetCameraView(RenderWorld);
 
             batch.Begin();
-            batch.Draw(camView, new Vector2(0f, 0f), Color.White);
+            batch.Draw(camView, new Vector2(0f, 0f), null,
+                Color.White, 0, new(), 1, SpriteEffects.None, 0f);
+
             batch.End();
-            return camView;
+
+            RenderTarget2D UItarget = GetRenderTarget();
+            MonoUtils.Graphics.SetRenderTarget(UItarget);
+            MonoUtils.Graphics.Clear(new Color(0, 0, 0, 0));
+
+            if (UIObjects.Count > 0)
+            {
+                batch.Begin();
+
+                foreach (var obj in UIObjects)
+                    obj.Render(batch);
+
+                batch.End();
+            }
+            else
+                UItarget = null;
+
+            MonoUtils.Graphics.SetRenderTarget(null);
+
+            return (camView, UItarget);
         }
         catch (Exception e)
         {
@@ -476,7 +509,7 @@ public sealed class World : IEnumerable<WorldObject>
                 MonoUtils.Graphics.SetRenderTarget(null);
             }
             catch { } // if the batch is already ended this will throw an exception, so we catch it here
-            return null;
+            return (null, null);
         }
         finally
         {
@@ -522,7 +555,7 @@ public sealed class World : IEnumerable<WorldObject>
             result.AttachComponent(newComp);
         }
 
-        if(Initialized)
+        if (Initialized)
         {
             result.WakeObject();
             result.StartObject();
@@ -535,22 +568,43 @@ public sealed class World : IEnumerable<WorldObject>
         if (renderTarget is null || lastScreenBounds != MonoUtils.WindowResolution)
         {
             lastScreenBounds = MonoUtils.WindowResolution;
-            renderTarget = new(MonoUtils.Graphics, MonoUtils.WindowResolution.X, MonoUtils.WindowResolution.Y);
+            renderTarget = new(MonoUtils.Graphics,
+                               MonoUtils.WindowResolution.X,
+                               MonoUtils.WindowResolution.Y,
+                               false,
+                               SurfaceFormat.Color,
+                               DepthFormat.None);
         }
         return renderTarget;
     }
-    private void RenderWorld(SpriteBatch batch)
+    private List<WorldObject> RenderWorld(SpriteBatch batch)
     {
+        List<WorldObject> UIObjects = [];
         for (int i = 0; i < objects.Count; i++)
         {
             WorldObject? obj = objects[i];
             if (obj is null || obj.IsDestroyed)
                 continue;
+            if (UIObjects.Contains(obj))
+                continue;
+            if (obj.IsUIRoot)
+            {
+                CommitKids(obj, UIObjects);
+                continue;
+            }
             obj.Render(batch);
         }
 
         Primitives2D.CommitDraw(batch);
         Debug.RenderDrawRequests(batch);
+        return UIObjects;
+    }
+
+    private void CommitKids(WorldObject parent, List<WorldObject> list)
+    {
+        list.Add(parent);
+        foreach (var obj in parent.transform)
+            CommitKids(obj.owner, list);
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -581,7 +635,7 @@ public sealed class World : IEnumerable<WorldObject>
     /// <returns></returns>
     public WorldObject? FindObjectWithFlag(string targetFlag)
     {
-        foreach(var obj in objects)
+        foreach (var obj in objects)
             if (obj.Flag == targetFlag)
                 return obj;
         return null;

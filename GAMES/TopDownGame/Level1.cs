@@ -13,6 +13,7 @@ using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem;
 using WinterRose.Monogame.ModdingSystem;
 using WinterRose.Monogame.StatusSystem;
+using WinterRose.Monogame.UI;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 
@@ -61,60 +62,60 @@ internal class Level1 : WorldTemplate
         gun.transform.parent = player.transform;
         gun.transform.position = new();
 
-        LootTable<IInventoryItem> table = LootTable<IInventoryItem>.WithName("box");
-        table.Add([
-            new LootChance<IInventoryItem>(.5f, new ResourceItem() { Item = new Crystal()}),
-            new LootChance<IInventoryItem>(.5f, new ResourceItem() { Item = new Flesh()})]);
+        var canvas = world.CreateObject<UICanvas>("Canvas");
+        var text = world.CreateObject<Button>("text");
+        text.transform.parent = canvas.transform;
+        text.transform.position = new(10, 10);
 
-        table.Save();
+        //var coeb = world.CreateObject<SpriteRenderer>("coeb", new Sprite(200, 200, Color.Pink));
+        //coeb.transform.position = new(10, 10);
+        //coeb.transform.parent = canvas.transform;
 
         world.CreateObject<SmoothCameraFollow>("cam", player.transform).Speed = 8;
 
-        //var enemy = world.CreateObject("enemy");
-        //enemy.transform.position = new(400, 50);
-        //var renderer = enemy.AttachComponent<SpriteRenderer>(50, 50, Color.Blue);
-        //enemy.AttachComponent<SquareCollider>(renderer);
-        //var boxhealth = enemy.AttachComponent<Vitality>();
-        //enemy.AttachComponent<DestroyOnDeath>();
-        //enemy.AttachComponent<DropOnDeath>().LootTable = LootTable<IInventoryItem>.WithName("box");
-        //enemy.AttachComponent<StatusEffector>();
-        //var mc = enemy.AttachComponent<AIMovementController>();
-        //mc.AddMovement<IdleMovement>();
-        //mc.AddMovement<ChasePlayer>();
-        //mc.AddMovement<EvadePlayer>();
-        //mc.Target = player.transform;
-        //enemy.CreatePrefab("Enemy");
 
-        world.Instantiate(WorldObjectPrefab.Load("enemy"),
-            obj =>
-            {
-                obj.transform.position = new Vector2(200, 200);
-                obj.FetchComponent<AIMovementController>()!.Target = player.transform;
-            });
+        LootTable<ResourceItem> table = LootTable<ResourceItem>.WithName("box");
+        table.Add([
+            new(.5f, new ResourceItem() { Item = new Crystal()}),
+            new(.5f, new ResourceItem() { Item = new Flesh()})]);
+
+        table.Save();
+
+        var enemy = world.CreateObject("enemy");
+        enemy.transform.position = new(400, 50);
+        var renderer = enemy.AttachComponent<SpriteRenderer>(50, 50, Color.Blue);
+        enemy.AttachComponent<SquareCollider>(renderer);
+        enemy.AttachComponent<Vitality>();
+        enemy.AttachComponent<DestroyOnDeath>();
+        enemy.AttachComponent<DropOnDeath>().LootTable 
+            = LootTable.WithName<ResourceItem>("box").Cast<ResourceItem, IInventoryItem>();
+
+        enemy.AttachComponent<StatusEffector>();
+        var mc = enemy.AttachComponent<AIMovementController>();
+        mc.AddMovement<IdleMovement>();
+        mc.AddMovement<ChasePlayer>();
+        mc.AddMovement<EvadePlayer>();
+        mc.Target = player.transform;
+        enemy.CreatePrefab("Enemy");
+
+        //world.Instantiate(WorldObjectPrefab.Load("enemy"),
+        //    obj =>
+        //    {
+        //        obj.transform.position = new Vector2(200, 200);
+        //        obj.FetchComponent<AIMovementController>()!.Target = player.transform;
+        //    });
 
         // Spawning multiple items in a circle
         int itemCount = 0; 
         Vector2 center = new Vector2(500, 500);
         float spawnRadius = 1000;
 
+        var loot = LootTable<ResourceItem>.WithName("box");
+
         for (int i = 0; i < itemCount; i++)
         {
             Vector2 spawnPos = center + RandomPointInCircle(spawnRadius);
-
-            ResourceItem item = new();
-            Color col;
-            if (Random.Shared.NextDouble() > .5)
-            {
-                item.Item = new Flesh();
-                col = new Color(255, 80, 80);
-            }
-            else
-            {
-                col = new Color(255, 150, 255);
-                item.Item = new Crystal();
-            }
-            item.Count = 1;
-
+            ResourceItem item = loot.Generate();
             ItemDrop.Create(spawnPos, item, world);
         }
 

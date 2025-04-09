@@ -77,6 +77,7 @@ public static class Universe
 
     private static World? curWorld;
     private static RenderTarget2D? lastFrame;
+    private static RenderTarget2D? lastUIFrame;
     internal static ImGuiRenderer imGuiRenderer;
     private static WorldRenderingOptions renderOptions = new();
 
@@ -176,7 +177,9 @@ public static class Universe
             if (RequestRender || !OptimizeDrawCalls)
             {
                 lastFrame = null;
-                lastFrame = CurrentWorld.Render(MonoUtils.SpriteBatch, cameraIndex);
+                var frames = CurrentWorld.Render(MonoUtils.SpriteBatch, cameraIndex);
+                lastFrame = frames.world;
+                lastUIFrame = frames.UI;
 
                 RenderFrame(cameraIndex);
 
@@ -187,7 +190,9 @@ public static class Universe
                 if (lastFrame is null)
                 {
                     MonoUtils.Graphics.Clear(Color.CornflowerBlue);
-                    lastFrame = CurrentWorld.Render(MonoUtils.SpriteBatch, cameraIndex);
+                    var frames = CurrentWorld.Render(MonoUtils.SpriteBatch, cameraIndex);
+                    lastFrame = frames.world;
+                    lastUIFrame = frames.UI;
                 }
 
                 RenderFrame(cameraIndex);
@@ -242,8 +247,29 @@ public static class Universe
 
         var batch = MonoUtils.SpriteBatch;
         batch.Begin();
-        batch.Draw(lastFrame, Vector2.Zero, null, Color.White, 0, new Vector2(), scale, SpriteEffects.None, 0);
-        //batch.Draw(lastFrame, new Vector2(), Color.White);
+        batch.Draw(lastFrame,
+                   Vector2.Zero,
+                   null,
+                   Color.White,
+                   0,
+                   new Vector2(),
+                   scale,
+                   SpriteEffects.None,
+                   0);
+
+        if (lastUIFrame != null)
+        {
+            batch.Draw(lastUIFrame,
+                       Vector2.Zero,
+                       null,
+                       Color.White,
+                       0,
+                       new Vector2(),
+                       scale,
+                       SpriteEffects.None,
+                       0);
+        }
+
         batch.End();
     }
     private static void FinalizeRendering()
