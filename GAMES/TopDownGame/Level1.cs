@@ -31,7 +31,7 @@ internal class Level1 : WorldTemplate
         _ = new WorldObject().Equals(this);
 
         //Rope r = world.CreateObject<Rope>("rope", new Vector2(100, 100), new Vector2(200, 100), 1, 0.2f);
-        
+
         world.Name = "Level 1";
 
         var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
@@ -64,6 +64,7 @@ internal class Level1 : WorldTemplate
 
         var canvas = world.CreateObject<UICanvas>("Canvas");
         var text = world.CreateObject<Button>("text");
+        text.ButtonTints.Normal = Color.Cyan;
         text.transform.parent = canvas.transform;
         text.transform.position = new(10, 10);
 
@@ -73,30 +74,28 @@ internal class Level1 : WorldTemplate
 
         world.CreateObject<SmoothCameraFollow>("cam", player.transform).Speed = 8;
 
-
-        LootTable<ResourceItem> table = LootTable<ResourceItem>.WithName("box");
-        table.Add([
-            new(.5f, new ResourceItem() { Item = new Crystal()}),
-            new(.5f, new ResourceItem() { Item = new Flesh()})]);
+        LootTable table = LootTable.WithName("box");
+        if (table.Table.Count == 0)
+            table.Add([
+                new(.5f, new ResourceItem() { Item = new Crystal()}),
+                new(.5f, new ResourceItem() { Item = new Flesh()})]);
 
         table.Save();
 
-        var enemy = world.CreateObject("enemy");
-        enemy.transform.position = new(400, 50);
-        var renderer = enemy.AttachComponent<SpriteRenderer>(50, 50, Color.Blue);
-        enemy.AttachComponent<SquareCollider>(renderer);
-        enemy.AttachComponent<Vitality>();
-        enemy.AttachComponent<DestroyOnDeath>();
-        enemy.AttachComponent<DropOnDeath>().LootTable 
-            = LootTable.WithName<ResourceItem>("box").Cast<ResourceItem, IInventoryItem>();
-
-        enemy.AttachComponent<StatusEffector>();
-        var mc = enemy.AttachComponent<AIMovementController>();
-        mc.AddMovement<IdleMovement>();
-        mc.AddMovement<ChasePlayer>();
-        mc.AddMovement<EvadePlayer>();
-        mc.Target = player.transform;
-        enemy.CreatePrefab("Enemy");
+        //var enemy = world.CreateObject("enemy");
+        //enemy.transform.position = new(400, 50);
+        //var renderer = enemy.AttachComponent<SpriteRenderer>(50, 50, Color.Blue);
+        //enemy.AttachComponent<SquareCollider>(renderer);
+        //enemy.AttachComponent<Vitality>();
+        //enemy.AttachComponent<DestroyOnDeath>();
+        //enemy.AttachComponent<DropOnDeath>().LootTable = LootTable.WithName("box");
+        //enemy.AttachComponent<StatusEffector>();
+        //var mc = enemy.AttachComponent<AIMovementController>();
+        //mc.AddMovement<IdleMovement>();
+        //mc.AddMovement<ChasePlayer>();
+        //mc.AddMovement<EvadePlayer>();
+        //mc.Target = player.transform;
+        //enemy.CreatePrefab("Enemy");
 
         //world.Instantiate(WorldObjectPrefab.Load("enemy"),
         //    obj =>
@@ -106,18 +105,20 @@ internal class Level1 : WorldTemplate
         //    });
 
         // Spawning multiple items in a circle
-        int itemCount = 0; 
+        int itemCount = 100;
         Vector2 center = new Vector2(500, 500);
         float spawnRadius = 1000;
 
-        var loot = LootTable<ResourceItem>.WithName("box");
+        var loot = LootTable.WithName("box");
 
         for (int i = 0; i < itemCount; i++)
         {
             Vector2 spawnPos = center + RandomPointInCircle(spawnRadius);
-            ResourceItem item = loot.Generate();
+            ResourceItem item = (ResourceItem)loot.Generate();
             ItemDrop.Create(spawnPos, item, world);
         }
+
+        world.SaveTemplate("demoWorld");
 
         Application.Current.CameraIndex = 0;
     }

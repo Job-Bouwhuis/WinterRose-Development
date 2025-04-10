@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Windows.Forms.Design;
 using WinterRose.Monogame.Attributes;
 using WinterRose.Monogame.Exceptions;
 using WinterRose.Monogame.Internals;
@@ -52,10 +53,38 @@ public class WorldObject
     /// Whether this object is active or not
     /// </summary>
     [IncludeWithSerialization]
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get
+        {
+            if (!_isActive)
+                return _isActive;
+            if (transform.parent == null)
+                return _isActive;
+            return transform.parent.owner.IsActive;
+        }
+    }
+
+    private bool _isActive = true;
 
     internal bool IsUIRoot => isUIRoot ??= components.Any(x => x is UICanvas);
     private bool? isUIRoot = null;
+
+    /// <summary>
+    /// If the object is somewhere in the hirarchy part of a <see cref="UICanvas"/> 
+    /// this will return <see cref="RenderSpace.Screen"/>. otherwise, <see cref="RenderSpace.World"/>
+    /// </summary>
+    public RenderSpace RenderSpace
+    {
+        get
+        {
+            if (IsUIRoot)
+                return RenderSpace.Screen;
+            else if (transform.parent != null)
+                return transform.parent.owner.RenderSpace;
+            return RenderSpace.World;
+        }
+    }
 
     private readonly List<ObjectComponent> components = new();
     private readonly List<Renderer> renderers = new();

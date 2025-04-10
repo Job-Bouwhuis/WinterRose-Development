@@ -21,7 +21,7 @@ public sealed class AIMovementController : ObjectBehavior
     [IncludeWithSerialization]
     public StaticCombinedModifier<float> MovementSpeed { get; private set; } = 170;
 
-    public required Transform Target { get; set; }
+    public Transform Target { get; set; }
 
     [IncludeWithSerialization]
     public float VisionRange { get; set; } = 200;

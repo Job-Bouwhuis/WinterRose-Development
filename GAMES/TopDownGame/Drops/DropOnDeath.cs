@@ -15,7 +15,7 @@ namespace TopDownGame.Drops
     class DropOnDeath : ObjectComponent
     {
         [IncludeWithSerialization]
-        public LootTable<IInventoryItem> LootTable { get; set; }
+        public LootTable LootTable { get; set; }
 
         protected override void Awake()
         {

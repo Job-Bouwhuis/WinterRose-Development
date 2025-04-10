@@ -100,9 +100,14 @@ public class Button : ActiveRenderer
 
     protected override void Update()
     {
-        Universe.RequestRender = true; 
-        Vector2 mousePos = Transform.ScreenToWorldPos(Input.MousePosition, Camera.current);
-        isHovering = Bounds.Contains(mousePos);
+        Universe.RequestRender = true;
+        Vector2 mousePos;
+        if (owner.RenderSpace == RenderSpace.World)
+            mousePos = Transform.ScreenToWorldPos(Input.MousePosition, Camera.current);
+        else
+            mousePos = Input.MousePosition;
+
+            isHovering = Bounds.Contains(mousePos);
         if (currentColorFraction < 1)
             currentColorFraction += Time.deltaTime * ColorFadeSpeed;
         if(currentColorFraction > 1)

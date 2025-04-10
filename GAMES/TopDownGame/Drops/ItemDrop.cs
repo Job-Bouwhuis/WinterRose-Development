@@ -4,6 +4,7 @@ using TopDownGame.Inventories.Base;
 using TopDownGame.Players;
 using WinterRose.Monogame;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Serialization;
 
 namespace TopDownGame.Drops;
 
@@ -16,12 +17,22 @@ internal class ItemDrop : ObjectBehavior
     private bool combined = false;
     private static int count = 0;
 
+    [IncludeWithSerialization]
     public string TargetFlag { get; set; } = "Player";
+
+    [IncludeWithSerialization]
     public float PickupDistance { get; set; } = 25;
+
+    [IncludeWithSerialization]
     public float FlyTowardsTargetDistance { get; set; } = 300;
+
+    [IncludeWithSerialization]
     public float FlySpeed { get; set; } = 200;
+
+    [IncludeWithSerialization]
     public required IInventoryItem Item { get; init; }
 
+    private ItemDrop() { } // for serialization
     public ItemDrop(IInventoryItem item) => Item = item;
 
     private WorldObject target;

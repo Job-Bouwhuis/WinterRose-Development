@@ -1,37 +1,77 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using TopDownGame.Inventories.Base;
 using WinterRose;
+using WinterRose.Monogame;
+using WinterRose.Serialization;
 
 namespace TopDownGame.Loot
 {
-
     /// <summary>
-    /// Factory clas for <see cref="LootTable{T}"/>
+    /// Represents a loot table that defines possible item drops and their chances.
+    /// Use <see cref="WithName(string)"/> to retrieve a specific loot table by name.
     /// </summary>
-    public static class LootTable
+    public class LootTable : Asset
     {
-        public static LootTable<T> WithName<T>(string name) where T : class
+        [IncludeWithSerialization]
+        public List<LootChance> Table { get; private set; } = [];
+
+        [DefaultArguments("")]
+        private LootTable(string name) : base(name)
         {
-            return LootTable<T>.WithName(name);
         }
 
-        /// <summary>
-        /// Transforms the type of the loottable item from <typeparamref name="TSource"/> into 
-        /// <typeparamref name="TTarget"/> using <see cref="Unsafe.As{T}(object?)"/> 
-        /// with some extra safeguards in place so this wont fail in runtime
-        /// </summary>
-        /// <typeparam name="TSource"></typeparam>
-        /// <typeparam name="TTarget"></typeparam>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        public static LootTable<TTarget> Cast<TSource, TTarget>(this LootTable<TSource> source)
-            where TSource : class, TTarget where TTarget : class
+        public override void Load() => Table = SnowSerializer.Deserialize<LootTable>(File.ReadContent(),
+                new() { IncludeType = true }).Result.Table;
+
+        public override void Unload() => Table.Clear();
+
+        public override void Save() => File.WriteContent(SnowSerializer.Serialize(this,
+                new() { IncludeType = true }), true);
+
+        public static LootTable WithName(string name)
         {
-            return Unsafe.As<LootTable<TTarget>>(source);
+            if (!AssetDatabase.AssetExistsOfType(name, typeof(LootTable)))
+                return new LootTable(name);
+
+            return AssetDatabase.LoadAsset<LootTable>(name);
         }
+
+        public IInventoryItem Generate()
+        {
+            if (Table.Count == 0)
+                return null;
+
+            float totalWeight = Table.Sum(entry => entry.Weight);
+            float roll = new Random().NextFloat(0, totalWeight);
+
+            float currentWeight = 0;
+            foreach (var entry in Table)
+            {
+                currentWeight += entry.Weight;
+                if (roll <= currentWeight)
+                    return entry.Item;
+            }
+
+            return Table.Last().Item; // fallback, should never be reached
+        }
+
+        public IInventoryItem[] GenerateMultiple(int count = 1)
+        {
+            if (count <= 0)
+                return [];
+
+            IInventoryItem[] items = new IInventoryItem[count];
+
+            for (int i = 0; i < count; i++)
+                items[i] = (IInventoryItem)Generate();
+
+            return items;
+        }
+
+        internal void Add(params ReadOnlySpan<LootChance> loot) => Table.AddRange(loot);
     }
 }

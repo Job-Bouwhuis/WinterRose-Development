@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using WinterRose.FileManagement;
 using WinterRose.Monogame.EditorMode;
 using WinterRose.Monogame.UI;
 using WinterRose.Serialization;
@@ -16,7 +17,8 @@ namespace WinterRose.Monogame.Worlds;
 /// <summary>
 /// A world where objects can be placed, updated, and rendered using various <see cref="ObjectComponent"/> or <see cref="ObjectBehavior"/>
 /// </summary>
-[SerializeAs<World>, IncludePrivateFields]
+[IncludePrivateFields]
+[SerializeAs<World>]
 public sealed class World : IEnumerable<WorldObject>
 {
     /// <summary>
@@ -60,6 +62,8 @@ public sealed class World : IEnumerable<WorldObject>
 
     // the list of all objects in this world
     private List<WorldObject> objects = [];
+
+    [ExcludeFromSerialization]
     private ConcurrentBag<NewObj> nextToSpawn = [];
     /// <summary>
     /// All objects in this world
@@ -68,10 +72,7 @@ public sealed class World : IEnumerable<WorldObject>
     {
         get
         {
-            lock (objects)
-            {
-                return [.. objects];
-            }
+            return objects;
         }
     }
     /// <summary>
@@ -80,7 +81,9 @@ public sealed class World : IEnumerable<WorldObject>
     private readonly List<WorldObject> ToDestroy = [];
 
     // the total time it took to update and draw the world
+    [ExcludeFromSerialization]
     private TimeSpan totalDrawTime = TimeSpan.Zero;
+    [ExcludeFromSerialization]
     private TimeSpan totalUpdateTime = TimeSpan.Zero;
 
     [ExcludeFromSerialization]
@@ -121,33 +124,6 @@ public sealed class World : IEnumerable<WorldObject>
         Initialized = true;
         WorldChunkGrid = new WorldGrid(this);
     }
-    [Obsolete("Will be removed at one point in the future")]
-    /// <summary>
-    /// Creates a new world from a template file
-    /// </summary>
-    /// <param name="name"></param>
-    /// <param name="templatePath"></param>
-    /// <param name="multiThread"></param>
-    /// <param name="callback"></param>
-    public World(string name, FilePath templatePath, bool multiThread = false, Action<string>? callback = null) : this(name)
-    {
-        throw new InvalidOperationException("Old template usage has been made obsolete.");
-
-        Initialized = false;
-        if (!templatePath.HasExtention(".world"))
-            templatePath /= ".world";
-
-        WorldTemplateLoader loader = new(this);
-        if (callback is not null)
-            loader.Callback += callback;
-
-        if (multiThread)
-            loader.LoadTemplateultiThread(templatePath);
-        else
-            loader.LoadTemplate(templatePath);
-
-        Initialized = true;
-    }
     /// <summary>
     /// Creates a new world using the template type. Must be a subclass of <see cref="WorldTemplate"/>
     /// </summary>
@@ -162,21 +138,7 @@ public sealed class World : IEnumerable<WorldObject>
 
         template.Build(this);
     }
-    /// <summary>
-    /// Creates a new world from a template file asynchronously
-    /// </summary>
-    /// <param name="name">the name of the world to be created</param>
-    /// <param name="templatePath">the path to the template file</param>
-    /// <param name="multiThreaded">whether to parse multiple objects at the same time</param>
-    /// <param name="callback">a callback for progress</param>
-    /// <returns></returns>
-    public static async Task<World> FromTemplateAsync(string name, string templatePath, bool multiThreaded = false, Action<string>? callback = null)
-    {
-        return await Task.Run(() =>
-        {
-            return new World(name, templatePath, multiThreaded, callback);
-        });
-    }
+    
     /// <summary>
     /// Creates a new world from the given template type
     /// </summary>
@@ -188,6 +150,40 @@ public sealed class World : IEnumerable<WorldObject>
         var world = new World(template.Name);
         template.Build(world);
         return world;
+    }
+    public static World FromTemplate(string templateFile)
+    {
+        string data = FileManager.Read("Content/Worlds/" + templateFile + ".world");
+        SerializerSettings settings = new SerializerSettings()
+        {
+            CircleReferencesEnabled = true,
+            IncludeType = true
+        };
+        World w = SnowSerializer.Deserialize<World>(data, settings);
+        return w;
+    }
+
+    /// <summary>
+    /// Saves all the objects to a file with the given
+    /// name to reference it later in <see cref=FromTemplate(string)"/>
+    /// </summary>
+    /// <param name="name"></param>
+    public void SaveTemplate(string name)
+    {
+        while (nextToSpawn.TryTake(out var newObj))
+        {
+            objects.Add(newObj.obj);
+            if (newObj.configure is not null)
+                newObj.configure(newObj.obj);
+        }
+
+        SerializerSettings settings = new SerializerSettings()
+        {
+            CircleReferencesEnabled = true,
+            IncludeType = true
+        };
+        string data = SnowSerializer.Serialize(this, settings);
+        FileManager.Write("Content/Worlds/" + name + ".world", data, true);
     }
     /// <summary>
     /// Calls the <c>Awake</c> and <c>Start</c> methods on all components on all objects that have these methods implemented

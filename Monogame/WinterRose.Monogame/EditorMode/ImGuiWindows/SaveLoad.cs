@@ -56,6 +56,8 @@ internal static class SaveLoad
     private static void LoadWorldColumn(DirectoryInfo dir = null)
     {
         dir ??= new DirectoryInfo("Content/WorldTemplates");
+        if (!dir.Exists)
+            dir.Create();
         foreach (var subDir in dir.GetDirectories())
         {
             if (subDir.GetFileSystemInfos().Length == 0)
@@ -78,7 +80,7 @@ internal static class SaveLoad
                     Editor.Opened = false;
                     Windows.OpenConsole();
                     Console.Title = $"Loading world '{Path.GetFileNameWithoutExtension(worldfile.Name)}'";
-                    Universe.CurrentWorld = new World(worldfile.Name, worldfile.FullName, false, Console.WriteLine);
+                    Universe.CurrentWorld = World.FromTemplate(worldfile.Name);
                     Windows.CloseConsole();
                     Editor.Opened = true;
                     return;
