@@ -58,7 +58,7 @@ internal class ItemDrop : ObjectBehavior
         sprite ??= noTextureItemPlaceholder;
         obj.AttachComponent<SpriteRenderer>(sprite);
         var result = obj.AttachComponent<ItemDrop>(item);
-        world.Instantiate(obj);
+        world.Instantiate(obj, obj => obj.IncludeWithSceneSerialization = true);
     }
 
     protected override void Awake()
@@ -97,39 +97,5 @@ internal class ItemDrop : ObjectBehavior
 
             transform.Translate(FlySpeed * Time.deltaTime * direction * closenessFactor);
         }
-
-        // item merging disabled cause it doesnt work
-
-        //var nearObjects = world.WorldChunkGrid.GetObjectsAroundObject(owner);
-        //foreach(var obj in nearObjects)
-        //{
-        //    if (obj is null || obj == owner || obj.IsDestroyed)
-        //        continue;
-        //    if (!obj.TryFetchComponent(out ItemDrop otherDrop))
-        //        continue;
-
-            //    if (!otherDrop.Item.Equals(Item))
-            //        continue; // not the same item as this drop.
-            //    if (otherDrop.combined)
-            //        continue; // other drop already combined with another, skip this one
-
-            //    var direction = (otherDrop.transform.position - transform.position).Normalized();
-            //    var dropDistance = Vector2.Distance(transform.position, otherDrop.transform.position);
-            //    if(dropDistance < 5)
-            //    {
-            //        if (!otherDrop.Item.Equals(Item))
-            //            continue;
-            //        if (Item.AddToStack(otherDrop.Item) is null)
-            //        {
-            //            Summon(transform.position, Item);
-            //            combined = true;
-            //            otherDrop.combined = true;
-            //            Destroy(owner);
-            //            Destroy(otherDrop.owner);
-            //        }
-            //    }
-
-            //    transform.Translate(30 * Time.deltaTime * direction);
-            //}
     }
 }

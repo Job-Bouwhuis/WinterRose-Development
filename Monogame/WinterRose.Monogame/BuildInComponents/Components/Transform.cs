@@ -142,10 +142,26 @@ namespace WinterRose.Monogame
         }
 
         [IncludeWithSerialization]
-        private Transform? _parent;
+        internal Transform? _parent;
         public Transform? parent
         {
-            get => _parent;
+            get
+            {
+                if (_parent is null)
+                    return _parent;
+
+                if (_parent?.owner is null)
+                {
+                    _parent = null;
+                    return _parent;
+                }
+                if(_parent.owner.IsDestroyed)
+                {
+                    _parent = null;
+                    return _parent;
+                }
+                return _parent;
+            }
             set
             {
                 if (value is null && _parent is not null)
@@ -184,11 +200,11 @@ namespace WinterRose.Monogame
                 return pos;
 
             Vector2 camPos = cam.transform.position;
-            Vector2 camBoundsHalf = cam.Bounds / 2;
+            Vector2 camCenter = cam.Bounds / 2;
             Vector2 windowResolutionHalf = MonoUtils.WindowResolution / 2;
 
             // Translate the screen position to world position considering the camera position
-            Vector2 result = pos + camPos - camBoundsHalf - windowResolutionHalf;
+            Vector2 result = pos + camPos - camCenter - windowResolutionHalf;
             return result + (MonoUtils.WindowResolution / 2);
         }
         /// <summary>

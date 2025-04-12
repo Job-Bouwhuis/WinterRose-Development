@@ -53,8 +53,7 @@ public static class Universe
                 if (MonoUtils.Graphics is null && MonoUtils.IsStopping)
                     return;
 
-                if(MonoUtils.Graphics is not null)
-                    MonoUtils.Graphics.SetRenderTarget(null);
+                MonoUtils.Graphics?.SetRenderTarget(null);
 
                 3.Repeat(x => GC.Collect());
 
@@ -68,6 +67,7 @@ public static class Universe
             curWorld?.WakeWorld();
             RequestRender = true;
             OnNewWorldLoaded();
+            CurrentWorld.Initialized = true;
         }
     }
     /// <summary>
@@ -176,8 +176,11 @@ public static class Universe
 
             if (RequestRender || !OptimizeDrawCalls)
             {
-                lastFrame = null;
                 var frames = CurrentWorld.Render(MonoUtils.SpriteBatch, cameraIndex);
+                lastUIFrame?.Dispose();
+                // why not dispose of LastFrame? 
+                // its a reference taken from the Camera
+                // if we dispose of this, the Camera cant set its render target anymore
                 lastFrame = frames.world;
                 lastUIFrame = frames.UI;
 

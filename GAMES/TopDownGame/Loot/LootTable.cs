@@ -53,7 +53,11 @@ namespace TopDownGame.Loot
             {
                 currentWeight += entry.Weight;
                 if (roll <= currentWeight)
-                    return entry.Item;
+                {
+                    IInventoryItem copy = entry.Item.Clone();
+                    copy.Count = new Random().Next(entry.MinDrops, entry.MaxDrops);
+                    return copy;
+                }
             }
 
             return Table.Last().Item; // fallback, should never be reached

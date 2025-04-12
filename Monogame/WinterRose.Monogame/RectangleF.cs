@@ -61,7 +61,7 @@ namespace WinterRose.Monogame
         /// <summary>
         /// The position of this rectangle
         /// </summary>
-        public Vector2 Location
+        public Vector2 Position
         {
             get
             {

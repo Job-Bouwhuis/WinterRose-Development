@@ -1,4 +1,5 @@
 ﻿using System;
+using WinterRose;
 using WinterRose.Monogame;
 
 namespace TopDownGame.Inventories.Base;
@@ -54,4 +55,6 @@ public interface IInventoryItem
     /// <param name="item"></param>
     /// <returns>remaining items if the stack of this item is full</returns>
     IInventoryItem? AddToStack(IInventoryItem item);
+
+    IInventoryItem Clone();
 }

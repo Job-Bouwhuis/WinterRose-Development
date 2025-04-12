@@ -72,16 +72,6 @@ internal class Level1 : WorldTemplate
         //coeb.transform.position = new(10, 10);
         //coeb.transform.parent = canvas.transform;
 
-        world.CreateObject<SmoothCameraFollow>("cam", player.transform).Speed = 8;
-
-        LootTable table = LootTable.WithName("box");
-        if (table.Table.Count == 0)
-            table.Add([
-                new(.5f, new ResourceItem() { Item = new Crystal()}),
-                new(.5f, new ResourceItem() { Item = new Flesh()})]);
-
-        table.Save();
-
         //var enemy = world.CreateObject("enemy");
         //enemy.transform.position = new(400, 50);
         //var renderer = enemy.AttachComponent<SpriteRenderer>(50, 50, Color.Blue);
@@ -97,15 +87,14 @@ internal class Level1 : WorldTemplate
         //mc.Target = player.transform;
         //enemy.CreatePrefab("Enemy");
 
-        //world.Instantiate(WorldObjectPrefab.Load("enemy"),
-        //    obj =>
-        //    {
-        //        obj.transform.position = new Vector2(200, 200);
-        //        obj.FetchComponent<AIMovementController>()!.Target = player.transform;
-        //    });
+        world.Instantiate(WorldObjectPrefab.Load("enemy"),
+            obj =>
+            {
+                obj.transform.position = new Vector2(200, 200);
+            });
 
         // Spawning multiple items in a circle
-        int itemCount = 100;
+        int itemCount = 0;
         Vector2 center = new Vector2(500, 500);
         float spawnRadius = 1000;
 
@@ -118,7 +107,7 @@ internal class Level1 : WorldTemplate
             ItemDrop.Create(spawnPos, item, world);
         }
 
-        world.SaveTemplate("demoWorld");
+        world.SaveTemplate();
 
         Application.Current.CameraIndex = 0;
     }

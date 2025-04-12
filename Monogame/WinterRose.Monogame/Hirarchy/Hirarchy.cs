@@ -113,6 +113,7 @@ namespace WinterRose.Monogame
                 valueContextDialogData = "";
                 gui.OpenPopup("NewObject", ImGuiPopupFlags.MouseButtonLeft);
             }
+
             ContextDialog("NewObject", () =>
             {
                 gui.InputTextWithHint("Object name", valueContextHint, ref valueContextDialogData, 100);

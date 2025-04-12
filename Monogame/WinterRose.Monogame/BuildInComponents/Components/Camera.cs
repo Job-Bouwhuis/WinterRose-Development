@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using System.Diagnostics;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame;
 
@@ -105,11 +106,14 @@ public sealed class Camera : ObjectComponent
     }
 
     [Hide]
-    [IgnoreInTemplateCreation] private SpriteBatch batch;
+    [ExcludeFromSerialization]
+    private SpriteBatch batch;
     [Hide]
-    [IgnoreInTemplateCreation] private RenderTarget2D renderTarget;
+    [ExcludeFromSerialization]
+    private RenderTarget2D renderTarget;
     [Hide]
-    [IgnoreInTemplateCreation] private Matrix trMatrix;
+    [ExcludeFromSerialization]
+    private Matrix trMatrix;
 
     protected override void Awake()
     {

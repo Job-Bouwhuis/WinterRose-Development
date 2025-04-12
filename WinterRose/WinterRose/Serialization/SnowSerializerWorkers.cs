@@ -360,6 +360,11 @@ namespace WinterRose.Serialization
                     return result;
             }
 
+            if(objectType.Name.Contains("SpriteBatch"))
+            {
+
+            }
+
             foreach (FieldInfo field in fields)
             {
                 result.Append(SerializeField(

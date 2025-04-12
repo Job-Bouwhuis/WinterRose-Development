@@ -17,6 +17,7 @@ namespace WinterRose.Monogame.EditorMode
         static WorldObject? hoveredObject;
 
         static Vector2 lastMousePos;
+        private static bool objectGUILocSet;
 
         internal static WorldObject? SelectedObject
         {
@@ -64,8 +65,21 @@ namespace WinterRose.Monogame.EditorMode
                 Vector2 minPos = obj.transform.position - size / 2;
                 Vector2 maxPos = obj.transform.position + size / 2;
 
+                Vector2 actualMousePos;
+                if (obj.RenderSpace == RenderSpace.World)
+                {
+                    actualMousePos = mouseWorldPos;
+                }
+                else
+                {
+                    actualMousePos = Input.MousePosition;
+                }
+
                 // check if mouse is inside the box
-                if (mouseWorldPos.X > minPos.X && mouseWorldPos.X < maxPos.X && mouseWorldPos.Y > minPos.Y && mouseWorldPos.Y < maxPos.Y)
+                if (actualMousePos.X > minPos.X && 
+                    actualMousePos.X < maxPos.X && 
+                    actualMousePos.Y > minPos.Y && 
+                    actualMousePos.Y < maxPos.Y)
                 {
                     hoveredObject = obj;
                     anyHovered = true;
@@ -178,7 +192,8 @@ namespace WinterRose.Monogame.EditorMode
                 if (!gui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow))
                     EditorContextMenu.Open();
             }
-            if (Input.GetKeyDown(Keys.Space, true))
+            if (Input.GetKey(Keys.LeftControl, true) 
+                && Input.GetKeyDown(Keys.S, true))
             {
                 if (!gui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow))
                     SaveLoad.Open();
@@ -219,6 +234,10 @@ namespace WinterRose.Monogame.EditorMode
             if (selectedObject is not null)
             {
                 SelectedObjectGUI();
+            }
+            else
+            {
+                objectGUILocSet = true;
             }
 
             EditorContextMenu.Render();

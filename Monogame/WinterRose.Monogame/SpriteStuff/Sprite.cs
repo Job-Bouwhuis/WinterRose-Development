@@ -205,7 +205,7 @@ public class Sprite
     /// <param name="color"></param>
     public Sprite(int width, int height, Color color)
     {
-        texture = MonoUtils.CreateTexture(width, height, color);
+        texture = MonoUtils.CreateTexture(width, height, color, color.A);
         TexturePath = texture.Name;
     }
 

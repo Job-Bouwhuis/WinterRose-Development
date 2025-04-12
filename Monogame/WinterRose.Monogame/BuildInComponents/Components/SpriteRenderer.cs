@@ -46,12 +46,12 @@ public sealed class SpriteRenderer : Renderer
             if (tex is null)
             {
                 RectangleF r = new RectangleF();
-                r.Location = transform.position;
+                r.Position = transform.position;
                 r.Size = new(0, 0);
                 return r;
             }
             RectangleF rect = ((RectangleF?)tex.Bounds) ?? RectangleF.Zero;
-            rect.Location = transform.position - GetTrueOrigin();
+            rect.Position = transform.position - GetTrueOrigin();
             return rect;
         } 
     }
@@ -78,7 +78,10 @@ public sealed class SpriteRenderer : Renderer
     /// <summary>
     /// Creates a new empty <see cref="SpriteRenderer"/>
     /// </summary>
-    public SpriteRenderer() => Sprite = new(1, 1, Color.Transparent);
+    public SpriteRenderer()
+    {
+        Sprite = new(1, 1, new Color(0, 0, 0, 0));
+    }
     /// <summary>
     /// Creates a new <see cref="SpriteRenderer"/> with <paramref name="tex"/> as the texture to draw
     /// </summary>

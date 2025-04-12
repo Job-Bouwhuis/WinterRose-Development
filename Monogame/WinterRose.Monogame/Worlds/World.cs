@@ -6,7 +6,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Remoting;
 using System.Threading.Tasks;
+using WinterRose.CrystalScripting.Legacy.Interpreting.Exceptions;
 using WinterRose.FileManagement;
 using WinterRose.Monogame.EditorMode;
 using WinterRose.Monogame.UI;
@@ -112,7 +114,6 @@ public sealed class World : IEnumerable<WorldObject>
     /// </summary>
     public World() : this("New Empty World")
     {
-        Initialized = true;
     }
     /// <summary>
     /// Creates a new empty world with the given name
@@ -121,7 +122,6 @@ public sealed class World : IEnumerable<WorldObject>
     public World(string name)
     {
         Name = name;
-        Initialized = true;
         WorldChunkGrid = new WorldGrid(this);
     }
     /// <summary>
@@ -167,8 +167,7 @@ public sealed class World : IEnumerable<WorldObject>
     /// Saves all the objects to a file with the given
     /// name to reference it later in <see cref=FromTemplate(string)"/>
     /// </summary>
-    /// <param name="name"></param>
-    public void SaveTemplate(string name)
+    public void SaveTemplate()
     {
         while (nextToSpawn.TryTake(out var newObj))
         {
@@ -177,13 +176,20 @@ public sealed class World : IEnumerable<WorldObject>
                 newObj.configure(newObj.obj);
         }
 
+        World savingWorld = new World(Name);
+        foreach(var obj in objects)
+        {
+            if(obj.IncludeWithSceneSerialization)
+                savingWorld.objects.Add(obj);
+        }
+
         SerializerSettings settings = new SerializerSettings()
         {
             CircleReferencesEnabled = true,
             IncludeType = true
         };
-        string data = SnowSerializer.Serialize(this, settings);
-        FileManager.Write("Content/Worlds/" + name + ".world", data, true);
+        string data = SnowSerializer.Serialize(savingWorld, settings);
+        FileManager.Write("Content/Worlds/" + Name + ".world", data, true);
     }
     /// <summary>
     /// Calls the <c>Awake</c> and <c>Start</c> methods on all components on all objects that have these methods implemented
@@ -542,6 +548,7 @@ public sealed class World : IEnumerable<WorldObject>
         result.transform.rotation = obj.transform.rotation;
         result.transform.scale = obj.transform.scale;
         result.Flag = obj.Flag;
+        result.IncludeWithSceneSerialization = obj.IncludeWithSceneSerialization;
 
         foreach (var comp in obj.FetchComponents())
         {
@@ -618,9 +625,15 @@ public sealed class World : IEnumerable<WorldObject>
         objects.Remove(worldObject);
     }
 
-    internal void InstantiateExact(WorldObject obj)
+    public WorldObject InstantiateExact(WorldObject obj)
     {
         objects.Add(obj);
+
+        foreach (var o in obj.transform)
+        {
+            InstantiateExact(o.owner);
+        }
+        return obj;
     }
 
     internal void RebuildParallelHelper() => rebuildParallelHelper = true;
@@ -637,9 +650,45 @@ public sealed class World : IEnumerable<WorldObject>
         return null;
     }
 
+    /// <summary>
+    /// Searches for all objects with the given <see cref="WorldObject.Flag"/>
+    /// </summary>
+    /// <param name="targetFlag"></param>
+    /// <returns></returns>
+    public List<WorldObject> FindObjectsWithFlag(string targetFlag)
+    {
+        List<WorldObject> result = [];
+        foreach (var obj in objects)
+            if (obj.Flag == targetFlag)
+                result.Add(obj);
+        return result;
+    }
+
     public void Instantiate(WorldObject obj, Action<WorldObject> configureObj = null)
     {
-        nextToSpawn.Add(new(obj, configureObj));
+        obj.IncludeWithSceneSerialization = false;
+
+        int id = System.Threading.Thread.GetCurrentProcessorId();
+        if (id == Application.Current.ApplicationMainThreadID)
+        {
+            WorldObject o = Duplicate(obj, obj.Name);
+            if (configureObj is not null)
+                configureObj(o);
+            if (Initialized)
+            {
+                o.WakeObject();
+                o.StartObject();
+            }
+        }
+        else
+        {
+            nextToSpawn.Add(new(obj, configureObj));
+        }
+
+        foreach(var o in obj.transform)
+        {
+            InstantiateExact(o.owner);
+        }
     }
 
     private record NewObj(WorldObject obj, Action<WorldObject>? configure);

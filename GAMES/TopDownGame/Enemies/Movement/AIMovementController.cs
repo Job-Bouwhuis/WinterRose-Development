@@ -1,4 +1,6 @@
-﻿using SharpDX.XInput;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using SharpDX.XInput;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,7 +34,12 @@ public sealed class AIMovementController : ObjectBehavior
     protected override void Update()
     {
         if (Target == null)
-            throw new InvalidOperationException("No target!");
+        {
+            Target = world.FindObjectWithFlag("Player")?.transform!;
+            if(Target == null)
+                throw new InvalidOperationException("No target!");
+        }
+        Current.Controller = this;
         Current.Move();
     }
 

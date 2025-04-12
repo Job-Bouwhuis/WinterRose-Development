@@ -12,11 +12,11 @@ namespace TopDownGame.Loot
         [IncludeWithSerialization]
         public float Weight { get; private set; } = weight;
 
-        public float MinDrops { get; set; } = 1;
-        public float MaxDrops { get; set; } = 1;
+        public int MinDrops { get; set; } = 1;
+        public int MaxDrops { get; set; } = 1;
 
         private LootChance() : this(0, null!) { } // for serialization
-        public LootChance(float weight, IInventoryItem item,  float minDrops, float maxDrops)
+        public LootChance(float weight, IInventoryItem item, int minDrops, int maxDrops)
             : this(weight, item)
         {
             MinDrops = minDrops;

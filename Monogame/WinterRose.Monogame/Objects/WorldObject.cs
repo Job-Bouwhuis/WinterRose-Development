@@ -65,6 +65,29 @@ public class WorldObject
         }
     }
 
+    /// <summary>
+    /// Whether or not this object should be saved upon creating a template
+    /// </summary>
+    public bool IncludeWithSceneSerialization
+    {
+        get
+        {
+            if (!_includeWithSceneSerialization)
+                return _includeWithSceneSerialization;
+
+            if(transform.parent is not null)
+            {
+                return transform.parent.owner.IncludeWithSceneSerialization;
+            }
+
+            return _includeWithSceneSerialization;
+        }
+        set
+        {
+            _includeWithSceneSerialization = value;
+        }
+    }
+    private bool _includeWithSceneSerialization = true;
     private bool _isActive = true;
 
     internal bool IsUIRoot => isUIRoot ??= components.Any(x => x is UICanvas);
@@ -594,5 +617,10 @@ public class WorldObject
     {
         if (TryFetchComponent(out T component)) return component;
         return AttachComponent<T>(args);
+    }
+
+    internal void _setParent(WorldObject obj)
+    {
+        transform._parent = obj.transform;
     }
 }

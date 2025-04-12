@@ -12,7 +12,8 @@ using WinterRose.Monogame.Worlds;
 namespace WinterRose.Monogame.UI;
 
 [RequireComponent<Text>(AutoAdd = true)]
-public class Button : ActiveRenderer
+[RequireComponent<SpriteRenderer>(AutoAdd = true)]
+public class Button : ObjectBehavior
 {
     /// <summary>
     /// The text element for this button
@@ -25,6 +26,7 @@ public class Button : ActiveRenderer
         }
     }
     private Text _text;
+    private SpriteRenderer renderer;
     /// <summary>
     /// Invoked on click
     /// </summary>
@@ -32,7 +34,19 @@ public class Button : ActiveRenderer
     /// <summary>
     /// The sprite used for the button. If not set before awake is called, a new blank sprite is created
     /// </summary>
-    public Sprite sprite { get; set; }
+    public Sprite sprite
+    {
+        get
+        {
+            renderer ??= FetchComponent<SpriteRenderer>();
+            return renderer.Sprite;
+        }
+        set
+        {
+            renderer ??= FetchComponent<SpriteRenderer>();
+            renderer.Sprite = value;
+        }
+    }
     /// <summary>
     /// Whether the button activates the moment the left mouse button is pressed, or when it is released
     /// </summary>
@@ -53,16 +67,6 @@ public class Button : ActiveRenderer
     };
 
     /// <summary>
-    /// The bounds of the button. Relies on having a <see cref="Sprite"/> If not manually assigned as sprite manually, this property will fail if called before Awake was called.
-    /// </summary>
-    public override RectangleF Bounds => 
-        new RectangleF(
-            sprite.Bounds.Width, 
-            sprite.Bounds.Height, 
-            transform.position.X - sprite.Bounds.Width / 2, 
-            transform.position.Y - sprite.Bounds.Height / 2);
-
-    /// <summary>
     /// The layer depth used when rendering the button (a value between 0 and 1)
     /// </summary>
     public float LayerDepth { get; set; } = 0.5f;
@@ -70,7 +74,6 @@ public class Button : ActiveRenderer
     /// The sprite effects used when rendering the button
     /// </summary>
     public SpriteEffects SpriteEffects { get; set; }
-    public override TimeSpan DrawTime { get; protected set; }
 
     [Show]
     private bool isHovering = false;
@@ -88,8 +91,12 @@ public class Button : ActiveRenderer
     protected override void Awake()
     {
         var textSize = text.SizeRaw;
-        sprite ??= MonoUtils.CreateTexture((int)(textSize.X + 15), (int)(textSize.Y + 15), "#FFFFFF");
-
+        if(sprite.Width is 1 && 
+            sprite.Height is 1 && 
+            sprite.GetPixel(0, 0).A == 0)
+        {
+            sprite = MonoUtils.CreateTexture((int)(textSize.X + 15), (int)(textSize.Y + 15), "#FFFFFF");
+        }
         if (LayerDepth is 1)
             LayerDepth = .99f;
         text.LayerDepth = LayerDepth + .01f;
@@ -107,11 +114,14 @@ public class Button : ActiveRenderer
         else
             mousePos = Input.MousePosition;
 
-            isHovering = Bounds.Contains(mousePos);
+        renderer ??= FetchComponent<SpriteRenderer>()!;
+        isHovering = renderer.Bounds.Contains(mousePos);
         if (currentColorFraction < 1)
             currentColorFraction += Time.deltaTime * ColorFadeSpeed;
         if(currentColorFraction > 1)
             currentColorFraction = 1;
+
+        renderer.Tint = colorRange.GetColor(currentColorFraction);
 
         if (isHovering)
         {
@@ -150,20 +160,5 @@ public class Button : ActiveRenderer
         }
     }
 
-    public override void Render(SpriteBatch batch)
-    {
-        Stopwatch w = Stopwatch.StartNew();
 
-        // calculate center of sprite based on sprite size and scale
-        Vector2 size = new(sprite.Bounds.Width * transform.scale.X, sprite.Bounds.Height * transform.scale.Y);
-        Vector2 center = new(size.X / 2, size.Y / 2);
-
-        //Color selectedColor = isClicked ? ButtonTints.Clicked : isHovering ? ButtonTints.Hover : ButtonTints.Normal;
-
-        batch.Draw(sprite, transform.position, null, colorRange.GetColor(currentColorFraction),
-            0, center, transform.scale, SpriteEffects, LayerDepth);
-
-        w.Stop();
-        DrawTime = w.Elapsed;
-    }
 }
