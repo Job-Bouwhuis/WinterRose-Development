@@ -65,7 +65,7 @@ public sealed class TextButton : ObjectBehavior
 
     protected override void Awake()
     {
-        text.color = Color.White;
+        text.Color = Color.White;
         colorRange = new([new ColorRangePoint(ButtonTints.Normal, 0), new ColorRangePoint(ButtonTints.Normal, 1)]);
         previousEndColor = colorRange.Points[^1].Color;
     }
@@ -116,6 +116,6 @@ public sealed class TextButton : ObjectBehavior
             currentColorFraction = 0;
         }
 
-        text.color = colorRange.GetColor(currentColorFraction);
+        text.Color = colorRange.GetColor(currentColorFraction);
     }
 }

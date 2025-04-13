@@ -46,6 +46,8 @@ internal class Level1 : WorldTemplate
         player.owner.Flag = "Player";
         player.AttachComponent<Player>("Test");
 
+        world.CreateObject<SmoothCameraFollow>("camera").Target = player.transform;
+
         MonoUtils.TargetFramerate = 144;
 
         var gun = CreateSMG(world).owner;
@@ -63,10 +65,11 @@ internal class Level1 : WorldTemplate
         gun.transform.position = new();
 
         var canvas = world.CreateObject<UICanvas>("Canvas");
-        var text = world.CreateObject<Button>("text");
-        text.ButtonTints.Normal = Color.Cyan;
-        text.transform.parent = canvas.transform;
-        text.transform.position = new(10, 10);
+        var button = world.CreateObject<Button>("text");
+        button.text.text = "Some Weird Text";
+        button.ButtonTints.Normal = Color.Cyan;
+        button.transform.parent = canvas.transform;
+        button.transform.position = new(200, 200);
 
         //var coeb = world.CreateObject<SpriteRenderer>("coeb", new Sprite(200, 200, Color.Pink));
         //coeb.transform.position = new(10, 10);
@@ -153,7 +156,7 @@ internal class Level1 : WorldTemplate
         collider.IgnoredFlags.Add("Player");
         collider.ResolveOverlaps = false;
         var proj = bullet.AttachComponent<Projectile>();
-        proj.Speed = 1600;
+        proj.Speed = 6000;
         proj.Damage = new FireDamage(10);
         proj.Lifetime = 5;
         proj.Spread = .1f;

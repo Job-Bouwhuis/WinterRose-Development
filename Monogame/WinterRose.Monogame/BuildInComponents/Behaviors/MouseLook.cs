@@ -12,7 +12,7 @@ namespace WinterRose.Monogame
         /// <summary>
         /// The speed at which it rotates
         /// </summary>
-        public StaticAdditiveModifier<float> RotateSpeedModifier { get; private set; } = new() { BaseValue = 20 };
+        public StaticAdditiveModifier<float> RotateSpeedModifier { get; private set; } = new() { BaseValue = 1 };
 
         /// <summary>
         /// Whether the rotating should snap, and not go smoothly
@@ -24,6 +24,17 @@ namespace WinterRose.Monogame
             Vector2 mousePos = Input.MousePosition;
             mousePos = Transform.ScreenToWorldPos(mousePos, Camera.current);
             transform.LookAt(mousePos);
+            return;
+
+            // need to fix rotation snapping from 179 degrees to -180
+            //var direction = Vector2.Normalize(mousePos - transform.position);
+
+            //var angle = MathHelper.ToDegrees(MathF.Atan2(direction.Y, direction.X));
+
+            //transform.rotation = 
+            //    float.Lerp(transform.rotation, 
+            //    angle, 
+            //    Time.deltaTime * RotateSpeedModifier);
         }
     }
 }

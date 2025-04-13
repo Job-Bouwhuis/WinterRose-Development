@@ -6,8 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Monogame;
-using Textw = WinterRose.Monogame.TextRendering.Text;
-using TextAlignment = WinterRose.Monogame.TextRendering.TextAlignment;
 using System.Windows.Forms;
 
 namespace WinterRose.Monogame.UI;
@@ -17,16 +15,19 @@ namespace WinterRose.Monogame.UI;
 /// </summary>
 public class Text : Renderer
 {
-    public Textw text { get; set; }
-    public Color color { get; set; }
+    public string text { get; set; }
+    public Color Color { get; set; }
+    public SpriteFont Font { get; set; } = MonoUtils.DefaultFont;
     public Vector2 PositionOffset { get; set; } = new();
 
-    public override RectangleF Bounds => text.CalculateBounds(transform.position);
-
-    public SpriteFont Font
+    public override RectangleF Bounds
     {
-        get => text[0].Font;
-        set => text.Foreach(word => word.Font = value);
+        get
+        {
+            var size = Size;
+            var position = PositionOffset + transform.position;
+            return new RectangleF(size.X, size.Y, position.X, position.Y);
+        }
     }
 
     /// <summary>
@@ -36,8 +37,8 @@ public class Text : Renderer
     {
         get
         {
-            var bounds = text.CalculateBounds(transform.position);
-            return new Vector2(bounds.Width, bounds.Height) * transform.scale;
+            var size = Font.MeasureString(text);
+            return new Vector2(size.X, size.Y) * transform.scale;
         }
     }
     /// <summary>
@@ -47,8 +48,8 @@ public class Text : Renderer
     {
         get
         {
-            var bounds = text.CalculateBounds(transform.position);
-            return new Vector2(bounds.Width, bounds.Height);
+            var size = Font.MeasureString(text);
+            return new Vector2(size.X, size.Y);
         }
     }
 
@@ -80,13 +81,20 @@ public class Text : Renderer
     public Text(string text, Color color, SpriteFont font)
     {
         this.text = text;
-        this.color = color;
+        this.Color = color;
         this.Font = font;
     }
 
     public override void Render(SpriteBatch batch)
     {
-        var size = Size;
-        batch.DrawText(text, new Vector2(0, 0), new RectangleF(new Vector2(0, 0), MonoUtils.ScreenSize), TextAlignment.Left);
+        batch.DrawString(Font,
+                         text,
+                         transform.position,
+                         Color,
+                         transform.rotation,
+                         SizeRaw * 0.5f,
+                         transform.scale,
+                         SpriteEffects,
+                         LayerDepth);
     }
 }

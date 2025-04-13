@@ -228,7 +228,7 @@ public sealed class World : IEnumerable<WorldObject>
     /// <returns></returns>
     public WorldObject CreateObject(WorldObjectPrefab prefab)
     {
-        return prefab.LoadIn(this);
+        return Duplicate(prefab.LoadedObject, prefab.LoadedObject.Name);
     }
 
     /// <summary>
@@ -268,7 +268,7 @@ public sealed class World : IEnumerable<WorldObject>
     public Camera GetCamera(int cameraIndex)
     {
         var cameras = FindComponents<Camera>();
-        if (cameraIndex < 0 || cameraIndex > cameras.Length)
+        if (cameraIndex < 0 || cameraIndex >= cameras.Length)
             return null;
         return cameras[cameraIndex];
     }
@@ -458,7 +458,7 @@ public sealed class World : IEnumerable<WorldObject>
                 MonoUtils.Graphics.SetRenderTarget(targetUI);
                 MonoUtils.Graphics.Clear(new Color(0, 0, 0, 0));
 
-                batch.Begin();
+                batch.Begin(SpriteSortMode.FrontToBack);
 
                 foreach (var obj in objs)
                     obj.Render(batch);
@@ -487,7 +487,7 @@ public sealed class World : IEnumerable<WorldObject>
 
             if (UIObjects.Count > 0)
             {
-                batch.Begin();
+                batch.Begin(SpriteSortMode.FrontToBack);
 
                 foreach (var obj in UIObjects)
                     obj.Render(batch);
@@ -605,6 +605,10 @@ public sealed class World : IEnumerable<WorldObject>
 
     private void CommitKids(WorldObject parent, List<WorldObject> list)
     {
+        if(parent == null)
+        {
+            return;
+        }
         list.Add(parent);
         foreach (var obj in parent.transform)
             CommitKids(obj.owner, list);
@@ -632,6 +636,12 @@ public sealed class World : IEnumerable<WorldObject>
         foreach (var o in obj.transform)
         {
             InstantiateExact(o.owner);
+        }
+
+        if(Initialized)
+        {
+            obj.WakeObject();
+            obj.StartObject();
         }
         return obj;
     }

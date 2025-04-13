@@ -16,6 +16,7 @@ using WinterRose.WinterThornScripting;
 using WinterRose.Monogame.WinterThornPort;
 using WinterRose.Monogame.TextRendering;
 using System.Text;
+using SpriteFontPlus;
 
 namespace WinterRose.Monogame;
 

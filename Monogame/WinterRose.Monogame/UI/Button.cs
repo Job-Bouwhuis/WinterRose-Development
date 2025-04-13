@@ -100,7 +100,7 @@ public class Button : ObjectBehavior
         if (LayerDepth is 1)
             LayerDepth = .99f;
         text.LayerDepth = LayerDepth + .01f;
-        text.color = Color.Black;
+        text.Color = Color.Black;
         colorRange = new([new ColorRangePoint(ButtonTints.Normal, 0), new ColorRangePoint(ButtonTints.Normal, 1)]);
         previousEndColor = colorRange.Points[^1].Color;
     }

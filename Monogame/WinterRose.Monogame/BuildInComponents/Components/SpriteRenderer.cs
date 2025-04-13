@@ -51,7 +51,7 @@ public sealed class SpriteRenderer : Renderer
                 return r;
             }
             RectangleF rect = ((RectangleF?)tex.Bounds) ?? RectangleF.Zero;
-            rect.Position = transform.position - GetTrueOrigin();
+            rect.Position = (transform.position - GetTrueOrigin());
             return rect;
         } 
     }

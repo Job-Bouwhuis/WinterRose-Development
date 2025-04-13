@@ -35,24 +35,25 @@ public sealed class WorldObjectPrefab : Prefab
             Save();
     }
 
-    public WorldObject LoadedObject { get; private set; }
-
+    public WorldObject LoadedObject
+    {
+        get
+        {
+            if(obj == null)
+                Load();
+            return obj!;
+        }
+        private set
+        {
+            obj = value;
+        }
+    }
+    private WorldObject? obj;
     public static void Create(string name, WorldObject obj)
     {
         WorldObjectPrefab prefab = new(name);
         prefab.LoadedObject = obj;
         prefab.Save();
-    }
-
-    /// <summary>
-    /// Loads the <see cref="WorldObject"/> into the <see cref="World"/>.
-    /// </summary>
-    /// <param name="world"></param>
-    public WorldObject LoadIn(World world)
-    {
-        if (LoadedObject == null)
-            Load();
-        return world.Duplicate(this, LoadedObject.Name);
     }
 
     /// <summary>
