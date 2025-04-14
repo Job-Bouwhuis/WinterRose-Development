@@ -26,10 +26,10 @@ public sealed class AIMovementController : ObjectBehavior
     public Transform Target { get; set; }
 
     [IncludeWithSerialization]
-    public float VisionRange { get; set; } = 200;
+    public float VisionRange { get; set; } = 1500;
 
     [IncludeWithSerialization]
-    public float EvadeDistance { get; set; } = 150;
+    public float EvadeDistance { get; set; } = 200;
 
     protected override void Update()
     {

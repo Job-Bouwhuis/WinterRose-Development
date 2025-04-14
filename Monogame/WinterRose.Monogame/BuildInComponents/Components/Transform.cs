@@ -78,7 +78,7 @@ namespace WinterRose.Monogame
             {
                 if (parent == null)
                     return position;
-                return position - parent.transform.position;
+                return parent.transform.position - position;
             }
             set
             {

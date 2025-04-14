@@ -14,7 +14,7 @@ namespace TopDownGame.Enemies;
 [RequireComponent<AIMovementController>]
 [RequireComponent<Vitality>] // technically enforced by StatusEffector. but here for explicitness
 [RequireComponent<StatusEffector>]
-internal abstract class Enemy : ObjectBehavior
+internal class Enemy : ObjectBehavior
 {
     public Weapon Weapon { get; set; }
     public Vitality vitality { get; private set; }
@@ -31,6 +31,10 @@ internal abstract class Enemy : ObjectBehavior
 
     protected override void Update()
     {
-        // yet to design what needs to go in here, if anything
+        if(Weapon is not null)
+        {
+            Weapon.DoShot();
+            Weapon.ResetShooting();
+        }
     }
 }

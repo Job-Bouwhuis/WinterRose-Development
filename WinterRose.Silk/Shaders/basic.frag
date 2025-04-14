@@ -1,17 +1,14 @@
-﻿#version 330 core
+﻿// Fragment Shader (basic.frag)
+#version 330 core
 
 in vec2 TexCoord;
+in vec4 ourColor;
+
 out vec4 FragColor;
 
 uniform sampler2D texture1;
 
 void main()
 {
-    vec4 texColor = texture(texture1, TexCoord);
-
-    if (texColor.a < 0.1) {
-        discard; 
-    }
-
-    FragColor = texColor;
+    FragColor = ourColor * texture(texture1, TexCoord);
 }

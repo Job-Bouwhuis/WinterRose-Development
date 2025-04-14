@@ -298,14 +298,15 @@ public sealed class World : IEnumerable<WorldObject>
 
         while (nextToSpawn.TryTake(out var newObj))
         {
-            WorldObject o = Duplicate(newObj.obj, newObj.obj.Name);
+            objects.Add(newObj.obj);
             if (newObj.configure is not null)
-                newObj.configure(o);
+                newObj.configure(newObj.obj);
             if (Initialized)
             {
-                o.WakeObject();
-                o.StartObject();
+                newObj.obj.WakeObject();
+                newObj.obj.StartObject();
             }
+
         }
 
 
@@ -343,13 +344,7 @@ public sealed class World : IEnumerable<WorldObject>
 
         foreach (var obj in ToDestroy)
         {
-            obj.Close();
-            obj.IsDestroyed = true;
-
-            objects.Remove(obj);
-
-
-            WorldChunkGrid.Remove(obj);
+            DoDestroyObject(obj);
         }
         if (ToDestroy.Count > 0)
         {
@@ -372,6 +367,24 @@ public sealed class World : IEnumerable<WorldObject>
             time = 0;
         }
     }
+
+    private void DoDestroyObject(WorldObject obj)
+    {
+        if(obj.transform is not null)
+        {
+            foreach (var kid in obj.transform) // destroy object children recursively
+                DoDestroyObject(kid.owner);
+        }
+
+        obj.Close();
+        obj.IsDestroyed = true;
+
+        objects.Remove(obj);
+
+        if(Initialized)
+            WorldChunkGrid.Remove(obj);
+    }
+
     /// <summary>
     /// Finds all components of the given type <typeparamref name="T"/> in the world
     /// </summary>
@@ -626,7 +639,7 @@ public sealed class World : IEnumerable<WorldObject>
     /// <param name="worldObject"></param>
     public void DestroyImmediately(WorldObject worldObject)
     {
-        objects.Remove(worldObject);
+        DoDestroyObject(worldObject);
     }
 
     public WorldObject InstantiateExact(WorldObject obj)
@@ -674,12 +687,12 @@ public sealed class World : IEnumerable<WorldObject>
         return result;
     }
 
-    public void Instantiate(WorldObject obj, Action<WorldObject> configureObj = null)
+    public void Instantiate(WorldObject obj, Action<WorldObject> configureObj = null, bool forceDelayed = false)
     {
         obj.IncludeWithSceneSerialization = false;
 
         int id = System.Threading.Thread.GetCurrentProcessorId();
-        if (id == Application.Current.ApplicationMainThreadID)
+        if (id == Application.Current.ApplicationMainThreadID && !forceDelayed)
         {
             WorldObject o = Duplicate(obj, obj.Name);
             if (configureObj is not null)
