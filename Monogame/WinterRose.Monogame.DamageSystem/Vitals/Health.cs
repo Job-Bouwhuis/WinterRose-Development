@@ -29,7 +29,6 @@ public class Health
         }
     }
 
-    [IgnoreInTemplateCreation]
     public event Action OnDeath = delegate { };
 
     /// <summary>
@@ -41,6 +40,7 @@ public class Health
     /// The modifier for base health
     /// </summary>
     public StaticAdditiveModifier<int> AddititiveHealthModifier { get; set; } = new();
+    public Action<Health, int, int> OnHealthChanged { get; set; } = delegate { };
 
     private int currentHealth = 1;
 
@@ -65,11 +65,14 @@ public class Health
     /// <param name="damage"></param>
     public void DealDamage(int damage)
     {
+        int previousHealth = currentHealth;
         currentHealth -= damage;
         currentHealth = Math.Max(currentHealth, 0);
 
         if(currentHealth <= 0)
             OnDeath();
+
+        OnHealthChanged(this, previousHealth, currentHealth);
     }
 
     /// <summary>
@@ -78,7 +81,10 @@ public class Health
     /// <param name="amount"></param>
     public void Heal(int amount)
     {
+        int previousHealth = currentHealth;
         currentHealth += amount;
         currentHealth = Math.Max(currentHealth, MaxHealth);
+
+        OnHealthChanged(this, previousHealth, currentHealth);
     }
 }

@@ -27,7 +27,12 @@ public sealed class WorldRenderingOptions
     /// <summary>
     /// The rasterizer state for the sprite batch. Defaults to <see cref="RasterizerState.CullCounterClockwise"/>
     /// </summary>
-    public RasterizerState? RasterizerState { get; set; } = RasterizerState.CullCounterClockwise;
+    public RasterizerState? RasterizerState { get; set; } = new RasterizerState()
+    {
+        ScissorTestEnable = true,
+        CullMode = CullMode.None,
+        FillMode = FillMode.WireFrame
+    };
     /// <summary>
     /// The effect for the sprite batch. Defaults to <see langword="null"/>
     /// </summary>

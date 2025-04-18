@@ -1,5 +1,7 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Microsoft.VisualBasic.Logging;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using SharpDX.Direct3D9;
 using System;
 using WinterRose.Serialization;
 
@@ -17,6 +19,12 @@ public sealed class SpriteRenderer : Renderer
     public Sprite Sprite { get => tex; set => tex = value; }
 
     /// <summary>
+    /// When not null, only this rectangle is drawn by this sprite renderer
+    /// </summary>
+    [IncludeWithSerialization]
+    public Rectangle? ClipMask { get; set; } = null;
+
+    /// <summary>
     /// The draw origin of this sprite, values between 0 and 1 are considered inside the bounds of the sprite. values outside 0 and 1 are accepted
     /// </summary>
     [IncludeWithSerialization]
@@ -25,7 +33,7 @@ public sealed class SpriteRenderer : Renderer
         get => origin;
         set
         {
-            if(value.X is > 1 or < 0 || value.Y is > 1 or < 0)
+            if (value.X is > 1 or < 0 || value.Y is > 1 or < 0)
                 throw new("Origin must be between 0 and 1");
             origin = value;
         }
@@ -39,21 +47,21 @@ public sealed class SpriteRenderer : Renderer
     /// <summary>
     /// The bounds of the texture this <see cref="SpriteRenderer"/> renders
     /// </summary>
-    public override RectangleF Bounds 
-    { 
+    public override RectangleF Bounds
+    {
         get
         {
             if (tex is null)
             {
                 RectangleF r = new RectangleF();
-                r.Location = transform.position;
+                r.Position = transform.position;
                 r.Size = new(0, 0);
                 return r;
             }
             RectangleF rect = ((RectangleF?)tex.Bounds) ?? RectangleF.Zero;
-            rect.Location = transform.position - GetTrueOrigin();
+            rect.Position = (transform.position - GetTrueOrigin());
             return rect;
-        } 
+        }
     }
     /// <summary>
     /// The <see cref="SpriteEffects"/> used when rendering the sprite
@@ -64,7 +72,7 @@ public sealed class SpriteRenderer : Renderer
     /// Layerdepth, used to determain what render element should be drawn in front of another
     /// </summary>
     [IncludeInTemplateCreation]
-    [IncludeWithSerialization] 
+    [IncludeWithSerialization]
     public float LayerDepth { get; set; } = 0.5f;
     /// <summary>
     /// The tint color of the sprite
@@ -78,7 +86,10 @@ public sealed class SpriteRenderer : Renderer
     /// <summary>
     /// Creates a new empty <see cref="SpriteRenderer"/>
     /// </summary>
-    public SpriteRenderer() => Sprite = new(1, 1, Color.Transparent);
+    public SpriteRenderer()
+    {
+        Sprite = new(1, 1, new Color(0, 0, 0, 0));
+    }
     /// <summary>
     /// Creates a new <see cref="SpriteRenderer"/> with <paramref name="tex"/> as the texture to draw
     /// </summary>
@@ -108,6 +119,35 @@ public sealed class SpriteRenderer : Renderer
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
+        Rectangle original = MonoUtils.Graphics.ScissorRectangle;
+        if (ClipMask is not null && Camera.current is not null)
+        {
+            if (!batch.GraphicsDevice.RasterizerState.ScissorTestEnable)
+                throw new Exception("SpriteRenderer wishes to clip rendering, but clipping wasnt enabled!");
+
+            Rectangle mask = ClipMask.Value;
+
+            // Calculate top-left of the sprite in world space
+            Vector2 originOffset = new Vector2(
+                tex.Width * Origin.X, tex.Height * Origin.Y);
+            Vector2 worldTopLeft = transform.position - originOffset;
+
+            // Add the clipmask relative to the sprite's top-left corner
+            mask.Location += worldTopLeft.ToPoint();
+
+            Debug.Log(mask);
+            Debug.DrawRectangle(mask, Color.Red);
+            Debug.DrawRectangle(Bounds, Color.GreenYellow);
+            // Convert to screen space
+
+            Rectangle r = Camera.current.WorldToScreenRectangle(mask);
+            //r.Location += Camera.current.TopLeft.ToPoint();
+            batch.GraphicsDevice.ScissorRectangle = r;
+
+            Debug.Log(batch.GraphicsDevice.ScissorRectangle);
+            Debug.DrawRectangle(batch.GraphicsDevice.ScissorRectangle, Color.Blue, 2, RenderSpace.Screen);
+        }
+
         var a = GetTrueOrigin();
         batch.Draw(
             tex,
@@ -121,6 +161,12 @@ public sealed class SpriteRenderer : Renderer
             LayerDepth
             );
 
+        if (ClipMask is not null && Camera.current is not null)
+        {
+            MonoUtils.Graphics.ScissorRectangle = original;
+            Debug.Log(MonoUtils.Graphics.ScissorRectangle);
+        }
+      
         sw.Stop();
         DrawTime = sw.Elapsed;
     }

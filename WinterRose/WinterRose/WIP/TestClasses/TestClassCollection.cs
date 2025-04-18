@@ -38,10 +38,12 @@ namespace WinterRose.WIP.TestClasses
         public int R;
         public int G;
         public int B;
+        public CTC ctc;
     }
     public class CTC
     {
         public bool HasTarget { get; set; }
+        public LightBlock Block { get; set; }
     }
     public class Randomness
     {
@@ -61,7 +63,7 @@ namespace WinterRose.WIP.TestClasses
         }
     }
 
-    [SerializeAs<CTC>]
+    [SerializeAs<Yeeter>]
     public class Yeeter : IEnumerable<int>
     {
 
@@ -146,6 +148,11 @@ namespace WinterRose.WIP.TestClasses
         }
     }
 
+    public class ContainsListOfNums
+    {
+        public List<Klant> nums = [];
+    }
+
     public class Everything
     {
         public bool a;
@@ -169,21 +176,21 @@ namespace WinterRose.WIP.TestClasses
         public Everything()
         {
             a = true;
-            b = 0;
-            c = 0;
-            d = '0';
-            e = 0;
-            f = 0;
-            g = 0;
-            h = 0;
-            i = 0;
-            l = 0;
-            m = 0;
-            n = 0;
-            o = 0;
-            p = "";
-            vec = new Vector3();
-            nums = new();
+            b = 1;
+            c = 2;
+            d = '3';
+            e = 4;
+            f = 5;
+            g = 6;
+            h = 7;
+            i = 8;
+            l = 9;
+            m = 10;
+            n = 11;
+            o = 12;
+            p = "13";
+            vec = new Vector3(14, 15, 16);
+            nums = [17, 18, 19, 20];
             //names = Array.Empty<string>();
             mode = GameMode.None;
         }
@@ -323,17 +330,22 @@ namespace WinterRose.WIP.TestClasses
         public int id;
         public string? name;
         public string? phoneNumber;
-        public DateOnly? birthday;
-        public static Klant Random() => new(new Random().Next(0, 1000000)) { name = Randomness.RandomString(5), phoneNumber = Randomness.RandomString(5), birthday = DateOnly.FromDateTime(DateTime.Now) };
-        public Klant(int id) => this.id = id;
+        public static Klant Random() => new(new Random().Next(0, 1000000)) { name = Randomness.RandomString(5), phoneNumber = Randomness.RandomString(5) };
+        public Klant(int id) : this() => this.id = id;
+        public Klant() 
+        {
+            1.Repeat(i => orders.Add(new Order()));
+        }
+        public List<Order> orders = [];
     }
 
     public class Order
     {
-        public int klantId;
-        public Klant klant;
-        public int OrderId;
-
+        public List<dinges> dingen = [];
+        public Order()
+        {
+            1.Repeat(i => dingen.Add(dinges.Random()));
+        }
     }
 
     public record SomeGuy(string Name, string LastName, int Age)
@@ -352,11 +364,10 @@ namespace WinterRose.WIP.TestClasses
         public Settings() : this(Empty()) { }
     }
 
-    [IncludeAllProperties]
-    [IncludePrivateFields]
     public class dinges
     {
-        private Vector2 vec { get; set; }
+        [IncludeWithSerialization]
+        public Vector2 vec { get; set; }
         public dinges()
         {
             vec = new();

@@ -1,7 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System.Collections.Generic;
 using System.Diagnostics;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame;
 
@@ -57,22 +59,22 @@ public sealed class Camera : ObjectComponent
     /// <summary>
     /// Gets the top left corner of the camera in world space
     /// </summary>
-    [Hide]
+    //[Hide]
     public Vector2 TopLeft => Transform.ScreenToWorldPos(new(0, 0), this);
     /// <summary>
     /// The top right corner of the camera in world space
     /// </summary>
-    [Hide]
+    //[Hide]
     public Vector2 TopRight => Transform.ScreenToWorldPos(new(MonoUtils.WindowResolution.X, 0), this);
     /// <summary>
     /// The bottom left corner of the camera in world space
     /// </summary>
-    [Hide]
+    //[Hide]
     public Vector2 BottomLeft => Transform.ScreenToWorldPos(new(0, MonoUtils.WindowResolution.Y), this);
     /// <summary>
     /// The bottom right corner of the camera in world space
     /// </summary>
-    [Hide]
+    //[Hide]
     public Vector2 BottomRight => Transform.ScreenToWorldPos(MonoUtils.WindowResolution, this);
 
     public SpriteSortMode SpriteSorting { get; set; } = SpriteSortMode.FrontToBack;
@@ -93,8 +95,10 @@ public sealed class Camera : ObjectComponent
         }
     }
 
+    public Matrix TransformMatrix => trMatrix;
+
     [Hide]
-    private Matrix TransformMatrix
+    private Matrix CalculateTransformMatrix
     {
         get
         {
@@ -104,11 +108,14 @@ public sealed class Camera : ObjectComponent
     }
 
     [Hide]
-    [IgnoreInTemplateCreation] private SpriteBatch batch;
+    [ExcludeFromSerialization]
+    private SpriteBatch batch;
     [Hide]
-    [IgnoreInTemplateCreation] private RenderTarget2D renderTarget;
+    [ExcludeFromSerialization]
+    private RenderTarget2D renderTarget;
     [Hide]
-    [IgnoreInTemplateCreation] private Matrix trMatrix;
+    [ExcludeFromSerialization]
+    private Matrix trMatrix;
 
     protected override void Awake()
     {
@@ -134,27 +141,68 @@ public sealed class Camera : ObjectComponent
         trMatrix = (pos * zoomMatrix) * Matrix.CreateTranslation(Bounds.X / 2, Bounds.Y / 2, 0);
     }
 
-    internal RenderTarget2D GetCameraView(System.Action<SpriteBatch> renderMethod)
+    internal (RenderTarget2D view, List<WorldObject> UIObjects)
+        GetCameraView(System.Func<SpriteBatch, List<WorldObject>> renderMethod)
     {
         MonoUtils.Graphics.SetRenderTarget(renderTarget);
 
-        batch.Begin(
-            transformMatrix: TransformMatrix,
-            sortMode: SpriteSorting,
-            blendState: BlendState.AlphaBlend,
-            samplerState: SamplerState.PointClamp);
+        RasterizerState raster = new()
+        {
+            ScissorTestEnable = true,
+            Name = "scissor" 
+        };
 
-        renderMethod(batch);
+        batch.GraphicsDevice.RasterizerState = raster;
+
+        batch.Begin(
+                transformMatrix: CalculateTransformMatrix,
+                sortMode: SpriteSorting,
+                blendState: BlendState.AlphaBlend,
+                samplerState: SamplerState.PointClamp,
+                rasterizerState: raster);
+
+        Vector2I screenTopLeft = (Vector2I)Vector2.Transform(TopLeft, trMatrix);
+        Vector2I screenBottomRight = (Vector2I)Vector2.Transform(BottomRight, trMatrix);
+        MonoUtils.Graphics.ScissorRectangle =
+            new Rectangle(
+                screenTopLeft.X,
+                screenTopLeft.Y,
+                screenBottomRight.X - screenTopLeft.X,
+                screenBottomRight.Y - screenTopLeft.Y);
+
+        var uiObjs = renderMethod(batch);
         batch.End();
 
         MonoUtils.Graphics.SetRenderTarget(null);
-        return renderTarget;
+        return (renderTarget, uiObjs);
+    }
+
+    /// <summary>
+    /// Transforms the given rectangle into screenspace, rather than world space.<br></br>
+    /// Used for mask clip rendering
+    /// </summary>
+    /// <param name="worldRect"></param>
+    /// <returns></returns>
+    public Rectangle WorldToScreenRectangle(Rectangle worldRect)
+    {
+        Vector2 worldTopLeft = new Vector2(worldRect.X, worldRect.Y);
+        Vector2 worldBottomRight = new Vector2(worldRect.X + worldRect.Width, worldRect.Y + worldRect.Height);
+
+        Vector2 screenTopLeft = Vector2.Transform(worldTopLeft, trMatrix);
+        Vector2 screenBottomRight = Vector2.Transform(worldBottomRight, trMatrix);
+
+        return new Rectangle(
+            (int)screenTopLeft.X,
+            (int)screenTopLeft.Y,
+            (int)(screenBottomRight.X - screenTopLeft.X),
+            (int)(screenBottomRight.Y - screenTopLeft.Y)
+        );
     }
 
     internal void BeginWorldSpaceSpriteBatch(SpriteBatch batch)
     {
         batch.Begin(
-            transformMatrix: TransformMatrix,
+            transformMatrix: CalculateTransformMatrix,
             sortMode: SpriteSorting,
             blendState: BlendState.AlphaBlend,
             samplerState: SamplerState.PointClamp);

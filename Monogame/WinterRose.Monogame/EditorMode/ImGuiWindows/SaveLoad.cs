@@ -12,8 +12,6 @@ namespace WinterRose.Monogame.EditorMode.ImGuiWindows;
 
 internal static class SaveLoad
 {
-    static string nameInput = "";
-
     static bool opened = false;
 
     public static void Render()
@@ -22,12 +20,13 @@ internal static class SaveLoad
 
         gui.Begin("Save or load world", ref opened);
         gui.SetWindowSize(new(800, 900));
-        gui.Columns(2, "saveload", true);
 
         // first column, saving
         SaveWorldColumn();
 
-        gui.NextColumn();
+        gui.Text("");
+        gui.Separator();
+        gui.Text("");
 
         gui.SetWindowFontScale(1.2f);
         gui.Text("Load your world!");
@@ -43,12 +42,10 @@ internal static class SaveLoad
         gui.SetWindowFontScale(1.2f);
         gui.Text("Save your world!");
         gui.SetWindowFontScale(1);
-
-        gui.InputText("world name", ref nameInput, 25);
-
+        gui.SameLine();
         if(gui.Button("Save"))
         {
-            WorldTemplateCreator.CreateSave("Content/WorldTemplates/" + nameInput + ".world", Universe.CurrentWorld);
+            Universe.CurrentWorld!.SaveTemplate();
             opened = false;
         }
     }
@@ -56,6 +53,8 @@ internal static class SaveLoad
     private static void LoadWorldColumn(DirectoryInfo dir = null)
     {
         dir ??= new DirectoryInfo("Content/WorldTemplates");
+        if (!dir.Exists)
+            dir.Create();
         foreach (var subDir in dir.GetDirectories())
         {
             if (subDir.GetFileSystemInfos().Length == 0)
@@ -78,7 +77,7 @@ internal static class SaveLoad
                     Editor.Opened = false;
                     Windows.OpenConsole();
                     Console.Title = $"Loading world '{Path.GetFileNameWithoutExtension(worldfile.Name)}'";
-                    Universe.CurrentWorld = new World(worldfile.Name, worldfile.FullName, false, Console.WriteLine);
+                    Universe.CurrentWorld = World.FromTemplate(worldfile.Name);
                     Windows.CloseConsole();
                     Editor.Opened = true;
                     return;

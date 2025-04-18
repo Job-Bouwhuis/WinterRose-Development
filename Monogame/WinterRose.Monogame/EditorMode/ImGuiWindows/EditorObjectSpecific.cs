@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using WinterRose.Monogame.Worlds;
 using WinterRose.Monogame.EditorMode.BuildInDisplays;
 using SharpDX.Direct3D9;
+using System.Collections;
+using System.Windows.Forms;
 
 namespace WinterRose.Monogame.EditorMode
 {
@@ -70,8 +72,18 @@ namespace WinterRose.Monogame.EditorMode
                 selectedObject = null;
                 return;
             }
-
-            gui.Begin("Selected Object", ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.HorizontalScrollbar);
+            bool open = true;
+            gui.Begin("Selected Object", ref open, ImGuiWindowFlags.HorizontalScrollbar);
+            if(objectGUILocSet)
+            {
+                gui.SetWindowSize(
+                    new System.Numerics.Vector2(500, 
+                                        MonoUtils.ScreenSize.Y - 100), 
+                    ImGuiCond.Appearing);
+                gui.SetWindowPos(new System.Numerics.Vector2(), ImGuiCond.Appearing);
+                objectGUILocSet = false;
+            }
+            
 
             if (gui.TreeNodeEx("Basic Stuff", ImGuiTreeNodeFlags.DefaultOpen))
             {
@@ -101,6 +113,11 @@ namespace WinterRose.Monogame.EditorMode
             gui.Text("");
 
             gui.End();
+
+            if(!open)
+            {
+                SelectedObject = null;
+            }
         }
 
         private static void OSE_ObjectComponentInspector()
@@ -123,7 +140,7 @@ namespace WinterRose.Monogame.EditorMode
                         componentValueEdits.Clear();
                         rhh.GetMembers().Foreach(member =>
                         {
-                            if(!member.Exists)
+                            if (!member.Exists)
                             {
 
                             }
@@ -144,7 +161,11 @@ namespace WinterRose.Monogame.EditorMode
                 return;
             }
 
-            object c = inspectorComponent;
+            RenderObjectFields(inspectorComponent);
+        }
+
+        private static object RenderObjectFields(object c)
+        {
             ReflectionHelper rh = new(ref c);
             var members = rh.GetMembers();
 
@@ -152,10 +173,8 @@ namespace WinterRose.Monogame.EditorMode
             for (int i = 0; i < members.Count; i++)
             {
                 MemberData? member = members[i];
-
-                //if (member.Name is "world" or "Chunk" or "owner")
-                //    continue;
-
+                if(!member.CanWrite)
+                    continue;
                 if (!member.IsPublic && !member.HasAttribute<ShowAttribute>() || member.HasAttribute<HideAttribute>())
                     continue;
 
@@ -181,9 +200,59 @@ namespace WinterRose.Monogame.EditorMode
 
                     if (!SnowSerializerHelpers.SupportedPrimitives.Contains(member.Type))
                     {
-                        gui.TextColored(new(1, 0, 0, 1), "Unsupported Type.");
-                        gui.SameLine();
-                        gui.Text(member.Name + ": " + member.GetValue(inspectorComponent)?.ToString() ?? "null");
+                        if (member.Type.IsAssignableTo(typeof(ObjectComponent)))
+                        {
+                            gui.TextColored(new(1, 0, 0, 1), "Unsupported Type.");
+                            gui.SameLine();
+                            gui.Text(member.Name + ": " + member.GetValue(inspectorComponent)?.ToString() ?? "null");
+                            continue;
+                        }
+                        if(member.Type == typeof(WorldObject))
+                        {
+                            WorldObject? obj = (WorldObject)member.GetValue(c)!;
+                            if (gui.Button(member.Name) && obj != null)
+                            {
+                                selectedObject = obj;
+                            }
+                            else
+                                gui.Text($"{member.Name} = null");
+                        }
+
+                        if(member.Type.IsAssignableTo(typeof(IEnumerable)))
+                        {
+                            if(!member.Attributes.Any(x => x is SerializeAsAttributeINTERNAL))
+                            {
+                                gui.Text($"Collection of type '{member.Type.Name}' " +
+                                         $"must have custom EditorDisplay implemented");
+                                continue;
+                            }
+                        }
+
+                        if(member.Type.IsAssignableTo(typeof(Delegate)))
+                        {
+                            gui.TextColored(Color.Red.ToVector4()
+                                .ToNumerics(), $"{member.Name}: Cant edit a Delegate type!");
+                            continue;
+                        }
+
+                        if (gui.TreeNode(member.Name))
+                        {
+                            object result = RenderObjectFields(member.GetValue(c));
+                            if(member.Type.IsByRef)
+                            {
+                                member.SetValue(ref result, c);
+                            }
+                            if(member.Type.Name.Contains("Nullable`1"))
+                            {
+                                Type kind = member.Type.GetGenericArguments()[0];
+                                var method = 
+                                    TypeWorker.FindImplicitConversionMethod(member.Type, kind);
+                                object val = method.Invoke(null, [result]);
+                                member.SetValue(ref c, val);
+                            }
+                            gui.TreePop();
+                        }
+                        
                         continue;
                     }
 
@@ -212,6 +281,7 @@ namespace WinterRose.Monogame.EditorMode
                     valueIndex++;
                 }
             }
+            return c;
         }
 
         private static void OSE_AddComponentFlow()
@@ -331,14 +401,12 @@ namespace WinterRose.Monogame.EditorMode
             gui.EndChild();
         }
 
+        private static string prefabName = "";
         private static void OSE_BasicStuff()
         {
             gui.Text("");
             gui.Separator();
             gui.Text("");
-
-            gui.SetWindowPos(new(0, 0));
-            gui.SetWindowSize(new(400, MonoUtils.WindowResolution.Y));
 
             gui.InputText("Object Name", ref objectName, 100);
             if (objectName != selectedObject.Name && gui.Button("Rename Object"))
@@ -346,6 +414,47 @@ namespace WinterRose.Monogame.EditorMode
                 selectedObject.Name = objectName;
             }
             gui.Text($"Position: {selectedObject.transform.position}\n\t(Drag object to move)");
+
+            if(gui.TreeNode("Prefab Creation"))
+            {
+                gui.InputText("Prefab name", ref prefabName, 100);
+
+                void create()
+                {
+                    bool allowed = true;
+                    if (string.IsNullOrWhiteSpace(prefabName))
+                    {
+                        Windows.MessageBox("Invalid prefab name!");
+                        allowed = false;
+                    }
+                    if (allowed)
+                    {
+                        gui.PushID("Prefab name");
+                        gui.SetNextItemOpen(false, ImGuiCond.Always);
+                        gui.PopID();
+                        selectedObject.CreatePrefab(prefabName);
+                        if (AssetDatabase.AssetExists(prefabName))
+                        {
+                            Windows.MessageBox("Prefab created!");
+                            selectedObject.IncludeWithSceneSerialization = false;
+                        }
+                        else
+                            Windows.MessageBox("Prefab creation failed!");
+                        prefabName = "";
+                    }
+                }
+
+                if (gui.Button("Create Prefab"))
+                {
+                    create();
+                }
+                gui.SameLine();
+                if (gui.Button("Create Prefab With Spawner"))
+                {
+                    Windows.MessageBox("Not implemented!");
+                }
+                gui.TreePop();
+            }
 
             if (gui.TreeNode("Danger zone"))
             {

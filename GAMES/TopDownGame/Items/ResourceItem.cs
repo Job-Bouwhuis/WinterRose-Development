@@ -20,5 +20,5 @@ internal class ResourceItem : InventoryItem<Resource>
         set => Item.ResourceSprite = value;
     }
 
-    protected override void ConfigureClone(InventoryItem<Resource> clone) => clone.Item = Item;
+    protected override void ConfigureClone(InventoryItem<Resource> clone) => clone.Item = Item.Clone();
 }

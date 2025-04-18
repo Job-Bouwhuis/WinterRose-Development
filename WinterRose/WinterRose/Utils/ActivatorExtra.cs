@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Reflection;
 using WinterRose.Serialization;
 
 namespace WinterRose
@@ -26,14 +27,20 @@ namespace WinterRose
                 Type[] types = new Type[args.Length];
                 args.Foreach((x, i) => types[i] = x.GetType());
 
-                ConstructorInfo? info = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, types, null) ??
+                ConstructorInfo? info = type.GetConstructor(
+                    BindingFlags.Instance | BindingFlags.Public | 
+                    BindingFlags.NonPublic | BindingFlags.CreateInstance, 
+                    null, types, null) ??
                     throw new NullReferenceException("No constructor with provided argument types was found.");
                 return info.Invoke(args);
             }
 
-
+            //ReflectionHelper<Type> t = new(ref type);
+            //ConstructorInfo[] constructors = (ConstructorInfo[])t.GetValueFrom("DeclaredConstructors");
             //Get all constructors
-            ConstructorInfo[] constructors = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            ConstructorInfo[] constructors = type.GetConstructors(
+                BindingFlags.Instance | BindingFlags.Public |
+                BindingFlags.NonPublic | BindingFlags.CreateInstance);
             foreach (ConstructorInfo constructor in constructors)
             {
                 //fetch all attributes that are of type DefaultArgumentAttribute

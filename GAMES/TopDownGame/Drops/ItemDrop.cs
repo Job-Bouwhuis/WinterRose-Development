@@ -4,6 +4,7 @@ using TopDownGame.Inventories.Base;
 using TopDownGame.Players;
 using WinterRose.Monogame;
 using WinterRose.Monogame.Worlds;
+using WinterRose.Serialization;
 
 namespace TopDownGame.Drops;
 
@@ -14,13 +15,24 @@ namespace TopDownGame.Drops;
 internal class ItemDrop : ObjectBehavior
 {
     private bool combined = false;
+    private static int count = 0;
 
+    [IncludeWithSerialization]
     public string TargetFlag { get; set; } = "Player";
+
+    [IncludeWithSerialization]
     public float PickupDistance { get; set; } = 25;
+
+    [IncludeWithSerialization]
     public float FlyTowardsTargetDistance { get; set; } = 300;
+
+    [IncludeWithSerialization]
     public float FlySpeed { get; set; } = 200;
+
+    [IncludeWithSerialization]
     public required IInventoryItem Item { get; init; }
 
+    private ItemDrop() { } // for serialization
     public ItemDrop(IInventoryItem item) => Item = item;
 
     private WorldObject target;
@@ -40,13 +52,13 @@ internal class ItemDrop : ObjectBehavior
 
     public static void Create(Vector2 pos, IInventoryItem item, World world)
     {
-        WorldObject obj = WorldObject.CreateNew("ItemDrop_" + item.Name);
+        WorldObject obj = WorldObject.CreateNew("ItemDrop_" + item.Name + "_" + ++count);
         obj.transform.position = pos;
         Sprite sprite = item.ItemSprite;
         sprite ??= noTextureItemPlaceholder;
         obj.AttachComponent<SpriteRenderer>(sprite);
         var result = obj.AttachComponent<ItemDrop>(item);
-        world.Instantiate(obj);
+        world.InstantiateExact(obj);
     }
 
     protected override void Awake()
@@ -85,39 +97,5 @@ internal class ItemDrop : ObjectBehavior
 
             transform.Translate(FlySpeed * Time.deltaTime * direction * closenessFactor);
         }
-
-        // item merging disabled cause it doesnt work
-
-        //var nearObjects = world.WorldChunkGrid.GetObjectsAroundObject(owner);
-        //foreach(var obj in nearObjects)
-        //{
-        //    if (obj is null || obj == owner || obj.IsDestroyed)
-        //        continue;
-        //    if (!obj.TryFetchComponent(out ItemDrop otherDrop))
-        //        continue;
-
-            //    if (!otherDrop.Item.Equals(Item))
-            //        continue; // not the same item as this drop.
-            //    if (otherDrop.combined)
-            //        continue; // other drop already combined with another, skip this one
-
-            //    var direction = (otherDrop.transform.position - transform.position).Normalized();
-            //    var dropDistance = Vector2.Distance(transform.position, otherDrop.transform.position);
-            //    if(dropDistance < 5)
-            //    {
-            //        if (!otherDrop.Item.Equals(Item))
-            //            continue;
-            //        if (Item.AddToStack(otherDrop.Item) is null)
-            //        {
-            //            Summon(transform.position, Item);
-            //            combined = true;
-            //            otherDrop.combined = true;
-            //            Destroy(owner);
-            //            Destroy(otherDrop.owner);
-            //        }
-            //    }
-
-            //    transform.Translate(30 * Time.deltaTime * direction);
-            //}
     }
 }

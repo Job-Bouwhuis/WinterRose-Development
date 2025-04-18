@@ -106,10 +106,11 @@ public abstract class InventoryItem<T> : IInventoryItem
     public InventoryItem<T> Clone()
     {
         Type t = GetType();
-        var clone = ActivatorExtra.CreateInstance(t, this) as InventoryItem<T>;
+        var clone = ActivatorExtra.CreateInstance(t) as InventoryItem<T>;
         ConfigureClone(clone);
         return clone;
     }
+    IInventoryItem IInventoryItem.Clone() => Clone();
     protected abstract void ConfigureClone(InventoryItem<T> clone);
     IInventoryItem? IInventoryItem.AddToStack(IInventoryItem item) => _AddToStack(item);
 

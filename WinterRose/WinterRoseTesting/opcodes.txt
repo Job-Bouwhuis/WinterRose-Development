@@ -1,0 +1,20 @@
+DEFINE WinterRose.StaticValueModifiers.StaticCombinedModifier<System.Int32> 0
+SET BaseValue 15
+END 0
+
+DEFINE Vitality 1
+
+DEFINE Health 2
+SET MaxHealth 100
+SET Health 100
+END 2
+
+SET Health 2
+
+DEFINE Armor 3
+SET BaseArmor 0.99f
+END 3
+
+SET Armor 3
+
+END 1

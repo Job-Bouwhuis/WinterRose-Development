@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using WinterRose.Monogame.Servers;
 using System.Net;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame;
 #nullable enable
@@ -16,10 +17,10 @@ namespace WinterRose.Monogame;
 /// </summary>
 public class TopDownPlayerController : ObjectBehavior
 {
-    [IncludeInTemplateCreation]
+    [IncludeWithSerialization]
     public float Speed { get; set; } = 410f;
 
-    [IgnoreInTemplateCreation]
+    [ExcludeFromSerialization]
     PhysicsObject physics;
 
     public TopDownPlayerController(int speed) : this() => this.Speed = speed;

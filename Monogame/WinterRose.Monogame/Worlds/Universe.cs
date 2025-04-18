@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using WinterRose.Exceptions;
 using WinterRose.Monogame.Audio;
@@ -53,8 +54,7 @@ public static class Universe
                 if (MonoUtils.Graphics is null && MonoUtils.IsStopping)
                     return;
 
-                if(MonoUtils.Graphics is not null)
-                    MonoUtils.Graphics.SetRenderTarget(null);
+                MonoUtils.Graphics?.SetRenderTarget(null);
 
                 3.Repeat(x => GC.Collect());
 
@@ -68,6 +68,7 @@ public static class Universe
             curWorld?.WakeWorld();
             RequestRender = true;
             OnNewWorldLoaded();
+            CurrentWorld.Initialized = true;
         }
     }
     /// <summary>
@@ -75,8 +76,11 @@ public static class Universe
     /// </summary>
     public static Action OnNewWorldLoaded { get; internal set; } = delegate { };
 
+    public static List<Effect> RenderEffects { get; } = [];
+
     private static World? curWorld;
     private static RenderTarget2D? lastFrame;
+    private static RenderTarget2D? lastUIFrame;
     internal static ImGuiRenderer imGuiRenderer;
     private static WorldRenderingOptions renderOptions = new();
 
@@ -165,9 +169,7 @@ public static class Universe
                     return false;
                 }
                 MonoUtils.Graphics.Clear(Color.Black);
-
                 var batch = MonoUtils.SpriteBatch;
-
                 RenderFrame(cameraIndex);
 
                 return false;
@@ -175,8 +177,13 @@ public static class Universe
 
             if (RequestRender || !OptimizeDrawCalls)
             {
-                lastFrame = null;
-                lastFrame = CurrentWorld.Render(MonoUtils.SpriteBatch, cameraIndex);
+                var frames = CurrentWorld.Render(MonoUtils.SpriteBatch, cameraIndex);
+                lastUIFrame?.Dispose();
+                // why not dispose of LastFrame? 
+                // its a reference taken from the Camera
+                // if we dispose of this, the Camera cant set its render target anymore
+                lastFrame = frames.world;
+                lastUIFrame = frames.UI;
 
                 RenderFrame(cameraIndex);
 
@@ -187,7 +194,9 @@ public static class Universe
                 if (lastFrame is null)
                 {
                     MonoUtils.Graphics.Clear(Color.CornflowerBlue);
-                    lastFrame = CurrentWorld.Render(MonoUtils.SpriteBatch, cameraIndex);
+                    var frames = CurrentWorld.Render(MonoUtils.SpriteBatch, cameraIndex);
+                    lastFrame = frames.world;
+                    lastUIFrame = frames.UI;
                 }
 
                 RenderFrame(cameraIndex);
@@ -222,7 +231,7 @@ public static class Universe
             return;
         }
 
-        Vector2 scale = new(1, 1);
+        Vector2I scale = new(1, 1);
         var cameras = CurrentWorld.FindComponents<Camera>();
         if (cameras.Length is not 0)
             if (cameraIndex != -1 && CurrentWorld is not null)
@@ -241,11 +250,22 @@ public static class Universe
             }
 
         var batch = MonoUtils.SpriteBatch;
+
+
         batch.Begin();
-        batch.Draw(lastFrame, Vector2.Zero, null, Color.White, 0, new Vector2(), scale, SpriteEffects.None, 0);
-        //batch.Draw(lastFrame, new Vector2(), Color.White);
+        batch.Draw(
+                lastFrame, Vector2.Zero, null, Color.White, 0, new Vector2(), scale, SpriteEffects.None, 0);
+
+        if (lastUIFrame != null)
+        {
+            batch.Draw(
+                lastUIFrame, Vector2.Zero, null, Color.White, 0, new Vector2(), scale, SpriteEffects.None, 0);
+        }
+
         batch.End();
     }
+
+
     private static void FinalizeRendering()
     {
         try
@@ -265,7 +285,7 @@ public static class Universe
             {
                 if (Debug.AllowThrow)
                     throw;
-                if(Debugger.IsAttached)
+                if (Debugger.IsAttached)
                 {
                     var result = Windows.MessageBox("An error happened in the Debug class. this causes the buildin exception screen to fail. hence this message box.\n\n" +
                         $"Type: {e.GetType()}\n" +

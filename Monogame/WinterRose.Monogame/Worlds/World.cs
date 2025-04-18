@@ -6,7 +6,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Remoting;
 using System.Threading.Tasks;
+using WinterRose.CrystalScripting.Legacy.Interpreting.Exceptions;
+using WinterRose.FileManagement;
 using WinterRose.Monogame.EditorMode;
 using WinterRose.Monogame.UI;
 using WinterRose.Serialization;
@@ -16,7 +19,8 @@ namespace WinterRose.Monogame.Worlds;
 /// <summary>
 /// A world where objects can be placed, updated, and rendered using various <see cref="ObjectComponent"/> or <see cref="ObjectBehavior"/>
 /// </summary>
-[SerializeAs<World>, IncludePrivateFields]
+[IncludePrivateFields]
+[SerializeAs<World>]
 public sealed class World : IEnumerable<WorldObject>
 {
     /// <summary>
@@ -60,6 +64,8 @@ public sealed class World : IEnumerable<WorldObject>
 
     // the list of all objects in this world
     private List<WorldObject> objects = [];
+
+    [ExcludeFromSerialization]
     private ConcurrentBag<NewObj> nextToSpawn = [];
     /// <summary>
     /// All objects in this world
@@ -68,10 +74,7 @@ public sealed class World : IEnumerable<WorldObject>
     {
         get
         {
-            lock(objects)
-            {
-                return [.. objects];
-            }
+            return objects;
         }
     }
     /// <summary>
@@ -80,7 +83,9 @@ public sealed class World : IEnumerable<WorldObject>
     private readonly List<WorldObject> ToDestroy = [];
 
     // the total time it took to update and draw the world
+    [ExcludeFromSerialization]
     private TimeSpan totalDrawTime = TimeSpan.Zero;
+    [ExcludeFromSerialization]
     private TimeSpan totalUpdateTime = TimeSpan.Zero;
 
     [ExcludeFromSerialization]
@@ -109,7 +114,6 @@ public sealed class World : IEnumerable<WorldObject>
     /// </summary>
     public World() : this("New Empty World")
     {
-        Initialized = true;
     }
     /// <summary>
     /// Creates a new empty world with the given name
@@ -118,35 +122,7 @@ public sealed class World : IEnumerable<WorldObject>
     public World(string name)
     {
         Name = name;
-        Initialized = true;
         WorldChunkGrid = new WorldGrid(this);
-    }
-    /// <summary>
-    /// Creates a new world from a template file
-    /// </summary>
-    /// <param name="name"></param>
-    /// <param name="templatePath"></param>
-    /// <param name="multiThread"></param>
-    /// <param name="callback"></param>
-    public World(string name, FilePath templatePath, bool multiThread = false, Action<string>? callback = null) : this(name)
-    {
-        Initialized = false;
-        if (!templatePath.HasExtention(".world"))
-            templatePath /= ".world";
-
-        WorldTemplateLoader loader = new(this);
-        if (callback is not null)
-            loader.Callback += callback;
-
-        if (multiThread)
-            loader.LoadTemplateultiThread(templatePath);
-        else
-            loader.LoadTemplate(templatePath);
-
-        foreach (var obj in objects)
-            obj.PostTemplateLoad();
-
-        Initialized = true;
     }
     /// <summary>
     /// Creates a new world using the template type. Must be a subclass of <see cref="WorldTemplate"/>
@@ -162,21 +138,7 @@ public sealed class World : IEnumerable<WorldObject>
 
         template.Build(this);
     }
-    /// <summary>
-    /// Creates a new world from a template file asynchronously
-    /// </summary>
-    /// <param name="name">the name of the world to be created</param>
-    /// <param name="templatePath">the path to the template file</param>
-    /// <param name="multiThreaded">whether to parse multiple objects at the same time</param>
-    /// <param name="callback">a callback for progress</param>
-    /// <returns></returns>
-    public static async Task<World> FromTemplateAsync(string name, string templatePath, bool multiThreaded = false, Action<string>? callback = null)
-    {
-        return await Task.Run(() =>
-        {
-            return new World(name, templatePath, multiThreaded, callback);
-        });
-    }
+
     /// <summary>
     /// Creates a new world from the given template type
     /// </summary>
@@ -189,17 +151,47 @@ public sealed class World : IEnumerable<WorldObject>
         template.Build(world);
         return world;
     }
+    public static World FromTemplate(string templateFile)
+    {
+        string data = FileManager.Read("Content/Worlds/" + templateFile + ".world");
+        SerializerSettings settings = new SerializerSettings()
+        {
+            CircleReferencesEnabled = true,
+            IncludeType = true
+        };
+        World w = SnowSerializer.Deserialize<World>(data, settings);
+        return w;
+    }
+
+    /// <summary>
+    /// Saves all the objects to a file with the given
+    /// name to reference it later in <see cref=FromTemplate(string)"/>
+    /// </summary>
+    public void SaveTemplate()
+    {
+        HandleNewToAdd();
+
+        World savingWorld = new World(Name);
+        foreach (var obj in objects)
+        {
+            if (obj.IncludeWithSceneSerialization)
+                savingWorld.objects.Add(obj);
+        }
+
+        SerializerSettings settings = new SerializerSettings()
+        {
+            CircleReferencesEnabled = true,
+            IncludeType = true
+        };
+        string data = SnowSerializer.Serialize(savingWorld, settings);
+        FileManager.Write("Content/Worlds/" + Name + ".world", data, true);
+    }
     /// <summary>
     /// Calls the <c>Awake</c> and <c>Start</c> methods on all components on all objects that have these methods implemented
     /// </summary>
     public void WakeWorld()
     {
-        while (nextToSpawn.TryTake(out var newObj))
-        {
-            objects.Add(newObj.obj);
-            if (newObj.configure is not null)
-                newObj.configure(newObj.obj);
-        }
+        HandleNewToAdd();
 
         foreach (var obj in objects)
             obj.WakeObject();
@@ -226,7 +218,7 @@ public sealed class World : IEnumerable<WorldObject>
     /// <returns></returns>
     public WorldObject CreateObject(WorldObjectPrefab prefab)
     {
-        return prefab.LoadIn(this);
+        return Duplicate(prefab.LoadedObject, prefab.LoadedObject.Name);
     }
 
     /// <summary>
@@ -266,7 +258,7 @@ public sealed class World : IEnumerable<WorldObject>
     public Camera GetCamera(int cameraIndex)
     {
         var cameras = FindComponents<Camera>();
-        if (cameraIndex < 0 || cameraIndex > cameras.Length)
+        if (cameraIndex < 0 || cameraIndex >= cameras.Length)
             return null;
         return cameras[cameraIndex];
     }
@@ -294,18 +286,7 @@ public sealed class World : IEnumerable<WorldObject>
             runOnce = false;
         }
 
-        while(nextToSpawn.TryTake(out var newObj))
-        {
-            WorldObject o = Duplicate(newObj.obj, newObj.obj.Name);
-            if (newObj.configure is not null)
-                newObj.configure(o);
-            if(Initialized)
-            {
-                o.WakeObject();
-                o.StartObject();
-            }
-        }
-        
+        HandleNewToAdd();
 
         if (rebuildParallelHelper)
         {
@@ -341,15 +322,9 @@ public sealed class World : IEnumerable<WorldObject>
 
         foreach (var obj in ToDestroy)
         {
-            obj.Close();
-            obj.IsDestroyed = true;
-
-            objects.Remove(obj);
-
-
-            WorldChunkGrid.Remove(obj);
+            DoDestroyObject(obj);
         }
-        if(ToDestroy.Count > 0)
+        if (ToDestroy.Count > 0)
         {
             UpdateCameraIndexes();
             rebuildParallelHelper = true;
@@ -370,6 +345,56 @@ public sealed class World : IEnumerable<WorldObject>
             time = 0;
         }
     }
+
+    private void HandleNewToAdd()
+    {
+        List<NewObj> unreadObjects = [];
+        while (nextToSpawn.TryTake(out var newObj))
+        {
+            WorldObject toAdd;
+
+            if (newObj is NewObjPrefab fab)
+            {
+                if (!fab.fab.HasLoaded)
+                {
+                    unreadObjects.Add(fab);
+                    continue;
+                }
+                toAdd = fab.fab.LoadedObject;
+            }
+            else
+                toAdd = newObj.obj;
+
+            objects.Add(toAdd);
+            if (newObj.configure is not null)
+                newObj.configure(toAdd);
+            if (Initialized)
+            {
+                toAdd.WakeObject();
+                toAdd.StartObject();
+            }
+        }
+
+        unreadObjects.Foreach(nextToSpawn.Add);
+    }
+
+    private void DoDestroyObject(WorldObject obj)
+    {
+        if (obj.transform is not null)
+        {
+            foreach (var kid in obj.transform) // destroy object children recursively
+                DoDestroyObject(kid.owner);
+        }
+
+        obj.Close();
+        obj.IsDestroyed = true;
+
+        objects.Remove(obj);
+
+        if (Initialized)
+            WorldChunkGrid.Remove(obj);
+    }
+
     /// <summary>
     /// Finds all components of the given type <typeparamref name="T"/> in the world
     /// </summary>
@@ -435,7 +460,7 @@ public sealed class World : IEnumerable<WorldObject>
     /// <param name="batch"></param>
     /// <param name="cameraIndex"></param>
     /// <returns></returns>
-    public RenderTarget2D Render(SpriteBatch batch, int cameraIndex)
+    public (RenderTarget2D world, RenderTarget2D? UI) Render(SpriteBatch batch, int cameraIndex)
     {
         draws++;
         var sw = Stopwatch.StartNew();
@@ -444,27 +469,49 @@ public sealed class World : IEnumerable<WorldObject>
             var cameras = FindComponents<Camera>();
             if (cameraIndex is -1 || cameras.Length is 0)
             {
-                RenderTarget2D target = GetRenderTarget();
-                MonoUtils.Graphics.SetRenderTarget(target);
+                RenderTarget2D targetWorld = GetRenderTarget();
+                MonoUtils.Graphics.SetRenderTarget(targetWorld);
 
                 Universe.StartNoCameraSpritebatch(batch);
-                RenderWorld(batch);
+                var objs = RenderWorld(batch);
+
+                foreach (var obj in objs)
+                    obj.Render(batch);
                 batch.End();
 
                 MonoUtils.Graphics.SetRenderTarget(null);
-                return target;
+                return (targetWorld, null);
             }
             else
                 renderTarget = null;
 
             Camera cam = cameras[cameraIndex];
 
-            RenderTarget2D camView = cam.GetCameraView(RenderWorld);
+            var (camView, UIObjects) = cam.GetCameraView(RenderWorld);
 
             batch.Begin();
-            batch.Draw(camView, new Vector2(0f, 0f), Color.White);
+            batch.Draw(camView, new Vector2(0f, 0f), null,
+                Color.White, 0, new(), 1, SpriteEffects.None, 0f);
+
             batch.End();
-            return camView;
+
+            RenderTarget2D? UItarget = null;
+
+            UItarget = GetRenderTarget();
+            MonoUtils.Graphics.SetRenderTarget(UItarget);
+            MonoUtils.Graphics.Clear(new Color(0, 0, 0, 0));
+            batch.Begin(SpriteSortMode.FrontToBack);
+
+            foreach (var obj in UIObjects)
+                obj.Render(batch);
+
+            Debug.RenderScreenSpaceDrawRequests(batch);
+
+            batch.End();
+
+            MonoUtils.Graphics.SetRenderTarget(null);
+
+            return (camView, UItarget);
         }
         catch (Exception e)
         {
@@ -476,7 +523,7 @@ public sealed class World : IEnumerable<WorldObject>
                 MonoUtils.Graphics.SetRenderTarget(null);
             }
             catch { } // if the batch is already ended this will throw an exception, so we catch it here
-            return null;
+            return (null, null);
         }
         finally
         {
@@ -513,6 +560,7 @@ public sealed class World : IEnumerable<WorldObject>
         result.transform.rotation = obj.transform.rotation;
         result.transform.scale = obj.transform.scale;
         result.Flag = obj.Flag;
+        result.IncludeWithSceneSerialization = obj.IncludeWithSceneSerialization;
 
         foreach (var comp in obj.FetchComponents())
         {
@@ -522,7 +570,7 @@ public sealed class World : IEnumerable<WorldObject>
             result.AttachComponent(newComp);
         }
 
-        if(Initialized)
+        if (Initialized)
         {
             result.WakeObject();
             result.StartObject();
@@ -535,22 +583,47 @@ public sealed class World : IEnumerable<WorldObject>
         if (renderTarget is null || lastScreenBounds != MonoUtils.WindowResolution)
         {
             lastScreenBounds = MonoUtils.WindowResolution;
-            renderTarget = new(MonoUtils.Graphics, MonoUtils.WindowResolution.X, MonoUtils.WindowResolution.Y);
+            renderTarget = new(MonoUtils.Graphics,
+                               MonoUtils.WindowResolution.X,
+                               MonoUtils.WindowResolution.Y,
+                               false,
+                               SurfaceFormat.Color,
+                               DepthFormat.None);
         }
         return renderTarget;
     }
-    private void RenderWorld(SpriteBatch batch)
+    private List<WorldObject> RenderWorld(SpriteBatch batch)
     {
+        List<WorldObject> UIObjects = [];
         for (int i = 0; i < objects.Count; i++)
         {
             WorldObject? obj = objects[i];
             if (obj is null || obj.IsDestroyed)
                 continue;
+            if (UIObjects.Contains(obj))
+                continue;
+            if (obj.IsUIRoot)
+            {
+                CommitKids(obj, UIObjects);
+                continue;
+            }
             obj.Render(batch);
         }
 
         Primitives2D.CommitDraw(batch);
-        Debug.RenderDrawRequests(batch);
+        Debug.RenderWorldSpaceDrawRequests(batch);
+        return UIObjects;
+    }
+
+    private void CommitKids(WorldObject parent, List<WorldObject> list)
+    {
+        if (parent == null)
+        {
+            return;
+        }
+        list.Add(parent);
+        foreach (var obj in parent.transform)
+            CommitKids(obj.owner, list);
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -565,12 +638,24 @@ public sealed class World : IEnumerable<WorldObject>
     /// <param name="worldObject"></param>
     public void DestroyImmediately(WorldObject worldObject)
     {
-        objects.Remove(worldObject);
+        DoDestroyObject(worldObject);
     }
 
-    internal void InstantiateExact(WorldObject obj)
+    public WorldObject InstantiateExact(WorldObject obj)
     {
         objects.Add(obj);
+
+        foreach (var o in obj.transform)
+        {
+            InstantiateExact(o.owner);
+        }
+
+        if (Initialized)
+        {
+            obj.WakeObject();
+            obj.StartObject();
+        }
+        return obj;
     }
 
     internal void RebuildParallelHelper() => rebuildParallelHelper = true;
@@ -581,16 +666,58 @@ public sealed class World : IEnumerable<WorldObject>
     /// <returns></returns>
     public WorldObject? FindObjectWithFlag(string targetFlag)
     {
-        foreach(var obj in objects)
+        foreach (var obj in objects)
             if (obj.Flag == targetFlag)
                 return obj;
         return null;
     }
 
-    public void Instantiate(WorldObject obj, Action<WorldObject> configureObj = null)
+    /// <summary>
+    /// Searches for all objects with the given <see cref="WorldObject.Flag"/>
+    /// </summary>
+    /// <param name="targetFlag"></param>
+    /// <returns></returns>
+    public List<WorldObject> FindObjectsWithFlag(string targetFlag)
     {
-        nextToSpawn.Add(new(obj, configureObj));
+        List<WorldObject> result = [];
+        foreach (var obj in objects)
+            if (obj.Flag == targetFlag)
+                result.Add(obj);
+        return result;
+    }
+
+    public void Instantiate(WorldObject obj, Action<WorldObject> configureObj = null, bool forceDelayed = false)
+    {
+        obj.IncludeWithSceneSerialization = false;
+
+        int id = System.Threading.Thread.GetCurrentProcessorId();
+        if (id == Application.Current.ApplicationMainThreadID && !forceDelayed)
+        {
+            WorldObject o = Duplicate(obj, obj.Name);
+            if (configureObj is not null)
+                configureObj(o);
+            if (Initialized)
+            {
+                o.WakeObject();
+                o.StartObject();
+            }
+        }
+        else
+        {
+            nextToSpawn.Add(new(obj, configureObj));
+        }
+
+        foreach (var o in obj.transform)
+        {
+            InstantiateExact(o.owner);
+        }
+    }
+
+    public void SchedulePrefabSpawn(WorldObjectPrefab fab, Action<WorldObject> configureObj = null)
+    {
+        nextToSpawn.Add(new NewObjPrefab(fab, configureObj));
     }
 
     private record NewObj(WorldObject obj, Action<WorldObject>? configure);
+    private record NewObjPrefab(WorldObjectPrefab fab, Action<WorldObject>? configure) : NewObj(null, configure);
 }

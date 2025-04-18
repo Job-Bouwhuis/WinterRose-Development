@@ -10,8 +10,11 @@ using WinterRose.Monogame.Worlds;
 
 namespace WinterRose.Monogame.UI;
 
-[RequireComponent<Text>]
-public sealed class TextButton : UIRenderer
+/// <summary>
+/// A button that has no back image, and is only represented by text
+/// </summary>
+[RequireComponent<Text>(AutoAdd = true)]
+public sealed class TextButton : ObjectBehavior
 {
     /// <summary>
     /// The text element for this button
@@ -20,7 +23,7 @@ public sealed class TextButton : UIRenderer
     {
         get
         {
-            return _text ??= FetchComponent<Text>();
+            return _text ??= FetchComponent<Text>()!;
         }
     }
     private Text _text;
@@ -47,8 +50,6 @@ public sealed class TextButton : UIRenderer
         Clicked = Color.Yellow
     };
 
-    public override RectangleF Bounds => text.Bounds;
-
     [Show]
     private bool isHovering = false;
     [Show]
@@ -64,7 +65,7 @@ public sealed class TextButton : UIRenderer
 
     protected override void Awake()
     {
-        text.color = Color.White;
+        text.Color = Color.White;
         colorRange = new([new ColorRangePoint(ButtonTints.Normal, 0), new ColorRangePoint(ButtonTints.Normal, 1)]);
         previousEndColor = colorRange.Points[^1].Color;
     }
@@ -115,11 +116,6 @@ public sealed class TextButton : UIRenderer
             currentColorFraction = 0;
         }
 
-        text.color = colorRange.GetColor(currentColorFraction);
-    }
-
-    public override void Render(SpriteBatch batch)
-    {
-
+        text.Color = colorRange.GetColor(currentColorFraction);
     }
 }

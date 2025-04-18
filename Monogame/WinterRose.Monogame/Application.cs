@@ -23,6 +23,8 @@ public abstract class Application : Game, IDisposable
 {
     public static Application Current { get; private set; }
 
+    public int ApplicationMainThreadID { get; init; }
+
     /// <summary>
     /// Shortcut route to <see cref="ExitHelper.GameClosing"/>
     /// </summary>
@@ -46,6 +48,8 @@ public abstract class Application : Game, IDisposable
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
         Current = this;
+
+        ApplicationMainThreadID = System.Threading.Thread.GetCurrentProcessorId();
 
 #if DEBUG
 
@@ -124,14 +128,14 @@ public abstract class Application : Game, IDisposable
         {
             base.EndDraw();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             MonoUtils.Graphics.SetRenderTarget(null);
             try
             {
                 base.EndDraw();
             }
-            catch (Exception ee)
+            catch (Exception)
             {
                 Debug.AllowThrow = true;
                 throw;

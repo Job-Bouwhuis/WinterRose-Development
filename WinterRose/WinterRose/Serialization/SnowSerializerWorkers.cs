@@ -246,7 +246,7 @@ namespace WinterRose.Serialization
 
             bool asAnonymous = typeof(T).IsAnonymousType();
             if (settings.AssumeObjectIsAnonymous && !asAnonymous)
-                if (typeof(T) == typeof(object))
+                if (objectType == typeof(object))
                     asAnonymous = true;
             if (typeof(T) == typeof(Anonymous))
                 asAnonymous = true;
@@ -358,6 +358,11 @@ namespace WinterRose.Serialization
 
                 if (!newItem)
                     return result;
+            }
+
+            if(objectType.Name.Contains("SpriteBatch"))
+            {
+
             }
 
             foreach (FieldInfo field in fields)
@@ -593,7 +598,7 @@ namespace WinterRose.Serialization
 
             bool asAnonymous = typeof(T).IsAnonymousType();
             if (settings.AssumeObjectIsAnonymous && !asAnonymous)
-                if (typeof(T) == typeof(object))
+                if (objectType == typeof(object))
                     asAnonymous = true;
             if (typeof(T) == typeof(Anonymous))
                 asAnonymous = true;

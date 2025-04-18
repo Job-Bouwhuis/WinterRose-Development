@@ -1,74 +1,154 @@
-﻿using Silk.NET.Maths;
-using Silk.NET.OpenGL;
-
+﻿using Silk.NET.OpenGL;
+using Silk.NET.Maths;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
+using System.Drawing;
 using Shader = WinterRose.SilkEngine.Shaders.Shader;
 
-namespace WinterRose.SilkEngine;
-
-public class Painter
+namespace WinterRose.SilkEngine
 {
-    private GL gl;
-    private Shader shader;
-
-    public Painter(GL gl, Shader shader)
+    public class Painter
     {
-        this.gl = gl;
-        this.shader = shader;
-    }
+        private readonly GL gl;
+        private Shader shader;
+        private uint vao, vbo, ebo;
+        private List<SpriteDrawCall> drawCalls;
+        private uint _currentTextureID;
 
-    public unsafe void DrawSprite(Sprite sprite, Vector2D<float> position)
-    {
-        float[] vertices = new float[]
+        // For batching
+        private const int MaxBatchSize = 10000;
+
+        public Painter(GL gl)
         {
-            -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-             0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-             0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 
-
-             0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-            -0.5f,  0.5f, 0.0f, 0.0f, 0.0f,
-            -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
-        };
-
-        // Step 1: Create a vertex array object (VAO)
-        uint vao = 0;
-        gl.GenVertexArrays(1, &vao);
-        gl.BindVertexArray(vao);
-
-        // Step 2: Create a buffer to store the vertex data (VBO)
-        uint vbo = 0;
-        gl.GenBuffers(1, &vbo);
-        gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
-
-        fixed (float* vertexPtr = vertices)
-        {
-            gl.BufferData(GLEnum.ArrayBuffer, unchecked((nuint)vertices.Length * sizeof(float)), vertexPtr, GLEnum.StaticDraw);
+            this.gl = gl;
+            drawCalls = new List<SpriteDrawCall>();
+            InitializeBuffers();
+            shader = new Shader(this.gl, "Shaders/basic.vert", "Shaders/basic.frag");
         }
 
-        // Step 3: Setup vertex attributes (position, texture coordinates)
-        gl.VertexAttribPointer(0, 3, GLEnum.Float, false, 5 * sizeof(float), (void*)0);
-        gl.EnableVertexAttribArray(0);
+        public void Begin()
+        {
+            drawCalls.Clear();
+        }
 
-        gl.VertexAttribPointer(1, 2, GLEnum.Float, false, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-        gl.EnableVertexAttribArray(1);
+        public void Draw(Texture texture, Vector2 position, Vector2 size, Color color)
+        {
+            if (drawCalls.Count >= MaxBatchSize)
+            {
+                End();
+                Begin();
+            }
 
-        // Step 4: Bind the texture (make sure the texture has already been loaded into OpenGL)
-        gl.ActiveTexture(GLEnum.Texture0); // Activate texture unit 0
-        gl.BindTexture(GLEnum.Texture2D, sprite.TextureID); // Bind the sprite texture to the current texture unit
+            drawCalls.Add(new SpriteDrawCall
+            {
+                Texture = texture,
+                Position = position,
+                Size = size,
+                Color = color
+            });
+        }
 
-        // Step 5: Set the shader uniform (e.g., model, projection matrix, etc.)
-        shader.Use();
-        shader.SetVector2("position", position); // Pass position to shader (for example, model transformation)
+        public void End()
+        {
+            if (drawCalls.Count == 0)
+                return;
 
-        // Step 6: Draw the sprite (execute the drawing commands)
-        gl.DrawArrays(GLEnum.Triangles, 0, 6); // Draw the two triangles forming the sprite
+            // Set the shader program
+            shader.Use();
 
-        // Step 7: Clean up (unbind the buffers and VAO to avoid state pollution)
-        gl.BindVertexArray(0);
-        gl.BindBuffer(GLEnum.ArrayBuffer, 0);
-        gl.BindTexture(GLEnum.Texture2D, 0); // Unbind texture
+            // Bind the VAO (vertex array object)
+            gl.BindVertexArray(vao);
 
-        // Optionally, delete the VAO and VBO if you want to clean up after drawing
-        gl.DeleteVertexArrays(1, &vao);
-        gl.DeleteBuffers(1, &vbo);
+            // Loop through all draw calls
+            foreach (var call in drawCalls)
+            {
+                if (call.Texture.Handle != _currentTextureID)
+                {
+                    // Bind the new texture if necessary
+                    gl.BindTexture(TextureTarget.Texture2D, call.Texture.Handle);
+                    _currentTextureID = call.Texture.Handle;
+                }
+
+                // Update VBO with new sprite data
+                UpdateVertexBuffer(call);
+
+                // Draw the sprite
+                gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, IntPtr.Zero);
+            }
+
+            // Unbind the VAO
+            gl.BindVertexArray(0);
+
+            // Clear the draw calls list
+            drawCalls.Clear();
+        }
+
+        private unsafe void InitializeBuffers()
+        {
+            // Create VAO, VBO, and EBO
+            vao = gl.GenVertexArray();
+            vbo = gl.GenBuffer();
+            ebo = gl.GenBuffer();
+
+            gl.BindVertexArray(vao);
+
+            // Vertices (positions, texture coords, and colors)
+            float[] vertices = {
+                // Positions        // Texture Coordinates    // Colors
+                0.5f,  0.5f,        1.0f, 1.0f,              1.0f, 1.0f, 1.0f, 1.0f,
+                0.5f, -0.5f,        1.0f, 0.0f,              1.0f, 1.0f, 1.0f, 1.0f,
+               -0.5f, -0.5f,        0.0f, 0.0f,              1.0f, 1.0f, 1.0f, 1.0f,
+               -0.5f,  0.5f,        0.0f, 1.0f,              1.0f, 1.0f, 1.0f, 1.0f
+            };
+
+            // Indices for the quad
+            uint[] indices = {
+                0, 1, 3,
+                1, 2, 3
+            };
+
+            // Load data into VBO and EBO
+            gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
+            gl.BufferData(GLEnum.ArrayBuffer, (uint)(vertices.Length * sizeof(float)), &vertices, BufferUsageARB.StaticDraw);
+
+            gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
+            gl.BufferData(GLEnum.ElementArrayBuffer, (uint)(indices.Length * sizeof(uint)), &indices, BufferUsageARB.StaticDraw);
+
+            // Set attribute pointers
+            gl.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), (void*)0);           // Position
+            gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), (void*)(2 * sizeof(float)));  // Texture Coordinates
+            gl.VertexAttribPointer(2, 4, VertexAttribPointerType.Float, false, 8 * sizeof(float), (void*)(4 * sizeof(float)));  // Colors
+
+            gl.EnableVertexAttribArray(0);
+            gl.EnableVertexAttribArray(1);
+            gl.EnableVertexAttribArray(2);
+
+            // Unbind the VAO
+            gl.BindVertexArray(0);
+        }
+
+        private unsafe void UpdateVertexBuffer(SpriteDrawCall drawCall)
+        {
+            float[] vertexData = {
+                // Positions               // TexCoords    // Colors
+                drawCall.Position.X + drawCall.Size.X, drawCall.Position.Y + drawCall.Size.Y, 1.0f, 1.0f, drawCall.Color.R, drawCall.Color.G, drawCall.Color.B, drawCall.Color.A,
+                drawCall.Position.X + drawCall.Size.X, drawCall.Position.Y,           1.0f, 0.0f, drawCall.Color.R, drawCall.Color.G, drawCall.Color.B, drawCall.Color.A,
+                drawCall.Position.X,           drawCall.Position.Y,                   0.0f, 0.0f, drawCall.Color.R, drawCall.Color.G, drawCall.Color.B, drawCall.Color.A,
+                drawCall.Position.X,           drawCall.Position.Y + drawCall.Size.Y, 0.0f, 1.0f, drawCall.Color.R, drawCall.Color.G, drawCall.Color.B, drawCall.Color.A
+            };
+
+            gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
+            gl.BufferSubData(GLEnum.ArrayBuffer, IntPtr.Zero, (uint)(vertexData.Length * sizeof(float)), &vertexData);
+        }
+    }
+
+    public struct SpriteDrawCall
+    {
+        public Texture Texture;
+        public Vector2 Position;
+        public Vector2 Size;
+        public Color Color;
     }
 }

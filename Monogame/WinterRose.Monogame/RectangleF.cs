@@ -61,7 +61,7 @@ namespace WinterRose.Monogame
         /// <summary>
         /// The position of this rectangle
         /// </summary>
-        public Vector2 Location
+        public Vector2 Position
         {
             get
             {
@@ -116,6 +116,14 @@ namespace WinterRose.Monogame
             Height = 0;
             X = 0;
             Y = 0;
+        }
+
+        public RectangleF(Vector2 location, Vector2 size) : this()
+        {
+            X = location.X;
+            Y = location.Y;
+            Width = size.X;
+            Height = size.Y;
         }
 
         /// <summary>

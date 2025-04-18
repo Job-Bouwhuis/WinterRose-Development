@@ -10,11 +10,19 @@ using WinterRose.Serialization;
 
 namespace TopDownGame.Loot
 {
-    [method: DefaultArguments("")]
-    internal class LootTable(string name) : Asset(name)
+    /// <summary>
+    /// Represents a loot table that defines possible item drops and their chances.
+    /// Use <see cref="WithName(string)"/> to retrieve a specific loot table by name.
+    /// </summary>
+    public class LootTable : Asset
     {
         [IncludeWithSerialization]
         public List<LootChance> Table { get; private set; } = [];
+
+        [DefaultArguments("")]
+        private LootTable(string name) : base(name)
+        {
+        }
 
         public override void Load() => Table = SnowSerializer.Deserialize<LootTable>(File.ReadContent(),
                 new() { IncludeType = true }).Result.Table;
@@ -45,7 +53,11 @@ namespace TopDownGame.Loot
             {
                 currentWeight += entry.Weight;
                 if (roll <= currentWeight)
-                    return entry.Item;
+                {
+                    IInventoryItem copy = entry.Item.Clone();
+                    copy.Count = new Random().Next(entry.MinDrops, entry.MaxDrops);
+                    return copy;
+                }
             }
 
             return Table.Last().Item; // fallback, should never be reached
@@ -59,7 +71,7 @@ namespace TopDownGame.Loot
             IInventoryItem[] items = new IInventoryItem[count];
 
             for (int i = 0; i < count; i++)
-                items[i] = Generate();
+                items[i] = (IInventoryItem)Generate();
 
             return items;
         }

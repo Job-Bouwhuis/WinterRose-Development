@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Windows.Forms.Design;
 using WinterRose.Monogame.Attributes;
 using WinterRose.Monogame.Exceptions;
 using WinterRose.Monogame.Internals;
@@ -18,7 +19,7 @@ namespace WinterRose.Monogame;
 /// <summary>
 /// An object that exists within a <see cref="Worlds.World"/>
 /// </summary>
-[DebuggerDisplay("WorldObject: {Name}"), IncludePrivateFields]
+[DebuggerDisplay("WorldObject: {Name}")]
 public class WorldObject
 {
     /// <summary>
@@ -52,9 +53,69 @@ public class WorldObject
     /// Whether this object is active or not
     /// </summary>
     [IncludeWithSerialization]
-    public bool IsActive { get; set; } = true;
+    public bool IsActive
+    {
+        get
+        {
+            if (!_isActive)
+                return _isActive;
+            if (transform.parent == null)
+                return _isActive;
+            return transform.parent.owner.IsActive;
+        }
+        set
+        {
+            _isActive = value;
+        }
+    }
 
-    private readonly List<ObjectComponent> components = new();
+    /// <summary>
+    /// Whether or not this object should be saved upon creating a template
+    /// </summary>
+    public bool IncludeWithSceneSerialization
+    {
+        get
+        {
+            if (!_includeWithSceneSerialization)
+                return _includeWithSceneSerialization;
+
+            if(transform.parent is not null)
+            {
+                return transform.parent.owner.IncludeWithSceneSerialization;
+            }
+
+            return _includeWithSceneSerialization;
+        }
+        set
+        {
+            _includeWithSceneSerialization = value;
+        }
+    }
+    private bool _includeWithSceneSerialization = true;
+    private bool _isActive = true;
+
+    internal bool IsUIRoot => isUIRoot ??= components.Any(x => x is UICanvas);
+    private bool? isUIRoot = null;
+
+    /// <summary>
+    /// If the object is somewhere in the hirarchy part of a <see cref="UICanvas"/> 
+    /// this will return <see cref="RenderSpace.Screen"/>. otherwise, <see cref="RenderSpace.World"/>
+    /// </summary>
+    public RenderSpace RenderSpace
+    {
+        get
+        {
+            if (IsUIRoot)
+                return RenderSpace.Screen;
+            else if (transform.parent != null)
+                return transform.parent.owner.RenderSpace;
+            return RenderSpace.World;
+        }
+    }
+
+
+    [IncludeWithSerialization]
+    private List<ObjectComponent> components = new();
     private readonly List<Renderer> renderers = new();
     private readonly List<ActiveRenderer> activeRenderers = new();
 
@@ -87,7 +148,7 @@ public class WorldObject
     /// <summary>
     /// A flag that can be used to identify this object. e.g. "Player", "Enemy", "Projectile"
     /// </summary>
-    [IncludeInTemplateCreation, IncludeWithSerialization]
+    [IncludeWithSerialization]
     public string Flag { get; set; } = "";
     /// <summary>
     /// The amount of components the object has
@@ -222,6 +283,7 @@ public class WorldObject
 
     private void AddComponent(ObjectComponent comp)
     {
+        isUIRoot = null;
         if (comp is Renderer renderer)
             renderers.Add(renderer);
         components.Add(comp);
@@ -354,6 +416,7 @@ public class WorldObject
     {
         if (component is Transform)
             return; // cant remove transform component
+        isUIRoot = null;
         component.CallClose();
 
         components.Remove(component);
@@ -384,6 +447,7 @@ public class WorldObject
     {
         if (typeof(T) == typeof(Transform))
             return;
+        isUIRoot = null;
         var col = components.Where(x => x is T).ToArray();
         for (int i = 0; i < col.Length; i++)
         {
@@ -416,15 +480,6 @@ public class WorldObject
         _transform = null;
     }
 
-
-    internal void PostTemplateLoad()
-    {
-        for (int i = 0; i < components.Count; i++)
-        {
-            ObjectComponent? comp = components[i];
-            comp._owner = this;
-        }
-    }
     internal void WakeObject()
     {
         for (int i = 0; i < components.Count; i++)
@@ -568,5 +623,10 @@ public class WorldObject
     {
         if (TryFetchComponent(out T component)) return component;
         return AttachComponent<T>(args);
+    }
+
+    internal void _setParent(WorldObject obj)
+    {
+        transform._parent = obj.transform;
     }
 }

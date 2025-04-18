@@ -262,28 +262,13 @@ public static class WorldEditor
             gui.EndPopup();
         }
     }
-    private static async Task LoadWorldAsync()
-    {
-        Debug.AutoClear = false;
-        World world = await World.FromTemplateAsync(
-                            string.Join('.', worldTemplateFileNames[selectedItem].Split()[new Index(0)..new Index(1, true)]),
-                            worldTemplates[selectedItem],
-                            true,
-                            x => Debug.Log(x));
-        Debug.AutoClear = true;
-        Universe.CurrentWorld = world;
-    }
     private static void LoadWorld()
     {
         Debug.AutoClear = false;
 
         if (worldTemplates[selectedItem].EndsWith(".MonoWorld"))
         {
-            World world = new(string.Join('.', worldTemplateFileNames[selectedItem].Split()[new Index(0)..new Index(1, true)]),
-                                    worldTemplates[selectedItem],
-                                    false,
-                                    x => Debug.Log(x));
-            Debug.AutoClear = true;
+            World world = World.FromTemplate(worldTemplates[selectedItem]);
             Universe.CurrentWorld = world;
             return;
         }

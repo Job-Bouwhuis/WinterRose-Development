@@ -121,10 +121,16 @@ namespace WinterRose.Monogame.Weapons
 
                 foreach(int i in BulletsPerShot)
                 {
-                    WorldObject bullet = BulletPrefab.LoadIn(world);
-                    bullet.Name += "_" + bulletsSpawned++;
+                    WorldObject bullet = world.Duplicate(BulletPrefab!.LoadedObject,
+                                    BulletPrefab.LoadedObject.Name + "_" + bulletsSpawned++);
+
                     bullet.transform.position = bulletStartPos;
                     bullet.transform.rotation = bulletStartRotation;
+                    var dir = bullet.transform.position - transform.position;
+                    bullet.transform.position 
+                        += dir.Normalized() * 
+                        bullet.FetchComponent<SpriteRenderer>()!.Bounds.Width * 1.6f;
+
                     bullets[i] = bullet.FetchComponent<Projectile>()!;
                     if (bullets[i] is null)
                     {

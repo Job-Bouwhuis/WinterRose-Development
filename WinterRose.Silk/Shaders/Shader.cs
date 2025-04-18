@@ -11,11 +11,11 @@ namespace WinterRose.SilkEngine.Shaders;
 public class Shader
 {
     private readonly uint _program;
-    private readonly GL _gl;
+    private readonly GL gl;
 
     public Shader(GL gl, string vertexShaderFile, string fragmentShaderFile)
     {
-        _gl = gl;
+        this.gl = gl;
 
         string shaderSource = FileManager.Read(vertexShaderFile);
         uint vertexShader = CompileShader(GLEnum.VertexShader, shaderSource);
@@ -23,43 +23,43 @@ public class Shader
         shaderSource = FileManager.Read(fragmentShaderFile);
         uint fragmentShader = CompileShader(GLEnum.FragmentShader, shaderSource);
 
-        _program = _gl.CreateProgram();
-        _gl.AttachShader(_program, vertexShader);
-        _gl.AttachShader(_program, fragmentShader);
-        _gl.LinkProgram(_program);
-        _gl.DetachShader(_program, vertexShader);
-        _gl.DetachShader(_program, fragmentShader);
-        _gl.DeleteShader(vertexShader);
-        _gl.DeleteShader(fragmentShader);
+        _program = this.gl.CreateProgram();
+        this.gl.AttachShader(_program, vertexShader);
+        this.gl.AttachShader(_program, fragmentShader);
+        this.gl.LinkProgram(_program);
+        this.gl.DetachShader(_program, vertexShader);
+        this.gl.DetachShader(_program, fragmentShader);
+        this.gl.DeleteShader(vertexShader);
+        this.gl.DeleteShader(fragmentShader);
     }
 
     // Use the shader program
     public void Use()
     {
-        _gl.UseProgram(_program);
+        gl.UseProgram(_program);
     }
 
     // Set a 2D vector uniform in the shader
     public void SetVector2(string name, Vector2D<float> value)
     {
-        int location = _gl.GetUniformLocation(_program, name);
-        _gl.Uniform2(location, value.X, value.Y);
+        int location = gl.GetUniformLocation(_program, name);
+        gl.Uniform2(location, value.X, value.Y);
     }
 
     public void SetInt(string name, int value)
     {
-        int location = _gl.GetUniformLocation(_program, name);
-        _gl.Uniform1(location, value);
+        int location = gl.GetUniformLocation(_program, name);
+        gl.Uniform1(location, value);
     }
 
     private uint CompileShader(GLEnum type, string source)
     {
-        uint shader = _gl.CreateShader(type);
-        _gl.ShaderSource(shader, source);
-        _gl.CompileShader(shader);
+        uint shader = gl.CreateShader(type);
+        gl.ShaderSource(shader, source);
+        gl.CompileShader(shader);
 
         // Check compilation status
-        string infoLog = _gl.GetShaderInfoLog(shader);
+        string infoLog = gl.GetShaderInfoLog(shader);
         if (!string.IsNullOrEmpty(infoLog))
         {
             Console.WriteLine($"Shader compile error: {infoLog}");
@@ -71,6 +71,6 @@ public class Shader
     // Dispose method to delete shader program
     public void Dispose()
     {
-        _gl.DeleteProgram(_program);
+        gl.DeleteProgram(_program);
     }
 }

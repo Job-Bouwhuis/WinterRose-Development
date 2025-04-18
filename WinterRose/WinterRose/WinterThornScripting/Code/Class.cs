@@ -60,7 +60,7 @@ namespace WinterRose.WinterThornScripting
         {
             Name = name;
             Description = description;
-            Constructors = new List<Constructor>(constructors);
+            Constructors = [.. constructors];
             Constructors.Foreach(c => c.DelcaredClass = this);
             Block = block;
 

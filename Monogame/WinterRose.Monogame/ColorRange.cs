@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Serialization;
 using WinterRose.SourceGeneration.Serialization;
 
 namespace WinterRose.Monogame
@@ -14,6 +15,7 @@ namespace WinterRose.Monogame
     [GenerateSerializer]
     public sealed class ColorRange
     {
+        [IncludeWithSerialization]
         private List<ColorRangePoint> points;
 
         /// <summary>
@@ -140,12 +142,23 @@ namespace WinterRose.Monogame
         /// <summary>
         /// The color at this fraction.
         /// </summary>
-        public Color Color => color;
+        [IncludeWithSerialization]
+        public Color Color 
+        {
+            get => color;
+            private set => color = value;
+        }
         /// <summary>
         /// The fraction
         /// </summary>
-        public float Fraction => fraction;
+        [IncludeWithSerialization]
+        public float Fraction
+        {
+            get => fraction;
+            private set => fraction = value;
+        }
 
         public static implicit operator ColorRangePoint((Color color, float fraction) point) => new(point.color, point.fraction);
+        private ColorRangePoint() : this(Color.Transparent, 0) { } // for serialization
     }
 }

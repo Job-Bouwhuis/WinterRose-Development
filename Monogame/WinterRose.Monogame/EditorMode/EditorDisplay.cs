@@ -29,6 +29,9 @@ namespace WinterRose.Monogame
         }
     }
 
+    /// <summary>
+    /// The internally used base class for the generic <see cref="EditorDisplay{T}"/>
+    /// </summary>
     public abstract class EditorDisplay
     {
         internal EditorDisplay(Type t, string superSecretCode)
@@ -38,6 +41,9 @@ namespace WinterRose.Monogame
             DisplayType = t;
         }
 
+        /// <summary>
+        /// The type this editor display will handle
+        /// </summary>
         public Type DisplayType { get; }
 
         internal abstract void I_Render(ref object obj, MemberData field, object owner);

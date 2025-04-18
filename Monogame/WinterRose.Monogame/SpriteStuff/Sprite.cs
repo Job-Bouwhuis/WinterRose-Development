@@ -5,18 +5,23 @@ using WinterRose.FileManagement;
 using System.Linq;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
+using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Threading;
+using SharpDX.DirectWrite;
 
 namespace WinterRose.Monogame;
 
 /// <summary>
 /// Represents an image that can be drawn to the screen
 /// </summary>
-[IncludePrivateFields]
 public class Sprite
 {
+    private readonly Lock threadLock = new();
     /// <summary>
     /// The path of where the source of this sprite is. can be null if created using <see cref="MonoUtils.CreateTexture(int, int, byte[])"/> or other methods of creating a texture at runtime
     /// </summary>
+    [IncludeWithSerialization]
     public string? TexturePath
     {
         get => texturePath;
@@ -34,9 +39,12 @@ public class Sprite
     }
     public object Tag => texture?.Tag;
 
+    private Task? spriteCreationTask;
+
     /// <summary>
     /// The name of the sprite
     /// </summary>
+    [IncludeWithSerialization]
     public string? Name { get; set; }
     [ExcludeFromSerialization] private Texture2D? texture;
     private string? texturePath;
@@ -74,7 +82,9 @@ public class Sprite
         }
     }
 
+    [IncludeWithSerialization]
     internal bool IsExternalTexture { get; private set; } = false;
+    [IncludeWithSerialization]
     internal GeneratedTextureData? GeneratedTextureData;
     internal Sprite(Texture2D texture, string name)
     {
@@ -119,13 +129,24 @@ public class Sprite
             return;
         }
         catch { }
+
+        texture = MonoUtils.CreateTexture(1, 1, Color.White);
+        spriteCreationTask = CreateRuntimeSprite(data);
+    }
+
+    private async Task CreateRuntimeSprite(string data)
+    {
         try
         {
             GeneratedTextureData genData = SnowSerializer.Deserialize<GeneratedTextureData>(data).Result;
             if (genData != null)
             {
                 GeneratedTextureData = genData;
-                texture = GeneratedTextureData.MakeTexture();
+                Texture2D tex = GeneratedTextureData.MakeTexture();
+                threadLock.Enter();
+                texture = tex;
+                threadLock.Exit();
+
                 texturePath = null;
                 IsExternalTexture = false;
             }
@@ -139,7 +160,7 @@ public class Sprite
             if (filePath.Contains('\\'))
             {
                 toSeach = FileManager.PathOneUp(filePath);
-                targetName = filePath.Split('\\', 
+                targetName = filePath.Split('\\',
                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Last();
             }
             else
@@ -156,19 +177,22 @@ public class Sprite
                 return Path.GetFileNameWithoutExtension(x.Name) == targetName;
             });
             file ??= fileInfos.FirstOrDefault(x =>
-                {
-                    return Path.GetFileName(x.Name) == targetName;
-                });
+            {
+                return Path.GetFileName(x.Name) == targetName;
+            });
 
             if (file is not null && file.Exists)
             {
                 FileStream stream = file.OpenRead();
-                texture = Texture2D.FromStream(MonoUtils.Graphics, stream);
+                Texture2D tex = Texture2D.FromStream(MonoUtils.Graphics, stream);
+                threadLock.Enter();
+                texture = tex;
                 TexturePath = FileManager.PathFrom(
                     Path.Combine(
                         FileManager.PathOneUp(file.FullName),
                         Path.GetFileNameWithoutExtension(file.FullName)),
                     "Content")[8..];
+                threadLock.Exit();
             }
             else
                 throw new Exception("no file at data. attempting to load from Base64");
@@ -205,7 +229,7 @@ public class Sprite
     /// <param name="color"></param>
     public Sprite(int width, int height, Color color)
     {
-        texture = MonoUtils.CreateTexture(width, height, color);
+        texture = MonoUtils.CreateTexture(width, height, color, color.A);
         TexturePath = texture.Name;
     }
 
@@ -233,7 +257,15 @@ public class Sprite
     {
         GeneratedTextureData = generatedData;
         Name = generatedData.Name;
-        texture = generatedData.MakeTexture();
+
+        texture = MonoUtils.CreateTexture(1, 1, Color.White);
+        spriteCreationTask = Task.Run(() =>
+        {
+            Texture2D tex = generatedData.MakeTexture();
+            threadLock.Enter();
+            texture = tex;
+            threadLock.Exit();
+        });
     }
 
     private void LoadFromBase64(string data)
@@ -244,23 +276,19 @@ public class Sprite
         int height = TypeWorker.CastPrimitive<int>(stuff[1]);
 
         var bytes = Convert.FromBase64String(stuff[2]);
-        texture = MonoUtils.CreateTexture(width, height, bytes);
+        Texture2D tex = MonoUtils.CreateTexture(width, height, bytes);
+
+        threadLock.Enter();
+        texture = tex;
+        threadLock.Exit();
         TexturePath = texture.Name;
     }
 
     public static implicit operator string(Sprite s) => s.Name;
     public static implicit operator Texture2D(Sprite s)
     {
-        try
-        {
-            if (s.texture == null && s.GeneratedTextureData != null)
-                s.texture = s.GeneratedTextureData.MakeTexture();
-            return s.texture;
-        }
-        catch (NullReferenceException)
-        {
-            throw new Exception($"Sprite has no texture. > '{s.Name}'");
-        }
+        s.Validate();
+        return s.texture ?? throw new Exception($"Sprite has no texture. > '{s.Name}'");
     }
     public static implicit operator Sprite(Texture2D tex) => new(tex, "default") { TexturePath = tex.Name };
 
@@ -270,6 +298,7 @@ public class Sprite
     /// <returns></returns>
     public Color[] GetPixelData()
     {
+        Validate();
         if (texture == null)
             return Array.Empty<Color>();
 
@@ -277,12 +306,28 @@ public class Sprite
         texture.GetData(data);
         return data;
     }
+
+    private void Validate()
+    {
+        if(spriteCreationTask == null)
+            return;
+
+        if(spriteCreationTask.IsCompletedSuccessfully)
+        {
+            spriteCreationTask = null;
+            return;
+        }
+
+
+    }
+
     /// <summary>
     /// does nothing atm
     /// </summary>
     /// <exception cref="NullReferenceException"></exception>
     public void SetPixelData(Color[] colors)
     {
+        Validate();
         if (texture is null)
             throw new NullReferenceException();
 
@@ -295,6 +340,7 @@ public class Sprite
     /// <exception cref="NullReferenceException"></exception>
     public void Save(string path)
     {
+        Validate();
         if (texture is null)
             throw new NullReferenceException();
         texture.SaveAsPng(path);
@@ -314,6 +360,7 @@ public class Sprite
     /// <param name="sprite"></param>
     public void SetTexture(Sprite sprite)
     {
+        sprite.Validate();
         texture = sprite.texture;
         TexturePath = sprite.TexturePath;
     }
@@ -327,6 +374,7 @@ public class Sprite
     /// <exception cref="NullReferenceException"></exception>
     public void SetPixel(int x, int y, Color color)
     {
+        Validate();
         if (texture is null)
             throw new NullReferenceException();
         Color[] data = new Color[Width * Height];
@@ -344,6 +392,7 @@ public class Sprite
     /// <exception cref="NullReferenceException"></exception>
     public Color GetPixel(int x, int y)
     {
+        Validate();
         if (texture is null)
             throw new NullReferenceException();
         Color[] data = new Color[Width * Height];
@@ -353,35 +402,43 @@ public class Sprite
 
     public static Sprite Circle(int radius, Color color)
     {
-        // generate a circle texture with the given radius and color
-        Texture2D tex = new Texture2D(MonoUtils.Graphics, radius * 2, radius * 2);
-
-        // create a color array to hold the data
-        Color[] data = new Color[radius * radius * 4];
-
-        // calculate the diameter and radius
-        float diam = radius / 2f;
-
-        // the texture is a square so we need to loop through the entire texture and set the pixels that are not in the circle to transparent
-        for (int x = 0; x < radius * 2; x++)
+        Sprite result = new();
+        result.texture = MonoUtils.CreateTexture(1, 1, Color.White);
+        result.spriteCreationTask = Task.Run(() =>
         {
-            for (int y = 0; y < radius * 2; y++)
+            // generate a circle texture with the given radius and color
+            Texture2D tex = new Texture2D(MonoUtils.Graphics, radius * 2, radius * 2);
+
+            // create a color array to hold the data
+            Color[] data = new Color[radius * radius * 4];
+
+            // calculate the diameter and radius
+            float diam = radius / 2f;
+
+            // the texture is a square so we need to loop through the entire texture and set the pixels that are not in the circle to transparent
+            for (int x = 0; x < radius * 2; x++)
             {
-                // calculate the distance from the center of the circle
-                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(radius, radius));
+                for (int y = 0; y < radius * 2; y++)
+                {
+                    // calculate the distance from the center of the circle
+                    float dist = Vector2.Distance(new Vector2(x, y), new Vector2(radius, radius));
 
-                // if the distance is greater than the radius, set the pixel to transparent
-                if (dist > diam)
-                    data[x + y * radius * 2] = Color.Transparent;
-                else
-                    data[x + y * radius * 2] = color;
+                    // if the distance is greater than the radius, set the pixel to transparent
+                    if (dist > diam)
+                        data[x + y * radius * 2] = Color.Transparent;
+                    else
+                        data[x + y * radius * 2] = color;
+                }
             }
-        }
 
-        // set the data to the texture
-        tex.SetData(data);
+            // set the data to the texture
+            tex.SetData(data);
 
-        return tex;
+            result.threadLock.Enter();
+            result.texture = tex;
+            result.threadLock.Exit();
+        });
+        return result;
     }
 
     public static Sprite Noise(NoiseType noiseType, int width, int height, float frequency, float amplitude, float offsetX, float offsetY)

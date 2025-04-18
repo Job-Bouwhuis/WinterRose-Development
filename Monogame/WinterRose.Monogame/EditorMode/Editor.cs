@@ -31,8 +31,10 @@ public static class Editor
 
                 Camera nonEditorCam = world.GetCamera(cameraIndexBeforeEditMode);
                 editorCamera.transform.position = nonEditorCam?.transform?.position ?? MonoUtils.ScreenCenter;
+                editorCamera.owner.IncludeWithSceneSerialization = false;
 
                 debugObject = world.CreateObject("Debug Object (DO NOT DELETE)");
+                debugObject.IncludeWithSceneSerialization = false;
                 debugObject.AddUpdateBehavior(obj =>
                 {
                     obj.transform.position = editorCamera.transform.position;
@@ -46,12 +48,10 @@ public static class Editor
             {
                 isEditMode = false;
 
-                if (editorCamera is not null)
-                {
-                    editorCamera.Destroy();
-                    debugObject!.Destroy();
-                    Application.Current.CameraIndex = cameraIndexBeforeEditMode;
-                }
+                editorCamera?.Destroy();
+                debugObject?.Destroy();
+
+                Application.Current.CameraIndex = cameraIndexBeforeEditMode;
             }
         }
     }

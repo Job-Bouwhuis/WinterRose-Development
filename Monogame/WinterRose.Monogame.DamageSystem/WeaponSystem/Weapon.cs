@@ -22,6 +22,13 @@ public class Weapon : ObjectBehavior
     public string Name { get; set; }
 
     /// <summary>
+    /// Whether the player controls the weapon, or if another piece of code controls it
+    /// </summary>
+    [field: Show]
+    [IncludeWithSerialization]
+    public bool IsPlayerGun { get; set; }
+
+    /// <summary>
     /// The description of this weapon
     /// </summary>
     [field: Hide]
@@ -115,73 +122,72 @@ public class Weapon : ObjectBehavior
     // Update is called once per frame
     protected override void Update()
     {
-        if(Input.GetKeyDown(Microsoft.Xna.Framework.Input.Keys.T))
-        {
-            ModContainer.UnapplyAllMods(this);
-        }
-
-        if (Input.GetKeyDown(Microsoft.Xna.Framework.Input.Keys.Y))
-        {
-            ModContainer.ApplyAllMods(this);
-        }
-
         // Handle reloading
         Reload();
 
         // handle switching firemodes
         SwitchFiringMode();
 
-        /// handle firerate timeout. Do not continue if the firerate is not ready
+        // if the weapon is reloading, do not continue to prevent shooting while reloading in case the magazine is not empty.
+        if (Magazine.IsReloading)
+            return;
+
+        // Handle shooting
+        if (IsPlayerGun)
+            PlayerShoot();
+    }
+
+    public void PlayerShoot()
+    {
+        if (Input.MouseLeft)
+        {
+            DoShot();
+        }
+        else
+        {
+            ResetShooting();
+        }
+    }
+
+    public void DoShot()
+    {
         if (fireRateTimer > 0.0f)
         {
             fireRateTimer -= Time.deltaTime;
             return;
         }
 
-        // if the weapon is reloading, do not continue to prevent shooting while reloading in case the magazine is not empty.
-        if (Magazine.IsReloading)
-            return;
+        shooting = true;
+        if (currentFireMode == WeaponFireingMode.Single)
+        {
+            if (timesFired > 0)
+                return;
+            timesFired++;
+        }
+        if (currentFireMode == WeaponFireingMode.Burst)
+        {
+            if (timesFired >= BurstAmount)
+                return;
+            timesFired++;
+        }
 
-        // Handle shooting
-        Shoot();
+        Transform pos = PositionInheritor ?? transform;
+        Vector2 startPos = pos.position + pos.up;
+        Transform rot = RotationInheritor ?? transform;
+        float startRotation = rot.rotation;
+
+        Projectile[] bullets = Magazine.Take(startPos, startRotation);
+        foreach (Projectile bullet in bullets)
+        {
+            bullet.Fire();
+            fireRateTimer = 1.0f / FireRate;
+        }
     }
 
-    private void Shoot()
+    public void ResetShooting()
     {
-        if (Input.MouseLeft)
-        {
-            shooting = true;
-
-            if (currentFireMode == WeaponFireingMode.Single)
-            {
-                if (timesFired > 0)
-                    return;
-                timesFired++;
-            }
-            if (currentFireMode == WeaponFireingMode.Burst)
-            {
-                if (timesFired >= BurstAmount)
-                    return;
-                timesFired++;
-            }
-
-            Transform pos = PositionInheritor ?? transform;
-            Vector2 startPos = pos.position + pos.up;
-            Transform rot = RotationInheritor ?? transform;
-            float startRotation = rot.rotation;
-
-            Projectile[] bullets = Magazine.Take(startPos, startRotation);
-            foreach (Projectile bullet in bullets)
-            {
-                bullet.Fire();
-                fireRateTimer = 1.0f / FireRate;
-            }
-        }
-        else
-        {
-            shooting = false;
-            timesFired = 0;
-        }
+        shooting = false;
+        timesFired = 0;
     }
 
     private void Reload()

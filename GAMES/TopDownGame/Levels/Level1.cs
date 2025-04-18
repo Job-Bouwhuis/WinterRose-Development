@@ -1,6 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using System.Security.Principal;
 using TopDownGame.Drops;
+using TopDownGame.Enemies;
+using TopDownGame.Enemies.Movement;
+using TopDownGame.Inventories.Base;
 using TopDownGame.Items;
 using TopDownGame.Loot;
 using TopDownGame.Players;
@@ -10,6 +14,7 @@ using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem;
 using WinterRose.Monogame.ModdingSystem;
 using WinterRose.Monogame.StatusSystem;
+using WinterRose.Monogame.UI;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 
@@ -26,6 +31,8 @@ internal class Level1 : WorldTemplate
         _ = new Vitality().Equals(this);
         _ = new WorldObject().Equals(this);
 
+        //Rope r = world.CreateObject<Rope>("rope", new Vector2(100, 100), new Vector2(200, 100), 1, 0.2f);
+
         world.Name = "Level 1";
 
         var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
@@ -34,11 +41,15 @@ internal class Level1 : WorldTemplate
         player.AttachComponent<PlayerSprint>();
         var effector = player.AttachComponent<StatusEffector>();
         player.AttachComponent<Dash>();
-        var vitals = player.AttachComponent<Vitality>();
+        var vitals = player.FetchOrAttachComponent<Vitality>();
         vitals.Health.MaxHealth = 2500;
         vitals.Armor.BaseArmor = 0.97f;
         player.owner.Flag = "Player";
         player.AttachComponent<Player>("Test");
+
+        world.CreateObject<SmoothCameraFollow>("camera").Target = player.transform;
+
+        MonoUtils.TargetFramerate = 144;
 
         var gun = CreateSMG(world).owner;
         gun.FetchComponent<Weapon>().AvailableFireingMode = WeaponFireingMode.Auto;
@@ -47,81 +58,85 @@ internal class Level1 : WorldTemplate
         Mod<Weapon> mod = new("Hard Hitter", "Increases damage of the weapon");
         mod.AddAttribute<WeaponDamageMod>().DamageBoost = 5;
 
-        var container = gun.FetchComponent<Weapon>().ModContainer;
-        container.TotalModCapacity = 100;
-        container.AddMod(mod);
+        var modContainer = gun.FetchComponent<Weapon>().ModContainer;
+        modContainer.TotalModCapacity = 100;
+        modContainer.AddMod(mod);
 
         gun.transform.parent = player.transform;
         gun.transform.position = new();
 
-        LootTable table = new("box");
-        table.Add([
-            new(.5f, new ResourceItem() { Item = new Crystal()}),
-            new(.5f, new ResourceItem() { Item = new Flesh()})]);
+        var canvas = world.CreateObject<UICanvas>("Canvas");
+        var button = world.CreateObject<Button>("text");
+        button.text.text = "Some Weird Text";
+        button.ButtonTints.Normal = Color.Cyan;
+        button.transform.parent = canvas.transform;
+        button.transform.position = new(200, 200);
 
-        table.Save();
+        //var coeb = world.CreateObject<SpriteRenderer>("coeb", new Sprite(200, 200, Color.Pink));
+        //coeb.transform.position = new(10, 10);
+        //coeb.transform.parent = canvas.transform;
 
-        world.CreateObject<SmoothCameraFollow>("cam", player.transform).Speed = 8;
-
-        var box = world.CreateObject("box");
-        box.transform.position = new(500, 100);
-        var renderer = box.AttachComponent<SpriteRenderer>(200, 50, Color.Blue);
-        box.AttachComponent<SquareCollider>(renderer);
-        var boxhealth = box.AttachComponent<Vitality>();
-        box.AttachComponent<DestroyOnDeath>();
-        box.AttachComponent<DropOnDeath>().LootTable = LootTable.WithName("box");
-        box.AttachComponent<StatusEffector>();
-
-        //var itemObject = world.CreateObject<SpriteRenderer>("item", 5, 5, new Color(255, 150, 255));
-        //itemObject.transform.position = new Vector2(500, 500);
-        //ResourceItem item = new();
-        //item.Item = new Flesh();
-        //item.Count = 1;
-        //itemObject.AttachComponent<ItemDrop>(item);
-
-        //var itemObject2 = world.CreateObject<SpriteRenderer>("item", 5, 5, new Color(255, 150, 255));
-        //itemObject2.transform.position = new Vector2(530, 500);
-        //ResourceItem item2 = new();
-        //item2.Item = new Flesh();
-        //item2.Count = 1;
-        //itemObject2.AttachComponent<ItemDrop>(item2);
-
-        //Time.Timescale = 0.1f;
+        var enemy = world.CreateObject("enemy");
+        enemy.transform.position = new(400, 50);
+        var renderer = enemy.AttachComponent<SpriteRenderer>(50, 50, Color.Blue);
+        enemy.AttachComponent<SquareCollider>(renderer);
+        enemy.AttachComponent<Vitality>();
+        enemy.AttachComponent<DestroyOnDeath>();
+        enemy.AttachComponent<DropOnDeath>().LootTable = LootTable.WithName("box");
+        enemy.AttachComponent<StatusEffector>();
+        var mc = enemy.AttachComponent<AIMovementController>();
+        mc.AddMovement<IdleMovement>();
+        mc.AddMovement<ChasePlayer>();
+        mc.AddMovement<EvadePlayer>();
+        mc.Target = player.transform;
+        enemy.AttachComponent<Enemy>();
+        enemy.CreatePrefab("Enemy");
+        world.DestroyImmediately(enemy);
 
         // Spawning multiple items in a circle
-        int itemCount = 100; 
+        int itemCount = 0;
         Vector2 center = new Vector2(500, 500);
-        float spawnRadius = 1000;
+        float spawnRadius = 2000;
 
+        var loot = LootTable.WithName("box");
+        Random rnd = new Random();
         for (int i = 0; i < itemCount; i++)
         {
-            Vector2 spawnPos = center + RandomPointInCircle(spawnRadius);
-
-            ResourceItem item = new();
-            Color col;
-            if (Random.Shared.NextDouble() > .5)
-            {
-                item.Item = new Flesh();
-                col = new Color(255, 80, 80);
-            }
-            else
-            {
-                col = new Color(255, 150, 255);
-                item.Item = new Crystal();
-            }
-            item.Count = 1;
-
+            Vector2 spawnPos = center + rnd.RandomPointInCircle(spawnRadius);
+            ResourceItem item = (ResourceItem)loot.Generate();
             ItemDrop.Create(spawnPos, item, world);
         }
 
-        Application.Current.CameraIndex = 0;
-    }
 
-    public static Vector2 RandomPointInCircle(float radius)
-    {
-        float angle = new Random().NextFloat(0, MathF.PI * 2);
-        float distance = MathF.Sqrt(new Random().NextFloat(0, 1)) * radius;
-        return new Vector2(MathF.Cos(angle) * distance, MathF.Sin(angle) * distance);
+        int enemyCount = 0;
+        spawnRadius = 1000;
+
+        WinterRose.Windows.OpenConsole(false);
+        World w = world;
+        int enemycount = 0;
+        for (int i = 0; i < enemyCount; i++)
+        {
+            Console.WriteLine($"Dispatched {i} enemies");
+            world.Instantiate(WorldObjectPrefab.Load("enemy", true),
+                obj =>
+                {
+                    obj.Name += $"_{enemycount++}";
+                    obj.transform.position = center + rnd.RandomPointInCircle(spawnRadius);
+                    Enemy e = obj.FetchComponent<Enemy>()!;
+                    var weaponObj = CreateEnemyPistol(w).owner;
+                    e.Weapon = weaponObj.FetchComponent<Weapon>()!;
+                    e.Weapon.FireRate += new Random().NextFloat(-0.1f, 0.1f);
+                    weaponObj.transform.parent = obj.transform;
+                    weaponObj.transform.localPosition = new();
+                    Console.WriteLine($"Created {enemycount} enemies!");
+                }, true);
+        }
+        
+
+        world.SaveTemplate();
+        WinterRose.Windows.CloseConsole();
+
+        Application.Current.CameraIndex = 0;
     }
 
     Weapon CreatePistol(World world)
@@ -138,6 +153,7 @@ internal class Level1 : WorldTemplate
         bullet.AttachComponent<DefaultProjectileHitAction>();
         bullet.owner.Flag = "PlayerBullet";
         bullet.owner.CreatePrefab("PistolBullet");
+        //bullet.destroyImmediately();
 
         var gun = world.CreateObject("Pistol");
         gun.AttachComponent<SpriteRenderer>(35, 15, Color.Yellow);
@@ -148,9 +164,41 @@ internal class Level1 : WorldTemplate
         mag.PoolOfProjectiles = 9 * 6;
         gun.AttachComponent<MouseLook>();
         gun.CreatePrefab("Pistol");
+        //gun.DestroyImmediately();
 
         return weapon;
     }
+
+    Weapon CreateEnemyPistol(World world)
+    {
+        var bullet = world.CreateObject<SpriteRenderer>("EnemyPistolBullet", 25, 8, Color.Red);
+        var collider = bullet.AttachComponent<SquareCollider>();
+        collider.IgnoredFlags.Add("Enemy");
+        collider.ResolveOverlaps = false;
+        var proj = bullet.AttachComponent<Projectile>();
+        proj.Speed = 2000;
+        proj.Damage = new FireDamage(100);
+        proj.Lifetime = 5;
+        proj.StatusChance = 40;
+        bullet.AttachComponent<DefaultProjectileHitAction>();
+        bullet.owner.Flag = "EnemyBullet";
+        bullet.owner.CreatePrefab("EnemyPistolBullet");
+        world.DestroyImmediately(bullet.owner);
+
+        var gun = world.CreateObject("Pistol");
+        gun.AttachComponent<SpriteRenderer>(35, 15, Color.Yellow);
+        var weapon = gun.AttachComponent<Weapon>();
+        weapon.FireRate = 0.2f;
+        var mag = gun.AttachOrFetchComponent<Magazine>();
+        mag.BulletPrefab = new WorldObjectPrefab("EnemyPistolBullet");
+        mag.MaxBullets = int.MaxValue;
+        mag.PoolOfProjectiles = 1;
+        gun.AttachComponent<GunLookatPlayer>();
+        gun.CreatePrefab("EnemyPistol");
+
+        return weapon;
+    }
+
     Weapon CreateSMG(World world)
     {
         var bullet = world.CreateObject<SpriteRenderer>("SMGBullet", 25, 8, Color.Red);
@@ -158,7 +206,7 @@ internal class Level1 : WorldTemplate
         collider.IgnoredFlags.Add("Player");
         collider.ResolveOverlaps = false;
         var proj = bullet.AttachComponent<Projectile>();
-        proj.Speed = 1600;
+        proj.Speed = 6000;
         proj.Damage = new FireDamage(10);
         proj.Lifetime = 5;
         proj.Spread = .1f;
@@ -173,6 +221,7 @@ internal class Level1 : WorldTemplate
         var weapon = gun.AttachComponent<Weapon>();
         weapon.AvailableFireingMode = WeaponFireingMode.Auto | WeaponFireingMode.Burst | WeaponFireingMode.Single;
         weapon.CurrentFiringMode = WeaponFireingMode.Auto;
+        weapon.IsPlayerGun = true;
         var mag = gun.AttachOrFetchComponent<Magazine>();
         mag.BulletPrefab = new WorldObjectPrefab("SMGBullet");
         mag.MaxBullets = 25;

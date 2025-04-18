@@ -38,6 +38,9 @@
 		<None Update="Bass_Drop_04.wav">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		<None Update="opcodes.txt">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
 		<None Update="TestThorn.thn">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>

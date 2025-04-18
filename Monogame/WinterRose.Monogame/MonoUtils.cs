@@ -16,6 +16,7 @@ using WinterRose.WinterThornScripting;
 using WinterRose.Monogame.WinterThornPort;
 using WinterRose.Monogame.TextRendering;
 using System.Text;
+using SpriteFontPlus;
 
 namespace WinterRose.Monogame;
 
@@ -41,9 +42,10 @@ public static class MonoUtils
     {
         get
         {
-            return Environment.GetCommandLineArgs()[1..];
+            return Environment.GetCommandLineArgs();
         }
     }
+
     /// <summary>
     /// The main game instance. This is <b>NOT</b> intended to 
     /// </summary>
@@ -216,7 +218,7 @@ public static class MonoUtils
     {
         get
         {
-            return  GameWindow.AllowUserResizing;
+            return GameWindow.AllowUserResizing;
         }
         set
         {
@@ -313,15 +315,15 @@ public static class MonoUtils
         get => mainGame.IsMouseVisible;
         set => mainGame.IsMouseVisible = value;
     }
-    
+
     public static bool AutoUserdomainUpdate
     {
         get => _autoUserdomainUpdate;
         set
-   {
+        {
             if (value && !_autoUserdomainUpdate)
             {
-                if(!Directory.Exists(UserDomainCompiler.ScriptSource))
+                if (!Directory.Exists(UserDomainCompiler.ScriptSource))
                 {
                     Debug.LogWarning("User Domain Source Directory does not exist. Creating...");
                     Directory.CreateDirectory(UserDomainCompiler.ScriptSource);
@@ -336,7 +338,7 @@ public static class MonoUtils
                 watcher.EnableRaisingEvents = true;
                 _autoUserdomainUpdate = true;
             }
-            if(!value && _autoUserdomainUpdate)
+            if (!value && _autoUserdomainUpdate)
             {
                 watcher!.Dispose();
                 watcher = null;
@@ -368,7 +370,7 @@ public static class MonoUtils
         {
             DefaultFont = Content.Load<SpriteFont>(fontName);
         }
-        catch 
+        catch
         {
             Debug.LogWarning($"Could not load font with given name {fontName}", true);
         }
@@ -409,9 +411,9 @@ public static class MonoUtils
 
         UserDomainCompiler.LoadUserDomain(x => Debug.Log(x));
         Debug.LogWarning("Compiling User Domain...", true);
-        UserDomain = UserDomainCompiler.CompileUserDomain(x => 
-        { 
-            if(x.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+        UserDomain = UserDomainCompiler.CompileUserDomain(x =>
+        {
+            if (x.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
             {
                 var e = new UserDomainCompilationErrorException();
                 var a = x.GetType();
@@ -669,13 +671,28 @@ public static class MonoUtils
     /// Gets a random vector2 with the given min and max values
     /// </summary>
     /// <param name="random"></param>
-    /// <param name="min"></param>
-    /// <param name="max"></param>
     /// <returns></returns>
-    public static Vector2 NextVector2(this Random random, Vector2 X, Vector2 Y)
+    public static Vector2 NextVector2(this Random random, Vector2 minmaxX, Vector2 minmaxY)
     {
-        return new(random.NextFloat(X.X, X.Y), random.NextFloat(Y.X, Y.Y));
+        return new(random.NextFloat(minmaxX.X, minmaxX.Y), random.NextFloat(minmaxY.X, minmaxY.Y));
     }
+
+    /// <summary>
+    /// Gets the parameter with the specified name. or null if it doesnt exist
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="e"></param>
+    /// <param name="paramName"></param>
+    /// <returns></returns>
+    public static EffectParameter? GetParameter(this Effect e, string paramName)
+    {
+        foreach(EffectParameter? param in e.Parameters)
+            if(param.Name == paramName)
+                return param;
+        return null;
+    }
+
+
     /// <summary>
     /// Gets a random vector2 with the given min and max values
     /// </summary>
@@ -739,20 +756,13 @@ public static class MonoUtils
         Texture2D texture;
         texture = new Texture2D(_graphics, x, y);
 
-        try
-        {
-            Color[] colorData = new Color[x * y];
-            color.A = alpha;
-            for (int i = 0; i < x * y; i++)
-                colorData[i] = color;
-            texture.SetData(colorData);
-            return texture;
-        }
-        catch
-        {
-            //Debug.Log(ex.Message);
-            throw;
-        }
+        Color[] colorData = new Color[x * y];
+        color.A = alpha;
+        for (int i = 0; i < x * y; i++)
+            colorData[i] = color;
+        texture.SetData(colorData);
+        return texture;
+
 
     }
     /// <summary>
@@ -767,19 +777,12 @@ public static class MonoUtils
         Texture2D texture;
         texture = new Texture2D(Graphics, x, y);
 
-        try
-        {
-            Color[] colorData = new Color[x * y];
-            for (int i = 0; i < x * y; i++)
-                colorData[i] = new Color(data[i]);
-            texture.SetData(colorData);
-            return texture;
-        }
-        catch (Exception ex)
-        {
-            //Debug.Log(ex.Message);
-            throw;
-        }
+        Color[] colorData = new Color[x * y];
+        for (int i = 0; i < x * y; i++)
+            colorData[i] = new Color(data[i]);
+        texture.SetData(colorData);
+        return texture;
+
     }
     /// <summary>
     /// Creates a new textures using the given parameters
@@ -792,8 +795,8 @@ public static class MonoUtils
     public static Texture2D CreateTexture(int x, int y, Color color, byte alpha = 255)
     {
         Texture2D texture;
-        if(x <= 0)  x = 1;
-        if(y <= 0)  y = 1;
+        if (x <= 0) x = 1;
+        if (y <= 0) y = 1;
         texture = new Texture2D(Graphics, x, y);
 
         try
@@ -916,8 +919,41 @@ public static class MonoUtils
         spriteBatch.Draw(Pixel, new Rectangle((int)start.X, (int)start.Y, (int)edge.Length(), width), null, color, angle, new(), SpriteEffects.None, layerdepth);
     }
 
+    public static void DrawDashedLine(this SpriteBatch spriteBatch, Vector2 start, Vector2 end, Color color, int width = 1, float layerdepth = 0.5f, float dashLength = 10f, float gapLength = 5f)
+    {
+        Vector2 edge = end - start;
+        float angle = (float)Math.Atan2(edge.Y, edge.X);
+        float totalLength = edge.Length();
+        float currentLength = 0f;
+        bool isDash = true;
+
+        while (currentLength < totalLength)
+        {
+            float segmentLength = isDash ? dashLength : gapLength;
+            Vector2 segmentEnd = 
+                Microsoft.Xna.Framework.Vector2.Lerp(start, end, 
+                (currentLength + segmentLength) / totalLength);
+
+            if (isDash)
+            {
+                spriteBatch.Draw(Pixel, new Rectangle((int)start.X, (int)start.Y, (int)(segmentLength), width), null, color, angle, new(), SpriteEffects.None, layerdepth);
+            }
+
+            currentLength += segmentLength;
+            start = segmentEnd;
+            isDash = !isDash;
+        }
+    }
+
     internal static void Activated() => OnApplicationFocusGained();
     internal static void Deactivated() => OnApplicationFocusLost();
+
+    public static Vector2 RandomPointInCircle(this Random random, float radius)
+    {
+        float angle = random.NextFloat(0, MathF.PI * 2);
+        float distance = MathF.Sqrt(random.NextFloat(0, 1)) * radius;
+        return new Vector2(MathF.Cos(angle) * distance, MathF.Sin(angle) * distance);
+    }
 
     /// <summary>
     /// Creates a <see cref="Namespace"/> for use in the <see cref="WinterThorn"/> scripting language.
@@ -936,7 +972,7 @@ public static class MonoUtils
         return new(
             "WinterRose-ThornPort --- Provides access to the standard WinterRose.Monogame classes from within WinterThorn scripting",
             [
-                input, 
+                input,
                 vector2,
                 debug,
                 monoutils,

@@ -75,11 +75,35 @@ namespace WinterRose.Reflection
         /// <summary>
         /// Indicates if the property has a setter.
         /// </summary>
-        public bool PropertyHasSetter => propertysource?.GetSetMethod() != null;
+        public bool PropertyHasSetter => propertysource?.GetSetMethod(true) != null;
         /// <summary>
         /// Indicates if the field or property is static.
         /// </summary>
-        public bool IsStatic => fieldsource?.IsStatic ?? propertysource?.GetGetMethod()?.IsStatic ?? throw new InvalidOperationException("No field or property found.");
+        public bool IsStatic
+        {
+            get
+            {
+                if (fieldsource != null)
+                {
+                    // Check if field is static
+                    return fieldsource.IsStatic;
+                }
+
+                if (propertysource != null)
+                {
+                    // Check if the property getter method is static
+                    var getMethod = propertysource.GetGetMethod(true);
+                    if (getMethod != null)
+                    {
+                        return getMethod.IsStatic;
+                    }
+                }
+
+                // If neither field nor property found, throw an exception
+                throw new InvalidOperationException("No field or property found.");
+            }
+        }
+
         /// <summary>
         /// Indicates if the field is readonly. eg const or readonly
         /// </summary>

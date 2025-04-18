@@ -54,6 +54,11 @@ public class Text : ICollection<Word>
         }
     }
 
+    public override int GetHashCode()
+    {
+        return words.GetHashCode();
+    }
+
     public Word this[int index]
     {
         get => words[index];
@@ -62,6 +67,11 @@ public class Text : ICollection<Word>
 
     public int Count => words.Count;
     public bool IsReadOnly => false;
+
+    public void SetText(string text)
+    {
+        ParseString(text);
+    }
 
     public RectangleF CalculateBounds(Vector2 pos)
     {
