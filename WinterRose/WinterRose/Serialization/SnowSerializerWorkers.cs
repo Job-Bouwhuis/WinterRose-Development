@@ -411,7 +411,8 @@ namespace WinterRose.Serialization
         }
         /// <summary>
         /// Serializes an 'unusual' type, such as DateTime, TimeSpan, TimeOnly, DateOnly, 
-        /// such types are serialized in a different way than normal types
+        /// such types are serialized in a different way than normal types. 
+        /// <br></br>implement your own by implementing the <see cref="CustomSerializer"/> class!
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="item"></param>
