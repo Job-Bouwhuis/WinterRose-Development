@@ -194,19 +194,27 @@ namespace WinterRose.Monogame
         /// <param name="cam"></param>
         /// <returns>The position of <paramref name="pos"/> in the world based on the priveded <see cref="Camera"/> <paramref name="cam"/> position, 
         /// <br></br> if <paramref name="cam"/> is null, returns <paramref name="pos"/></returns>
-        public static Vector2 ScreenToWorldPos(Vector2 pos, Camera? cam)
+        public static Vector2 ScreenToWorldPos(Vector2 screenPos, Camera? cam)
         {
             if (cam is null)
-                return pos;
+                return screenPos;
 
-            Vector2 camPos = cam.transform.position;
-            Vector2 camCenter = cam.Bounds / 2;
-            Vector2 windowResolutionHalf = MonoUtils.WindowResolution / 2;
-
-            // Translate the screen position to world position considering the camera position
-            Vector2 result = pos + camPos - camCenter - windowResolutionHalf;
-            return result + (MonoUtils.WindowResolution / 2);
+            Matrix inverse = Matrix.Invert(cam.TransformMatrix);
+            return Vector2.Transform(screenPos, inverse);
         }
+        //public static Vector2 ScreenToWorldPos(Vector2 pos, Camera? cam)
+        //{
+        //    if (cam is null)
+        //        return pos;
+
+        //    Vector2 camPos = cam.transform.position;
+        //    Vector2 camCenter = cam.Bounds / 2;
+        //    Vector2 windowResolutionHalf = MonoUtils.WindowResolution / 2;
+
+        //    // Translate the screen position to world position considering the camera position
+        //    Vector2 result = pos + camPos - camCenter - windowResolutionHalf;
+        //    return result + (MonoUtils.WindowResolution / 2);
+        //}
         /// <summary>
         /// Rotates the object so that its forward direction faces the given <paramref name="pos"/>
         /// </summary>

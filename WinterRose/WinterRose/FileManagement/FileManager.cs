@@ -133,7 +133,7 @@ namespace WinterRose.FileManagement
         public static FileOutput Read(string path)
         {
             if (!File.Exists(path))
-                throw new FileNotFoundException("Target file does not exist");
+                throw new FileNotFoundException("Target file does not exist: " + path);
 
             StreamReader sr = new StreamReader(path);
             string content = sr.ReadToEnd();

@@ -164,7 +164,7 @@ namespace WinterRose.Monogame.EditorMode
             RenderObjectFields(inspectorComponent);
         }
 
-        private static void RenderObjectFields(object c)
+        private static object RenderObjectFields(object c)
         {
             ReflectionHelper rh = new(ref c);
             var members = rh.GetMembers();
@@ -237,7 +237,19 @@ namespace WinterRose.Monogame.EditorMode
 
                         if (gui.TreeNode(member.Name))
                         {
-                            RenderObjectFields(member.GetValue(c));
+                            object result = RenderObjectFields(member.GetValue(c));
+                            if(member.Type.IsByRef)
+                            {
+                                member.SetValue(ref result, c);
+                            }
+                            if(member.Type.Name.Contains("Nullable`1"))
+                            {
+                                Type kind = member.Type.GetGenericArguments()[0];
+                                var method = 
+                                    TypeWorker.FindImplicitConversionMethod(member.Type, kind);
+                                object val = method.Invoke(null, [result]);
+                                member.SetValue(ref c, val);
+                            }
                             gui.TreePop();
                         }
                         
@@ -269,6 +281,7 @@ namespace WinterRose.Monogame.EditorMode
                     valueIndex++;
                 }
             }
+            return c;
         }
 
         private static void OSE_AddComponentFlow()

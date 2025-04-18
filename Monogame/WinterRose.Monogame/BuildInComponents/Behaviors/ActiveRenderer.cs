@@ -17,12 +17,12 @@ public abstract class ActiveRenderer : ObjectBehavior
     /// <summary>
     /// The bounds of this renderer
     /// </summary>
-    [IncludeInTemplateCreation, IncludeWithSerialization]
     public abstract RectangleF Bounds { get; }
 
     /// <summary>
     /// The time it took to render the contents to the screen
     /// </summary>
+    [ExcludeFromSerialization]
     public abstract TimeSpan DrawTime { get; protected set; }
 
     /// <summary>

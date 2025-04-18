@@ -61,4 +61,8 @@ all in all, this made colisions work again</PackageReleaseNotes>
 	  <ProjectReference Include="..\..\WinterRose\WinterRose\WinterRose.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="AttemptAtBloom\" />
+	</ItemGroup>
+
 </Project>

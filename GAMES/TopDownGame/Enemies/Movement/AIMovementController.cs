@@ -14,6 +14,7 @@ using WinterRose.StaticValueModifiers;
 
 namespace TopDownGame.Enemies.Movement;
 
+[ParallelBehavior]
 public sealed class AIMovementController : ObjectBehavior
 {
     [IncludeWithSerialization]

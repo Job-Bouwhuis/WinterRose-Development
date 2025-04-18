@@ -1,15 +1,18 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.Tests;
 
 internal class BallSpawner : ObjectBehavior
 {
+    [IncludeWithSerialization]
     public Sprite Sprite { get; set; }
 
     public BallSpawner(Sprite sprite) => Sprite = sprite;
 
+    [ExcludeFromSerialization]
     public List<WorldObject> spawned = [];
 
     int balls = 0;

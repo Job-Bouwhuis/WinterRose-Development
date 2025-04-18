@@ -7,7 +7,7 @@ namespace WinterRose.AnonymousTypes;
 /// <summary>
 /// A class that creates the underlying type for an anonymous type.
 /// </summary>
-public static class AnonymousTypeTemplate
+public static class AnonymousTypeBuilderHelper
 {
     /// <summary>
     /// Creates a new type builder.

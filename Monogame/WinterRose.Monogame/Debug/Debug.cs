@@ -189,9 +189,9 @@ public static class Debug
     /// <param name="rectangle"></param>
     /// <param name="color"></param>
     /// <param name="thickness"></param>
-    public static void DrawRectangle(RectangleF rectangle, Color color, int thickness = 1)
+    public static void DrawRectangle(RectangleF rectangle, Color color, int thickness = 1, RenderSpace space = RenderSpace.World)
     {
-        CachedRectangleTexture cachedTexture = GetCachedRectangleTexture(rectangle, color, thickness);
+        CachedRectangleTexture cachedTexture = GetCachedRectangleTexture(rectangle, color, thickness, space);
         DebugDrawRequests.Add(cachedTexture);
     }
 
@@ -202,14 +202,14 @@ public static class Debug
     /// <param name="point2">end point</param>
     /// <param name="color">Color of the line</param>
     /// <param name="thickness">The thickness of the line in pixels</param>
-    public static void DrawLine(Vector2 point1, Vector2 point2, Color color, int thickness = 1)
+    public static void DrawLine(Vector2 point1, Vector2 point2, Color color, int thickness = 1, RenderSpace space = RenderSpace.World)
     {
-        DebugDrawRequests.Add(new CachedLineTexture(point1, point2, color, thickness));
+        DebugDrawRequests.Add(new CachedLineTexture(point1, point2, color, thickness, space));
     }
 
-    public static void DrawCircle(Vector2 center, float radius, Color color, int thickness = 1)
+    public static void DrawCircle(Vector2 center, float radius, Color color, int thickness = 1, RenderSpace space = RenderSpace.World)
     {
-        DebugDrawRequests.Add(new CachedCircleTexture(center, radius, color, thickness));
+        DebugDrawRequests.Add(new CachedCircleTexture(center, radius, color, thickness, space));
     }
 
     //public static void Slider(string label, Action<float> OnValueChange, float value, float min = 0, float max = 1)
@@ -252,11 +252,30 @@ public static class Debug
     //    gui.EndChild();
     //}
 
-    internal static void RenderDrawRequests(SpriteBatch batch)
+    internal static void RenderWorldSpaceDrawRequests(SpriteBatch batch)
     {
-        foreach (var request in DebugDrawRequests)
-            request?.Draw(batch);
-        DebugDrawRequests.Clear();
+        for (int i = 0; i < DebugDrawRequests.Count; i++)
+        {
+            CachedTexture? request = DebugDrawRequests[i];
+            if (request.space == RenderSpace.World)
+            {
+                request?.Draw(batch);
+                DebugDrawRequests.RemoveAt(i);
+            }
+        }
+    }
+
+    internal static void RenderScreenSpaceDrawRequests(SpriteBatch batch)
+    {
+        for (int i = 0; i < DebugDrawRequests.Count; i++)
+        {
+            CachedTexture? request = DebugDrawRequests[i];
+            if (request.space == RenderSpace.Screen)
+            {
+                request?.Draw(batch);
+                DebugDrawRequests.RemoveAt(i);
+            }
+        }
     }
 
     internal static void RenderLayout()
@@ -631,28 +650,28 @@ public static class Debug
     }
 
 
-    private record CachedLineTexture(Vector2 point1, Vector2 point2, Color color, int thickness) : CachedTexture
+    private record CachedLineTexture(Vector2 point1, Vector2 point2, Color color, int thickness, RenderSpace space) : CachedTexture(space)
     {
         public override void Draw(SpriteBatch batch)
         {
             batch.DrawLine(point1, point2, color, thickness);
         }
     }
-    private record CachedCircleTexture(Vector2 center, float radius, Color color, int thickness) : CachedTexture
+    private record CachedCircleTexture(Vector2 center, float radius, Color color, int thickness, RenderSpace space) : CachedTexture(space)
     {
         public override void Draw(SpriteBatch batch)
         {
             batch.DrawCircle(center, radius, color, thickness);
         }
     }
-    private abstract record CachedTexture()
+    private abstract record CachedTexture(RenderSpace space)
     {
         public abstract void Draw(SpriteBatch batch);
     }
 
     static List<CachedTexture> textureCache = new();
 
-    private record CachedRectangleTexture(RectangleF rectangle, int thickness, Color color) : CachedTexture
+    private record CachedRectangleTexture(RectangleF rectangle, int thickness, Color color, RenderSpace space) : CachedTexture(space)
     {
         public override void Draw(SpriteBatch batch)
         {
@@ -694,28 +713,28 @@ public static class Debug
         }
     }
 
-    private static CachedRectangleTexture GetCachedRectangleTexture(RectangleF rect, Color color, int thickness)
+    private static CachedRectangleTexture GetCachedRectangleTexture(RectangleF rect, Color color, int thickness, RenderSpace space)
     {
         // Check if the texture is already in the cache based on size, position, thickness, and color
         CachedRectangleTexture? cachedTexture = textureCache.Find(tex =>
         {
-            if (tex is not CachedRectangleTexture other)
+            if (tex is not CachedRectangleTexture rec)
                 return false;
 
-            bool isThicknessCorrect = other.thickness == thickness;
-            bool isColorCorrect = other.color == color;
+            bool isThicknessCorrect = rec.thickness == thickness;
+            bool isColorCorrect = rec.color == color;
 
             // Add position check
-            bool isPositionCorrect = other.rectangle.X == rect.X && other.rectangle.Y == rect.Y &&
-                                     other.rectangle.Width == rect.Width && other.rectangle.Height == rect.Height;
+            bool isPositionCorrect = rec.rectangle.X == rect.X && rec.rectangle.Y == rect.Y &&
+                                     rec.rectangle.Width == rect.Width && rec.rectangle.Height == rect.Height;
 
-            return isThicknessCorrect && isColorCorrect && isPositionCorrect; // Compare positions and attributes
+            return isThicknessCorrect && isColorCorrect && isPositionCorrect && tex.space == space; // Compare positions and attributes
         }) as CachedRectangleTexture;
 
         // If not found, create and add to the cache
         if (cachedTexture is null)
         {
-            cachedTexture = new CachedRectangleTexture(rect, thickness, color);
+            cachedTexture = new CachedRectangleTexture(rect, thickness, color, space);
             textureCache.Add(cachedTexture);
         }
 

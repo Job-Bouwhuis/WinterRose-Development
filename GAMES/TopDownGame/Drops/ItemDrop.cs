@@ -58,7 +58,7 @@ internal class ItemDrop : ObjectBehavior
         sprite ??= noTextureItemPlaceholder;
         obj.AttachComponent<SpriteRenderer>(sprite);
         var result = obj.AttachComponent<ItemDrop>(item);
-        world.Instantiate(obj, obj => obj.IncludeWithSceneSerialization = true);
+        world.InstantiateExact(obj);
     }
 
     protected override void Awake()

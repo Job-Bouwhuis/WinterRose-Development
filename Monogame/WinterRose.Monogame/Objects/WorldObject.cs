@@ -19,7 +19,7 @@ namespace WinterRose.Monogame;
 /// <summary>
 /// An object that exists within a <see cref="Worlds.World"/>
 /// </summary>
-[DebuggerDisplay("WorldObject: {Name}"), IncludePrivateFields]
+[DebuggerDisplay("WorldObject: {Name}")]
 public class WorldObject
 {
     /// <summary>
@@ -62,6 +62,10 @@ public class WorldObject
             if (transform.parent == null)
                 return _isActive;
             return transform.parent.owner.IsActive;
+        }
+        set
+        {
+            _isActive = value;
         }
     }
 
@@ -109,7 +113,9 @@ public class WorldObject
         }
     }
 
-    private readonly List<ObjectComponent> components = new();
+
+    [IncludeWithSerialization]
+    private List<ObjectComponent> components = new();
     private readonly List<Renderer> renderers = new();
     private readonly List<ActiveRenderer> activeRenderers = new();
 
@@ -142,7 +148,7 @@ public class WorldObject
     /// <summary>
     /// A flag that can be used to identify this object. e.g. "Player", "Enemy", "Projectile"
     /// </summary>
-    [IncludeInTemplateCreation, IncludeWithSerialization]
+    [IncludeWithSerialization]
     public string Flag { get; set; } = "";
     /// <summary>
     /// The amount of components the object has

@@ -19,6 +19,9 @@ using System.Net;
 using System.Xml;
 using System;
 using WinterRose.Serialization.Things;
+using WinterRose.WinterForge;
+using System.Text;
+using WinterRose.StaticValueModifiers;
 
 #pragma warning disable aaa
 new Programm().Start();
@@ -56,27 +59,7 @@ internal class Programm
 {
     public void Start()
     {
-        SerializationTests();
-        return;
-
-        WinterThorn script = new(
-            """
-            namespace Test.Movement
-            {
-            	class Move
-            	{
-                    function lmao
-                    {
-                        Console.WriteLine("test");
-                    }
-                }
-            }
-            """, "Test Script", "", "Me", new(0, 0, 0));
-
-        script.GenerateDocumentation(new DirectoryInfo("ThornDocs"));
-
-        Function main = script.GetInstancedClass("Test.Movement", "Move")!.Block.Functions[0];
-        main.Invoke();
+        
     }
 
     private unsafe void EncryptionTests()

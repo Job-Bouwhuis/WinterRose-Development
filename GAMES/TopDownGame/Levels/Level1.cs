@@ -96,19 +96,19 @@ internal class Level1 : WorldTemplate
         // Spawning multiple items in a circle
         int itemCount = 0;
         Vector2 center = new Vector2(500, 500);
-        float spawnRadius = 1000;
+        float spawnRadius = 2000;
 
         var loot = LootTable.WithName("box");
-
+        Random rnd = new Random();
         for (int i = 0; i < itemCount; i++)
         {
-            Vector2 spawnPos = center + RandomPointInCircle(spawnRadius);
+            Vector2 spawnPos = center + rnd.RandomPointInCircle(spawnRadius);
             ResourceItem item = (ResourceItem)loot.Generate();
             ItemDrop.Create(spawnPos, item, world);
         }
 
 
-        int enemyCount = 2;
+        int enemyCount = 0;
         spawnRadius = 1000;
 
         WinterRose.Windows.OpenConsole(false);
@@ -117,14 +117,15 @@ internal class Level1 : WorldTemplate
         for (int i = 0; i < enemyCount; i++)
         {
             Console.WriteLine($"Dispatched {i} enemies");
-            world.Instantiate(WorldObjectPrefab.Load("enemy"),
+            world.Instantiate(WorldObjectPrefab.Load("enemy", true),
                 obj =>
                 {
                     obj.Name += $"_{enemycount++}";
-                    obj.transform.position = center + RandomPointInCircle(spawnRadius);
+                    obj.transform.position = center + rnd.RandomPointInCircle(spawnRadius);
                     Enemy e = obj.FetchComponent<Enemy>()!;
                     var weaponObj = CreateEnemyPistol(w).owner;
                     e.Weapon = weaponObj.FetchComponent<Weapon>()!;
+                    e.Weapon.FireRate += new Random().NextFloat(-0.1f, 0.1f);
                     weaponObj.transform.parent = obj.transform;
                     weaponObj.transform.localPosition = new();
                     Console.WriteLine($"Created {enemycount} enemies!");
@@ -136,13 +137,6 @@ internal class Level1 : WorldTemplate
         WinterRose.Windows.CloseConsole();
 
         Application.Current.CameraIndex = 0;
-    }
-
-    public static Vector2 RandomPointInCircle(float radius)
-    {
-        float angle = new Random().NextFloat(0, MathF.PI * 2);
-        float distance = MathF.Sqrt(new Random().NextFloat(0, 1)) * radius;
-        return new Vector2(MathF.Cos(angle) * distance, MathF.Sin(angle) * distance);
     }
 
     Weapon CreatePistol(World world)

@@ -15,12 +15,12 @@ public static class AnonymousTypeBuilder
     /// <returns></returns>
     public static Type CreateNewAnonymousType(Dictionary<string, object> properties)
     {
-        var typeBuilder = AnonymousTypeTemplate.CreateTypeBuilder();
+        var typeBuilder = AnonymousTypeBuilderHelper.CreateTypeBuilder();
 
         // Define properties
         foreach (var property in properties)
         {
-            AnonymousTypeTemplate.CreateProperty(typeBuilder, property.Key, property.Value.GetType());
+            AnonymousTypeBuilderHelper.CreateProperty(typeBuilder, property.Key, property.Value.GetType());
         }
 
         return typeBuilder.CreateTypeInfo().UnderlyingSystemType;

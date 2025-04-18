@@ -697,6 +697,31 @@ namespace WinterRose
             return last + 1;
         }
         /// <summary>
+        /// finds the first unused <see cref="int"/> from a list
+        /// </summary>
+        /// <param name="list"></param>
+        /// <returns>the next avalible <see cref="int"/> from a list of type  <see cref="int"/></returns>
+        public static int NextAvalible(this IEnumerable<int>? list)
+        {
+            if (list is null)
+                return -1;
+            if (list.Count() == 0)
+                return 0;
+
+            var sorted = list.OrderBy(x => x).ToList();
+
+            int last = 0;
+            foreach (int i in sorted.Count)
+            {
+                if (sorted[i] != i)
+                {
+                    return last + 1;
+                }
+                last = i;
+            }
+            return last + 1;
+        }
+        /// <summary>
         /// finds the first unused <see cref="int"/> from a Dictionary which has a Key value of type <see cref="int"/>
         /// </summary>
         /// <returns>the next avalible <see cref="int"/> from the Dictionary of Keys of type <see cref="int"/></returns>
@@ -766,10 +791,20 @@ namespace WinterRose
             for (int i = 0; i < array.Length; i++)
             {
                 T item = array[i];
-                if (item != null)
                     action(item, i);
             }
         }
+
+        public static void Foreach<T>(this IEnumerable<T> array, Action<T, int> action)
+        {
+            int size = array.Count();
+            for (int i = 0; i < size; i++)
+            {
+                T item = array.ElementAt(i);
+                    action(item, i);
+            }
+        }
+
         /// <summary>
         /// executes the given action on every entry in the Enumerable
         /// </summary>

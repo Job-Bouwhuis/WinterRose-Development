@@ -5,6 +5,7 @@ using System.Text;
 using WinterRose.Serialization;
 using System.Linq;
 using System;
+using System.Collections.ObjectModel;
 
 namespace WinterRose.AnonymousTypes;
 
@@ -15,6 +16,8 @@ public class AnonymousObjectReader : DynamicObject
 {
     private readonly Dictionary<string, object> map = [];
     private readonly Dictionary<string, AnonymousMethod> methods = new();
+
+    public Dictionary<string, object> DataMembers => map;
 
     /// <summary>
     /// Gets the dynamic member names.

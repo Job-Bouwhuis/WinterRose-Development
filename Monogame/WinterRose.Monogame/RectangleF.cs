@@ -118,7 +118,7 @@ namespace WinterRose.Monogame
             Y = 0;
         }
 
-        public RectangleF(Vector2 location, Vector2I size) : this()
+        public RectangleF(Vector2 location, Vector2 size) : this()
         {
             X = location.X;
             Y = location.Y;

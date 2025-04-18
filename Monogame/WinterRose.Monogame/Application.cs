@@ -128,14 +128,14 @@ public abstract class Application : Game, IDisposable
         {
             base.EndDraw();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             MonoUtils.Graphics.SetRenderTarget(null);
             try
             {
                 base.EndDraw();
             }
-            catch (Exception ee)
+            catch (Exception)
             {
                 Debug.AllowThrow = true;
                 throw;

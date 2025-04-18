@@ -31,6 +31,9 @@
     <None Update="Content\WorldTemplates\demotemplate.MonoWorld">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="opcodes.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="ThornScripts\Movement.thn">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

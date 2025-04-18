@@ -42,9 +42,10 @@ public static class MonoUtils
     {
         get
         {
-            return Environment.GetCommandLineArgs()[1..];
+            return Environment.GetCommandLineArgs();
         }
     }
+
     /// <summary>
     /// The main game instance. This is <b>NOT</b> intended to 
     /// </summary>
@@ -670,13 +671,28 @@ public static class MonoUtils
     /// Gets a random vector2 with the given min and max values
     /// </summary>
     /// <param name="random"></param>
-    /// <param name="min"></param>
-    /// <param name="max"></param>
     /// <returns></returns>
     public static Vector2 NextVector2(this Random random, Vector2 minmaxX, Vector2 minmaxY)
     {
         return new(random.NextFloat(minmaxX.X, minmaxX.Y), random.NextFloat(minmaxY.X, minmaxY.Y));
     }
+
+    /// <summary>
+    /// Gets the parameter with the specified name. or null if it doesnt exist
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="e"></param>
+    /// <param name="paramName"></param>
+    /// <returns></returns>
+    public static EffectParameter? GetParameter(this Effect e, string paramName)
+    {
+        foreach(EffectParameter? param in e.Parameters)
+            if(param.Name == paramName)
+                return param;
+        return null;
+    }
+
+
     /// <summary>
     /// Gets a random vector2 with the given min and max values
     /// </summary>
@@ -931,6 +947,13 @@ public static class MonoUtils
 
     internal static void Activated() => OnApplicationFocusGained();
     internal static void Deactivated() => OnApplicationFocusLost();
+
+    public static Vector2 RandomPointInCircle(this Random random, float radius)
+    {
+        float angle = random.NextFloat(0, MathF.PI * 2);
+        float distance = MathF.Sqrt(random.NextFloat(0, 1)) * radius;
+        return new Vector2(MathF.Cos(angle) * distance, MathF.Sin(angle) * distance);
+    }
 
     /// <summary>
     /// Creates a <see cref="Namespace"/> for use in the <see cref="WinterThorn"/> scripting language.

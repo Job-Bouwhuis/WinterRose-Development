@@ -138,7 +138,7 @@ public sealed class World : IEnumerable<WorldObject>
 
         template.Build(this);
     }
-    
+
     /// <summary>
     /// Creates a new world from the given template type
     /// </summary>
@@ -169,17 +169,12 @@ public sealed class World : IEnumerable<WorldObject>
     /// </summary>
     public void SaveTemplate()
     {
-        while (nextToSpawn.TryTake(out var newObj))
-        {
-            objects.Add(newObj.obj);
-            if (newObj.configure is not null)
-                newObj.configure(newObj.obj);
-        }
+        HandleNewToAdd();
 
         World savingWorld = new World(Name);
-        foreach(var obj in objects)
+        foreach (var obj in objects)
         {
-            if(obj.IncludeWithSceneSerialization)
+            if (obj.IncludeWithSceneSerialization)
                 savingWorld.objects.Add(obj);
         }
 
@@ -196,12 +191,7 @@ public sealed class World : IEnumerable<WorldObject>
     /// </summary>
     public void WakeWorld()
     {
-        while (nextToSpawn.TryTake(out var newObj))
-        {
-            objects.Add(newObj.obj);
-            if (newObj.configure is not null)
-                newObj.configure(newObj.obj);
-        }
+        HandleNewToAdd();
 
         foreach (var obj in objects)
             obj.WakeObject();
@@ -296,19 +286,7 @@ public sealed class World : IEnumerable<WorldObject>
             runOnce = false;
         }
 
-        while (nextToSpawn.TryTake(out var newObj))
-        {
-            objects.Add(newObj.obj);
-            if (newObj.configure is not null)
-                newObj.configure(newObj.obj);
-            if (Initialized)
-            {
-                newObj.obj.WakeObject();
-                newObj.obj.StartObject();
-            }
-
-        }
-
+        HandleNewToAdd();
 
         if (rebuildParallelHelper)
         {
@@ -368,9 +346,41 @@ public sealed class World : IEnumerable<WorldObject>
         }
     }
 
+    private void HandleNewToAdd()
+    {
+        List<NewObj> unreadObjects = [];
+        while (nextToSpawn.TryTake(out var newObj))
+        {
+            WorldObject toAdd;
+
+            if (newObj is NewObjPrefab fab)
+            {
+                if (!fab.fab.HasLoaded)
+                {
+                    unreadObjects.Add(fab);
+                    continue;
+                }
+                toAdd = fab.fab.LoadedObject;
+            }
+            else
+                toAdd = newObj.obj;
+
+            objects.Add(toAdd);
+            if (newObj.configure is not null)
+                newObj.configure(toAdd);
+            if (Initialized)
+            {
+                toAdd.WakeObject();
+                toAdd.StartObject();
+            }
+        }
+
+        unreadObjects.Foreach(nextToSpawn.Add);
+    }
+
     private void DoDestroyObject(WorldObject obj)
     {
-        if(obj.transform is not null)
+        if (obj.transform is not null)
         {
             foreach (var kid in obj.transform) // destroy object children recursively
                 DoDestroyObject(kid.owner);
@@ -381,7 +391,7 @@ public sealed class World : IEnumerable<WorldObject>
 
         objects.Remove(obj);
 
-        if(Initialized)
+        if (Initialized)
             WorldChunkGrid.Remove(obj);
     }
 
@@ -465,21 +475,12 @@ public sealed class World : IEnumerable<WorldObject>
                 Universe.StartNoCameraSpritebatch(batch);
                 var objs = RenderWorld(batch);
 
-                batch.End();
-
-                RenderTarget2D targetUI = GetRenderTarget();
-                MonoUtils.Graphics.SetRenderTarget(targetUI);
-                MonoUtils.Graphics.Clear(new Color(0, 0, 0, 0));
-
-                batch.Begin(SpriteSortMode.FrontToBack);
-
                 foreach (var obj in objs)
                     obj.Render(batch);
-
                 batch.End();
 
                 MonoUtils.Graphics.SetRenderTarget(null);
-                return (targetWorld, targetUI);
+                return (targetWorld, null);
             }
             else
                 renderTarget = null;
@@ -494,21 +495,19 @@ public sealed class World : IEnumerable<WorldObject>
 
             batch.End();
 
-            RenderTarget2D UItarget = GetRenderTarget();
+            RenderTarget2D? UItarget = null;
+
+            UItarget = GetRenderTarget();
             MonoUtils.Graphics.SetRenderTarget(UItarget);
             MonoUtils.Graphics.Clear(new Color(0, 0, 0, 0));
+            batch.Begin(SpriteSortMode.FrontToBack);
 
-            if (UIObjects.Count > 0)
-            {
-                batch.Begin(SpriteSortMode.FrontToBack);
+            foreach (var obj in UIObjects)
+                obj.Render(batch);
 
-                foreach (var obj in UIObjects)
-                    obj.Render(batch);
+            Debug.RenderScreenSpaceDrawRequests(batch);
 
-                batch.End();
-            }
-            else
-                UItarget = null;
+            batch.End();
 
             MonoUtils.Graphics.SetRenderTarget(null);
 
@@ -612,13 +611,13 @@ public sealed class World : IEnumerable<WorldObject>
         }
 
         Primitives2D.CommitDraw(batch);
-        Debug.RenderDrawRequests(batch);
+        Debug.RenderWorldSpaceDrawRequests(batch);
         return UIObjects;
     }
 
     private void CommitKids(WorldObject parent, List<WorldObject> list)
     {
-        if(parent == null)
+        if (parent == null)
         {
             return;
         }
@@ -651,7 +650,7 @@ public sealed class World : IEnumerable<WorldObject>
             InstantiateExact(o.owner);
         }
 
-        if(Initialized)
+        if (Initialized)
         {
             obj.WakeObject();
             obj.StartObject();
@@ -708,11 +707,17 @@ public sealed class World : IEnumerable<WorldObject>
             nextToSpawn.Add(new(obj, configureObj));
         }
 
-        foreach(var o in obj.transform)
+        foreach (var o in obj.transform)
         {
             InstantiateExact(o.owner);
         }
     }
 
+    public void SchedulePrefabSpawn(WorldObjectPrefab fab, Action<WorldObject> configureObj = null)
+    {
+        nextToSpawn.Add(new NewObjPrefab(fab, configureObj));
+    }
+
     private record NewObj(WorldObject obj, Action<WorldObject>? configure);
+    private record NewObjPrefab(WorldObjectPrefab fab, Action<WorldObject>? configure) : NewObj(null, configure);
 }

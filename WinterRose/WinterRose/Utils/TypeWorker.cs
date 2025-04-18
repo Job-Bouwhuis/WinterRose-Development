@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using WinterRose.StaticValueModifiers.BuildInValueProviders;
 
 namespace WinterRose
 {
@@ -120,11 +121,32 @@ namespace WinterRose
 
         public static Type[] FindTypesWithInterface<T>()
         {
+            Type target = typeof(T);
             List<Type> types = new();
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
+            assemblies = [typeof(TypeWorker).Assembly];
             //see if the type matches the type name, and exists within the same namespace as given with the parameter
-            assemblies.Foreach(x => x.GetTypes().Where(t => t.GetInterfaces().Any(i => i == typeof(T))).Foreach(t => types.Add(t)));
+            foreach (var assembly in assemblies)
+            {
+                // Get all types from the current assembly
+                var typesInAssembly = assembly.GetTypes();
+                typesInAssembly = [typeof(DateOnlyValueProvider)];
+                foreach (var type in typesInAssembly)
+                {
+                    var interfaces = type.GetInterfaces();
+                    bool implements = false;
+                    foreach (var i in interfaces)
+                    {
+                        if(i.IsAssignableFrom(target))
+                        {
+                            implements = true;
+                        }
+                    }
+                    if (implements)
+                        types.Add(type);
+                }
+            }
+
             return [.. types];
         }
 
