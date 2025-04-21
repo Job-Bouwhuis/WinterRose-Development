@@ -181,7 +181,7 @@ namespace WinterRose.WinterForge
             {
                 foreach (char c in remainingOnLine)
                 {
-                    int res = ToBeNamed(ref insideFunction, currentElement, ref collectingDefinition, ref depth, ref listDepth, c);
+                    int res = handleChar(ref insideFunction, currentElement, ref collectingDefinition, ref depth, ref listDepth, c);
                     if (res == -1)
                         return;
                 }
@@ -192,7 +192,7 @@ namespace WinterRose.WinterForge
             // If we exit the loop without finding a closing bracket, throw an error
             throw new Exception("Expected ']' to close list.");
 
-            void EmitElement()
+            void emitElement()
             {
                 if (currentElement.Length > 0)
                 {
@@ -203,7 +203,7 @@ namespace WinterRose.WinterForge
                         lineBuffer.Push(new LineQueue<string>());
                         var lines = currentElementString.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                         foreach (var line in lines) // reverse because we're using a queue (FIFO)
-                            lineBuffer.Peek().Enqueue(line.Trim());
+                            lineBuffer.Peek().Enqueue(line.Trim() + '\n');
 
                         currentLine = ReadNonEmptyLine();
                         ParseObjectOrAssignment();
@@ -215,7 +215,7 @@ namespace WinterRose.WinterForge
                 }
             }
 
-            int ToBeNamed(ref bool insideFunction, StringBuilder currentElement, ref bool collectingDefinition, ref int depth, ref int listDepth, char? currentChar)
+            int handleChar(ref bool insideFunction, StringBuilder currentElement, ref bool collectingDefinition, ref int depth, ref int listDepth, char? currentChar)
             {
                 char character = currentChar.Value;
 
@@ -257,7 +257,7 @@ namespace WinterRose.WinterForge
                         currentElement.Append("\n]");
                         return 1;
                     }
-                    EmitElement();
+                    emitElement();
                     return 1;
                 }
 
@@ -274,7 +274,7 @@ namespace WinterRose.WinterForge
                         currentElement.Append("\n]");
                         return 1;
                     }
-                    EmitElement();
+                    emitElement();
                     lineBuffer.Pop();
                     WriteLine("LIST_END");
                     if (listDepth == 0)
