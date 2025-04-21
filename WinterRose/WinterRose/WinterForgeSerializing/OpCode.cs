@@ -1,4 +1,4 @@
-﻿namespace WinterRose.WinterForge
+﻿namespace WinterRose.WinterForgeSerializing
 {
     public enum OpCode
     {

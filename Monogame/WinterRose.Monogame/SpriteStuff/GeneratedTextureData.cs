@@ -4,7 +4,10 @@ using System;
 
 namespace WinterRose.Monogame;
 
-internal class GeneratedTextureData
+/// <summary>
+/// A data class that holds some information about a runtime created texture. Used for serialization
+/// </summary>
+public class GeneratedTextureData
 {
     public string Name;
     public int Width;

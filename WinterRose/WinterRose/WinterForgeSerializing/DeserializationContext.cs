@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace WinterRose.WinterForge
+namespace WinterRose.WinterForgeSerializing
 {
     public class DeserializationContext
     {

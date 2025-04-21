@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.WinterForge
+namespace WinterRose.WinterForgeSerializing
 {
     /// <summary>
     /// Notifies <see cref="WinterForge"/> not to cache this object duing serialization

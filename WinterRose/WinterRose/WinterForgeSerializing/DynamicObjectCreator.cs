@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using WinterRose.Reflection;
 using WinterRose.Serialization;
 
-namespace WinterRose.WinterForge
+namespace WinterRose.WinterForgeSerializing
 {
     public class DynamicObjectCreator
     {
@@ -42,9 +42,7 @@ namespace WinterRose.WinterForge
                 if (!first)
                     s += ", ";
                 if (arg is not string)
-                {
                     s += arg.GetType().Name;
-                }
                 else
                     s += arg;
 
@@ -57,33 +55,21 @@ namespace WinterRose.WinterForge
         {
             // If the argument is already the target type or derived from it, it's a match
             if (targetType.IsAssignableFrom(argument.GetType()))
-            {
                 return true;
-            }
 
             // Handle cases for primitive types like int, float, and double
             if (targetType == typeof(int) && argument is string str && int.TryParse(str, out _))
-            {
                 return true;
-            }
             if (targetType == typeof(float) && argument is string s && float.TryParse(s, out _))
-            {
                 return true;
-            }
             if (targetType == typeof(double) && argument is string ss && double.TryParse(ss, out _))
-            {
                 return true;
-            }
 
             // If a numeric value is passed (like 50), and we're checking for integer/float/double compatibility
-            if (argument is double dblArg && targetType == typeof(int) && (Math.Abs(dblArg - Math.Round(dblArg)) < 0.01))
-            {
+            if (argument is double dblArg && targetType == typeof(int) && Math.Abs(dblArg - Math.Round(dblArg)) < 0.01)
                 return true;
-            }
-            if (argument is float fltArg && targetType == typeof(int) && (Math.Abs(fltArg - Math.Round(fltArg)) < 0.01))
-            {
+            if (argument is float fltArg && targetType == typeof(int) && Math.Abs(fltArg - Math.Round(fltArg)) < 0.01)
                 return true;
-            }
 
             // For now, just handle some basic cases
             return false;
@@ -99,9 +85,7 @@ namespace WinterRose.WinterForge
                 if (argument is string s)
                 {
                     if (int.TryParse(s, out var intResult))
-                    {
                         resolvedArguments.Add(intResult); // Integer
-                    }
                     else if (float.TryParse(s, out var floatResult))
                     {
                         resolvedArguments.Add(floatResult); // Float

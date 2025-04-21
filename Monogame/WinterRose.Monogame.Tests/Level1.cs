@@ -1,11 +1,14 @@
 ﻿using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json.Serialization;
 using WinterRose.Monogame.StatusSystem;
 using WinterRose.Monogame.Tests;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 using WinterRose.WinterForge;
+using WinterRose.WinterForge.Formatting;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.Monogame.DamageSystem.Tests;
 
@@ -26,16 +29,12 @@ internal class Level1 : WorldTemplate
         world.CreateObject<SmoothCameraFollow>("cam", player.transform);
 
         Application.Current.CameraIndex = 0;
-
-        ObjectSerializer serializer = new();
-        serializer.SerializeToFile(world, "SavedWorld.txt");
-
-        List<Instruction> instructions;
-        using (Stream reader = File.OpenRead("SavedWorld.txt"))
+        using (Stream serialized = new MemoryStream())
         using (Stream opcodes = new FileStream("SavedWorldCodes.txt", FileMode.Create, FileAccess.ReadWrite))
         {
-            new HumanReadableParser().Parse(reader, opcodes);
-            instructions = InstructionParser.ParseInstructions(opcodes);
+            ObjectSerializer serializer = new();
+            serializer.Serialize(world, serialized);
+            new HumanReadableParser().Parse(serialized, opcodes);
         }
     }
 }

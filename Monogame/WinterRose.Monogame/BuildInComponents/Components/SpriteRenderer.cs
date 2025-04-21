@@ -118,7 +118,6 @@ public sealed class SpriteRenderer : Renderer
     public override void Render(SpriteBatch batch)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
-
         Rectangle original = MonoUtils.Graphics.ScissorRectangle;
         if (ClipMask is not null && Camera.current is not null)
         {

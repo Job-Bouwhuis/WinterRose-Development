@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace WinterRose.WinterForge
+namespace WinterRose.WinterForgeSerializing
 {
     public static class InstructionParser
     {
-        public static List<Instruction> ParseInstructions(Stream stream)
+        public static List<Instruction> ParseOpcodes(Stream stream)
         {
             var instructions = new List<Instruction>();
 
@@ -57,7 +57,11 @@ namespace WinterRose.WinterForge
                 if (c == '"')
                 {
                     insideQuotes = !insideQuotes;
-                    sb.Append(c);
+                    if (!insideQuotes && sb.Length == 0)
+                    {
+                        tokens.Add("");
+                        continue;
+                    }
                 }
                 else if (char.IsWhiteSpace(c) && !insideQuotes)
                 {

@@ -6,20 +6,18 @@ using System.Threading.Tasks;
 using TopDownGame.Inventories;
 using WinterRose.Monogame;
 using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TopDownGame.CustomSerializers
 {
-    class InventorySerializer : CustomSerializer<Inventory>
+    class InventorySerializer : CustomValueProvider<Inventory>
     {
-        public override object Deserialize(string data, int depth)
+        public override Inventory? CreateObject(string value, InstructionExecutor executor) => AssetDatabase.LoadAsset<Inventory>(value);
+        public override string CreateString(Inventory inv, ObjectSerializer serializer)
         {
-            return AssetDatabase.LoadAsset<Inventory>(data);
-        }
-
-        public override string Serialize(object obj, int depth)
-        {
-            ((Inventory)obj).Save();
-            return ((Inventory)obj).Name;
+            inv.Save();
+            return inv.Name;
         }
     }
 }

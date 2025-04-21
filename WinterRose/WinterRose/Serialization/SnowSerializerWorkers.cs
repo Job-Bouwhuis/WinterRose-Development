@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
-using WinterRose.AnonymousObjectStuff;
 using WinterRose.AnonymousTypes;
 using WinterRose.Encryption;
 using WinterRose.Serialization.Things;

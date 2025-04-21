@@ -11,6 +11,7 @@ internal class BallSpawner : ObjectBehavior
     public Sprite Sprite { get; set; }
 
     public BallSpawner(Sprite sprite) => Sprite = sprite;
+    private BallSpawner() { } // for serialization
 
     [ExcludeFromSerialization]
     public List<WorldObject> spawned = [];

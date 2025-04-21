@@ -11,6 +11,7 @@ using WinterRose.Encryption;
 using WinterRose.FileManagement;
 using WinterRose.Monogame.Worlds;
 using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.Monogame;
 
@@ -31,12 +32,13 @@ public sealed class WorldObjectPrefab : Prefab
     /// For serializing
     /// </summary>
     private WorldObjectPrefab() : base("") { }
-    public WorldObjectPrefab(string name, bool multithread = false) : base(name) 
+    public WorldObjectPrefab(string name, bool loadImmediate = true, bool multithread = false) : base(name) 
     {
-        Load(multithread);
+        if(File.File.Exists && loadImmediate)
+            Load(multithread);
     }
 
-    public WorldObjectPrefab(string name, WorldObject obj, bool immediateAutoSave = true) : this(name)
+    public WorldObjectPrefab(string name, WorldObject obj, bool immediateAutoSave = true) : this(name, false)
     {
         LoadedObject = obj;
 
@@ -99,27 +101,22 @@ public sealed class WorldObjectPrefab : Prefab
         {
             objectLoadTask = Task.Run(() =>
             {
-                string content;
                 while (true)
                 {
                     try
                     {
-                        content = File.ReadContent();
-                        break;
+                        obj = WinterForge.DeserializeFromFile<WorldObject>(File.File.FullName);
                     }
                     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                     {
                         System.Diagnostics.Debug.Write("Read failure: " + FileManager.PathFrom(File.File.FullName, "Content"));
                     }
                 }
-                var obj = SnowSerializer.Deserialize<WorldObject>(content, serializerSettings);
-                this.obj = obj;
             });
         }
         else
         {
-            string content = File.ReadContent();
-            LoadedObject = SnowSerializer.Deserialize<WorldObject>(content, serializerSettings);
+            obj = WinterForge.DeserializeFromFile<WorldObject>(File.File.FullName);
         }
     }
 
@@ -128,8 +125,7 @@ public sealed class WorldObjectPrefab : Prefab
     /// </summary>
     public override void Save()
     {
-        string templateData = SnowSerializer.Serialize(LoadedObject, serializerSettings);
-        File.WriteContent(templateData, true);
+        WinterForge.SerializeToFile(LoadedObject, File.File.FullName);
     }
 
     /// <summary>

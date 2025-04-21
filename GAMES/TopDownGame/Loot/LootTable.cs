@@ -23,11 +23,10 @@ namespace TopDownGame.Loot
         private LootTable(string name) : base(name)
         {
         }
+        public override void Unload() => Table.Clear();
 
         public override void Load() => Table = SnowSerializer.Deserialize<LootTable>(File.ReadContent(),
                 new() { IncludeType = true }).Result.Table;
-
-        public override void Unload() => Table.Clear();
 
         public override void Save() => File.WriteContent(SnowSerializer.Serialize(this,
                 new() { IncludeType = true }), true);

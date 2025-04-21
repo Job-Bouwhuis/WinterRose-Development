@@ -3,10 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.WinterForge
+namespace WinterRose.WinterForgeSerializing
 {
     public class HumanReadableParser
     {
@@ -14,7 +15,7 @@ namespace WinterRose.WinterForge
         private StreamWriter writer = null!;
         private string? currentLine;
         private int depth = 0;
-        private readonly Stack<LineQueue<string>> lineBuffer = new();
+        private readonly Stack<OverridableStack<string>> lineBuffers = new();
 
         public void Parse(Stream input, Stream output)
         {
@@ -123,14 +124,13 @@ namespace WinterRose.WinterForge
                 if (line == "}")
                 {
                     depth--;
+
                     WriteLine($"END {id}");
                     return;
                 }
 
                 if (line.Contains('=') && line.EndsWith(";"))
-                {
                     ParseAssignment(line);
-                }
                 else if (line.Contains(':'))
                 {
                     currentLine = line;
@@ -139,7 +139,8 @@ namespace WinterRose.WinterForge
                 else if (line.Contains('['))
                 {
                     currentLine = line;
-                    ParseList();
+
+                    bool result = ParseList();
 
                     int equalsIndex = line.IndexOf('=');
                     if (equalsIndex != -1)
@@ -148,8 +149,19 @@ namespace WinterRose.WinterForge
                         if (!string.IsNullOrEmpty(name))
                             WriteLine($"SET {name} _stack()");
                     }
-                }
 
+                    if (lineBuffers.Count > 0)
+                    {
+                        if (lineBuffers.Peek().Count >= 1)
+                        {
+                            string last = lineBuffers.Peek().PeekLast();
+                            if (last.Trim() == "}")
+                                continue;
+                        }
+
+                        return;
+                    }
+                }
                 else
                 {
                     throw new Exception($"Unhandled block content: {line}");
@@ -157,14 +169,14 @@ namespace WinterRose.WinterForge
             }
         }
 
-        private void ParseList()
+        private bool ParseList()
         {
-            int typeOpen = currentLine!.IndexOf("<");
-            int typeClose = currentLine.LastIndexOf(">");
+            int typeOpen = this.currentLine!.IndexOf("<");
+            int typeClose = this.currentLine.LastIndexOf(">");
             if (typeOpen == -1 || typeClose == -1 || typeClose < typeOpen)
                 throw new Exception("Expected <TYPE1,TYPE2,...> to indicate the type(s) of the collection before [");
 
-            string types = currentLine.Substring(typeOpen + 1, typeClose - typeOpen - 1).Trim();
+            string types = this.currentLine.Substring(typeOpen + 1, typeClose - typeOpen - 1).Trim();
             WriteLine("LIST_START " + types);
 
             bool insideFunction = false;
@@ -175,21 +187,35 @@ namespace WinterRose.WinterForge
             int listDepth = 1;
             char? currentChar;
 
-            string remainingOnLine = currentLine[(typeClose + 2)..];
+            string currentLine = this.currentLine[(typeClose + 2)..];
 
+            bool lastCharWasClose = false;
             do
             {
-                foreach (char c in remainingOnLine)
+                foreach (char c in currentLine)
                 {
+                    //if (c == ']' && collectingDefinition)
+                    //{
+                    //    listDepth--;
+                    //    currentElement.Append('\n');
+                    //    if (listDepth is not 0)
+                    //    {
+                    //        currentElement.Append("]\n");
+                    //        continue;
+                    //    }
+                    //    emitElement();
+                    //    WriteLine("LIST_END");
+                    //    if (listDepth == 0)
+                    //        return true;
+                    //}
                     int res = handleChar(ref insideFunction, currentElement, ref collectingDefinition, ref depth, ref listDepth, c);
                     if (res == -1)
-                        return;
+                        return true;
                 }
-            } while ((remainingOnLine = ReadNonEmptyLine()) != null);
+                if (collectingDefinition)
+                    currentElement.Append('\n');
+            } while ((currentLine = ReadNonEmptyLine()) != null);
 
-            string tmp = currentElement.ToString();
-
-            // If we exit the loop without finding a closing bracket, throw an error
             throw new Exception("Expected ']' to close list.");
 
             void emitElement()
@@ -200,17 +226,27 @@ namespace WinterRose.WinterForge
 
                     if (currentElementString.Contains(":"))
                     {
-                        lineBuffer.Push(new LineQueue<string>());
+                        lineBuffers.Push(new OverridableStack<string>());
                         var lines = currentElementString.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                        foreach (var line in lines) // reverse because we're using a queue (FIFO)
-                            lineBuffer.Peek().Enqueue(line.Trim() + '\n');
+                        foreach (var line in lines)
+                            lineBuffers.Peek().PushEnd(line.Trim() + '\n');
 
-                        currentLine = ReadNonEmptyLine();
+                        this.currentLine = ReadNonEmptyLine();
+                        int colonIndex = this.currentLine.IndexOf(':');
+                        int braceIndex = this.currentLine.IndexOf('{');
+                        string id;
+                        if (braceIndex == -1)
+                            id = this.currentLine[colonIndex..].Trim();
+                        else
+                            id = this.currentLine.Substring(colonIndex + 1, braceIndex - colonIndex - 1).Trim();
                         ParseObjectOrAssignment();
+                        WriteLine($"ELEMENT _ref({id})");
                     }
-
-
-                    // Clear current element after processing
+                    else
+                    {
+                        currentElementString = ValidateValue(currentElementString);
+                        WriteLine("ELEMENT " + currentElementString);
+                    }
                     currentElement.Clear();
                 }
             }
@@ -226,14 +262,22 @@ namespace WinterRose.WinterForge
                 {
                     collectingDefinition = true;
                     depth++;
+                    currentElement.Append(character);
+                    return 1;
                 }
 
                 if (character == '}')
                 {
                     depth--;
-                    if (depth == 0)
-                        collectingDefinition = false;
+                    currentElement.Append(character);
 
+                    if (depth == 0)
+                    {
+                        collectingDefinition = false;
+                        emitElement();
+                        return 1;
+                    }
+                    return 1;
                 }
 
                 if (character == '(')
@@ -252,30 +296,26 @@ namespace WinterRose.WinterForge
 
                 if (!insideFunction && character == ',')
                 {
-                    if (listDepth is not 0)
-                    {
-                        currentElement.Append("\n]");
-                        return 1;
-                    }
-                    emitElement();
+                    if(!collectingDefinition)
+                        emitElement();
+                    else
+                        currentElement.Append(character);
+
                     return 1;
                 }
 
                 if (!insideFunction && character == '[')
-                {
                     listDepth++;
-                }
 
                 if (!insideFunction && character == ']')
                 {
                     listDepth--;
-                    if (listDepth is not 0)
+                    if (listDepth is not 0 || collectingDefinition)
                     {
-                        currentElement.Append("\n]");
+                        currentElement.Append("\n]\n");
                         return 1;
                     }
                     emitElement();
-                    lineBuffer.Pop();
                     WriteLine("LIST_END");
                     if (listDepth == 0)
                         return -1;
@@ -293,9 +333,17 @@ namespace WinterRose.WinterForge
             line = line.TrimEnd(';');
             int eq = line.IndexOf('=');
             string key = line[..eq].Trim();
-            string value = line[(eq + 1)..].Trim();
-
+            string value = ValidateValue(line[(eq + 1)..].Trim());
+            
             WriteLine($"SET {key} {value}");
+        }
+
+        private string ValidateValue(string value)
+        {
+            //if (value.Length >= 2 && value.StartsWith("\"") && value.EndsWith("\""))
+            //    value = value[1..^1];
+
+            return value;
         }
 
         private string? ReadNonEmptyLine()
@@ -303,16 +351,24 @@ namespace WinterRose.WinterForge
             string? line;
             do
             {
-                if (lineBuffer.Count > 0)
+                if (lineBuffers.Count > 0)
                 {
-                    line = lineBuffer.Peek().Dequeue();
-                }
-                else
-                {
-                    if (reader.EndOfStream)
+                    if ((lineBuffers.Peek()?.Count ?? 0) > 0)
+                    {
+                        line = lineBuffers.Peek().Pop();
+                        if (lineBuffers.Peek().Count == 0)
+                            lineBuffers.Pop();
+                    }
+                    else
+                    {
+                        lineBuffers.Pop();
                         return null;
-                    line = reader.ReadLine();
+                    }
+                    continue;
                 }
+                if (reader.EndOfStream)
+                    return null;
+                line = reader.ReadLine();
             } while (string.IsNullOrWhiteSpace(line));
 
             return line;
@@ -325,10 +381,10 @@ namespace WinterRose.WinterForge
 
             while (true)
             {
-                if (lineBuffer.Count > 0
-                    && lineBuffer.Peek().Count > 0)
+                if (lineBuffers.Count > 0
+                    && lineBuffers.Peek().Count > 0)
                 {
-                    string line = lineBuffer.Peek().Peek();
+                    string line = lineBuffers.Peek().Peek();
 
                     if (line.Length > 0)
                     {
@@ -336,9 +392,9 @@ namespace WinterRose.WinterForge
 
                         // Replace the line with the rest, or remove if empty
                         if (line.Length == 1)
-                            lineBuffer.Peek().Dequeue();
+                            lineBuffers.Peek().Pop();
                         else
-                            lineBuffer.Peek().InsertAt(0, line[1..]);
+                            lineBuffers.Peek().OverrideAt(0, line[1..]);
 
                         if (acceptEmptyCharsAnyway || !char.IsWhiteSpace(c.Value))
                             return c;
@@ -348,7 +404,7 @@ namespace WinterRose.WinterForge
                     else
                     {
                         // Remove empty string
-                        lineBuffer.Peek().Dequeue();
+                        lineBuffers.Peek().Pop();
                         continue;
                     }
                 }
@@ -358,9 +414,9 @@ namespace WinterRose.WinterForge
                 if (newLine == null)
                     return null;
 
-                if (lineBuffer.Count == 0)
-                    lineBuffer.Push(new());
-                lineBuffer.Peek().Enqueue(newLine);
+                if (lineBuffers.Count == 0)
+                    lineBuffers.Push(new());
+                lineBuffers.Peek().PushEnd(newLine);
             }
         }
 

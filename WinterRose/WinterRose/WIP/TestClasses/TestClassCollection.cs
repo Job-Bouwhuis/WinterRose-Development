@@ -334,7 +334,7 @@ namespace WinterRose.WIP.TestClasses
         public Klant(int id) : this() => this.id = id;
         public Klant() 
         {
-            1.Repeat(i => orders.Add(new Order()));
+            2.Repeat(i => orders.Add(new Order()));
         }
         public List<Order> orders = [];
     }
@@ -344,7 +344,7 @@ namespace WinterRose.WIP.TestClasses
         public List<dinges> dingen = [];
         public Order()
         {
-            1.Repeat(i => dingen.Add(dinges.Random()));
+            2.Repeat(i => dingen.Add(dinges.Random()));
         }
     }
 

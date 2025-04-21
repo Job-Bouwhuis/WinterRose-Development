@@ -4,11 +4,14 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Reflection;
+using WinterRose.Utils;
 
-namespace WinterRose.WinterForge
+namespace WinterRose.WinterForgeSerializing
 {
     public class InstructionExecutor
     {
@@ -23,8 +26,8 @@ namespace WinterRose.WinterForge
 
         public InstructionExecutor()
         {
-            this.context = new();
-            this.instanceIDStack = new Stack<int>();  // Initialize stack for instance IDs
+            context = new();
+            instanceIDStack = new Stack<int>();  // Initialize stack for instance IDs
         }
 
         public object Execute(List<Instruction> instructions)
@@ -111,10 +114,20 @@ namespace WinterRose.WinterForge
 
             object? value = GetArgumentValue(rawValue, member.Type, val =>
             {
+                if (member.Type.IsArray)
+                {
+                    if (member.Type.IsArray)
+                        val = ((IList)val).GetInternalArray();
+                }
+
                 member.SetValue(ref target, val);
             });
             if (value is Dispatched)
                 return; // value has been dispatched to be set later
+
+            if(member.Type.IsArray)
+                value = ((IList)value).GetInternalArray();
+
             member.SetValue(ref target, value);
         }
 
@@ -168,14 +181,14 @@ namespace WinterRose.WinterForge
 
                 case string s when s.StartsWith("_stack"):
                     var stackValue = context.ValueStack.Pop();
-                    if (stackValue is String ss)
+                    if (stackValue is string ss)
                         value = ParseLiteral(ss, desiredType);
                     else
                         value = stackValue;
 
                     break;
                 case string s when CustomValueProviderCache.Get(desiredType, out var provider):
-                    value = provider._CreateObject(s);
+                    value = provider._CreateObject(s, this);
                     break;
                 default:
                     value = ParseLiteral(arg, desiredType);
@@ -202,8 +215,10 @@ namespace WinterRose.WinterForge
             instanceIDStack.Pop();
         }
 
-        private static object ParseLiteral(string raw, Type target)
+        private static object? ParseLiteral(string raw, Type target)
         {
+            if (raw is "null")
+                return null;
             raw = raw.Replace('.', ',');
             return TypeWorker.CastPrimitive(raw, target);
         }
@@ -219,9 +234,7 @@ namespace WinterRose.WinterForge
             ValidateKeywordType(ref typeName);
             // Check if the type is already cached
             if (typeCache.TryGetValue(typeName, out Type cachedType))
-            {
                 return cachedType;
-            }
 
             Type resolvedType;
 

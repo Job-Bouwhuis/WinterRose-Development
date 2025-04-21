@@ -182,7 +182,7 @@ public static class Debug
     /// logs a texture to the debug window
     /// </summary>
     /// <param name="sprite"></param>
-    public static void Sprite(Sprite sprite) => debugSprites.Add(sprite);
+    public static void LogSprite(Sprite sprite) => debugSprites.Add(sprite);
     /// <summary>
     /// Draws a rectangle inside the game (can theoretically be used for actual game rendering, but is intended for debugging purposes)
     /// </summary>

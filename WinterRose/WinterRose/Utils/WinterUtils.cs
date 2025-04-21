@@ -14,6 +14,7 @@ using System.Drawing;
 using System.Diagnostics;
 using System.IO;
 using WinterRose.FileManagement;
+using System.Reflection;
 
 namespace WinterRose
 {
@@ -726,6 +727,11 @@ namespace WinterRose
         /// </summary>
         /// <returns>the next avalible <see cref="int"/> from the Dictionary of Keys of type <see cref="int"/></returns>
         public static int NextAvalible<TValue>(this Dictionary<int, TValue> dict) => dict.Keys.ToList().NextAvalible();
+
+
+        private static readonly FieldInfo ITEMS_FIELD =
+        typeof(List<>).GetField("_items", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
         #region Repeat, For, and Foreach extention methods
 
         /// <summary>

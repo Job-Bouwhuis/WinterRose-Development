@@ -26,17 +26,7 @@ public class WorldObject
     /// The name of this object
     /// </summary>
     [IncludeWithSerialization]
-    public string Name
-    {
-        get
-        {
-            return name;
-        }
-        set
-        {
-            name = value;
-        }
-    }
+    public string Name { get; set; }
     /// <summary>
     /// The time it took to update all components of this object
     /// </summary>
@@ -129,8 +119,9 @@ public class WorldObject
     [ExcludeFromSerialization]
     private readonly List<Action<WorldObject, SpriteBatch>> DrawBehaviors = new();
 
-    private string name;
+    [IncludeWithSerialization]
     private long id;
+    [IncludeWithSerialization]
     private Transform _transform;
 
     /// <summary>
@@ -187,7 +178,7 @@ public class WorldObject
     public WorldObject() : this("New Object") { }
     public WorldObject(string name)
     {
-        this.name = name;
+        Name = name;
         id = WinterUtils.RandomLongID;
     }
 
@@ -628,5 +619,22 @@ public class WorldObject
     internal void _setParent(WorldObject obj)
     {
         transform._parent = obj.transform;
+    }
+
+    internal void ValidateComponents()
+    {
+        foreach(var comp in components)
+        {
+            if(comp is Renderer r)
+            {
+                if(!renderers.Contains(r))
+                    renderers.Add(r);
+            }
+            if(comp is ActiveRenderer ar)
+            {
+                if (!activeRenderers.Contains(ar))
+                    activeRenderers.Add(ar);
+            }
+        }
     }
 }

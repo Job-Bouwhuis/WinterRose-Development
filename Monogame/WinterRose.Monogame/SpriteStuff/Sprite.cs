@@ -21,7 +21,6 @@ public class Sprite
     /// <summary>
     /// The path of where the source of this sprite is. can be null if created using <see cref="MonoUtils.CreateTexture(int, int, byte[])"/> or other methods of creating a texture at runtime
     /// </summary>
-    [IncludeWithSerialization]
     public string? TexturePath
     {
         get => texturePath;
@@ -41,12 +40,16 @@ public class Sprite
 
     private Task? spriteCreationTask;
 
+    public Texture2D? BackingTexture => texture;
+
     /// <summary>
     /// The name of the sprite
     /// </summary>
     [IncludeWithSerialization]
     public string? Name { get; set; }
     [ExcludeFromSerialization] private Texture2D? texture;
+
+    [IncludeWithSerialization]
     private string? texturePath;
 
     /// <summary>
@@ -101,6 +104,10 @@ public class Sprite
         texture = new(MonoUtils.Graphics, rect.Width, rect.Height);
         texture.SetData(colors);
         TexturePath = texture.Name;
+    }
+    public static implicit operator Sprite(GeneratedTextureData data)
+    {
+        return new Sprite(data);
     }
 
     /// <summary>

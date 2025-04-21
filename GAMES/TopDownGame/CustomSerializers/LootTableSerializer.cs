@@ -7,20 +7,18 @@ using TopDownGame.Inventories;
 using TopDownGame.Loot;
 using WinterRose.Monogame;
 using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TopDownGame.CustomSerializers
 {
-    class LootTableSerializer : CustomSerializer<LootTable>
+    class LootTableSerializer : CustomValueProvider<LootTable>
     {
-        public override object Deserialize(string data, int depth)
+        public override LootTable? CreateObject(string value, InstructionExecutor executor) => AssetDatabase.LoadAsset<LootTable>(value);
+        public override string CreateString(LootTable obj, ObjectSerializer serializer)
         {
-            return AssetDatabase.LoadAsset<LootTable>(data);
-        }
-
-        public override string Serialize(object obj, int depth)
-        {
-            ((LootTable)obj).Save();
-            return ((LootTable)obj).Name;
+            obj.Save();
+            return obj.Name;
         }
     }
 }

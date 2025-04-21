@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using TopDownGame.Inventories.Base;
+using TopDownGame.Loot;
 using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Serialization;
@@ -62,12 +64,12 @@ public sealed class Inventory : Asset
         IncludeType = true,
         CircleReferencesEnabled = true
     };
-    public override void Load() => Items = SnowSerializer.Deserialize<Inventory>(File.ReadContent(), inventorySaveSettings).Result.Items;
-    public override void Save()
-    {
-        ValidateItemStacks();
-        File.WriteContent(SnowSerializer.Serialize(this, inventorySaveSettings).Result, true);
-    }
+
+    public override void Load() => Items = SnowSerializer.Deserialize<Inventory>(File.ReadContent(),
+                   new() { IncludeType = true }).Result.Items;
+
+    public override void Save() => File.WriteContent(SnowSerializer.Serialize(this,
+            new() { IncludeType = true }), true);
     public override void Unload()
     {
         Save();

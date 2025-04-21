@@ -27,12 +27,12 @@ namespace WinterRose.Monogame.Tests
                     return;
                 }
 
-                Debug.Sprite(coolerAnimations);
-                Debug.Sprite(testFile);
-                Debug.Sprite(trex);
+                Debug.LogSprite(coolerAnimations);
+                Debug.LogSprite(testFile);
+                Debug.LogSprite(trex);
                 foreach(int i in sheet.SpriteCount)
                 {
-                    Debug.Sprite(sheet[i]);
+                    Debug.LogSprite(sheet[i]);
                 }
             });
         }

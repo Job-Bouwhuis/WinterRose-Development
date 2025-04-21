@@ -212,9 +212,7 @@ public class AnonymousObjectReader : DynamicObject
             var key = keyValue[0];
             object value = keyValue[1];
             if (((string)value).Contains($"={objectDepth + 1}"))
-            {
                 reader.Add(key, Deserialize((string)value, objectDepth + 1));
-            }
             else
             {
                 var typeValue = ((string)value).Split("|", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -222,9 +220,7 @@ public class AnonymousObjectReader : DynamicObject
                 value = typeValue[1];
 
                 if (SnowSerializerHelpers.SupportedPrimitives.Contains(type))
-                {
                     value = TypeWorker.CastPrimitive(value, type);
-                }
                 else
                 {
                     MethodInfo DeserializeMethod = typeof(SnowSerializer).GetMethod("Deserialize", 1, [typeof(string), typeof(SerializerSettings)]);

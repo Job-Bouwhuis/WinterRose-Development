@@ -7,20 +7,18 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Reflection;
 using WinterRose.Serialization;
-using WinterRose;
 using System.Collections;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Reflection.Metadata;
 
-namespace WinterRose.WinterForge
+namespace WinterRose.WinterForgeSerializing
 {
     public class ObjectSerializer
     {
         private readonly Dictionary<object, int> cache = [];
-
         private int currentKey = 0;
 
-        // Serialize an object to the given stream
-        public void Serialize(object obj, Stream destinationStream, bool isRootCall)
+        private void Serialize(object obj, Stream destinationStream, bool isRootCall)
         {
             if (isRootCall)
             {
@@ -59,14 +57,15 @@ namespace WinterRose.WinterForge
 
             if (CustomValueProviderCache.Get(objType, out var provider))
             {
-                WriteToStream(destinationStream, provider._CreateString(obj));
+                WriteToStream(destinationStream, provider._CreateString(obj, this));
                 return;
             }
 
             // Write the type and an index for the object
-            WriteToStream(destinationStream, $"{objType.FullName} : {key} {{\n");
 
-            // Use reflection to get properties and fields and serialize them
+            string name = GetTypeName(objType);
+
+            WriteToStream(destinationStream, $"{name} : {key} {{\n");
             var helper = new ReflectionHelper(ref obj);
 
             // dont cache the object if it doesnt wish to be cached. or is a struct
@@ -75,17 +74,32 @@ namespace WinterRose.WinterForge
                     cache.Add(obj, key);
 
             SerializePropertiesAndFields(obj, helper, destinationStream);
-
             WriteToStream(destinationStream, "}\n");
 
             if (isRootCall)
-            {
                 WriteToStream(destinationStream, "\n\nreturn " + key);
-            }
             destinationStream.Flush();
         }
 
-        // Serialize properties and fields of an object directly to the stream
+        private string GetTypeName(Type t)
+        {
+            if (!t.IsGenericType)
+                return t.FullName ?? t.Name;
+
+            string mainTypeName = t.GetGenericTypeDefinition().FullName!;
+            mainTypeName = mainTypeName[..mainTypeName.IndexOf('`')]; // remove `N
+
+            Type[] genericArgs = t.GetGenericArguments();
+            string[] genericNames = new string[genericArgs.Length];
+            for (int i = 0; i < genericArgs.Length; i++)
+            {
+                genericNames[i] = GetTypeName(genericArgs[i]); // recursive call for nested generics
+            }
+
+            return $"{mainTypeName}<{string.Join(", ", genericNames)}>";
+        }
+
+
         private void SerializePropertiesAndFields(object obj, ReflectionHelper rh, Stream destinationStream)
         {
             Type objType = obj.GetType();
@@ -95,8 +109,6 @@ namespace WinterRose.WinterForge
             bool hasIncludeAllPrivateFields =
                 objType.GetCustomAttributes<IncludePrivateFieldsAttribute>().FirstOrDefault() is not null;
 
-
-
             // Serialize properties
             var members = rh.GetMembers();
             foreach (var member in members)
@@ -104,7 +116,7 @@ namespace WinterRose.WinterForge
                 if (member.IsStatic)
                     continue;
                 if (!member.CanWrite)
-                    continue; // ignore unwritable members, cant restore them anyway
+                    continue; // ignore unwritable members, can't restore them anyway
                 if (!member.IsPublic)
                 {
                     if (!member.Attributes.Any(x => x is IncludeWithSerializationAttribute) && !hasIncludeAllPrivateFields)
@@ -121,15 +133,11 @@ namespace WinterRose.WinterForge
                         continue;
                 }
 
-
-                // if value cant be written to, dont bother saving its value. cant be restored anyway
+                // Commit the value to the stream with proper formatting
                 if (member.CanWrite)
-                {
                     CommitValue(obj, destinationStream, member);
-                }
             }
         }
-
         private void CommitValue(object obj, Stream destinationStream, MemberData member)
         {
             object value = member.GetValue(obj);
@@ -158,14 +166,45 @@ namespace WinterRose.WinterForge
                 }
             }
 
+            if (isDecimalNumber(serializedString))
+                serializedString = serializedString.Replace(',', '.');
+
             WriteToStream(destinationStream, $"{member.Name} = {serializedString}");
             if (!serializedString.Contains('['))
-            {
                 WriteToStream(destinationStream, ";\n");
-            }
         }
-
-        // Serialize individual values directly, handling nested objects
+        private bool isDecimalNumber(string serializedString)
+        {
+            bool lastDigit = false;
+            bool expectNextIsPlus = false;
+            foreach (char c in serializedString)
+            {
+                if (expectNextIsPlus)
+                    if (c == '+')
+                    {
+                        expectNextIsPlus = false;
+                        continue;
+                    }
+                    else
+                        return false;
+                if (char.IsDigit(c))
+                {
+                    lastDigit = true;
+                    continue;
+                }
+                else if (c == ',' || c == '.')
+                {
+                    if (!lastDigit)
+                        return false;
+                }
+                else if (c == 'E')
+                    expectNextIsPlus = true;
+                else
+                    return false;
+                lastDigit = false;
+            }
+            return true;
+        }
         private string SerializeValue(object value)
         {
             if (value == null)
@@ -173,8 +212,11 @@ namespace WinterRose.WinterForge
 
             Type valueType = value.GetType();
 
+            if(value is string)
+                return $"\"{value}\"";
+
             // Check if the value is a primitive or string
-            if (valueType.IsPrimitive || value is string)
+            if (valueType.IsPrimitive)
                 return value.ToString();
 
             // Handle arrays, lists, and collections (nested objects)
@@ -185,58 +227,55 @@ namespace WinterRose.WinterForge
             // If the value is a nested object, recursively serialize it
             return RecursiveSerialization(value); // We can reuse the same serializer method for nested objects
         }
-
         private string? TryCollection(object value)
         {
-            if (value is Array array)
-            {
-                StringBuilder arrayString = new StringBuilder();
-                arrayString.Append("[");
-                foreach (var item in array)
-                {
-                    arrayString.Append(SerializeValue(item) + ", ");
-                }
-                arrayString.Append("]");
-                return arrayString.ToString();
-            }
-
-            SerializeAsAttributeINTERNAL? attr
-                = value.GetType().GetCustomAttribute<SerializeAsAttributeINTERNAL>();
-            if (attr is not null && attr.Type != typeof(IEnumerable))
+            if (value is not IEnumerable collection)
                 return null;
 
-            if (value is IEnumerable list)
+            Type valueType = value.GetType();
+
+            bool isArray = valueType.IsArray;
+
+            Type? elementType = isArray
+                ? valueType.GetElementType()
+                : valueType.IsGenericType
+                    ? valueType.GetGenericArguments()[0]
+                    : null;
+
+            // Respect custom attribute blocking serialization
+            if (!isArray)
             {
-                StringBuilder listString = new StringBuilder();
-
-                Type listType = value.GetType().GetGenericArguments()[0];
-
-                listString.Append($"<{listType.FullName}>[\n");
-                bool firstItem = true;
-                foreach (var item in list)
-                {
-                    if (!firstItem)
-                        listString.Append(",\n");
-
-                    var v = SerializeValue(item);
-                    listString.Append(v);
-                    firstItem = false;
-                }
-                listString.Append("]\n");
-                return listString.ToString();
+                SerializeAsAttributeINTERNAL? attr =
+                    valueType.GetCustomAttribute<SerializeAsAttributeINTERNAL>();
+                if (attr is not null && attr.Type != typeof(IEnumerable))
+                    return null;
             }
 
-            return null;
-        }
+            StringBuilder sb = new StringBuilder();
+            if (elementType is null)
+                sb.Append($"<System.Object>[\n");
+            else
+                sb.Append($"<{elementType.FullName}>[\n");
 
-        // Write the serialized content directly to the stream
+            bool first = true;
+            foreach (var item in collection)
+            {
+                if (!first)
+                    sb.Append("\n,\n");
+
+                sb.Append(SerializeValue(item));
+                first = false;
+            }
+
+            sb.Append("\n]\n");
+
+            return sb.ToString();
+        }
         private void WriteToStream(Stream stream, string content)
         {
             byte[] contentBytes = Encoding.UTF8.GetBytes(content);
             stream.Write(contentBytes, 0, contentBytes.Length);
         }
-
-        // Helper method to get a string representation of the serialized object
         private string RecursiveSerialization(object obj)
         {
             using (MemoryStream ms = new MemoryStream())
@@ -259,8 +298,11 @@ namespace WinterRose.WinterForge
                 return Encoding.UTF8.GetString(ms.ToArray());
             }
         }
-
-        // Helper method to directly write to a file
+        /// <summary>
+        /// Serializes the given object directly to a file
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="filePath"></param>
         public void SerializeToFile(object obj, string filePath)
         {
             using (FileStream fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
@@ -268,5 +310,11 @@ namespace WinterRose.WinterForge
                 Serialize(obj, fs, true);
             }
         }
+        /// <summary>
+        /// Serializes the given object to the given stream
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="destination"></param>
+        public void Serialize(object obj, Stream destination) => Serialize(obj, destination, true);
     }
 }

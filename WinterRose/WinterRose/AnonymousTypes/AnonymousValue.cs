@@ -128,9 +128,7 @@ public readonly struct AnonymousValue
         get
         {
             if (Value is AnonymousObjectReader reader)
-            {
                 return reader[name];
-            }
             return new("", null);
         }
     }

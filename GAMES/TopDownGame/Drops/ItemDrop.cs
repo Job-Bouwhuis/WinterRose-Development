@@ -58,6 +58,7 @@ internal class ItemDrop : ObjectBehavior
         sprite ??= noTextureItemPlaceholder;
         obj.AttachComponent<SpriteRenderer>(sprite);
         var result = obj.AttachComponent<ItemDrop>(item);
+        obj.IncludeWithSceneSerialization = true;
         world.InstantiateExact(obj);
     }
 

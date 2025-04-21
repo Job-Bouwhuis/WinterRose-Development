@@ -19,6 +19,8 @@ public static class AnonymousTypeBuilderHelper
         var moduleBuilder = assemblyBuilder.DefineDynamicModule("DynamicModule");
         var typeBuilder = moduleBuilder.DefineType("a`", TypeAttributes.Public);
 
+        typeBuilder.SetParent(typeof(Anonymous));
+
         return typeBuilder;
     }
 

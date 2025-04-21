@@ -5,20 +5,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.WinterForge
+namespace WinterRose.WinterForgeSerializing
 {
-    internal class LineQueue<T> : IEnumerable<T>
+    internal class OverridableStack<T> : IEnumerable<T>
     {
         private readonly List<T> items = new();
 
         public int Count => items.Count;
 
-        public void Enqueue(T item)
+        public void PushEnd(T item)
         {
             items.Add(item);
         }
 
-        public T Dequeue()
+        public void PushStart(T item)
+        {
+            items.Insert(0, item);
+        }
+
+        public T Pop()
         {
             if (items.Count == 0)
                 throw new InvalidOperationException("Queue is empty.");
@@ -36,12 +41,20 @@ namespace WinterRose.WinterForge
             return items[0];
         }
 
+        public T PeekLast()
+        {
+            if (items.Count == 0)
+                throw new InvalidOperationException("Queue is empty.");
+
+            return items[^1];
+        }
+
         public void Clear()
         {
             items.Clear();
         }
 
-        public void InsertAt(int index, T item)
+        public void OverrideAt(int index, T item)
         {
             if (index < 0 || index > items.Count)
                 throw new ArgumentOutOfRangeException(nameof(index));
@@ -55,6 +68,7 @@ namespace WinterRose.WinterForge
         public IEnumerator<T> GetEnumerator() => items.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
     }
 
 }

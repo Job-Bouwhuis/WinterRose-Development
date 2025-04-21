@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Diagnostics;
+using System.IO;
 using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem.Tests;
@@ -9,6 +10,7 @@ using WinterRose.Monogame.Tests;
 using WinterRose.Monogame.Tests.Scripts;
 using WinterRose.Monogame.UI;
 using WinterRose.Monogame.Worlds;
+using WinterRose.WinterForgeSerializing;
 
 internal class TestApp : Application
 {
@@ -20,6 +22,16 @@ internal class TestApp : Application
             MonoUtils.WindowResolution = new(1280, 720);
 
         Hirarchy.Show = true;
+
+        World.FromTemplate<Level1>(); // to resave
+        using (Stream opcodes = new FileStream("SavedWorldCodes.txt", FileMode.Open, FileAccess.ReadWrite))
+        {
+           
+            var instructions = InstructionParser.ParseOpcodes(opcodes);
+            World ww = (World)new InstructionExecutor().Execute(instructions);
+            return ww;
+        }
+
         return World.FromTemplate<Level1>();
 
         World w = new World("simworld");
@@ -29,7 +41,7 @@ internal class TestApp : Application
             player.AttachComponent<SpriteRenderer>(50, 50, Color.Yellow);
             player.AttachComponent<TopDownPlayerController>().transform.position = (Vector2)MonoUtils.ScreenCenter;
             player.AttachComponent<InputRotator>();
-            
+
             w.CreateObject<SmoothCameraFollow>("cam", player.transform);
 
             var wall = w.CreateObject<SpriteRenderer>("button", 25, 25, Color.Blue).owner;

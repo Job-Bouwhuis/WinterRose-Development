@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.Remoting;
 using System.Threading.Tasks;
@@ -13,6 +14,8 @@ using WinterRose.FileManagement;
 using WinterRose.Monogame.EditorMode;
 using WinterRose.Monogame.UI;
 using WinterRose.Serialization;
+using WinterRose.Monogame.TextRendering;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.Monogame.Worlds;
 
@@ -153,14 +156,7 @@ public sealed class World : IEnumerable<WorldObject>
     }
     public static World FromTemplate(string templateFile)
     {
-        string data = FileManager.Read("Content/Worlds/" + templateFile + ".world");
-        SerializerSettings settings = new SerializerSettings()
-        {
-            CircleReferencesEnabled = true,
-            IncludeType = true
-        };
-        World w = SnowSerializer.Deserialize<World>(data, settings);
-        return w;
+        return WinterForge.DeserializeFromFile<World>("Content/Worlds/" + templateFile + ".world");
     }
 
     /// <summary>
@@ -178,13 +174,7 @@ public sealed class World : IEnumerable<WorldObject>
                 savingWorld.objects.Add(obj);
         }
 
-        SerializerSettings settings = new SerializerSettings()
-        {
-            CircleReferencesEnabled = true,
-            IncludeType = true
-        };
-        string data = SnowSerializer.Serialize(savingWorld, settings);
-        FileManager.Write("Content/Worlds/" + Name + ".world", data, true);
+        WinterForge.SerializeToFile(savingWorld, "Content/Worlds/" + Name + ".world");
     }
     /// <summary>
     /// Calls the <c>Awake</c> and <c>Start</c> methods on all components on all objects that have these methods implemented
@@ -194,7 +184,10 @@ public sealed class World : IEnumerable<WorldObject>
         HandleNewToAdd();
 
         foreach (var obj in objects)
+        {
+            obj.ValidateComponents();
             obj.WakeObject();
+        }
         foreach (var obj in objects)
             obj.StartObject();
     }

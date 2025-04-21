@@ -186,15 +186,13 @@ namespace WinterRose.Reflection
 
         public void SetPropertyValue<T>(object? obj, T value)
         {
-            // Check if the property type or the value type has a compatible implicit conversion operator
-            MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(Type, value.GetType());
-
             object actualValue = value;
-
-            if (conversionMethod != null)
+            if (value != null)
             {
-                // Convert the value using the implicit operator if it exists
-                actualValue = conversionMethod.Invoke(null, new object[] { value })!;
+                MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(Type, value.GetType());
+
+                if (conversionMethod != null)
+                    actualValue = conversionMethod.Invoke(null, new object[] { value })!;
             }
 
             if (obj is null && !(Type.IsAbstract && Type.IsSealed))
@@ -216,7 +214,7 @@ namespace WinterRose.Reflection
                 actualValue = conversionMethod.Invoke(null, [value]);
             }
 
-            if(obj is null && !(Type.IsAbstract && Type.IsSealed))
+            if (obj is null && !(Type.IsAbstract && Type.IsSealed))
                 throw new Exception("Reflection helper was created type only.");
 
             if (!Type.IsByRef)
@@ -236,7 +234,7 @@ namespace WinterRose.Reflection
         /// <returns>True if the field or property has at least 1 attribute of the given type <typeparamref name="T"/></returns>
         public bool HasAttribute<T>()
         {
-            foreach(var attr in Attributes)
+            foreach (var attr in Attributes)
             {
                 if (attr is T)
                     return true;

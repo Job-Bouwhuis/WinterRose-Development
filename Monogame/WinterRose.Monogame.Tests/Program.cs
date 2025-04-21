@@ -7,15 +7,16 @@ using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
 using WinterRose;
-using WinterRose.AnonymousTypes;
 using WinterRose.FileManagement;
 using WinterRose.Monogame;
 using WinterRose.Plugins;
 using WinterRose.Reflection;
 using WinterRose.Serialization;
-using WinterRose.WinterForge;
+using WinterRose.WinterForge.Formatting;
+using WinterRose.WinterForgeSerializing;
 using WinterRose.WIP.TestClasses;
 using windows = WinterRose.Windows;
+
 
 // Get all DLL files in the directory
 var assemblyFiles = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll");
@@ -40,40 +41,49 @@ foreach (var assemblyFile in assemblyFiles)
 
 //Type t = TypeWorker.FindType("Program+<>c__DisplayClass0_0");
 
-ContainsListOfNums obj = new ContainsListOfNums();
-1.Repeat(i => obj.nums.Add(Klant.Random()));
-windows.OpenConsole();
+//ContainsListOfNums obj = new ContainsListOfNums();
+//30.Repeat(i => obj.nums.Add(Klant.Random()));
+//windows.OpenConsole();
 
-int i = 0;
-System.Diagnostics.Stopwatch execForge = new System.Diagnostics.Stopwatch();
-while (i++ < 1000)
-{
-    execForge.Restart();
-    ObjectSerializer serializer = new();
-    serializer.SerializeToFile(obj, "humanReadable.txt");
+//ObjectSerializer serializer = new();
+//serializer.SerializeToFile(obj, "humanReadable.txt");
 
-    List<Instruction> instructions;
-    using (Stream reader = File.OpenRead("humanReadable.txt"))
-    using (Stream opcodes = new FileStream("opcodes.txt", FileMode.Create, FileAccess.ReadWrite))
-    {
-        new HumanReadableParser().Parse(reader, opcodes);
-        instructions = InstructionParser.ParseInstructions(opcodes);
-    }
+//List<Instruction> instructions;
+//using (Stream reader = File.OpenRead("humanReadable.txt"))
+//using (Stream opcodes = new FileStream("opcodes.txt", FileMode.Create, FileAccess.ReadWrite))
+//{
+//    new HumanReadableParser().Parse(reader, opcodes);
 
-    using (Stream opcodes = new FileStream("opcodes.txt", FileMode.Open, FileAccess.ReadWrite))
-    {
-        instructions = InstructionParser.ParseInstructions(opcodes);
-    }
+//    reader.Seek(0, SeekOrigin.Begin);
+//    using (Stream formatted = new FileStream("humanFormatted.txt", FileMode.Create, FileAccess.ReadWrite))
+//        new HumanReadableIndenter().Process(reader, formatted);
+//}
 
-    InstructionExecutor executor = new();
-    object result = executor.Execute(instructions);
-    execForge.Stop();
-}
+//using (Stream opcodes = new FileStream("opcodes.txt", FileMode.Open, FileAccess.ReadWrite))
+//{
+//    instructions = InstructionParser.ParseInstructions(opcodes);
+//}
 
-Console.WriteLine($"\n\nEverything took:\nms: {execForge.Elapsed.TotalMilliseconds} -- nano: {execForge.Elapsed.TotalNanoseconds} ({execForge.Elapsed.TotalSeconds}s)");
-Console.WriteLine("end");
-Console.ReadLine();
-return;
+//InstructionExecutor executor = new();
+
+//int i = 0;
+//System.Diagnostics.Stopwatch execForge = new System.Diagnostics.Stopwatch();
+//while (i++ < 1000)
+//{
+//    execForge.Restart();
+
+//    object result = executor.Execute(instructions);
+//    execForge.Stop();
+//    Console.WriteLine($"\n\nEverything took:\n" +
+//        $"ms: {execForge.Elapsed.TotalMilliseconds} -- " +
+//        $"nano: {execForge.Elapsed.TotalNanoseconds} " +
+//        $"({execForge.Elapsed.TotalSeconds}s)");
+//}
+
+
+//Console.WriteLine("end");
+//Console.ReadLine();
+//return;
 
 static void DelegateSerializeTest()
 {
@@ -102,22 +112,5 @@ static void DelegateSerializeTest()
     Console.WriteLine(serialized);
 }
 
-try
-{
-    using var game = new TestApp();
-    game.Run();
-}
-catch (PluginCompilationErrorException e)
-{
-    if (Debug.AllowThrow)
-        throw;
-    windows.CloseConsole();
-    windows.MessageBox($"Plugin Compilation Error!\n\n{e.DiagnosticsString}", "Plugin Compilation Error!");
-}
-catch (Exception e)
-{
-    if (Debug.AllowThrow)
-        throw;
-    windows.CloseConsole();
-    windows.MessageBox($"Catastrophic Error!\n\n{e.GetType().Name}\n{e.Message}", "Game Crashed!");
-}
+using var game = new TestApp();
+game.Run();
