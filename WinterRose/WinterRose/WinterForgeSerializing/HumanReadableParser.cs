@@ -17,6 +17,16 @@ namespace WinterRose.WinterForgeSerializing
         private int depth = 0;
         private readonly Stack<OverridableStack<string>> lineBuffers = new();
 
+        private static readonly Dictionary<string, int> opcodeMap = Enum
+            .GetValues(typeof(OpCode))
+            .Cast<OpCode>()
+            .ToDictionary(op => op.ToString(), op => (int)op);
+
+        //    private static readonly Dictionary<string, string> opcodeMap = Enum
+        //.GetValues(typeof(OpCode))
+        //.Cast<OpCode>()
+        //.ToDictionary(op => op.ToString(), op => op.ToString());
+
         public void Parse(Stream input, Stream output)
         {
             reader = new StreamReader(input, Encoding.UTF8, leaveOpen: true);
@@ -49,8 +59,8 @@ namespace WinterRose.WinterForgeSerializing
 
                 var args = arguments.Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
                 foreach (string arg in args)
-                    WriteLine("PUSH " + arg);
-                WriteLine($"DEFINE {type} {id} {args.Length}");
+                    WriteLine($"{opcodeMap["PUSH"]} " + arg);
+                WriteLine($"{opcodeMap["DEFINE"]} {type} {id} {args.Length}");
                 depth++;
                 ParseBlock(id);
             }
@@ -67,8 +77,8 @@ namespace WinterRose.WinterForgeSerializing
 
                 var args = arguments.Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
                 foreach (string arg in args)
-                    WriteLine("PUSH " + arg);
-                WriteLine($"DEFINE {type} {id} {args.Length}");
+                    WriteLine($"{opcodeMap["PUSH"]} " + arg);
+                WriteLine($"{opcodeMap["DEFINE"]} {type} {id} {args.Length}");
             }
             // Definition: Type : ID {
             else if (line.Contains(':') && line.Contains('{'))
@@ -79,7 +89,7 @@ namespace WinterRose.WinterForgeSerializing
                 string type = line[..colonIndex].Trim();
                 string id = line.Substring(colonIndex + 1, braceIndex - colonIndex - 1).Trim();
 
-                WriteLine($"DEFINE {type} {id} 0");
+                WriteLine($"{opcodeMap["DEFINE"]} {type} {id} 0");
                 depth++;
                 ParseBlock(id);
             }
@@ -94,7 +104,7 @@ namespace WinterRose.WinterForgeSerializing
 
                 ReadNextLineExpecting("{");
 
-                WriteLine($"DEFINE {type} {id} 0");
+                WriteLine($"{opcodeMap["DEFINE"]} {type} {id} 0");
                 depth++;
 
                 ParseBlock(id);
@@ -107,7 +117,7 @@ namespace WinterRose.WinterForgeSerializing
                 string ID = line[6..new Index(trimoffEnd, true)].Trim();
                 if (string.IsNullOrWhiteSpace(ID) || !ID.All(char.IsDigit))
                     throw new Exception("Invalid ID parameter in RETURN statement");
-                WriteLine($"RET {ID}");
+                WriteLine($"{opcodeMap["RET"]} {ID}");
             }
             else
             {
@@ -125,7 +135,7 @@ namespace WinterRose.WinterForgeSerializing
                 {
                     depth--;
 
-                    WriteLine($"END {id}");
+                    WriteLine($"{opcodeMap["END"]} {id}");
                     return;
                 }
 
@@ -147,7 +157,7 @@ namespace WinterRose.WinterForgeSerializing
                     {
                         string name = line[..equalsIndex].Trim();
                         if (!string.IsNullOrEmpty(name))
-                            WriteLine($"SET {name} _stack()");
+                            WriteLine($"{opcodeMap["SET"]} {name} _stack()");
                     }
 
                     if (lineBuffers.Count > 0)
@@ -177,7 +187,9 @@ namespace WinterRose.WinterForgeSerializing
                 throw new Exception("Expected <TYPE1,TYPE2,...> to indicate the type(s) of the collection before [");
 
             string types = this.currentLine.Substring(typeOpen + 1, typeClose - typeOpen - 1).Trim();
-            WriteLine("LIST_START " + types);
+            if (string.IsNullOrWhiteSpace(types))
+                throw new Exception("Failed to parse types: " + this.currentLine);
+            WriteLine($"{opcodeMap["LIST_START"]} " + types);
 
             bool insideFunction = false;
             StringBuilder currentElement = new();
@@ -194,20 +206,6 @@ namespace WinterRose.WinterForgeSerializing
             {
                 foreach (char c in currentLine)
                 {
-                    //if (c == ']' && collectingDefinition)
-                    //{
-                    //    listDepth--;
-                    //    currentElement.Append('\n');
-                    //    if (listDepth is not 0)
-                    //    {
-                    //        currentElement.Append("]\n");
-                    //        continue;
-                    //    }
-                    //    emitElement();
-                    //    WriteLine("LIST_END");
-                    //    if (listDepth == 0)
-                    //        return true;
-                    //}
                     int res = handleChar(ref insideFunction, currentElement, ref collectingDefinition, ref depth, ref listDepth, c);
                     if (res == -1)
                         return true;
@@ -240,12 +238,12 @@ namespace WinterRose.WinterForgeSerializing
                         else
                             id = this.currentLine.Substring(colonIndex + 1, braceIndex - colonIndex - 1).Trim();
                         ParseObjectOrAssignment();
-                        WriteLine($"ELEMENT _ref({id})");
+                        WriteLine($"{opcodeMap["ELEMENT"]} _ref({id})");
                     }
                     else
                     {
                         currentElementString = ValidateValue(currentElementString);
-                        WriteLine("ELEMENT " + currentElementString);
+                        WriteLine($"{opcodeMap["ELEMENT"]} " + currentElementString);
                     }
                     currentElement.Clear();
                 }
@@ -316,7 +314,7 @@ namespace WinterRose.WinterForgeSerializing
                         return 1;
                     }
                     emitElement();
-                    WriteLine("LIST_END");
+                    WriteLine(opcodeMap["LIST_END"].ToString());
                     if (listDepth == 0)
                         return -1;
                     else return 1;
@@ -335,7 +333,7 @@ namespace WinterRose.WinterForgeSerializing
             string key = line[..eq].Trim();
             string value = ValidateValue(line[(eq + 1)..].Trim());
             
-            WriteLine($"SET {key} {value}");
+            WriteLine($"{opcodeMap["SET"]} {key} {value}");
         }
 
         private string ValidateValue(string value)

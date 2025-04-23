@@ -36,8 +36,11 @@ namespace WinterRose.WinterForgeSerializing
                 // Parse OpCode
                 // enum tryparse is slow. opt for numerical opcodes in the future
                 // when a parser exists to convert the human readable format into computer format
-                if (!Enum.TryParse(parts[0], ignoreCase: true, out OpCode opcode))
-                    throw new Exception($"Invalid opcode: {parts[0]}");
+
+                OpCode opcode = (OpCode)int.Parse(parts[0]);
+
+                //if (!Enum.TryParse(parts[0], ignoreCase: true, out OpCode opcode))
+                    //throw new Exception($"Invalid opcode: {parts[0]}");
 
                 // Add instruction
                 instructions.Add(new Instruction(opcode, parts.Skip(1).ToArray()));

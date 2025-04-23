@@ -41,7 +41,7 @@ namespace WinterRose.Serialization
     /// <summary>
     /// Tells the serializer to serialize this class as the given type, even if the serializer would normally serialize it as a different type
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = true)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
     public class SerializeAsAttribute<T> : SerializeAsAttributeINTERNAL
     {
         /// <summary>

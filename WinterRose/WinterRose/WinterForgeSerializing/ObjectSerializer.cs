@@ -18,9 +18,11 @@ namespace WinterRose.WinterForgeSerializing
         private readonly Dictionary<object, int> cache = [];
         private int currentKey = 0;
 
-        private void Serialize(object obj, Stream destinationStream, bool isRootCall)
+        internal bool ClearOnRoot { get; set; } = true;
+
+        internal void Serialize(object obj, Stream destinationStream, bool isRootCall, bool emitReturn = true)
         {
-            if (isRootCall)
+            if (isRootCall && ClearOnRoot)
             {
                 cache.Clear();
                 currentKey = 0;
@@ -76,7 +78,7 @@ namespace WinterRose.WinterForgeSerializing
             SerializePropertiesAndFields(obj, helper, destinationStream);
             WriteToStream(destinationStream, "}\n");
 
-            if (isRootCall)
+            if (isRootCall && ClearOnRoot)
                 WriteToStream(destinationStream, "\n\nreturn " + key);
             destinationStream.Flush();
         }

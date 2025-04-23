@@ -11,17 +11,19 @@ using Microsoft.Xna.Framework;
 using WinterRose.Exceptions;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework.Graphics;
-using System.Threading.Tasks;
-using System.Net.Http.Headers;
+using System.Diagnostics;
 
 namespace WinterRose.Monogame;
 
 /// <summary>
 /// Provides easy methods to write logs to the game screen at runtime, and to view details about any unhandled exception<br></br><br></br>
 /// 
-/// You can log string messages using <see cref="Log(object)"/>, <see cref="LogWarning(object)"/>, and <see cref="LogError(object)"/>. these objects will have automatic.ToString() be called on them<br></br>
+/// You can log string messages using <see cref="Log(object)"/>, <see cref="LogWarning(object, bool)"/>, and <see cref="LogError(object, bool)"/>. these objects will have automatic.ToString() be called on them<br></br>
 /// You can log an <see cref="Exception"/> using <see cref="LogException(Exception)"/> <b>NOTE:</b> this will stop your entire game and only show windows with details about the exception.
 /// </summary>
+/// <remarks>
+/// If the compiler symbol "NO_DEBUG" is defined, all but <see cref="LogException(Exception)"/> or <see cref="LogException(string)"/> will not be called by the .NET runtime
+/// </remarks>
 public static class Debug
 {
     /// <summary>
@@ -91,6 +93,7 @@ public static class Debug
     /// </summary>
     /// <param name="message"></param>
     /// <param name="percistant"></param>
+    [Conditional("NO_DEBUG")]
     public static void Log(object message, bool percistant)
     {
         string? s = message?.ToString();
@@ -104,6 +107,7 @@ public static class Debug
     /// </summary>
     /// <param name="message"></param>
     /// <param name="percistant"></param>
+    [Conditional("NO_DEBUG")]
     public static void Log(object message)
     {
         string? s = message?.ToString();
@@ -117,6 +121,7 @@ public static class Debug
     /// </summary>
     /// <param name="message"></param>
     /// <param name="percistant"></param>
+    [Conditional("NO_DEBUG")]
     public static void LogWarning(object message, bool percistant = false)
     {
         string? s = message?.ToString();
@@ -130,6 +135,7 @@ public static class Debug
     /// </summary>
     /// <param name="message"></param>
     /// <param name="percistant"></param>
+    [Conditional("NO_DEBUG")]
     public static void LogError(object message, bool percistant = false)
     {
         string? s = message?.ToString();
@@ -167,21 +173,25 @@ public static class Debug
     /// </summary>
     /// <param name="label"></param>
     /// <param name="OnClick"></param>
+    [Conditional("NO_DEBUG")]
     public static void Button(string label, Action OnClick) => debugButtons.Add(new(label, OnClick));
     /// <summary>
     /// Logs a button to the debug window
     /// </summary>
     /// <param name="button"></param>
+    [Conditional("NO_DEBUG")]
     public static void Button(DebugWindowButton button) => debugButtons.Add(button);
     /// <summary>
     /// logs a button with no action to the debug window
     /// </summary>
     /// <param name="label"></param>
+    [Conditional("NO_DEBUG")]
     public static void Button(string label) => Button(label, delegate { });
     /// <summary>
     /// logs a texture to the debug window
     /// </summary>
     /// <param name="sprite"></param>
+    [Conditional("NO_DEBUG")]
     public static void LogSprite(Sprite sprite) => debugSprites.Add(sprite);
     /// <summary>
     /// Draws a rectangle inside the game (can theoretically be used for actual game rendering, but is intended for debugging purposes)
@@ -189,6 +199,7 @@ public static class Debug
     /// <param name="rectangle"></param>
     /// <param name="color"></param>
     /// <param name="thickness"></param>
+    [Conditional("NO_DEBUG")]
     public static void DrawRectangle(RectangleF rectangle, Color color, int thickness = 1, RenderSpace space = RenderSpace.World)
     {
         CachedRectangleTexture cachedTexture = GetCachedRectangleTexture(rectangle, color, thickness, space);
@@ -202,11 +213,21 @@ public static class Debug
     /// <param name="point2">end point</param>
     /// <param name="color">Color of the line</param>
     /// <param name="thickness">The thickness of the line in pixels</param>
+    [Conditional("NO_DEBUG")]
     public static void DrawLine(Vector2 point1, Vector2 point2, Color color, int thickness = 1, RenderSpace space = RenderSpace.World)
     {
         DebugDrawRequests.Add(new CachedLineTexture(point1, point2, color, thickness, space));
     }
 
+    /// <summary>
+    /// Draws a circle
+    /// </summary>
+    /// <param name="center"></param>
+    /// <param name="radius"></param>
+    /// <param name="color"></param>
+    /// <param name="thickness"></param>
+    /// <param name="space"></param>
+    [Conditional("NO_DEBUG")]
     public static void DrawCircle(Vector2 center, float radius, Color color, int thickness = 1, RenderSpace space = RenderSpace.World)
     {
         DebugDrawRequests.Add(new CachedCircleTexture(center, radius, color, thickness, space));
@@ -648,7 +669,6 @@ public static class Debug
     {
         exceptions.Clear();
     }
-
 
     private record CachedLineTexture(Vector2 point1, Vector2 point2, Color color, int thickness, RenderSpace space) : CachedTexture(space)
     {

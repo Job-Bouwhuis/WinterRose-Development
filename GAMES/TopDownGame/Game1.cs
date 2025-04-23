@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using SpriteFontPlus;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Principal;
 using TopDownGame.Drops;
@@ -17,6 +18,7 @@ using WinterRose.Monogame;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
 
 namespace TopDownGame;
 
@@ -32,7 +34,6 @@ public class Game1 : Application
         else
             MonoUtils.WindowResolution = new(1280, 720);
 
-
         //LootTable table = LootTable.WithName("box");
         //if (table.Table.Count == 0)
         //    table.Add([
@@ -40,21 +41,8 @@ public class Game1 : Application
         //        new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
 
         //table.Save();
-
-
-
         WinterRose.Windows.OpenConsole();
-        World w = null;
-        int i = 0;
-        System.Diagnostics.Stopwatch sw = new();
-        while (i++ < 10)
-        {
-            sw.Restart();
-            w = World.FromTemplate("Level 1");
-            sw.Stop();
-            Console.WriteLine(i);
-        }
-        Console.WriteLine(sw.Elapsed.TotalMilliseconds);
+        World w = World.FromTemplate("Level 1");
         return w;
 
 
