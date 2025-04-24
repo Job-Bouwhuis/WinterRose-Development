@@ -134,7 +134,6 @@ internal class Level1 : WorldTemplate
         
 
         world.SaveTemplate();
-        WinterRose.Windows.CloseConsole();
 
         Application.Current.CameraIndex = 0;
     }

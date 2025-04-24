@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Principal;
+using System.Threading.Tasks;
 using TopDownGame.Drops;
 using TopDownGame.Enemies;
 using TopDownGame.Enemies.Movement;
@@ -34,14 +35,17 @@ public class Game1 : Application
         else
             MonoUtils.WindowResolution = new(1280, 720);
 
-        //LootTable table = LootTable.WithName("box");
-        //if (table.Table.Count == 0)
-        //    table.Add([
-        //        new(.5f, new ResourceItem() { Item = new Crystal()}, 1, 2),
-        //        new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
+        if(!AssetDatabase.AssetExists("box"))
+        {
+            LootTable table = LootTable.WithName("box");
+            if (table.Table.Count == 0)
+                table.Add([
+                    new(.5f, new ResourceItem() { Item = new Crystal()}, 1, 2),
+                new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
 
-        //table.Save();
-        WinterRose.Windows.OpenConsole();
+            table.Save();
+        }
+
         World w = World.FromTemplate("Level 1");
         return w;
 
