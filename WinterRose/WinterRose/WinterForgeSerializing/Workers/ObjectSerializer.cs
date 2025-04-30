@@ -11,7 +11,7 @@ using System.Collections;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Reflection.Metadata;
 
-namespace WinterRose.WinterForgeSerializing
+namespace WinterRose.WinterForgeSerializing.Workers
 {
     public class ObjectSerializer
     {

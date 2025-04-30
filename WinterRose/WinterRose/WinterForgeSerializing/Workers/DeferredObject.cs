@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace WinterRose.WinterForgeSerializing
+namespace WinterRose.WinterForgeSerializing.Workers
 {
     public class DeferredObject
     {

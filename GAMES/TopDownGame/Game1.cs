@@ -4,6 +4,7 @@ using SpriteFontPlus;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using TopDownGame.Drops;
@@ -20,6 +21,7 @@ using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 using WinterRose.Serialization;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Formatting;
 
 namespace TopDownGame;
 
@@ -41,8 +43,7 @@ public class Game1 : Application
             if (table.Table.Count == 0)
                 table.Add([
                     new(.5f, new ResourceItem() { Item = new Crystal()}, 1, 2),
-                new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
-
+                    new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
             table.Save();
         }
 

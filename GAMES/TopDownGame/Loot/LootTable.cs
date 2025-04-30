@@ -7,6 +7,7 @@ using TopDownGame.Inventories.Base;
 using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
 
 namespace TopDownGame.Loot
 {
@@ -25,11 +26,15 @@ namespace TopDownGame.Loot
         }
         public override void Unload() => Table.Clear();
 
-        public override void Load() => Table = SnowSerializer.Deserialize<LootTable>(File.ReadContent(),
-                new() { IncludeType = true }).Result.Table;
+        public override void Load()
+        {
+            Table = WinterForge.DeserializeFromFile<List<LootChance>>(File.File.FullName);
+        }
 
-        public override void Save() => File.WriteContent(SnowSerializer.Serialize(this,
-                new() { IncludeType = true }), true);
+        public override void Save()
+        {
+            WinterForge.SerializeToFile(Table, File.File.FullName);
+        }
 
         public static LootTable WithName(string name)
         {
@@ -44,7 +49,10 @@ namespace TopDownGame.Loot
             if (Table.Count == 0)
                 return null;
 
-            float totalWeight = Table.Sum(entry => entry.Weight);
+            float totalWeight = 0;
+            foreach (var item in Table)
+                totalWeight += item.Weight;
+
             float roll = new Random().NextFloat(0, totalWeight);
 
             float currentWeight = 0;

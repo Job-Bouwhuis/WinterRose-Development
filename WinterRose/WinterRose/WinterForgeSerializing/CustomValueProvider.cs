@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.WinterForgeSerializing
 {
@@ -25,15 +26,5 @@ namespace WinterRose.WinterForgeSerializing
 
         public abstract string CreateString(T obj, ObjectSerializer serializer);
         public abstract T? CreateObject(string value, InstructionExecutor executor);
-    }
-
-    /// <summary>
-    /// Used internally to browse types to find custom value providers
-    /// </summary>
-    public abstract class CustomValueProviderINTERNAL
-    {
-        internal abstract Type Type { get; }
-        internal abstract string _CreateString(object? obj, ObjectSerializer serializer);
-        internal abstract object? _CreateObject(string value, InstructionExecutor executor);
     }
 }

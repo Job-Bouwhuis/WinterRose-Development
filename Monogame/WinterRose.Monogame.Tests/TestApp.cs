@@ -10,7 +10,7 @@ using WinterRose.Monogame.Tests;
 using WinterRose.Monogame.Tests.Scripts;
 using WinterRose.Monogame.UI;
 using WinterRose.Monogame.Worlds;
-using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Workers;
 
 internal class TestApp : Application
 {

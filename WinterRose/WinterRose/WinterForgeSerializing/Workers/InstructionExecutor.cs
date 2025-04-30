@@ -8,10 +8,11 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose;
 using WinterRose.Reflection;
 using WinterRose.Utils;
 
-namespace WinterRose.WinterForgeSerializing
+namespace WinterRose.WinterForgeSerializing.Workers
 {
     public class InstructionExecutor
     {
@@ -65,7 +66,7 @@ namespace WinterRose.WinterForgeSerializing
                 }
             }
 
-            return context.ObjectTable.Values;
+            return context.ObjectTable.Values.ToList();
         }
 
         private void HandleEndList()

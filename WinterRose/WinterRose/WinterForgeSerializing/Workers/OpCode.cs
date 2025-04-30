@@ -1,4 +1,4 @@
-﻿namespace WinterRose.WinterForgeSerializing
+﻿namespace WinterRose.WinterForgeSerializing.Workers
 {
     public enum OpCode
     {

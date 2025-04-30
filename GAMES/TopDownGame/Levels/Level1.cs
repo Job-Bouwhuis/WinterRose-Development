@@ -218,6 +218,7 @@ internal class Level1 : WorldTemplate
         var gun = world.CreateObject("SMG");
         gun.AttachComponent<SpriteRenderer>(35, 15, Color.Orange);
         var weapon = gun.AttachComponent<Weapon>();
+        weapon.Rarity = Rarity.CreateRarity(0, "awesome", Color.Red);
         weapon.AvailableFireingMode = WeaponFireingMode.Auto | WeaponFireingMode.Burst | WeaponFireingMode.Single;
         weapon.CurrentFiringMode = WeaponFireingMode.Auto;
         weapon.IsPlayerGun = true;

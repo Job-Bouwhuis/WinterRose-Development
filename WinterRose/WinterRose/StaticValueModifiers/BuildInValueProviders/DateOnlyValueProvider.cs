@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Reflection;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.StaticValueModifiers.BuildInValueProviders
 {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace WinterRose.WinterForgeSerializing;
+namespace WinterRose.WinterForgeSerializing.Workers;
 
 internal static class CustomValueProviderCache
 {

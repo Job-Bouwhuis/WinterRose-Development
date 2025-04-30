@@ -7,7 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.WinterForgeSerializing
+namespace WinterRose.WinterForgeSerializing.Workers
 {
     public class HumanReadableParser
     {
@@ -371,7 +371,6 @@ namespace WinterRose.WinterForgeSerializing
 
             return line;
         }
-
 
         private char? ReadNonEmptyChar(bool acceptEmptyCharsAnyway)
         {

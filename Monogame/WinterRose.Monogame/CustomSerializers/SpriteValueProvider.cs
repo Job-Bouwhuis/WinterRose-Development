@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Serialization;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.Monogame.CustomSerializers
 {

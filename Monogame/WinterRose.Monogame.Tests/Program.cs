@@ -13,7 +13,7 @@ using WinterRose.Plugins;
 using WinterRose.Reflection;
 using WinterRose.Serialization;
 using WinterRose.WinterForge.Formatting;
-using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Workers;
 using WinterRose.WIP.TestClasses;
 using windows = WinterRose.Windows;
 

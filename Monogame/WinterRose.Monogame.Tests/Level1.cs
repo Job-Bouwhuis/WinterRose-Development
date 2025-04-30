@@ -8,7 +8,7 @@ using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 using WinterRose.WinterForge;
 using WinterRose.WinterForge.Formatting;
-using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.Monogame.DamageSystem.Tests;
 

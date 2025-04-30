@@ -7,6 +7,7 @@ using TopDownGame.Inventories;
 using WinterRose.Monogame;
 using WinterRose.Serialization;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Workers;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TopDownGame.CustomSerializers

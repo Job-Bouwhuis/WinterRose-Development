@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.FileManagement;
 using WinterRose.Monogame.Worlds;
 using WinterRose.SourceGeneration;
 
@@ -58,6 +59,8 @@ public abstract class Application : Game, IDisposable
         {
             if (File.Exists("Content/Font.xnb"))
                 File.Delete("Content/Font.xnb");
+            FileManager.Write("Content/w", "", true);
+            File.Delete("Content/w");
             fontFile.CopyTo("Content/Font.xnb");
         }
 

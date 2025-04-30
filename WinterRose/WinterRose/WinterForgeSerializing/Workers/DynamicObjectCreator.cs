@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using WinterRose.Reflection;
 using WinterRose.Serialization;
 
-namespace WinterRose.WinterForgeSerializing
+namespace WinterRose.WinterForgeSerializing.Workers
 {
     public class DynamicObjectCreator
     {

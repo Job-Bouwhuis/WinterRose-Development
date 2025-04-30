@@ -9,6 +9,7 @@ using TopDownGame.Loot;
 using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
 
 namespace TopDownGame.Inventories;
 
@@ -59,17 +60,15 @@ public sealed class Inventory : Asset
         }
     }
 
-    private static SerializerSettings inventorySaveSettings = new()
+    public override void Load()
     {
-        IncludeType = true,
-        CircleReferencesEnabled = true
-    };
+        Items = WinterForge.DeserializeFromFile<List<IInventoryItem>>(File.File.FullName);
+    }
 
-    public override void Load() => Items = SnowSerializer.Deserialize<Inventory>(File.ReadContent(),
-                   new() { IncludeType = true }).Result.Items;
-
-    public override void Save() => File.WriteContent(SnowSerializer.Serialize(this,
-            new() { IncludeType = true }), true);
+    public override void Save()
+    {
+        WinterForge.SerializeToFile(Items, File.File.FullName);
+    }
     public override void Unload()
     {
         Save();
