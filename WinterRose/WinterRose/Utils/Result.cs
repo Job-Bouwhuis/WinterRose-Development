@@ -16,19 +16,19 @@ namespace WinterRose
         /// <summary>
         /// The value of successful operation
         /// </summary>
-        public readonly TValue Value { get; }
+        public TValue Value { get; }
         /// <summary>
         /// The error of a failed operation
         /// </summary>
-        public readonly TError Error { get; }
+        public TError Error { get; }
         /// <summary>
         /// Whether or not the operation was a success
         /// </summary>
-        public readonly bool IsSuccess { get; }
+        public bool IsSuccess { get; }
         /// <summary>
         /// Whether or not the operation was a failure
         /// </summary>
-        public readonly bool IsFailure => !IsSuccess;
+        public bool IsFailure => !IsSuccess;
 
         /// <summary>
         /// Creates a new result as successful

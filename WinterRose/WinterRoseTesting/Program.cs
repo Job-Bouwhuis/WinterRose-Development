@@ -19,9 +19,9 @@ using System.Net;
 using System.Xml;
 using System;
 using WinterRose.Serialization.Things;
-using WinterRose.WinterForge;
 using System.Text;
 using WinterRose.StaticValueModifiers;
+using WinterRose.WinterForgeSerializing;
 
 #pragma warning disable aaa
 new Programm().Start();
@@ -59,7 +59,7 @@ internal class Programm
 {
     public void Start()
     {
-        
+        WinterForgeSerializationTests();
     }
 
     private unsafe void EncryptionTests()
@@ -261,6 +261,22 @@ HOJ:
 
             Console.WriteLine($"\n\nMemory in use after collecting...\n" +
                 $"{GC.GetTotalMemory(true)}");
+
+            Console.ReadKey();
+            Console.Clear();
+        }
+    }
+
+    private void WinterForgeSerializationTests()
+    {
+        while (true)
+        {
+            WinterForgeSerializingTest();
+
+            6.Repeat(i => GC.Collect());
+
+            Console.WriteLine($"\n\nMemory in use after collecting...\n" +
+                              $"{GC.GetTotalMemory(true)}");
 
             Console.ReadKey();
             Console.Clear();
@@ -538,6 +554,66 @@ HOJ:
         Console.WriteLine("\n\nDeserializing...");
         Stopwatch sw2 = Stopwatch.StartNew();
         List<Vector3> deserializedResult = SnowSerializer.Deserialize<List<Vector3>>(readData, settings).Result;
+        sw2.Stop();
+
+        Console.WriteLine($"Serializing took {sw1.ElapsedTicks} ticks ({sw1.ElapsedMilliseconds}ms)");
+        Console.WriteLine($"Deserializing took {sw2.ElapsedTicks} ticks ({sw2.ElapsedMilliseconds}ms)");
+
+        Console.WriteLine($"Original list count: {list.Count}");
+        Console.WriteLine($"Deserialized list count: {deserializedResult.Count}");
+        Console.WriteLine(IsSame(list, deserializedResult) ? "Lists are the same" : "Lists are not the same");
+        Console.Title = "Done...";
+
+        bool IsSame(List<Vector3> l1, List<Vector3> l2)
+        {
+            if (l1.Count != l2.Count)
+                return false;
+
+            for (int i = 0; i < l1.Count; i++)
+            {
+                Vector3 item1 = l1[i];
+                Vector3 item2 = l2[i];
+
+                if (item1.x != item2.x || item1.y != item2.y || item1.z != item2.z)
+                    return false;
+            }
+            return true;
+        }
+    }
+
+     void WinterForgeSerializingTest()
+    {
+        _ = "Input amount of objects to be serialized".StringAnimation(10).ForeachAsync(x => Console.Title = x);
+        Console.WriteLine("Input Number:");
+        string? input = Console.ReadLine();
+        List<Vector3> list = new();
+        if (input == null)
+            return;
+
+        try
+        {
+            int count = TypeWorker.CastPrimitive<int>(input);
+            "Creating object list...".StringAnimation(10).Foreach(x => Console.Title = x);
+
+            foreach (int i in count)
+            {
+                list.Add(new Vector3(i, i, i));
+                if (i % 10000 == 0)
+                    Console.Title = $"{i} objects left";
+            }
+        }
+        catch { Console.Clear(); return; }
+
+        Console.Title = $"Working on {list.Count} objects...";
+
+        Console.WriteLine("Serializing...");
+        Stopwatch sw1 = Stopwatch.StartNew();
+        WinterForge.SerializeToFile(list, "Forged.txt");
+        sw1.Stop();
+
+        Console.WriteLine("\n\nDeserializing...");
+        Stopwatch sw2 = Stopwatch.StartNew();
+        List<Vector3> deserializedResult = WinterForge.DeserializeFromFile<List<Vector3>>("Forged.txt");
         sw2.Stop();
 
         Console.WriteLine($"Serializing took {sw1.ElapsedTicks} ticks ({sw1.ElapsedMilliseconds}ms)");

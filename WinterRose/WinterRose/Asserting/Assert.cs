@@ -139,7 +139,7 @@ namespace WinterRose
         public static void InstanceOf<T>(object obj, string? message = null)
         {
             if (obj is not T)
-                throw new WinterAssertException(message ?? $"Expected {obj} to be an instance of {typeof(T)}");
+                throw new WinterAssertException(message ?? $"Expected {obj} to be an instance of {typeof(T)} but is {obj.GetType()}");
         }
         /// <summary>
         /// Asserts that an object is not an instance of a type
