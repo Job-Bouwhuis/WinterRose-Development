@@ -3,9 +3,11 @@ using Microsoft.Xna.Framework.Graphics;
 using SpriteFontPlus;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Security.Principal;
+using System.Text;
 using System.Threading.Tasks;
 using TopDownGame.Drops;
 using TopDownGame.Enemies;
@@ -46,6 +48,8 @@ public class Game1 : Application
                     new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
             table.Save();
         }
+
+        benchmark();
 
         World w = World.FromTemplate("Level 1");
         return w;
@@ -103,5 +107,79 @@ public class Game1 : Application
 
         World world = World.FromTemplate<Level1>();
         return world;
+    }
+
+    private void benchmark()
+    {
+        WinterRose.Windows.OpenConsole();
+        Console.WriteLine("Creating data files");
+        World w1 = World.FromTemplate<Level1>();
+        Console.WriteLine("Serialization speed test...");
+
+        Stopwatch serializationSW = new();
+        int i1 = 0;
+        int max1 = 1;
+
+        long bestSerializationTime = long.MaxValue;
+        long worstSerializationTime = long.MinValue;
+
+        while (i1++ < max1)
+        {
+            serializationSW.Restart();
+            WinterForge.SerializeToFile(w1, "Level 1");
+            serializationSW.Stop();
+
+            long elapsed = serializationSW.ElapsedMilliseconds;
+            if (elapsed < bestSerializationTime) bestSerializationTime = elapsed;
+            if (elapsed > worstSerializationTime) worstSerializationTime = elapsed;
+
+            Console.WriteLine("pass " + i1);
+        }
+
+        Console.WriteLine("\n\nDeserialization...");
+
+        Stopwatch deserializationSW = new();
+        int i2 = 0;
+        int max2 = 20;
+
+        long bestDeserializationTime = long.MaxValue;
+        long worstDeserializationTime = long.MinValue;
+
+        while (i2++ < max2)
+        {
+            deserializationSW.Restart();
+            World d = WinterForge.DeserializeFromFile<World>("Level 1", (prog) => Console.WriteLine(prog.ProgressFloat * 100));
+            deserializationSW.Stop();
+
+            long elapsed = deserializationSW.ElapsedMilliseconds;
+            if (elapsed < bestDeserializationTime) bestDeserializationTime = elapsed;
+            if (elapsed > worstDeserializationTime) worstDeserializationTime = elapsed;
+
+            demo(d);
+            Console.WriteLine("pass " + i2);
+        }
+
+        Console.WriteLine("\n\nDone!");
+
+        Console.WriteLine("\n\nResults:");
+        StringBuilder sb = new();
+        sb.AppendLine($"Serialization: Best = {bestSerializationTime} ms, Worst = {worstSerializationTime} ms");
+        sb.AppendLine($"Deserialization: Best = {bestDeserializationTime} ms, Worst = {worstDeserializationTime} ms");
+
+        Console.WriteLine($"Serialization: Best = {bestSerializationTime} ms, Worst = {worstSerializationTime} ms");
+        Console.WriteLine($"Deserialization: Best = {bestDeserializationTime} ms, Worst = {worstDeserializationTime} ms");
+
+        Console.WriteLine("Press enter to copy to clipboard and close");
+
+        Console.ReadLine();
+
+        WinterRose.Windows.Clipboard.WriteString(sb.ToString());
+
+        Environment.Exit(0);
+    }
+
+    void demo(World w)
+    {
+        w.GetCamera(0);
     }
 }

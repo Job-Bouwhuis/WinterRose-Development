@@ -10,7 +10,7 @@ using System.Windows.Forms.Design;
 using WinterRose.Monogame;
 using WinterRose.Serialization;
 
-namespace TopDownGame.ScrollUI
+namespace TopDownGame.UIStuff.ScrollUI
 {
     class ScrollGridUI : ActiveRenderer
     {

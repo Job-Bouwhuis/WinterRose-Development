@@ -136,9 +136,10 @@ public sealed class Camera : ObjectComponent
             -transform.position.X,
             -transform.position.Y,
             0);
+        var rot = Matrix.CreateRotationZ(transform.rotation);
         var zoomMatrix = Matrix.CreateScale(Zoom);
 
-        trMatrix = (pos * zoomMatrix) * Matrix.CreateTranslation(Bounds.X / 2, Bounds.Y / 2, 0);
+        trMatrix = (pos * rot * zoomMatrix) * Matrix.CreateTranslation(Bounds.X / 2, Bounds.Y / 2, 0);
     }
 
     internal (RenderTarget2D view, List<WorldObject> UIObjects)

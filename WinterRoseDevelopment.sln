@@ -17,6 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WinterRose Monogame Library
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DEFB07F6-23B4-468F-9831-F3E8AA3D94E6}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		UtilTextFile.txt = UtilTextFile.txt
 	EndProjectSection
 EndProject

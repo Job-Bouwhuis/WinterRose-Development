@@ -5,7 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using WinterRose.ConsoleExtentions;
 
 namespace WinterRose.WinterForgeSerializing.Workers
 {
@@ -18,15 +20,18 @@ namespace WinterRose.WinterForgeSerializing.Workers
         private readonly Stack<OverridableStack<string>> lineBuffers = new();
 
         private static readonly Dictionary<string, int> opcodeMap = Enum
-            .GetValues(typeof(OpCode))
-            .Cast<OpCode>()
+            .GetValues<OpCode>()
             .ToDictionary(op => op.ToString(), op => (int)op);
 
-        //    private static readonly Dictionary<string, string> opcodeMap = Enum
-        //.GetValues(typeof(OpCode))
-        //.Cast<OpCode>()
-        //.ToDictionary(op => op.ToString(), op => op.ToString());
+        //private static readonly Dictionary<string, string> opcodeMap = Enum
+        //  .GetValues<OpCode>()
+        //  .ToDictionary(op => op.ToString(), op => op.ToString());
 
+        /// <summary>
+        /// Parses the human readable format of WinterForge into the opcodes that the <see cref="InstructionParser"/> understands. so that the <see cref="InstructionExecutor"/> can deserialize
+        /// </summary>
+        /// <param name="input">The source of human readable format</param>
+        /// <param name="output">The destination where the WinterForge opcodes will end up</param>
         public void Parse(Stream input, Stream output)
         {
             reader = new StreamReader(input, Encoding.UTF8, leaveOpen: true);
@@ -115,15 +120,54 @@ namespace WinterRose.WinterForgeSerializing.Workers
                 if (line.EndsWith(';'))
                     trimoffEnd = 1;
                 string ID = line[6..new Index(trimoffEnd, true)].Trim();
-                if (string.IsNullOrWhiteSpace(ID) || !ID.All(char.IsDigit))
+                if (string.IsNullOrWhiteSpace(ID) || !ID.All(char.IsDigit) && ID != "_stack()")
                     throw new Exception("Invalid ID parameter in RETURN statement");
                 WriteLine($"{opcodeMap["RET"]} {ID}");
+            }
+            else if (line.Contains("->"))
+            {
+                HandleAccessing(null);
+            }
+            else if (HasValidGenericFollowedByBracket(line))
+            {
+                ParseList();
             }
             else
             {
                 throw new Exception($"Unexpected top-level line: {line}");
             }
         }
+
+        private static bool HasValidGenericFollowedByBracket(ReadOnlySpan<char> input)
+        {
+            int length = input.Length;
+            int i = 0;
+
+            while (i < length && input[i] != '<') i++;
+            if (i == length) return false;
+
+            int depth = 0;
+            for (; i < length; i++)
+            {
+                char c = input[i];
+                if (c == '<')
+                {
+                    depth++;
+                }
+                else if (c == '>')
+                {
+                    depth--;
+                    if (depth < 0) return false;
+                }
+                else if (c == '[' && depth == 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
 
         private void ParseBlock(string id)
         {
@@ -138,8 +182,9 @@ namespace WinterRose.WinterForgeSerializing.Workers
                     WriteLine($"{opcodeMap["END"]} {id}");
                     return;
                 }
-
-                if (line.Contains('=') && line.EndsWith(";"))
+                if (line.Contains("->"))
+                    HandleAccessing(id);
+                else if (line.Contains('=') && line.EndsWith(";"))
                     ParseAssignment(line);
                 else if (line.Contains(':'))
                 {
@@ -175,6 +220,110 @@ namespace WinterRose.WinterForgeSerializing.Workers
                 else
                 {
                     throw new Exception($"Unhandled block content: {line}");
+                }
+            }
+        }
+
+        private void HandleAccessing(string? id)
+        {
+            // Step 1: Split on '=' to separate LHS and RHS
+            string[] assignmentParts = currentLine.Split('=', 2, StringSplitOptions.TrimEntries);
+            string accessPart = assignmentParts[0];
+            string? rhs = assignmentParts.Length > 1 ? assignmentParts[1] : null;
+
+            // Step 2: If there's a RHS, evaluate it first
+            if (rhs != null && rhs.Contains("->"))
+            {
+                var rhsParts = rhs.Split("->", StringSplitOptions.RemoveEmptyEntries);
+
+                if (rhsParts.Length > 0)
+                {
+                    string firstRhs = rhsParts[0];
+
+                    if (firstRhs == "this")
+                    {
+                        if (id is null)
+                            throw new Exception("'this' reference outside the bounds of an object");
+
+                        WriteLine($"{opcodeMap["PUSH"]} _ref({id})");
+                    }
+                    else
+                        WriteLine($"{opcodeMap["PUSH"]} {firstRhs}");
+
+                    for (int i = 1; i < rhsParts.Length; i++)
+                    {
+                        string part = rhsParts[i];
+                        if (string.IsNullOrWhiteSpace(part))
+                            continue;
+
+                        if (part.Contains("(") && part.Contains(")"))
+                        {
+                            // Placeholder for future function call handling
+                        }
+                        else
+                        {
+                            if (part.EndsWith(';'))
+                                part = part[..^1];
+                            WriteLine($"{opcodeMap["ACCESS"]} {part}");
+                        }
+                    }
+                }
+                else
+                    throw new Exception($"nothing to access on the right side...");
+            }
+
+
+            // Step 3: Process LHS
+            var lhsParts = accessPart.Split("->", StringSplitOptions.RemoveEmptyEntries);
+
+            if (lhsParts.Length == 0)
+                return;
+
+            string first = lhsParts[0];
+
+            if (lhsParts.Length is 1)
+            {
+                WriteLine($"{opcodeMap["SET"]} {first} _stack()");
+                return;
+            }
+
+            if (first == "this")
+            {
+                if (id is null)
+                    throw new Exception("'this' reference outside the bounds of an object");
+
+                WriteLine($"{opcodeMap["PUSH"]} _ref({id})");
+            }
+            else
+            {
+                WriteLine($"{opcodeMap["PUSH"]} {first}");
+            }
+
+            for (int i = 1; i < lhsParts.Length; i++)
+            {
+                string part = lhsParts[i];
+                if (string.IsNullOrWhiteSpace(part))
+                    continue;
+
+                bool isLast = i == lhsParts.Length - 1;
+
+                if (part.Contains("(") && part.Contains(")"))
+                    throw new Exception("Left hand side function is illegal.");
+                else
+                {
+                    if (rhs != null && isLast)
+                    {
+                        string val = rhs.Contains("->") ? "_stack()" : rhs;
+                        if (val.EndsWith(';'))
+                            val = val[..^1];
+                        WriteLine($"{opcodeMap["SETACCESS"]} {part} {val}");
+                    }
+                    else
+                    {
+                        if (part.EndsWith(';'))
+                            part = part[..^1];
+                        WriteLine($"{opcodeMap["ACCESS"]} {part}");
+                    }
                 }
             }
         }
@@ -294,7 +443,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
                 if (!insideFunction && character == ',')
                 {
-                    if(!collectingDefinition)
+                    if (!collectingDefinition)
                         emitElement();
                     else
                         currentElement.Append(character);
@@ -332,7 +481,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
             int eq = line.IndexOf('=');
             string key = line[..eq].Trim();
             string value = ValidateValue(line[(eq + 1)..].Trim());
-            
+
             WriteLine($"{opcodeMap["SET"]} {key} {value}");
         }
 

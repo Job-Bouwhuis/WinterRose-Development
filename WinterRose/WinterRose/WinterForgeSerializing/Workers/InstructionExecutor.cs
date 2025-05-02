@@ -14,59 +14,191 @@ using WinterRose.Utils;
 
 namespace WinterRose.WinterForgeSerializing.Workers
 {
-    public class InstructionExecutor
+    /// <summary>
+    /// Used to deserialize a collection of <see cref="Instruction"/>
+    /// </summary>
+    public class InstructionExecutor : IClearDisposable
     {
+        /// <summary>
+        /// Invoked when <see cref="OpCode.PROGRESS"/> is invoked
+        /// </summary>
+        public event Action<ProgressMark> ProgressMark = delegate { };
+        public bool IsDisposed { get; private set; }
+
         private static readonly ConcurrentDictionary<string, Type> typeCache = new();
-
-        private readonly DeserializationContext context;
-        private readonly Stack<int> instanceIDStack;  // Stack to manage instance IDs dynamically
-
-        private Stack<KeyValuePair<Type, IList>> listStack = new();
-
+        private DeserializationContext context = null!;
+        private readonly Stack<int> instanceIDStack;
+        private readonly Stack<KeyValuePair<Type, IList>> listStack = new();
         private readonly List<DispatchedReference> dispatchedReferences = [];
 
+
+        private int i = 0;
+
+        /// <summary>
+        /// Create a new instance of the <see cref="InstructionExecutor"/> to deserialize objects
+        /// </summary>
         public InstructionExecutor()
         {
-            context = new();
-            instanceIDStack = new Stack<int>();  // Initialize stack for instance IDs
+            instanceIDStack = new Stack<int>();
         }
 
-        public object Execute(List<Instruction> instructions)
+        /// <summary>
+        /// Releases the workings 
+        /// </summary>
+        public void Dispose()
         {
-            foreach (var instruction in instructions)
-            {
-                switch (instruction.OpCode)
-                {
-                    case OpCode.DEFINE:
-                        HandleDefine(instruction.Args);
-                        break;
-                    case OpCode.SET:
-                        HandleSet(instruction.Args);
-                        break;
-                    case OpCode.PUSH:
-                        context.ValueStack.Push(instruction.Args[0]);
-                        break;
-                    case OpCode.CALL:
-                        HandleCall(instruction.Args[0], int.Parse(instruction.Args[1]));
-                        break;
-                    case OpCode.ELEMENT:
-                        HandleAddElement(instruction.Args);
-                        break;
-                    case OpCode.LIST_START:
-                        HandleCreateList(instruction.Args);
-                        break;
-                    case OpCode.LIST_END:
-                        HandleEndList();
-                        break;
-                    case OpCode.END:
-                        HandleEnd();
-                        break;
-                    case OpCode.RET:
-                        return context.GetObject(int.Parse(instruction.Args[0]));
-                }
-            }
+            if (IsDisposed)
+                return;
+            IsDisposed = true;
 
-            return context.ObjectTable.Values.ToList();
+            context.Dispose();
+            dispatchedReferences.Clear();
+            listStack.Clear();
+            instanceIDStack.Clear();
+        }
+
+        /// <summary>
+        /// Deserializes the given instructions and gives either a <see cref="List{object}"/> of objects back, 
+        /// or the object on which the return instruction was given
+        /// </summary>
+        /// <param name="instructions"></param>
+        /// <returns></returns>
+        public unsafe object Execute(List<Instruction> instructions)
+        {
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
+            try
+            {
+                int instructionCount = instructions.FindIndex(inst => inst.OpCode == OpCode.RET);
+                if (instructionCount == -1)
+                    instructionCount = instructions.Count - 1;
+
+                context = new();
+
+                for (i = 0; i < instructions.Count; i++)
+                {
+                    Instruction? instruction = instructions[i];
+                    switch (instruction.OpCode)
+                    {
+                        case OpCode.DEFINE:
+                            HandleDefine(instruction.Args);
+                            break;
+                        case OpCode.SET:
+                            HandleSet(instruction.Args);
+                            break;
+                        case OpCode.PUSH:
+                            string arg = instruction.Args[0];
+                            object val = GetArgumentValue(arg, typeof(string), delegate { });
+                            if (val is Dispatched)
+                                throw new Exception("Other opcodes rely on PUSH having pushed its value, cant differ reference till later");
+
+                            if (!val.GetType().IsClass)
+                            {
+                                object* ptr = &val;
+                                var v = new StructReference(ptr);
+                                context.ValueStack.Push(v);
+                            }
+                            else
+                                context.ValueStack.Push(val);
+                            break;
+                        case OpCode.CALL:
+                            HandleCall(instruction.Args[0], int.Parse(instruction.Args[1]));
+                            break;
+                        case OpCode.ELEMENT:
+                            HandleAddElement(instruction.Args);
+                            break;
+                        case OpCode.LIST_START:
+                            HandleCreateList(instruction.Args);
+                            break;
+                        case OpCode.LIST_END:
+                            HandleEndList();
+                            break;
+                        case OpCode.END:
+                            HandleEnd();
+                            break;
+                        case OpCode.RET:
+                            Validate();
+                            if (instruction.Args[0] == "_stack()")
+                                return context.ValueStack.Peek();
+                            return context.GetObject(int.Parse(instruction.Args[0])) ?? throw new Exception($"object with ID {instruction.Args[0]} not found");
+                        case OpCode.PROGRESS:
+                            ProgressMark(new ProgressMark(i + 1, instructionCount));
+                            break;
+                        case OpCode.ACCESS:
+                            {
+                                object o = context.ValueStack.Pop();
+                                ReflectionHelper rh;
+                                if (o is StructReference sr)
+                                {
+                                    rh = new(ref sr.Get());
+                                }
+                                else
+                                    rh = new(ref o);
+
+                                context.ValueStack.Push(rh.GetValueFrom(instruction.Args[0]));
+                                break;
+                            }
+                        case OpCode.SETACCESS:
+                            {
+                                var field = instruction.Args[0];
+                                var rawValue = instruction.Args[1];
+
+                                var target = context.ValueStack.Pop();
+
+                                ReflectionHelper helper;
+                                if (target is StructReference sr)
+                                {
+                                    helper = new(ref sr.Get());
+                                    target = sr.Get();
+                                }
+                                else
+                                    helper = new(ref target);
+
+                                MemberData member = helper.GetMember(field);
+
+                                object? value = GetArgumentValue(rawValue, member.Type, val =>
+                                {
+                                    if (member.Type.IsArray)
+                                    {
+                                        if (member.Type.IsArray)
+                                            val = ((IList)val).GetInternalArray();
+                                    }
+
+                                    member.SetValue(ref target, val);
+                                });
+                                if (value is Dispatched)
+                                    continue; // value has been dispatched to be set later
+
+                                if (member.Type.IsArray)
+                                    value = ((IList)value).GetInternalArray();
+
+                                member.SetValue(ref target, value);
+                            }
+                            break;
+                    }
+                }
+
+                throw new Exception("No return statement given. unsure what to give back to the caller");
+            }
+            finally
+            {
+
+                context.Dispose();
+                dispatchedReferences.Clear();
+                listStack.Clear();
+                instanceIDStack.Clear();
+            }
+        }
+
+        private void Validate()
+        {
+            if (dispatchedReferences.Count > 0)
+            {
+                StringBuilder sb = new("\nOn lines:\n");
+                foreach (DispatchedReference d in dispatchedReferences)
+                    sb.AppendLine(d.lineNum.ToString());
+
+                throw new Exception("There were objects referenced in the deserialization that were never defined." + sb.ToString());
+            }
         }
 
         private void HandleEndList()
@@ -76,15 +208,14 @@ namespace WinterRose.WinterForgeSerializing.Workers
         }
         private void HandleCreateList(string[] args)
         {
-            if(args.Length == 0)
+            if (args.Length == 0)
                 throw new Exception("Expected type to initialize list");
             Type itemType = ResolveType(args[0]);
 
             var newList = WinterUtils.CreateList(itemType);
             listStack.Push(new(itemType, newList));
         }
-
-        private void HandleDefine(string[] args)
+        private unsafe void HandleDefine(string[] args)
         {
             var typeName = args[0];
             var id = int.Parse(args[1]);
@@ -95,13 +226,11 @@ namespace WinterRose.WinterForgeSerializing.Workers
             numArgs.Repeat(i => constrArgs.Add(context.ValueStack.Pop()));
             constrArgs.Reverse();
 
-            var instance = DynamicObjectCreator.CreateInstanceWithArguments(type, constrArgs)!;
-            //var instance = ActivatorExtra.CreateInstance(type);
-            context.AddObject(id, instance);
+            object instance = DynamicObjectCreator.CreateInstanceWithArguments(type, constrArgs)!;
+            context.AddObject(id, ref instance);
 
             instanceIDStack.Push(id);
         }
-
         private void HandleSet(string[] args)
         {
             var field = args[0];
@@ -110,7 +239,11 @@ namespace WinterRose.WinterForgeSerializing.Workers
             var instanceID = instanceIDStack.Peek();
             var target = context.GetObject(instanceID)!;
 
-            ReflectionHelper helper = new(ref target);
+            ReflectionHelper helper;
+            if (target is StructReference sr)
+                helper = new(ref sr.Get());
+            else
+                helper = new(ref target);
             MemberData member = helper.GetMember(field);
 
             object? value = GetArgumentValue(rawValue, member.Type, val =>
@@ -126,19 +259,16 @@ namespace WinterRose.WinterForgeSerializing.Workers
             if (value is Dispatched)
                 return; // value has been dispatched to be set later
 
-            if(member.Type.IsArray)
+            if (member.Type.IsArray)
                 value = ((IList)value).GetInternalArray();
 
             member.SetValue(ref target, value);
         }
-
         private void Dispatch(int refID, Action<object?> method)
         {
-            dispatchedReferences.Add(new(refID, method));
+            dispatchedReferences.Add(new(refID, i, method));
         }
-
-        private record DispatchedReference(int RefID, Action<object?> method);
-
+        private record DispatchedReference(int RefID, int lineNum, Action<object?> method);
         private void HandleCall(string methodName, int argCount)
         {
             var args = new object[argCount];
@@ -147,7 +277,6 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
             // Call method (logic to handle method calls here)
         }
-
         private void HandleAddElement(string[] args)
         {
             var kv = listStack.Peek();
@@ -160,7 +289,6 @@ namespace WinterRose.WinterForgeSerializing.Workers
                 return; // value has been dispatched to be set later
             kv.Value.Add(instance);
         }
-
         private object GetArgumentValue(string arg, Type desiredType, Action<object> onDispatch)
         {
             object? value;
@@ -198,7 +326,6 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
             return value;
         }
-
         private void HandleEnd()
         {
             int currentID = instanceIDStack.Peek();
@@ -215,7 +342,6 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
             instanceIDStack.Pop();
         }
-
         private static object? ParseLiteral(string raw, Type target)
         {
             if (raw is "null")
@@ -223,13 +349,11 @@ namespace WinterRose.WinterForgeSerializing.Workers
             raw = raw.Replace('.', ',');
             return TypeWorker.CastPrimitive(raw, target);
         }
-
         private static int ParseRef(string raw)
         {
             var inner = raw[5..^1];
             return int.Parse(inner);
         }
-
         private static Type ResolveType(string typeName)
         {
             ValidateKeywordType(ref typeName);
@@ -270,7 +394,6 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
             return resolvedType;
         }
-
         private static void ValidateKeywordType(ref string typeName)
         {
             typeName = typeName switch
@@ -289,39 +412,31 @@ namespace WinterRose.WinterForgeSerializing.Workers
                 _ => typeName // assume it's already a CLR type or custom type
             };
         }
-
-        // Helper method to handle the recursive parsing of generic arguments (handles nested generics)
         private static List<string> ParseGenericArguments(string args)
         {
             List<string> result = new List<string>();
             int nestingLevel = 0;
             StringBuilder currentArg = new StringBuilder();
 
-            // Iterate through each character in the generic arguments
             for (int i = 0; i < args.Length; i++)
             {
                 char c = args[i];
 
                 if (c == ',' && nestingLevel == 0)
                 {
-                    // If we're at the top level and encounter a comma, we finish the current argument
                     result.Add(currentArg.ToString().Trim());
                     currentArg.Clear();
                 }
                 else
                 {
-                    // If we encounter a '<', increase nesting level
                     if (c == '<') nestingLevel++;
 
-                    // If we encounter a '>', decrease nesting level
                     if (c == '>') nestingLevel--;
 
-                    // Add the current character to the argument
                     currentArg.Append(c);
                 }
             }
 
-            // Add the final argument (the last part of the string)
             if (currentArg.Length > 0)
                 result.Add(currentArg.ToString().Trim());
 

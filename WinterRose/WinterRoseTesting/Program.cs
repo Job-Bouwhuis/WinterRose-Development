@@ -621,6 +621,12 @@ HOJ:
 
         Console.WriteLine($"Original list count: {list.Count}");
         Console.WriteLine($"Deserialized list count: {deserializedResult.Count}");
+
+        foreach (var item in deserializedResult)
+        {
+            Console.WriteLine(item.ToString());
+        }
+
         Console.WriteLine(IsSame(list, deserializedResult) ? "Lists are the same" : "Lists are not the same");
         Console.Title = "Done...";
 

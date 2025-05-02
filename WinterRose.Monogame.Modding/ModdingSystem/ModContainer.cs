@@ -11,12 +11,12 @@ namespace WinterRose.Monogame.ModdingSystem;
 /// A container for mods for an object
 /// </summary>
 /// <typeparam name="T">The modifiable type</typeparam>
-[IncludePrivateFields]
 public class ModContainer<T> where T : class
 {
     /// <summary>
     /// The mods that are in this container
     /// </summary>
+    [IncludeWithSerialization]
     public List<Mod<T>> Mods { get; private set; } = new();
 
     /// <summary>

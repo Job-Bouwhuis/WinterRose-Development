@@ -18,11 +18,9 @@ namespace WinterRose.WinterForgeSerializing.Workers
         private readonly Dictionary<object, int> cache = [];
         private int currentKey = 0;
 
-        internal bool ClearOnRoot { get; set; } = true;
-
         internal void Serialize(object obj, Stream destinationStream, bool isRootCall, bool emitReturn = true)
         {
-            if (isRootCall && ClearOnRoot)
+            if (isRootCall)
             {
                 cache.Clear();
                 currentKey = 0;
@@ -54,6 +52,10 @@ namespace WinterRose.WinterForgeSerializing.Workers
             if (collection is not null)
             {
                 WriteToStream(destinationStream, collection);
+
+                if (isRootCall)
+                    WriteToStream(destinationStream, "\n\nreturn _stack()");
+
                 return;
             }
 
@@ -78,7 +80,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
             SerializePropertiesAndFields(obj, helper, destinationStream);
             WriteToStream(destinationStream, "}\n");
 
-            if (isRootCall && ClearOnRoot)
+            if (isRootCall)
                 WriteToStream(destinationStream, "\n\nreturn " + key);
             destinationStream.Flush();
         }
@@ -257,7 +259,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
             if (elementType is null)
                 sb.Append($"<System.Object>[\n");
             else
-                sb.Append($"<{elementType.FullName}>[\n");
+                sb.Append($"<{ParseTypeName(elementType)}>[\n");
 
             bool first = true;
             foreach (var item in collection)
@@ -273,6 +275,19 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
             return sb.ToString();
         }
+
+        private string ParseTypeName(Type elementType)
+        {
+            if (!elementType.IsGenericType)
+                return elementType.FullName;
+
+            Type[] genericTypes = elementType.GenericTypeArguments;
+            string[] genericTypeNames = [.. genericTypes.Select(ParseTypeName)];
+
+            int indexOfTypeNameEnd = elementType.FullName.IndexOf('`');
+            return elementType.FullName[0..indexOfTypeNameEnd] + "<" + string.Join(",", genericTypeNames) + ">";
+        }
+
         private void WriteToStream(Stream stream, string content)
         {
             byte[] contentBytes = Encoding.UTF8.GetBytes(content);

@@ -9,7 +9,14 @@ namespace WinterRose.WinterForgeSerializing
 {
     public static class InstructionParser
     {
-        public static List<Instruction> ParseOpcodes(Stream stream)
+        /// <summary>
+        /// Parses opcodes into instructions. inserting a progress mark every <paramref name="progressInterval"/>. <br></br>
+        /// eg: if <paramref name="progressInterval"/> is 20, 3 will be inserted
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="progressInterval"></param>
+        /// <returns></returns>
+        public static List<Instruction> ParseOpcodes(Stream stream, int progressInterval = -1)
         {
             var instructions = new List<Instruction>();
 
@@ -45,6 +52,31 @@ namespace WinterRose.WinterForgeSerializing
 
                 // Add instruction
                 instructions.Add(new Instruction(opcode, parts.Skip(1).ToArray()));
+            }
+
+            int count = instructions.Count;
+            Instruction progressInstr = new(OpCode.PROGRESS, []);
+
+            if (progressInterval > 0)
+            {
+                if (progressInterval > 100)
+                    progressInterval = 100;
+
+                int insertCount = 100 / progressInterval;
+                int step = count / insertCount;
+
+                instructions.Insert(0, progressInstr);
+                instructions.Insert(instructions.Count - 1, progressInstr);
+
+                if (step is 0)
+                    return instructions;
+
+                for (int i = step; i < count; i += step)
+                {
+                    instructions.Insert(i, progressInstr);
+                    count++; // Because we just added an item, so the count increases
+                    i++;     // Adjust index to avoid infinite loop due to shift
+                }
             }
 
             return instructions;

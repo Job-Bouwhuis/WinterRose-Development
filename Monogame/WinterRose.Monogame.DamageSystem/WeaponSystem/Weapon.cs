@@ -106,6 +106,9 @@ public class Weapon : ObjectBehavior
     [Show]
     WeaponFireingMode currentFireMode = WeaponFireingMode.Single;
 
+    /// <summary>
+    /// The modification container for this weapon
+    /// </summary>
     [Show]
     [IncludeWithSerialization]
     public ModContainer<Weapon> ModContainer { get; } = new();

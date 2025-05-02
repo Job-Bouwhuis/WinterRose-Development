@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -49,31 +50,21 @@ namespace WinterRose.WinterForgeSerializing
         public static string SerializeToString(object o)
         {
             using MemoryStream serialized = new();
-            using MemoryStream opcodes = new();
+            using MemoryStream formatted = new();
 
             ObjectSerializer serializer = new();
-            DoSerialization(serializer, o, serialized, opcodes);
-            opcodes.Seek(0, SeekOrigin.Begin);
-            byte[] bytes = opcodes.ToArray();
-            return Encoding.Unicode.GetString(bytes);
+            serializer.Serialize(o, serialized);
+            serialized.Seek(0, SeekOrigin.Begin);
+
+            new HumanReadableIndenter().Process(serialized, formatted);
+
+            byte[] bytes = formatted.ToArray();
+            return Encoding.UTF8.GetString(bytes);
         }
 
         private static void DoSerialization(ObjectSerializer serializer, object o, Stream serialized, Stream opcodes)
         {
-            SerializeAsAttributeINTERNAL? attr = o.GetType().GetCustomAttribute<SerializeAsAttributeINTERNAL>();
-            Type t = attr?.GetType() ?? o.GetType();
-
-            if (t.IsAssignableTo(typeof(IEnumerable)))
-            {
-                serializer.ClearOnRoot = false;
-                IEnumerable e = (IEnumerable)o;
-                foreach (var item in e)
-                    serializer.Serialize(item, serialized, true, false);
-                serializer.ClearOnRoot = true;
-            }
-            else
-                serializer.Serialize(o, serialized);
-
+            serializer.Serialize(o, serialized);
             serialized.Seek(0, SeekOrigin.Begin);
 
             //new HumanReadableIndenter().Process(serialized, formatted);
@@ -88,31 +79,62 @@ namespace WinterRose.WinterForgeSerializing
         /// <typeparam name="T"></typeparam>
         /// <param name="path"></param>
         /// <returns></returns>
-        public static T DeserializeFromFile<T>(FilePath path) where T : class
+        public static T DeserializeFromFile<T>(FilePath path, Action<ProgressMark>? progress = null) where T : class
         {
             using Stream opcodes = File.OpenRead(path);
-            var instructions = InstructionParser.ParseOpcodes(opcodes);
-            object res = new InstructionExecutor().Execute(instructions);
-            Type r = res.GetType();
+            var instructions = InstructionParser.ParseOpcodes(opcodes, 10);
+            return (T)DoDeserialization(typeof(T), instructions, progress);
+        }
 
-            if (res is List<object> e && (typeof(T).IsArray || typeof(T).Name.Contains("List`1")))
+        private static object DoDeserialization(Type targetType, List<Instruction> instructions, Action<ProgressMark>? progress)
+        {
+            using var executor = new InstructionExecutor();
+            if (progress is not null)
+                executor.ProgressMark += progress;
+            object res = executor.Execute(instructions);
+
+            if (res is List<object> list && (targetType.IsArray || targetType.Name.Contains("List`1")))
             {
-                Type t = typeof(T);
-                if (t.Name.Contains("List`1"))
-                    t = t.GetGenericArguments()[0];
-                else
-                    t = t.GetElementType()!;
+                if (targetType.IsArray)
+                {
+                    var array = Array.CreateInstance(targetType.GetElementType()!, list.Count);
 
-                IEnumerable<object> a = e.Where(x => x.GetType() == t);
-                if (typeof(T).IsArray)
-                    res = a.ToArray();
-                else if (typeof(T).Name.Contains("List`1"))
-                    res = a.ToList();
-                else
-                    res = a;
+                    for (int i = 0; i < list.Count; i++)
+                        array.SetValue(list[i], i);
+
+                    return array;
+                }
+
+                if (targetType.Name.Contains("List`1"))
+                {
+                    var targetList = WinterUtils.CreateList(targetType.GetGenericArguments()[0]);
+
+                    for (int i = 0; i < list.Count; i++)
+                        targetList.Add(list[i]);
+
+                    return targetList;
+                }
+
+                throw new Exception("invalid deserialization!");
             }
 
-            return Unsafe.As<T>(res);
+            return res;
+        }
+
+        public static T DeserializeFromHumanReadableString<T>(string HumanReadable, Action<ProgressMark>? progress = null)
+        {
+            using var opcodes = new MemoryStream();
+            using var serialized = new MemoryStream();
+            byte[] humanBytes = Encoding.UTF8.GetBytes(HumanReadable);
+            serialized.Write(humanBytes, 0, humanBytes.Length);
+            serialized.Seek(0, SeekOrigin.Begin);
+            new HumanReadableParser().Parse(serialized, opcodes);
+
+            opcodes.Seek(0, SeekOrigin.Begin);
+
+            var instructions = InstructionParser.ParseOpcodes(opcodes);
+
+            return (T)DoDeserialization(typeof(T), instructions, progress);
         }
     }
 }

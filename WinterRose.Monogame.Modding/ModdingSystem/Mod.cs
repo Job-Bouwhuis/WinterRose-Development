@@ -7,9 +7,9 @@ using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.ModdingSystem;
 
-[IncludeAllProperties]
 public class Mod<T> where T : class
 {
+    [IncludeWithSerialization]
     public List<ModAttribute<T>> attributes { get; private set; } = new();
 
     public Mod(string name, string description)
@@ -18,19 +18,24 @@ public class Mod<T> where T : class
         Description = description;
     }
 
+    private Mod() { } // for serialization
+
     /// <summary>
     /// Name of the mod, e.g., "Fortified"
     /// </summary>
+    [IncludeWithSerialization]
     public string Name { get; set; }
 
     /// <summary>
     /// A description of what the mod does
     /// </summary>
+    [IncludeWithSerialization]
     public string Description { get; set; }
 
     /// <summary>
     /// The number of mod points this mod costs (for balance or inventory systems)
     /// </summary>
+    [IncludeWithSerialization]
     public int ModPoints { get; set; }
 
     /// <summary>

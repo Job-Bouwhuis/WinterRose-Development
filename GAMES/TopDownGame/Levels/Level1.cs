@@ -17,6 +17,7 @@ using WinterRose.Monogame.StatusSystem;
 using WinterRose.Monogame.UI;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
+using WinterRose.WinterForgeSerializing;
 
 namespace TopDownGame.Levels;
 

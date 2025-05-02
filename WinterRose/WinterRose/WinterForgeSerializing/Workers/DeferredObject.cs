@@ -2,7 +2,7 @@
 
 namespace WinterRose.WinterForgeSerializing.Workers
 {
-    public class DeferredObject
+    internal class DeferredObject
     {
         public int TargetId { get; }
         public int ContextId { get; }

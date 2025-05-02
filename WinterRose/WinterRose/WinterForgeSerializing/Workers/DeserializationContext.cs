@@ -2,15 +2,24 @@
 
 namespace WinterRose.WinterForgeSerializing.Workers
 {
-    public class DeserializationContext
+    internal class DeserializationContext : IClearDisposable
     {
         public Dictionary<int, object> ObjectTable { get; } = new();
         public Stack<object> ValueStack { get; } = new();
         public List<DeferredObject> DeferredObjects { get; } = new();
 
-        public void AddObject(int id, object instance)
+        public bool IsDisposed { get; private set; }
+
+        public void AddObject(int id, ref object instance)
         {
-            ObjectTable[id] = instance;
+            ObjectTable.Add(id, instance);
+        }
+
+        public void Dispose()
+        {
+            ObjectTable.Clear();
+            ValueStack.Clear();
+            DeferredObjects.Clear();
         }
 
         public object? GetObject(int id)

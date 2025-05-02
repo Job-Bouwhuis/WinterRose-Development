@@ -39,10 +39,10 @@ public static class WorldEditor
 
     private static void Setup()
     {
-        if (!Directory.Exists("Content/WorldTemplates"))
-            Directory.CreateDirectory("Content/WorldTemplates");
+        if (!Directory.Exists("Content/Worlds"))
+            Directory.CreateDirectory("Content/Worlds");
 
-        FileInfo[] templates = new DirectoryInfo("Content/WorldTemplates").GetFiles();
+        FileInfo[] templates = new DirectoryInfo("Content/Worlds").GetFiles();
         DirectoryInfo saves = new("Content/Saves");
         if (saves.Exists)
             templates = [.. saves.GetFiles(), .. templates];
@@ -75,7 +75,7 @@ public static class WorldEditor
                 width = v.X.CeilingToInt();
         }
 
-        worldTemplateFileNames = worldTemplates.Select(x => FileManager.PathLast(x)).ToArray();
+        worldTemplateFileNames = [.. worldTemplates.Select(FileManager.PathLast)];
     }
     internal static void RenderLayout()
     {
@@ -153,7 +153,7 @@ public static class WorldEditor
             }
             else
             {
-                FileManager.CreateOrOpenFile($"Content\\WorldTemplates\\{templateName}.MonoWorld").Close();
+                FileManager.CreateOrOpenFile($"Content\\Worlds\\{templateName}.world").Close();
                 Setup();
                 tip = "Name of your template";
             }
@@ -167,7 +167,7 @@ public static class WorldEditor
             }
             else
             {
-                WorldTemplateCreator.CreateSave($"Content\\WorldTemplates\\{templateName}.MonoWorld", Universe.CurrentWorld);
+                WorldTemplateCreator.CreateSave($"Content\\Worlds\\{templateName}.world", Universe.CurrentWorld);
                 Setup();
                 tip = "Name of your template";
             }
