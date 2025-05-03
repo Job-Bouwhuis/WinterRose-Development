@@ -35,7 +35,7 @@ internal class Level1 : WorldTemplate
         //Rope r = world.CreateObject<Rope>("rope", new Vector2(100, 100), new Vector2(200, 100), 1, 0.2f);
 
         world.Name = "Level 1";
-
+        
         var player = world.CreateObject<SpriteRenderer>("Player", 50, 50, Color.Red);
         player.AttachComponent<SquareCollider>().IgnoredFlags.Add("PlayerBullet");
         player.AttachComponent<ModifiablePlayerMovement>();

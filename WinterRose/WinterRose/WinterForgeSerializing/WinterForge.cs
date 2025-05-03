@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -82,7 +83,7 @@ namespace WinterRose.WinterForgeSerializing
         public static T DeserializeFromFile<T>(FilePath path, Action<ProgressMark>? progress = null) where T : class
         {
             using Stream opcodes = File.OpenRead(path);
-            var instructions = InstructionParser.ParseOpcodes(opcodes, 10);
+            var instructions = InstructionParser.ParseOpcodes(opcodes);
             return (T)DoDeserialization(typeof(T), instructions, progress);
         }
 
@@ -135,6 +136,26 @@ namespace WinterRose.WinterForgeSerializing
             var instructions = InstructionParser.ParseOpcodes(opcodes);
 
             return (T)DoDeserialization(typeof(T), instructions, progress);
+        }
+
+        public static void SerializeToStream(object obj, Stream data)
+        {
+            using MemoryStream serialized = new MemoryStream();
+            ObjectSerializer serializer = new();
+            DoSerialization(serializer, obj, serialized, data);
+        }
+
+        /// <summary>
+        /// Deserializes the data from the given stream
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream"></param>
+        /// <param name="progress"></param>
+        /// <returns></returns>
+        public static T DeserializeFromStream<T>(Stream stream, Action<ProgressMark>? progress = null)
+        {
+            var instr = InstructionParser.ParseOpcodes(stream);
+            return (T)DoDeserialization(typeof(T), instr, progress);
         }
     }
 }

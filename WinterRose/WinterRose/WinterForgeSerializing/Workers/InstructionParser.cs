@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.WinterForgeSerializing
@@ -20,12 +23,15 @@ namespace WinterRose.WinterForgeSerializing
         {
             var instructions = new List<Instruction>();
 
-            StreamReader reader = new StreamReader(stream);
+            StreamReader reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
 
             string? rawLine;
             while ((rawLine = reader.ReadLine()) != null)
             {
                 var line = rawLine.Trim();
+
+                if (line == "WF_ENDOFDATA")
+                    break; // network stream end of data mark
 
                 // Skip comments and empty lines
                 if (string.IsNullOrWhiteSpace(line) || line.StartsWith("//"))
@@ -48,11 +54,12 @@ namespace WinterRose.WinterForgeSerializing
                 OpCode opcode = (OpCode)int.Parse(parts[0]);
 
                 //if (!Enum.TryParse(parts[0], ignoreCase: true, out OpCode opcode))
-                    //throw new Exception($"Invalid opcode: {parts[0]}");
+                //throw new Exception($"Invalid opcode: {parts[0]}");
 
                 // Add instruction
                 instructions.Add(new Instruction(opcode, parts.Skip(1).ToArray()));
             }
+
 
             int count = instructions.Count;
             Instruction progressInstr = new(OpCode.PROGRESS, []);

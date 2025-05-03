@@ -8,6 +8,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using WinterRose.StaticValueModifiers.BuildInValueProviders;
+using System.Collections.Concurrent;
 
 namespace WinterRose
 {
@@ -64,31 +65,66 @@ namespace WinterRose
         /// <param name="to"></param>
         /// <returns>a dynamic object converted to the given type. or null if converting failed</returns>
         public static dynamic Convert(dynamic from, Type to) => System.Convert.ChangeType(from, to);
-        /// <summary>
-        /// Searches for the Type matching to the given name. can pass the assembly as filter for the search
-        /// </summary>
-        /// <returns>The type matching the given name if it is found within the current accessable assemblies. if no matching type is found it returns null</returns>
-        public static Type FindType(string typeName, Assembly? targetAssembly = null)
+
+        private static readonly ConcurrentDictionary<string, Type?> typeCache
+            = new();
+
+        public static Type? FindType(string typeName, string assemblyName, string @namespace)
         {
-            Type? type = null;
-            if (targetAssembly == null)
-                AppDomain.CurrentDomain.GetAssemblies().Foreach(x => x.GetTypes().Foreach(x => { if (x.Name == typeName || x.FullName == typeName) type = x; }));
-            else
-                targetAssembly.GetTypes().Foreach(x => { if (x.Name == typeName || x.FullName == typeName) type = x; });
-            return type;
-        }
-        /// <summary>
-        /// Searches for the Type matching to the given name. can pass the assembly as filter for the search. be sure to just give the name of the assembly
-        /// </summary>
-        /// <returns>The type matching the given name if it is found within the given Assembly. if no matching type is found it returns null</returns>
-        public static Type? FindType(string typeName, string targetAssemblyName)
-        {
+            string key = string.Join('.', [@namespace, typeName]);
+            if (typeCache.TryGetValue(key, out var cachedType))
+                return cachedType;
+
             Type? type = null;
             Assembly? assembly = null;
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            assemblies.Foreach(x => { if (x.FullName.StartsWith(targetAssemblyName)) assembly = x; });
+
+            AppDomain.CurrentDomain.GetAssemblies().Foreach(x => { if (x.FullName.StartsWith(assemblyName)) assembly = x; });
+            assembly?.GetTypes().Foreach(x => { if (x.Name == typeName && x.Namespace == @namespace) type = x; });
+
+            if (type != null)
+                typeCache.AddOrUpdate(key, type, (key, existing) => existing);
+            return type;
+        }
+
+        public static Type FindType(string typeName, Assembly? targetAssembly = null)
+        {
+            if (typeCache.TryGetValue(typeName, out var cachedType) && cachedType != null)
+                return cachedType;
+
+            Type? type = null;
+            if (targetAssembly == null)
+            {
+                AppDomain.CurrentDomain.GetAssemblies()
+                    .Foreach(x => x.GetTypes()
+                    .Foreach(x => { if (x.Name == typeName || x.FullName == typeName) type = x; }));
+            }
+            else
+            {
+                targetAssembly.GetTypes()
+                    .Foreach(x => { if (x.Name == typeName || x.FullName == typeName) type = x; });
+            }
+
+            if (type != null)
+                typeCache.AddOrUpdate(typeName, type, (key, existing) => existing);
+            return type!;
+        }
+
+        public static Type? FindType(string typeName, string targetAssemblyName)
+        {
+            if (typeCache.TryGetValue(typeName, out var cachedType))
+                return cachedType;
+
+            Type? type = null;
+            Assembly? assembly = null;
+
+            AppDomain.CurrentDomain.GetAssemblies()
+                .Foreach(x => { if (x.FullName.StartsWith(targetAssemblyName)) assembly = x; });
+
             assembly?.GetTypes()
-            .Foreach(x => { if (x.Name == typeName) type = x; });
+                .Foreach(x => { if (x.Name == typeName) type = x; });
+
+            if (type != null)
+                typeCache.AddOrUpdate(typeName, type, (key, existing) => existing);
             return type;
         }
         /// <summary>
@@ -111,9 +147,9 @@ namespace WinterRose
             List<Type> types = new();
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             List<Type> allTypes = assemblies.SelectMany(x => x.GetTypes()).ToList();
-            foreach(Type type in allTypes)
+            foreach (Type type in allTypes)
             {
-                if(type.IsAssignableTo(typeof(T)))
+                if (type.IsAssignableTo(typeof(T)))
                     types.Add(type);
             }
             return [.. types];
@@ -137,7 +173,7 @@ namespace WinterRose
                     bool implements = false;
                     foreach (var i in interfaces)
                     {
-                        if(i.IsAssignableFrom(target))
+                        if (i.IsAssignableFrom(target))
                         {
                             implements = true;
                         }
@@ -159,32 +195,15 @@ namespace WinterRose
             // if it does, check if the generic type matches the generic type of the interface
             // otherwise, just check if the type implements the interface
 
-            assemblies.Foreach(x => 
-            x.GetTypes().Where(t => 
+            assemblies.Foreach(x =>
+            x.GetTypes().Where(t =>
             t.GetInterfaces().Any(i => i == type || (type.IsGenericType && i.IsGenericType && i.GetGenericTypeDefinition() == type.GetGenericTypeDefinition())))
             .Foreach(t => types.Add(t)));
 
             return [.. types];
         }
 
-        /// <summary>
-        /// Searches for the Type matching to the given name. can pass the assembly as filter for the search. be sure to just give the name of the assembly
-        /// </summary>
-        /// <returns>The type matching the given name if it is found within the given Assembly and namespace. if no matching type is found it returns null</returns>
-        public static Type? FindType(string typeName, string assemblyName, string @namespace)
-        {
-            Type? type = null;
-            Assembly? assembly = null;
-            
-            //get all the available assemblies
-            AppDomain.CurrentDomain.GetAssemblies().Foreach(x => { if (x.FullName.StartsWith(assemblyName)) assembly = x; });
-            
-            //see if the type matches the type name, and exists within the same namespace as given with the parameter
-            assembly?.GetTypes() .Foreach(x => { if (x.Name == typeName && x.Namespace == @namespace) type = x; });
-            
-            //return the found type, or null if none were found
-            return type;
-        }
+
 
         /// <summary>
         /// Searches for a method within the given type that has the given name.

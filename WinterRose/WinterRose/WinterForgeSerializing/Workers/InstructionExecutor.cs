@@ -91,7 +91,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
                             if (val is Dispatched)
                                 throw new Exception("Other opcodes rely on PUSH having pushed its value, cant differ reference till later");
 
-                            if (!val.GetType().IsClass)
+                            if (!val.GetType().IsClass && !val.GetType().IsPrimitive)
                             {
                                 object* ptr = &val;
                                 var v = new StructReference(ptr);
@@ -126,14 +126,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
                         case OpCode.ACCESS:
                             {
                                 object o = context.ValueStack.Pop();
-                                ReflectionHelper rh;
-                                if (o is StructReference sr)
-                                {
-                                    rh = new(ref sr.Get());
-                                }
-                                else
-                                    rh = new(ref o);
-
+                                ReflectionHelper rh = CreateReflectionHelper(ref o, out _);
                                 context.ValueStack.Push(rh.GetValueFrom(instruction.Args[0]));
                                 break;
                             }
@@ -144,14 +137,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
                                 var target = context.ValueStack.Pop();
 
-                                ReflectionHelper helper;
-                                if (target is StructReference sr)
-                                {
-                                    helper = new(ref sr.Get());
-                                    target = sr.Get();
-                                }
-                                else
-                                    helper = new(ref target);
+                                var helper = CreateReflectionHelper(ref target, out object actual);
 
                                 MemberData member = helper.GetMember(field);
 
@@ -163,21 +149,25 @@ namespace WinterRose.WinterForgeSerializing.Workers
                                             val = ((IList)val).GetInternalArray();
                                     }
 
-                                    member.SetValue(ref target, val);
+                                    member.SetValue(ref actual, val);
                                 });
                                 if (value is Dispatched)
                                     continue; // value has been dispatched to be set later
-
+                                if (value is StructReference sr)
+                                    value = sr.Get();
                                 if (member.Type.IsArray)
                                     value = ((IList)value).GetInternalArray();
 
-                                member.SetValue(ref target, value);
+                                member.SetValue(ref actual, value);
                             }
+                            break;
+                        case OpCode.AS:
+                            context.MoveStackTo(int.Parse(instruction.Args[0]));
                             break;
                     }
                 }
 
-                throw new Exception("No return statement given. unsure what to give back to the caller");
+                return new Nothing([.. context.ObjectTable]);
             }
             finally
             {
@@ -187,6 +177,28 @@ namespace WinterRose.WinterForgeSerializing.Workers
                 listStack.Clear();
                 instanceIDStack.Clear();
             }
+        }
+
+        private static ReflectionHelper CreateReflectionHelper(ref object o, out object? actualTarget)
+        {
+            ReflectionHelper rh;
+            if (o is StructReference sr)
+            {
+                rh = new(ref sr.Get());
+                actualTarget = sr.Get();
+                return rh;
+            }    
+            else if (o is Type t)
+            {
+                rh = new(t);
+                actualTarget = null;
+                return rh;
+            }
+            else
+                rh = new(ref o);
+
+            actualTarget = o;
+            return rh;
         }
 
         private void Validate()
@@ -239,11 +251,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
             var instanceID = instanceIDStack.Peek();
             var target = context.GetObject(instanceID)!;
 
-            ReflectionHelper helper;
-            if (target is StructReference sr)
-                helper = new(ref sr.Get());
-            else
-                helper = new(ref target);
+            ReflectionHelper helper = CreateReflectionHelper(ref target, out object actualTarget);
             MemberData member = helper.GetMember(field);
 
             object? value = GetArgumentValue(rawValue, member.Type, val =>
@@ -254,7 +262,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
                         val = ((IList)val).GetInternalArray();
                 }
 
-                member.SetValue(ref target, val);
+                member.SetValue(ref actualTarget, val);
             });
             if (value is Dispatched)
                 return; // value has been dispatched to be set later
@@ -262,20 +270,43 @@ namespace WinterRose.WinterForgeSerializing.Workers
             if (member.Type.IsArray)
                 value = ((IList)value).GetInternalArray();
 
-            member.SetValue(ref target, value);
+            member.SetValue(ref actualTarget, value);
         }
         private void Dispatch(int refID, Action<object?> method)
         {
             dispatchedReferences.Add(new(refID, i, method));
         }
         private record DispatchedReference(int RefID, int lineNum, Action<object?> method);
-        private void HandleCall(string methodName, int argCount)
+        private unsafe void HandleCall(string methodName, int argCount)
         {
             var args = new object[argCount];
             for (int i = argCount - 1; i >= 0; i--)
-                args[i] = context.ValueStack.Pop();
+            {
+                object arg = args[i] = context.ValueStack.Pop();
+                if (arg is StructReference sr)
+                    args[i] = sr.Get();
+                else
+                    args[i] = arg;
+            }
 
-            // Call method (logic to handle method calls here)
+            var target = context.ValueStack.Pop();
+
+            ReflectionHelper helper = CreateReflectionHelper(ref target, out object actualTarget);
+            MethodInfo method = helper.GetMethod(methodName);
+            if (method is null)
+                throw new Exception($"No method found '{methodName}' in type 'target'");
+
+            var val = method.Invoke(actualTarget, args);
+
+            if (!val.GetType().IsClass && !val.GetType().IsPrimitive)
+            {
+                object* ptr = &val;
+                var v = new StructReference(ptr);
+                context.ValueStack.Push(v);
+            }
+            else
+                context.ValueStack.Push(val);
+
         }
         private void HandleAddElement(string[] args)
         {
@@ -308,13 +339,16 @@ namespace WinterRose.WinterForgeSerializing.Workers
                     }
                     break;
 
-                case string s when s.StartsWith("_stack"):
+                case string s when s.StartsWith("_stack("):
                     var stackValue = context.ValueStack.Pop();
                     if (stackValue is string ss)
                         value = ParseLiteral(ss, desiredType);
                     else
                         value = stackValue;
 
+                    break;
+                case string s when s.StartsWith("_type("):
+                    value = ParseTypeLiteral(s);
                     break;
                 case string s when CustomValueProviderCache.Get(desiredType, out var provider):
                     value = provider._CreateObject(s, this);
@@ -354,6 +388,13 @@ namespace WinterRose.WinterForgeSerializing.Workers
             var inner = raw[5..^1];
             return int.Parse(inner);
         }
+
+        private static Type ParseTypeLiteral(string raw)
+        {
+            var inner = raw[6..^1];
+            return TypeWorker.FindType(inner);
+        }
+
         private static Type ResolveType(string typeName)
         {
             ValidateKeywordType(ref typeName);

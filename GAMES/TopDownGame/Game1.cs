@@ -24,6 +24,7 @@ using WinterRose.Monogame.Worlds;
 using WinterRose.Serialization;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.WinterForgeSerializing.Formatting;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace TopDownGame;
 
@@ -31,6 +32,21 @@ public class Game1 : Application
 {
     protected override World CreateWorld()
     {
+        using Stream human = File.OpenRead("staticCallHuamn.txt");
+        File.Delete("staticCallOpcodes.txt");
+        using Stream opcodes = File.Open("staticCallOpcodes.txt", FileMode.CreateNew, FileAccess.ReadWrite);
+
+        var parser = new HumanReadableParser();
+        parser.Parse(human, opcodes);
+        opcodes.Seek(0, SeekOrigin.Begin);
+
+        var instr = InstructionParser.ParseOpcodes(opcodes);
+
+        var exec = new InstructionExecutor();
+        var result = exec.Execute(instr);
+
+        var res = CameraIndex;
+
         Hirarchy.Show = true;
 
         // als fyschieke scherm 2k of meer is, maak game window 1920 x 1080. anders maak hem 1280 x 720
@@ -118,7 +134,7 @@ public class Game1 : Application
 
         Stopwatch serializationSW = new();
         int i1 = 0;
-        int max1 = 1;
+        int max1 = 20;
 
         long bestSerializationTime = long.MaxValue;
         long worstSerializationTime = long.MinValue;
@@ -148,7 +164,7 @@ public class Game1 : Application
         while (i2++ < max2)
         {
             deserializationSW.Restart();
-            World d = WinterForge.DeserializeFromFile<World>("Level 1", (prog) => Console.WriteLine(prog.ProgressFloat * 100));
+            World d = WinterForge.DeserializeFromFile<World>("Level 1");
             deserializationSW.Stop();
 
             long elapsed = deserializationSW.ElapsedMilliseconds;

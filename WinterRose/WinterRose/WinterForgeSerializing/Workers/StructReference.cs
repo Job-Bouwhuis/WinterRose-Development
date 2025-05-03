@@ -6,8 +6,23 @@ using System.Threading.Tasks;
 
 namespace WinterRose.WinterForgeSerializing.Workers
 {
-    internal unsafe class StructReference(void* p)
+    /// <summary>
+    /// Wrapper to hold a direct reference to a struct, and allows it to be stored like a class
+    /// </summary>
+    public unsafe class StructReference
     {
-        public ref object Get() => ref *(object*)p;
+        private readonly void* ptr;
+        /// <summary>
+        /// Wrapper to hold a direct reference to a struct, and allows it to be stored like a class<br></br><br></br>
+        /// 
+        /// Use with absolute care.
+        /// </summary>
+        /// <param name="ptr"></param>
+        public StructReference(void* ptr) => this.ptr = ptr;
+        /// <summary>
+        /// Gets the referenced value
+        /// </summary>
+        /// <returns></returns>
+        public ref object Get() => ref *(object*)ptr;
     }
 }

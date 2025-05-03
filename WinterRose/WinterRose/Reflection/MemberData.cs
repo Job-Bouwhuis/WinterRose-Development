@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.Reflection
 {
@@ -148,7 +149,7 @@ namespace WinterRose.Reflection
         /// </summary>
         /// <returns>The object stored in the field or property</returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public object? GetValue(object? obj)
+        public unsafe object? GetValue(object? obj)
         {
             if (propertysource is null && fieldsource is null)
                 throw new InvalidOperationException("No property or field found.");
@@ -163,8 +164,9 @@ namespace WinterRose.Reflection
             if (ByRef)
             {
                 TypedReference tr = __makeref(obj);
-                return fieldsource?.GetValueDirect(tr)
-                    ?? throw new InvalidOperationException("No field found.");
+                object? valueTypeVal = fieldsource.GetValueDirect(tr);
+                StructReference valueRef = new(&valueTypeVal);
+                return valueRef;
             }
 
             return fieldsource?.GetValue(obj);
@@ -195,7 +197,7 @@ namespace WinterRose.Reflection
                     actualValue = conversionMethod.Invoke(null, new object[] { value })!;
             }
 
-            if (obj is null && !(Type.IsAbstract && Type.IsSealed))
+            if (obj is null && !propertysource.SetMethod.IsStatic && !(Type.IsAbstract && Type.IsSealed))
                 throw new Exception("Reflection helper was created type only.");
 
             propertysource.SetValue(obj, actualValue);
@@ -210,11 +212,10 @@ namespace WinterRose.Reflection
 
             if (conversionMethod != null)
             {
-                // Convert the value using the implicit operator if it exists
                 actualValue = conversionMethod.Invoke(null, [value]);
             }
 
-            if (obj is null && !(Type.IsAbstract && Type.IsSealed))
+            if (obj is null && !fieldsource.IsStatic && !(Type.IsAbstract && Type.IsSealed))
                 throw new Exception("Reflection helper was created type only.");
 
             if (!Type.IsByRef)

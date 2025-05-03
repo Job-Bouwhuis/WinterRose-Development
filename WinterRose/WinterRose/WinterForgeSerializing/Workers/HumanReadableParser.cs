@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -32,18 +33,18 @@ namespace WinterRose.WinterForgeSerializing.Workers
         /// </summary>
         /// <param name="input">The source of human readable format</param>
         /// <param name="output">The destination where the WinterForge opcodes will end up</param>
+        /// <remarks>Appends a line 'WF_ENDOFDATA' when <paramref name="output"/> is of type <see cref="NetworkStream"/></remarks>
         public void Parse(Stream input, Stream output)
         {
-            reader = new StreamReader(input, Encoding.UTF8, leaveOpen: true);
+            reader = new StreamReader(input, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
             writer = new StreamWriter(output, Encoding.UTF8, leaveOpen: true);
 
             while ((currentLine = ReadNonEmptyLine()) != null)
-            {
                 ParseObjectOrAssignment();
-            }
 
+            if (output is NetworkStream)
+                writer.WriteLine("WF_ENDOFDATA");
             writer.Flush();
-            output.Position = 0;
         }
 
         private void ParseObjectOrAssignment()
@@ -84,6 +85,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
                 foreach (string arg in args)
                     WriteLine($"{opcodeMap["PUSH"]} " + arg);
                 WriteLine($"{opcodeMap["DEFINE"]} {type} {id} {args.Length}");
+                WriteLine($"{opcodeMap["END"]} {id}");
             }
             // Definition: Type : ID {
             else if (line.Contains(':') && line.Contains('{'))
@@ -122,20 +124,26 @@ namespace WinterRose.WinterForgeSerializing.Workers
                 string ID = line[6..new Index(trimoffEnd, true)].Trim();
                 if (string.IsNullOrWhiteSpace(ID) || !ID.All(char.IsDigit) && ID != "_stack()")
                     throw new Exception("Invalid ID parameter in RETURN statement");
-                WriteLine($"{opcodeMap["RET"]} {ID}");
+                string result = $"{opcodeMap["RET"]} {ID}";
+                WriteLine(result);
             }
             else if (line.Contains("->"))
             {
                 HandleAccessing(null);
+            }
+            else if (line.StartsWith("as"))
+            {
+                string id = line[2..].Trim();
+                if (id.EndsWith(';'))
+                    id = id[..^1];
+                WriteLine($"{opcodeMap["AS"]} {id}");
             }
             else if (HasValidGenericFollowedByBracket(line))
             {
                 ParseList();
             }
             else
-            {
                 throw new Exception($"Unexpected top-level line: {line}");
-            }
         }
 
         private static bool HasValidGenericFollowedByBracket(ReadOnlySpan<char> input)
@@ -190,6 +198,13 @@ namespace WinterRose.WinterForgeSerializing.Workers
                 {
                     currentLine = line;
                     ParseObjectOrAssignment(); // nested define
+                }
+                else if (line.StartsWith("as"))
+                {
+                    string asid = line[2..].Trim();
+                    if (asid.EndsWith(';'))
+                        asid = asid[..^1];
+                    WriteLine($"{opcodeMap["AS"]} {asid}");
                 }
                 else if (line.Contains('['))
                 {
@@ -247,8 +262,10 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
                         WriteLine($"{opcodeMap["PUSH"]} _ref({id})");
                     }
-                    else
+                    else if (firstRhs.StartsWith("_ref("))
                         WriteLine($"{opcodeMap["PUSH"]} {firstRhs}");
+                    else // assume value is a type literal
+                        WriteLine($"{opcodeMap["PUSH"]} _type({firstRhs})");
 
                     for (int i = 1; i < rhsParts.Length; i++)
                     {
@@ -256,9 +273,9 @@ namespace WinterRose.WinterForgeSerializing.Workers
                         if (string.IsNullOrWhiteSpace(part))
                             continue;
 
-                        if (part.Contains("(") && part.Contains(")"))
+                        if (part.Contains('(') && part.Contains(')'))
                         {
-                            // Placeholder for future function call handling
+                            ParseMethodCall(id, part);
                         }
                         else
                         {
@@ -271,7 +288,10 @@ namespace WinterRose.WinterForgeSerializing.Workers
                 else
                     throw new Exception($"nothing to access on the right side...");
             }
-
+            //else if (rhs.Contains('(') && rhs.Contains(')'))
+            //{
+            //    ParseMethodCall(id, rhs);
+            //}
 
             // Step 3: Process LHS
             var lhsParts = accessPart.Split("->", StringSplitOptions.RemoveEmptyEntries);
@@ -294,10 +314,12 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
                 WriteLine($"{opcodeMap["PUSH"]} _ref({id})");
             }
-            else
+            else if(first.StartsWith("_ref("))
             {
                 WriteLine($"{opcodeMap["PUSH"]} {first}");
             }
+            else // assume value is a type literal
+                WriteLine($"{opcodeMap["PUSH"]} _type({first})");
 
             for (int i = 1; i < lhsParts.Length; i++)
             {
@@ -307,7 +329,7 @@ namespace WinterRose.WinterForgeSerializing.Workers
 
                 bool isLast = i == lhsParts.Length - 1;
 
-                if (part.Contains("(") && part.Contains(")"))
+                if (part.Contains('(') && part.Contains(')'))
                     throw new Exception("Left hand side function is illegal.");
                 else
                 {
@@ -319,12 +341,33 @@ namespace WinterRose.WinterForgeSerializing.Workers
                         WriteLine($"{opcodeMap["SETACCESS"]} {part} {val}");
                     }
                     else
-                    {
-                        if (part.EndsWith(';'))
-                            part = part[..^1];
                         WriteLine($"{opcodeMap["ACCESS"]} {part}");
-                    }
                 }
+            }
+
+            void ParseMethodCall(string? id, string part)
+            {
+                var openParen = part.IndexOf('(');
+                var closeParen = part.LastIndexOf(')');
+
+                var methodName = part[..openParen].Trim();
+                var argList = part.Substring(openParen + 1, closeParen - openParen - 1);
+                var args = argList.Split(',').Select(x => x.Trim()).ToList();
+
+                for (int j = args.Count - 1; j >= 0; j--)
+                {
+                    string arg = args[j];
+
+                    if (arg is "..")
+                        continue; // assumed stack value exists from elsewhere
+
+                    if (arg.Contains("->"))
+                        HandleAccessing(id);
+                    else
+                        WriteLine($"{opcodeMap["PUSH"]} {arg}");
+                }
+
+                WriteLine($"{opcodeMap["CALL"]} {methodName} {args.Count}");
             }
         }
 

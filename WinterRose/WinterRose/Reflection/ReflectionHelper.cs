@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.Reflection
 {
@@ -87,6 +88,8 @@ namespace WinterRose.Reflection
             return true;
         }
 
+        public MethodInfo GetMethod(string method) => ObjectType.GetMethod(method, flags);
+
         public override bool TrySetMember(SetMemberBinder binder, object? value)
         {
             SetValue(binder.Name, value);
@@ -119,6 +122,8 @@ namespace WinterRose.Reflection
         /// <exception cref="FieldNotFoundException"></exception>
         public object? GetValueFrom(string name)
         {
+            return GetMember(name).GetValue(obj);
+
             int res = GetFieldOrProperty(name, out var field, out var property);
             if (res is -1)
                 throw new FieldNotFoundException($"field or property with name '{name}' does not exist");
@@ -136,7 +141,7 @@ namespace WinterRose.Reflection
         /// <returns>the value</returns>
         /// <exception cref="Exception"></exception>
         /// <exception cref="FieldNotFoundException"></exception>
-        public object? GetFieldValue(string name)
+        public unsafe object? GetFieldValue(string name)
         {
             FieldInfo field = GetField(name) ?? throw new FieldNotFoundException($"field with name '{name}' does not exist");
             if (field.IsStatic)
@@ -146,7 +151,9 @@ namespace WinterRose.Reflection
 
             if (ObjectType.IsByRef)
                 return field.GetValue(obj);
-            return field.GetValueDirect(__makeref(obj));
+            object? valueTypeVal = field.GetValueDirect(__makeref(obj));
+            StructReference valueRef = new(&valueTypeVal);
+            return valueRef;
         }
 
         public object? GetPropertyValue(string name)

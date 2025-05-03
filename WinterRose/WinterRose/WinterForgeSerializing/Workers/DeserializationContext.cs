@@ -1,16 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace WinterRose.WinterForgeSerializing.Workers
 {
     internal class DeserializationContext : IClearDisposable
     {
-        public Dictionary<int, object> ObjectTable { get; } = new();
-        public Stack<object> ValueStack { get; } = new();
-        public List<DeferredObject> DeferredObjects { get; } = new();
-
+        internal Dictionary<int, object> ObjectTable { get; } = [];
+        internal Stack<object> ValueStack { get; } = new();
+        internal List<DeferredObject> DeferredObjects { get; } = [];
         public bool IsDisposed { get; private set; }
 
-        public void AddObject(int id, ref object instance)
+        internal void AddObject(int id, ref object instance)
         {
             ObjectTable.Add(id, instance);
         }
@@ -22,10 +22,19 @@ namespace WinterRose.WinterForgeSerializing.Workers
             DeferredObjects.Clear();
         }
 
-        public object? GetObject(int id)
+        internal object? GetObject(int id)
         {
             ObjectTable.TryGetValue(id, out var obj);
             return obj;
+        }
+
+        internal void MoveStackTo(int id)
+        {
+            object o = ValueStack.Pop();
+            if (o is StructReference sr)
+                ObjectTable[id] = sr.Get();
+            else
+                ObjectTable[id] = o;
         }
     }
 

@@ -89,7 +89,16 @@
         /// 
         /// refer to <see cref="SET"/> for the example
         /// </summary>
-        SETACCESS = 11
+        SETACCESS = 11,
+        /// <summary>
+        /// Takes the top stack item and puts it as a reference item on the given ID 
+        /// (can be used to override an id reference)<br></br><br></br>
+        /// 
+        /// EG: 12 0<br></br>
+        /// 12 - AS<br></br>
+        /// 0 - store the stack item on ID 0. even if an object at that ID already exists
+        /// </summary>
+        AS = 12
     }
 
 }
