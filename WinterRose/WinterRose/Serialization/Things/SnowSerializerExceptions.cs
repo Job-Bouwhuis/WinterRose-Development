@@ -17,16 +17,6 @@ namespace WinterRose
     }
 
     /// <summary>
-    /// Gets thrown when a type is not found when using the serializer
-    /// </summary>
-    [Serializable]
-    public class TypeNotFoundException : WinterException
-    {
-        public TypeNotFoundException() { }
-        public TypeNotFoundException(string message) : base(message) { }
-        public TypeNotFoundException(string message, Exception inner) : base(message, inner) { }
-    }
-    /// <summary>
     /// Gets thrown when a field is not supported by the serializer
     /// </summary>
     [Serializable]

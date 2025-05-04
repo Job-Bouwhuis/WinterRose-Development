@@ -13,28 +13,17 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Authors>WinterRose</Authors>
     <Company>SnowyAnomaly</Company>
-    <Version>1.0.334</Version>
+    <Version>25.2.1</Version>
     <PackageId>WinterRose</PackageId>
     <Title>WinterRose</Title>
     <Product>WinterRose</Product>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <AssemblyVersion>1.0.323</AssemblyVersion>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression>CC-BY-4.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <IncludeSymbols>False</IncludeSymbols>
-    <PackageReleaseNotes># WinterThorn:
-   * Function recursion now functional
-   * For(each) loops
-   * Class constructors
-   * File class
-   * Directory class
-   * Collection syntax
-   * Documentation generation for existing classes, their variables, constructors, and functions, and the details of those
-   * Upgraded the build in Console class, it can now do more than just write to the console.
-
-# Windows:
-   * Moved clipboard functions to subclass 'Clipboard' and added support for copying files to and from clipboard.</PackageReleaseNotes>
+    <PackageReleaseNotes>Lots and lots of bugfixes. and improvements across various systems</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -64,6 +53,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\WinterRose.Reflection\WinterRose.Reflection.csproj" />
   </ItemGroup>
 
   <ItemGroup>

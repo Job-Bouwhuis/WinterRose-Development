@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Serialization;
 
 namespace WinterRose.Reflection
 {
@@ -77,6 +76,8 @@ namespace WinterRose.Reflection
             var members = CreateMemberList();
             return new(members);
         }
+
+        public MethodInfo GetMethod(string method) => ObjectType.GetMethod(method, flags);
 
         private List<MemberData> CreateMemberList()
         {

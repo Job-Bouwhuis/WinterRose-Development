@@ -1,14 +1,6 @@
-﻿using WinterRose.Serialization;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.ComponentModel;
-using WinterRose.Exceptions;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using WinterRose.StaticValueModifiers.BuildInValueProviders;
+﻿using System.Reflection;
 using System.Collections.Concurrent;
+using WinterRose.Reflection;
 
 namespace WinterRose
 {
@@ -78,8 +70,27 @@ namespace WinterRose
             Type? type = null;
             Assembly? assembly = null;
 
-            AppDomain.CurrentDomain.GetAssemblies().Foreach(x => { if (x.FullName.StartsWith(assemblyName)) assembly = x; });
-            assembly?.GetTypes().Foreach(x => { if (x.Name == typeName && x.Namespace == @namespace) type = x; });
+            foreach (var x in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (x.FullName.StartsWith(assemblyName))
+                {
+                    assembly = x;
+                    break;
+                }
+            }
+
+            if (assembly != null)
+            {
+                foreach (var x in assembly.GetTypes())
+                {
+                    if (x.Name == typeName && x.Namespace == @namespace)
+                    {
+                        type = x;
+                        break;
+                    }
+                }
+            }
+
 
             if (type != null)
                 typeCache.AddOrUpdate(key, type, (key, existing) => existing);
@@ -94,15 +105,30 @@ namespace WinterRose
             Type? type = null;
             if (targetAssembly == null)
             {
-                AppDomain.CurrentDomain.GetAssemblies()
-                    .Foreach(x => x.GetTypes()
-                    .Foreach(x => { if (x.Name == typeName || x.FullName == typeName) type = x; }));
+                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    foreach (var t in assembly.GetTypes())
+                    {
+                        if (t.Name == typeName || t.FullName == typeName)
+                        {
+                            type = t;
+                            break;
+                        }
+                    }
+                }
             }
             else
             {
-                targetAssembly.GetTypes()
-                    .Foreach(x => { if (x.Name == typeName || x.FullName == typeName) type = x; });
+                foreach (var t in targetAssembly.GetTypes())
+                {
+                    if (t.Name == typeName || t.FullName == typeName)
+                    {
+                        type = t;
+                        break;
+                    }
+                }
             }
+
 
             if (type != null)
                 typeCache.AddOrUpdate(typeName, type, (key, existing) => existing);
@@ -117,11 +143,27 @@ namespace WinterRose
             Type? type = null;
             Assembly? assembly = null;
 
-            AppDomain.CurrentDomain.GetAssemblies()
-                .Foreach(x => { if (x.FullName.StartsWith(targetAssemblyName)) assembly = x; });
+            foreach (var x in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (x.FullName.StartsWith(targetAssemblyName))
+                {
+                    assembly = x;
+                    break; // assuming only one match is needed
+                }
+            }
 
-            assembly?.GetTypes()
-                .Foreach(x => { if (x.Name == typeName) type = x; });
+            if (assembly != null)
+            {
+                foreach (var x in assembly.GetTypes())
+                {
+                    if (x.Name == typeName)
+                    {
+                        type = x;
+                        break; // assuming only one match is needed
+                    }
+                }
+            }
+
 
             if (type != null)
                 typeCache.AddOrUpdate(typeName, type, (key, existing) => existing);
@@ -138,7 +180,22 @@ namespace WinterRose
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
             //see if the type matches the type name, and exists within the same namespace as given with the parameter
-            assemblies.Foreach(x => x.GetTypes().Where(t => t.GetCustomAttributes().Any(a => a.GetType() == typeof(T))).Foreach(vt => types.Add(vt)));
+            foreach (var assembly in assemblies)
+            {
+                foreach (var type in assembly.GetTypes())
+                {
+                    var attributes = type.GetCustomAttributes();
+                    foreach (var attribute in attributes)
+                    {
+                        if (attribute.GetType() == typeof(T))
+                        {
+                            types.Add(type);
+                            break; // No need to check other attributes once a match is found
+                        }
+                    }
+                }
+            }
+
             return types.ToArray();
         }
 
@@ -166,7 +223,6 @@ namespace WinterRose
             {
                 // Get all types from the current assembly
                 var typesInAssembly = assembly.GetTypes();
-                typesInAssembly = [typeof(DateOnlyValueProvider)];
                 foreach (var type in typesInAssembly)
                 {
                     var interfaces = type.GetInterfaces();
@@ -195,10 +251,22 @@ namespace WinterRose
             // if it does, check if the generic type matches the generic type of the interface
             // otherwise, just check if the type implements the interface
 
-            assemblies.Foreach(x =>
-            x.GetTypes().Where(t =>
-            t.GetInterfaces().Any(i => i == type || (type.IsGenericType && i.IsGenericType && i.GetGenericTypeDefinition() == type.GetGenericTypeDefinition())))
-            .Foreach(t => types.Add(t)));
+            foreach (var assembly in assemblies)
+            {
+                foreach (var t in assembly.GetTypes())
+                {
+                    foreach (var i in t.GetInterfaces())
+                    {
+                        if (i == type ||
+                           (type.IsGenericType && i.IsGenericType && i.GetGenericTypeDefinition() == type.GetGenericTypeDefinition()))
+                        {
+                            types.Add(t);
+                            break; // No need to check other interfaces once a match is found
+                        }
+                    }
+                }
+            }
+
 
             return [.. types];
         }
@@ -434,7 +502,7 @@ namespace WinterRose
     /// Gets thrown when casting fails
     /// </summary>
     [Serializable]
-    public class FailedToCastTypeException : WinterException
+    public class FailedToCastTypeException : Exception
     {
 
         public FailedToCastTypeException() { }
@@ -445,7 +513,7 @@ namespace WinterRose
     /// Gets thrown when destination type is not supported by the <see cref="TypeWorker.CastPrimitive{T}(dynamic)"/> methods
     /// </summary>
     [Serializable]
-    public class CastTypeNotSupportedException : WinterException
+    public class CastTypeNotSupportedException : Exception
     {
         public CastTypeNotSupportedException() { }
         public CastTypeNotSupportedException(string message) : base(message) { }
@@ -455,7 +523,7 @@ namespace WinterRose
     /// Gets thrown when a linked method for events when serializing is not found
     /// </summary>
     [Serializable]
-    public class MethodNotFoundException : WinterException
+    public class MethodNotFoundException : Exception
     {
         public MethodNotFoundException() { }
         public MethodNotFoundException(string message) : base(message) { }

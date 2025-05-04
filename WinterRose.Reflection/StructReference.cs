@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.WinterForgeSerializing.Workers
+namespace WinterRose.Reflection
 {
     /// <summary>
     /// Wrapper to hold a direct reference to a struct, and allows it to be stored like a class
