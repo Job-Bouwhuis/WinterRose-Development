@@ -42,6 +42,12 @@ public abstract class NetworkConnection
     public abstract void Send(Packet packet, Guid destination);
 
     /// <summary>
+    /// When overriden in a derived class. attempts to disconnect the connection from the remote host
+    /// </summary>
+    /// <returns>true when accepted by the remote host, false otherwise. False may indicate crutial processing is still happening</returns>
+    public abstract bool Disconnect();
+
+    /// <summary>
     /// Gets a handler for the specific packet, if it exists
     /// </summary>
     /// <param name="packet"></param>

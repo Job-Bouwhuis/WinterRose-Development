@@ -22,9 +22,14 @@ Fixed bug where object would be seen as 1x1 pixel size in chunk system
 
 all in all, this made colisions work again</PackageReleaseNotes>
 		<PackageLicenseExpression>CC-BY-4.0</PackageLicenseExpression>
+		<Configurations>Debug;Release;debug FileServer</Configurations>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <DebugType>full</DebugType>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug FileServer|AnyCPU'">
 	  <DebugType>full</DebugType>
 	</PropertyGroup>
 

@@ -24,9 +24,14 @@
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <IncludeSymbols>False</IncludeSymbols>
     <PackageReleaseNotes>Lots and lots of bugfixes. and improvements across various systems</PackageReleaseNotes>
+    <Configurations>Debug;Release;debug FileServer</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug FileServer|AnyCPU'">
     <DebugType>portable</DebugType>
   </PropertyGroup>
 

@@ -40,4 +40,9 @@ public class RelayConnection : NetworkConnection
     {
         sendPoint.Send(packet, destination);
     }
+
+    public override bool Disconnect()
+    {
+        return sendPoint.Disconnect();
+    }
 }

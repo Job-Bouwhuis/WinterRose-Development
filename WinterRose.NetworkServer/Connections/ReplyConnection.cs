@@ -17,6 +17,8 @@ namespace WinterRose.NetworkServer.Connections
             this.original = original;
         }
 
+        public override bool Disconnect() => original.Disconnect();
+
         public override void Send(Packet packet)
         {
             if (packet is not ReplyPacket p)

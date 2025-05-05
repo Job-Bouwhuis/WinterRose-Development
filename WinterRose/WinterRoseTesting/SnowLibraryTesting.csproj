@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 		<EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild>
+		<Configurations>Debug;Release;debug FileServer</Configurations>
 	</PropertyGroup>
 	<ItemGroup>
 	  <Compile Remove="libraries\**" />

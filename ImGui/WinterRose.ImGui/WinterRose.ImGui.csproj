@@ -10,9 +10,14 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>WinterRose.ImGui</Title>
     <Version>1.0.2</Version>
+    <Configurations>Debug;Release;debug FileServer</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug FileServer|AnyCPU'">
     <DebugType>full</DebugType>
   </PropertyGroup>
 

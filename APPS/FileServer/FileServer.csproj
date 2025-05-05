@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>WinterRose.FileServer</RootNamespace>
+    <Configurations>Debug;Release;debug FileServer</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
