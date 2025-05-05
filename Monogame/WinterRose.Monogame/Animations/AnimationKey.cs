@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.Animations
 {
@@ -12,6 +11,7 @@ namespace WinterRose.Monogame.Animations
     /// </summary>
     public abstract class AnimationKey
     {
+        [IncludeWithSerialization]
         public Animation Animation { get; internal set; }
         public object Target { get; set; }
 

@@ -1,6 +1,5 @@
 ﻿using TopDownGame.Inventories.Base;
-using WinterRose.CrystalScripting.Legacy.Interpreting.Exceptions;
-using WinterRose.Serialization;
+using WinterRose;
 
 namespace TopDownGame.Loot
 {

@@ -1,6 +1,4 @@
-﻿using WinterRose.Serialization;
-
-namespace WinterRose.AnonymousTypes;
+﻿namespace WinterRose.AnonymousTypes;
 
 /// <summary>
 /// Holds no data.

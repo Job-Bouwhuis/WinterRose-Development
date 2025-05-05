@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net.Sockets;
-using WinterRose.Serialization;
 
 namespace WinterRose.Networking.TCP;
 

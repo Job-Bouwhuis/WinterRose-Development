@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.Networking.TCP
 {
@@ -39,12 +39,12 @@ namespace WinterRose.Networking.TCP
 
         public static Packet FromSerialized(string serialziedPacket)
         {
-            return SnowSerializer.Deserialize<Packet>(serialziedPacket).Result;
+            return WinterForge.DeserializeFromString<Packet>(serialziedPacket);
         }
 
-        public SerializationResult GetSerialized()
+        public string GetSerialized()
         {
-            return SnowSerializer.Serialize(this);
+            return WinterForge.SerializeToString(this);
         }
     }
 }

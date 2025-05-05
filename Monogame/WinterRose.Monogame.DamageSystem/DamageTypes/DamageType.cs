@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Monogame.StatusSystem;
-using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 #nullable enable

@@ -3,7 +3,6 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using WinterRose.Serialization;
 using WinterRose.WinterThornScripting.Interpreting;
 
 namespace WinterRose.WinterThornScripting;

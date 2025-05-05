@@ -14,7 +14,7 @@ namespace WinterRose.WIP.Redis.Framework
         private NetworkStream networkStream;
 
         public int DownloadChunkSize { get; set; } = 1024 * 1024 * 10;  // 1MB
-        public event Action<ProgressReporter> ProgressReporter;
+        public event Action<float> ProgressReporter;
 
         public RedisSynchronousStream(Socket socket)
         {
@@ -110,7 +110,7 @@ namespace WinterRose.WIP.Redis.Framework
                         reply.Append(Encoding.UTF8.GetString(data)[..readBytes]);
 
                         float progress = (float)i / dataLength;
-                        ProgressReporter?.Invoke(new ProgressReporter(progress * 100, $"handled {i} bytes of {dataLength}. Newly read bytes: {readBytes}"));
+                        ProgressReporter?.Invoke(progress * 100);
                         Thread.Sleep(30);
                         i += readBytes;
                         bytesLeft -= readBytes;

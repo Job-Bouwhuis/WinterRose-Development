@@ -5,8 +5,6 @@ using System.Drawing;
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Numerics;
-using WinterRose.Serialization;
-using WinterRose.SourceGeneration.Serialization;
 
 namespace WinterRose.Vectors
 {
@@ -14,18 +12,15 @@ namespace WinterRose.Vectors
     /// A vector2 with integer values
     /// </summary>
     [DebuggerDisplay("X: {x} - Y: {y}")]
-    [GenerateSerializer]
     public struct Vector2I : INumber<Vector2I>
     {
         /// <summary>
         /// Represents (0, 0)
         /// </summary>
-        [ExcludeFromSerialization]
         private static readonly Vector2I zero = new();
         /// <summary>
         /// Represents (0, 0)
         /// </summary>
-        [ExcludeFromSerialization]
         private static readonly Vector2I one = new(1, 1);
         /// <summary>
         /// The X component of the vector

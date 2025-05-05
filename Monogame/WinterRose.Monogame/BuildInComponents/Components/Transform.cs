@@ -7,7 +7,6 @@ using System.Windows.Forms;
 using WinterRose.Monogame.Attributes;
 using WinterRose.Monogame.Interfaces;
 using WinterRose.Monogame.Worlds;
-using WinterRose.Serialization;
 
 namespace WinterRose.Monogame
 {

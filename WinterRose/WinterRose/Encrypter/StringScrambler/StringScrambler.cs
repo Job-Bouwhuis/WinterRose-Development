@@ -81,7 +81,7 @@ namespace WinterRose.Encryption
         /// <param name="progress"></param>
         /// <param name="reportAt"></param>
         /// <returns>The resulting string from the encrypting</returns>
-        public MutableString Encrypt(MutableString message, Action<ProgressReporter> progress, int reportAt = 1407900)
+        public MutableString Encrypt(MutableString message, Action<float> progress, int reportAt = 1407900)
         {
             MutableString result = new();
 
@@ -114,7 +114,7 @@ namespace WinterRose.Encryption
                 result += cc;
 
                 if (i is not 0 && i % reportAt == 0)
-                    progress(new((float)MathS.GetPercentage(i, message.Length, 2), $"Completed {i} characters out of {message.Length}"));
+                    progress((float)MathS.GetPercentage(i, message.Length, 2));
             }
             Reset();
             return result;
@@ -169,7 +169,7 @@ namespace WinterRose.Encryption
         /// <param name="progress"></param>
         /// <param name="reportAt"></param>
         /// <returns>the resulting string from the decryption</returns>
-        public MutableString Decrypt(string? message, Action<ProgressReporter> progress, int reportAt = 1407900)
+        public MutableString Decrypt(string? message, Action<float> progress, int reportAt = 1407900)
         {
             if (message == null)
                 throw new ArgumentNullException(nameof(message), "message can not be null when decrypting");
@@ -203,7 +203,7 @@ namespace WinterRose.Encryption
                 result += cc;
 
                 if (i is not 0 && i % reportAt == 0)
-                    progress(new((float)MathS.GetPercentage(i, message.Length, 2), $"Completed {i} characters out of {message.Length}"));
+                    progress((float)MathS.GetPercentage(i, message.Length, 2));
                 i++;
             }
             Reset();

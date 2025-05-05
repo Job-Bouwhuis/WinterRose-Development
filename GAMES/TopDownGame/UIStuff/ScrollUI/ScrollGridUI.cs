@@ -7,8 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms.Design;
+using WinterRose;
 using WinterRose.Monogame;
-using WinterRose.Serialization;
 
 namespace TopDownGame.UIStuff.ScrollUI
 {

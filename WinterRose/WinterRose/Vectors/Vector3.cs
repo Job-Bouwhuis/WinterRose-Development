@@ -1,14 +1,11 @@
-﻿using WinterRose.Serialization;
-using WinterRose.WIP.TestClasses;
+﻿using WinterRose.WIP.TestClasses;
 using System;
-using WinterRose.SourceGeneration.Serialization;
 
 namespace WinterRose.Vectors
 {
     /// <summary>
     /// An object that represents a position in 3D worldspace
     /// </summary>
-    [GenerateSerializer]
     public struct Vector3
     {
         /// <summary>

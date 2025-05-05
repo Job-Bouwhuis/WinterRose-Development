@@ -18,7 +18,7 @@ namespace WinterRose.WIP.Redis.Framework
         /// <summary>
         /// Event that is triggered when a progress report is available
         /// </summary>
-        public event Action<ProgressReporter> ProgressReporter
+        public event Action<float> ProgressReporter
         {
             add 
             { 
@@ -32,7 +32,7 @@ namespace WinterRose.WIP.Redis.Framework
             }
         }
 
-        protected event Action<ProgressReporter>? progressReporter;
+        protected event Action<float>? progressReporter;
 
         /// <summary>
         /// Returns if the current connection is linked to Redis
@@ -52,7 +52,7 @@ namespace WinterRose.WIP.Redis.Framework
             sendCommanSyncQueue = Queue.Synchronized(new Queue());
         }
 
-        protected void CallProgressReporter(ProgressReporter progress)
+        protected void CallProgressReporter(float progress)
         {
             progressReporter?.Invoke(progress);
         }
@@ -126,7 +126,7 @@ namespace WinterRose.WIP.Redis.Framework
         {
             if (isInTransaction) return false;
             string retVal = ((reply != null && reply.Length > 0) ? reply[0] : null);
-            return ((retVal == null || retVal.Equals(Constants.NO_OP)) ? false : true);
+            return retVal != null && !retVal.Equals(Constants.NO_OP);
         }
 
         protected int ConvertReplyToInt(string[] reply)

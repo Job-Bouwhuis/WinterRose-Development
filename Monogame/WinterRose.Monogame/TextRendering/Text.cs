@@ -4,7 +4,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using WinterRose.CrystalScripting.Legacy.Interpreting.Exceptions;
 
 namespace WinterRose.Monogame.TextRendering;
 

@@ -2,7 +2,7 @@
 namespace WinterRose.Reflection;
 
 [Serializable]
-internal class FieldNotFoundException : Exception
+public class FieldNotFoundException : Exception
 {
     public FieldNotFoundException()
     {

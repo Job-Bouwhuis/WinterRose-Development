@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using TopDownGame.Inventories.Base;
 using TopDownGame.Loot;
+using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem;
-using WinterRose.Serialization;
 
 namespace TopDownGame.Drops
 {

@@ -1,14 +1,11 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
-using WinterRose.Serialization;
-using WinterRose.SourceGeneration.Serialization;
 
 namespace WinterRose.Monogame
 {
     /// <summary>
     /// A rectangle with float values
     /// </summary>
-    [GenerateSerializer]
     public struct RectangleF
     {
         /// <summary>

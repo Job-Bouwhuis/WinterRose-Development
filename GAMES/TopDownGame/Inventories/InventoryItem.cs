@@ -2,7 +2,7 @@
 using TopDownGame.Inventories.Base;
 using WinterRose;
 using WinterRose.Monogame;
-using WinterRose.Serialization;
+using WinterRose.WinterForgeSerialization;
 
 namespace TopDownGame.Inventories;
 

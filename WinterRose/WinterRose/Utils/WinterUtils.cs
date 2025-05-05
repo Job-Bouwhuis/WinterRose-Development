@@ -204,7 +204,7 @@ namespace WinterRose
         /// <param name="progress"></param>
         /// <returns></returns>
         /// <exception cref="OperationCanceledException"></exception>
-        public static Bitmap ConvertToBitmap(this byte[] inputBytes, ProgressReporter? progress = null)
+        public static Bitmap ConvertToBitmap(this byte[] inputBytes)
         {
             if (!OperatingSystem.IsWindowsVersionAtLeast(7))
                 throw new OperationCanceledException("This method requires Windows 7 or higher");

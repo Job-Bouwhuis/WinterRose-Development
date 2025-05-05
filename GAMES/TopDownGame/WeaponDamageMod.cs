@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Monogame.DamageSystem;
 using WinterRose.Monogame.Weapons;
-using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.ModdingSystem;
 public class WeaponDamageMod : ModAttribute<Weapon>

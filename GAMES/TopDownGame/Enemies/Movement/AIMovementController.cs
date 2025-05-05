@@ -9,7 +9,6 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose;
 using WinterRose.Monogame;
-using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 namespace TopDownGame.Enemies.Movement;

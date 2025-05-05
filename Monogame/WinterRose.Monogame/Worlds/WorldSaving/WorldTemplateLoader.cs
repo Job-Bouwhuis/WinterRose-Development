@@ -14,7 +14,6 @@ using WinterRose.Exceptions;
 using WinterRose.FileManagement;
 using WinterRose.Monogame.Worlds.WorldSaving;
 using WinterRose.Reflection;
-using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.Worlds;
 
@@ -269,7 +268,7 @@ internal sealed class WorldTemplateLoader
         {
             var e = new TypeNotFoundException($"Couldnt find the type of name \"{typeDef}\"");
             e.Source = "WorldTemplateLoader";
-            e.SetStackTrace($"object: {obj.Name}\n\ncontent:\n{content}");
+            //e.SetStackTrace($"object: {obj.Name}\n\ncontent:\n{content}");
             Debug.LogException(e);
             return new Breakout();
         }
@@ -404,7 +403,7 @@ internal sealed class WorldTemplateLoader
                 cur = refh.GetValueFrom(part);
             }
         }
-        catch (FieldNotFoundException)
+        catch (Exception e) when (e.GetType().Name is "FieldNotFoundException")
         {
             cur = GetValue(content, typeOverrides);
             if (cur is Breakout)
@@ -502,7 +501,7 @@ Continue:
                         {
                             var e = new TypeNotFoundException($"Couldnt find the type of name \"{typeDef}\"");
                             e.Source = "WorldTemplateLoader";
-                            e.SetStackTrace($"object: {obj.Name}\n\ncontent:\n{content}");
+                            //e.SetStackTrace($"object: {obj.Name}\n\ncontent:\n{content}");
                             Debug.LogException(e);
                             return new[] { new Breakout() };
                         }
@@ -698,7 +697,7 @@ Continue:
         {
             var e = new TypeNotFoundException($"Couldnt find the type of name \"{typeDef}\"");
             e.Source = "WorldTemplateLoader";
-            e.SetStackTrace($"object: {obj.Name}\n\ncomponentData:\n{componentData}");
+            //e.SetStackTrace($"object: {obj.Name}\n\ncomponentData:\n{componentData}");
             Debug.LogException(e);
             return false;
         }

@@ -2,9 +2,9 @@
 using System;
 using TopDownGame.Inventories.Base;
 using TopDownGame.Players;
+using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Monogame.Worlds;
-using WinterRose.Serialization;
 
 namespace TopDownGame.Drops;
 

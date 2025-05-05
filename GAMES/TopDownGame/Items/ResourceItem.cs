@@ -2,7 +2,6 @@
 using TopDownGame.Inventories;
 using TopDownGame.Resources;
 using WinterRose.Monogame;
-using WinterRose.Serialization;
 
 namespace TopDownGame.Items;
 internal class ResourceItem : InventoryItem<Resource>
@@ -13,7 +12,7 @@ internal class ResourceItem : InventoryItem<Resource>
     public override string Description => Item.Description;
     public override Rarity Rarity => Item.Rarity;
     public override int Count { get => Item.Amount; set => Item.Amount = value; }
-    public override int StackLimit => Item.Timeout is null ? int.MaxValue : 1;
+    public override int StackLimit => Item.Timeout.Equals(DateTime.MinValue) ? int.MaxValue : 1;
     public override Sprite ItemSprite 
     { 
         get => Item.ResourceSprite; 

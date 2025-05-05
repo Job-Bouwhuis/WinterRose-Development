@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using WinterRose.Encryption;
 using WinterRose.FileManagement;
 using WinterRose.Monogame.Worlds;
-using WinterRose.Serialization;
 using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.Monogame;
@@ -22,11 +21,6 @@ public sealed class WorldObjectPrefab : Prefab
 {
     private readonly Lock threadLock = new();
     private Task? objectLoadTask;
-    private static SerializerSettings serializerSettings = new()
-    {
-        IncludeType = true,
-        CircleReferencesEnabled = true
-    };
 
     /// <summary>
     /// For serializing
@@ -150,17 +144,17 @@ public sealed class WorldObjectPrefab : Prefab
     public static implicit operator WorldObject(WorldObjectPrefab prefab) => prefab.LoadedObject;
 }
 
-public class WorldObjectPrefabSerializer : CustomSerializer<WorldObjectPrefab>
-{
-    public override object Deserialize(string data, int depth)
-    {
-        var fab = new WorldObjectPrefab(data);
-        return fab;
-    }
-    public override string Serialize(object obj, int depth)
-    {
-        WorldObjectPrefab fab = (WorldObjectPrefab)obj;
-        fab.Save();
-        return fab.Name;
-    }
-}
+//public class WorldObjectPrefabSerializer : CustomSerializer<WorldObjectPrefab>
+//{
+//    public override object Deserialize(string data, int depth)
+//    {
+//        var fab = new WorldObjectPrefab(data);
+//        return fab;
+//    }
+//    public override string Serialize(object obj, int depth)
+//    {
+//        WorldObjectPrefab fab = (WorldObjectPrefab)obj;
+//        fab.Save();
+//        return fab.Name;
+//    }
+//}

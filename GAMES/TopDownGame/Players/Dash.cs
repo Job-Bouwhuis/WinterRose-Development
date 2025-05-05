@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Input;
+using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Monogame.StatusSystem;
-using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 namespace TopDownGame.Players;

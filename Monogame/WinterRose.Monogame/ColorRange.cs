@@ -4,15 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Serialization;
-using WinterRose.SourceGeneration.Serialization;
 
 namespace WinterRose.Monogame
 {
     /// <summary>
     /// A range of colors.
     /// </summary>
-    [GenerateSerializer]
     public sealed class ColorRange
     {
         [IncludeWithSerialization]

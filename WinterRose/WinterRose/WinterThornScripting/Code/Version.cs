@@ -1,6 +1,4 @@
-﻿using WinterRose.Serialization;
-
-namespace WinterRose.WinterThornScripting
+﻿namespace WinterRose.WinterThornScripting
 {
     /// <summary>
     /// The version of a WinterThorn script.

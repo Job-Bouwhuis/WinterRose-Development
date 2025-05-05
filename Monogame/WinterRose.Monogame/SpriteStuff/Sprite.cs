@@ -1,5 +1,4 @@
-﻿using WinterRose.Serialization;
-using System;
+﻿using System;
 using System.IO;
 using WinterRose.FileManagement;
 using System.Linq;
@@ -9,6 +8,7 @@ using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Threading;
 using SharpDX.DirectWrite;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.Monogame;
 
@@ -145,7 +145,7 @@ public class Sprite
     {
         try
         {
-            GeneratedTextureData genData = SnowSerializer.Deserialize<GeneratedTextureData>(data).Result;
+            GeneratedTextureData genData = WinterForge.DeserializeFromString<GeneratedTextureData>(data);
             if (genData != null)
             {
                 GeneratedTextureData = genData;

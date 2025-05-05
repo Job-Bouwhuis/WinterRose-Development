@@ -5,7 +5,6 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.StaticValueModifiers;

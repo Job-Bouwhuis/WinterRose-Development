@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace WinterRose;
 
@@ -63,6 +64,17 @@ public class Response<T> : INotifyCompletion, IClearDisposable
     /// </summary>
     /// <returns></returns>
     public Response<T> GetAwaiter() => this;
+
+    public void Wait()
+    {
+        Task t = Task.Run(() =>
+        {
+            while (!_isCompleted)
+                continue;
+        });
+
+        t.Wait();
+    }
 
     /// <summary>
     /// Sets the result of the response.

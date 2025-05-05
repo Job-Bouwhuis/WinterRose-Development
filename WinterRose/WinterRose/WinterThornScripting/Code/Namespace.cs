@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using WinterRose.WinterThornScripting.Generation;
 using WinterRose;
 using System.Linq;
-using WinterRose.Serialization;
 
 namespace WinterRose.WinterThornScripting
 {

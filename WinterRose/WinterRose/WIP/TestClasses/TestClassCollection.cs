@@ -1,10 +1,9 @@
-﻿using WinterRose.Serialization;
-using System.Collections;
+﻿using System.Collections;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using WinterRose.Vectors;
-using WinterRose.SourceGeneration.Serialization;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.WIP.TestClasses
 {
@@ -135,9 +134,9 @@ namespace WinterRose.WIP.TestClasses
         {
             TimeDataTypeTests data = new();
 
-            string serializedData = SnowSerializer.Serialize(data).Result;
+            string serializedData = WinterForge.SerializeToString(data);
             
-            var i = SnowSerializer.Deserialize<TimeDataTypeTests>(serializedData).Result;
+            var i = WinterForge.DeserializeFromString<TimeDataTypeTests>(serializedData);
 
             bool same = data.IsSame(i);
         }

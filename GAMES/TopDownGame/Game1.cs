@@ -21,7 +21,8 @@ using WinterRose.FileManagement;
 using WinterRose.Monogame;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
-using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace TopDownGame;
 
@@ -29,20 +30,20 @@ public class Game1 : Application
 {
     protected override World CreateWorld()
     {
-        using Stream human = File.OpenRead("staticCallHuamn.txt");
-        File.Delete("staticCallOpcodes.txt");
-        using Stream opcodes = File.Open("staticCallOpcodes.txt", FileMode.CreateNew, FileAccess.ReadWrite);
+        //using Stream human = File.OpenRead("staticCallHuamn.txt");
+        //File.Delete("staticCallOpcodes.txt");
+        //using Stream opcodes = File.Open("staticCallOpcodes.txt", FileMode.CreateNew, FileAccess.ReadWrite);
 
-        var parser = new HumanReadableParser();
-        parser.Parse(human, opcodes);
-        opcodes.Seek(0, SeekOrigin.Begin);
+        //var parser = new HumanReadableParser();
+        //parser.Parse(human, opcodes);
+        //opcodes.Seek(0, SeekOrigin.Begin);
 
-        var instr = InstructionParser.ParseOpcodes(opcodes);
+        //var instr = InstructionParser.ParseOpcodes(opcodes);
 
-        var exec = new InstructionExecutor();
-        var result = exec.Execute(instr);
+        //var exec = new InstructionExecutor();
+        //var result = exec.Execute(instr);
 
-        var res = CameraIndex;
+        //WinterRose.Monogame.Debug.Log(CameraIndex, true);
 
         Hirarchy.Show = true;
 
@@ -179,8 +180,11 @@ public class Game1 : Application
         sb.AppendLine($"Serialization: Best = {bestSerializationTime} ms, Worst = {worstSerializationTime} ms");
         sb.AppendLine($"Deserialization: Best = {bestDeserializationTime} ms, Worst = {worstDeserializationTime} ms");
 
-        Console.WriteLine($"Serialization: Best = {bestSerializationTime} ms, Worst = {worstSerializationTime} ms");
-        Console.WriteLine($"Deserialization: Best = {bestDeserializationTime} ms, Worst = {worstDeserializationTime} ms");
+        int lines = FileManager.ReadAllLines("Level 1").Length;
+        sb.AppendLine("Total instructions: " + lines);
+        sb.AppendLine("file size (bytes): " + new FileInfo("Level 1").Length);
+        
+        Console.WriteLine(sb.ToString());
 
         Console.WriteLine("Press enter to copy to clipboard and close");
 

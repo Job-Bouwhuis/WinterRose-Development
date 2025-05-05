@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using TopDownGame.Inventories.Base;
 using WinterRose;
 using WinterRose.Monogame;
-using WinterRose.Serialization;
 using WinterRose.WinterForgeSerializing;
 
 namespace TopDownGame.Loot

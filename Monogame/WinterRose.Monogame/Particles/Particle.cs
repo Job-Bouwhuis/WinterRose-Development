@@ -1,12 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using WinterRose.Serialization;
-using WinterRose.SourceGeneration.Serialization;
 
 namespace WinterRose.Monogame.Particles
 {
-    [GenerateSerializer]
     public class Particle
     {
         [IncludeWithSerialization]

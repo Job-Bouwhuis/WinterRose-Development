@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using WinterRose;
 using WinterRose.Monogame.DamageSystem;
-using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.Monogame.Weapons;

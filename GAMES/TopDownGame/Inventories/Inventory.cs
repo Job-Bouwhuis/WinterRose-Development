@@ -8,7 +8,6 @@ using TopDownGame.Inventories.Base;
 using TopDownGame.Loot;
 using WinterRose;
 using WinterRose.Monogame;
-using WinterRose.Serialization;
 using WinterRose.WinterForgeSerializing;
 
 namespace TopDownGame.Inventories;

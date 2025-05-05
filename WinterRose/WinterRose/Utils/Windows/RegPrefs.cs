@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose;
 
@@ -44,20 +44,19 @@ public static class RegPrefs
     }
 
     /// <summary>
-    /// Sets a value that is serialized using <see cref="SnowSerializer"/>
+    /// Sets a value that is serialized using <see cref="WinterForge"/>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public static void SetSerialized<T>(string key, T value)
+    public static void SetSerialized(string key, object value)
     {
-        string serialize = SnowSerializer.Serialize(value).Result;
+        string serialize = WinterForge.SerializeToString(value);
 
         rootKey[key].SetValue(serialize);
     }
 
     /// <summary>
-    /// Gets a value that is serialized using <see cref="SnowSerializer"/>
+    /// Gets a value that is serialized using <see cref="WinterForge"/>
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="key"></param>
@@ -67,7 +66,7 @@ public static class RegPrefs
     {
         if (!rootKey[key].GetValue(out string s))
             return defaultValue;
-        return SnowSerializer.Deserialize<T>(s).Result;
+        return WinterForge.DeserializeFromString<T>(s);
     }
 
     /// <summary>

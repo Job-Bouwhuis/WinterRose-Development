@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using WinterRose.Serialization;
 using WinterRose.WinterThornScripting.Interpreting;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 

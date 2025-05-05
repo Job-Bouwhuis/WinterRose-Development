@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using WinterRose.Serialization;
 using WinterRose.WinterThornScripting.Interpreting;
 
 namespace WinterRose.WinterThornScripting;

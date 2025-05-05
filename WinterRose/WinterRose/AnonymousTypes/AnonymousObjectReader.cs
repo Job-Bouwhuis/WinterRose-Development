@@ -2,10 +2,12 @@
 using System.Dynamic;
 using System.Reflection;
 using System.Text;
-using WinterRose.Serialization;
 using System.Linq;
 using System;
 using System.Collections.ObjectModel;
+using WinterRose.WinterForgeSerializing;
+using System.IO;
+using System.Reflection.Emit;
 
 namespace WinterRose.AnonymousTypes;
 
@@ -181,12 +183,9 @@ public class AnonymousObjectReader : DynamicObject
         var sb = new StringBuilder();
         foreach (var pair in map)
         {
-            if (pair.Value is not AnonymousObjectReader && !SnowSerializerHelpers.SupportedPrimitives.Contains(pair.Value.GetType()))
+            if (pair.Value is not AnonymousObjectReader && !WinterForge.SupportedPrimitives.Contains(pair.Value.GetType()))
             {
-                MethodInfo[] methods = typeof(SnowSerializer).GetMethods();
-                MethodInfo SerializeMethod = methods.First(m => m.Name == "Serialize" && m.GetParameters().Length == 2);
-                dynamic serialziedResult = SerializeMethod.MakeGenericMethod(pair.Value.GetType()).Invoke(null, new object[] { pair.Value, SnowSerializer.DefaultSettings });
-                string value = serialziedResult.Result;
+                string value = WinterForge.SerializeToString(pair.Value);
                 sb.Append($"{pair.Key}={objectDepth}|{$"{pair.Value.GetType().Namespace}.{pair.Value.GetType().Name}".Base64Encode()}|{value.Base64Encode()};{objectDepth}");
             }
             else if (pair.Value is AnonymousObjectReader reader)
@@ -216,17 +215,13 @@ public class AnonymousObjectReader : DynamicObject
             else
             {
                 var typeValue = ((string)value).Split("|", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                var type = Type.GetType(typeValue[0].Base64Decode());
+                var type = TypeWorker.FindType(typeValue[0].Base64Decode());
                 value = typeValue[1];
 
-                if (SnowSerializerHelpers.SupportedPrimitives.Contains(type))
+                if (WinterForge.SupportedPrimitives.Contains(type))
                     value = TypeWorker.CastPrimitive(value, type);
                 else
-                {
-                    MethodInfo DeserializeMethod = typeof(SnowSerializer).GetMethod("Deserialize", 1, [typeof(string), typeof(SerializerSettings)]);
-                    value = DeserializeMethod.MakeGenericMethod(type).Invoke(null, new object[] { ((string)value).Base64Decode(), SnowSerializer.DefaultSettings });
-                    value = ((dynamic)value).Result;
-                }
+                    value = WinterForge.DeserializeFromString(((string)value).Base64Decode());
 
                 reader.Add(key, value);
             }

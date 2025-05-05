@@ -1,14 +1,11 @@
-﻿using WinterRose.Serialization;
-using System;
+﻿using System;
 using System.Diagnostics.CodeAnalysis;
-using WinterRose.SourceGeneration.Serialization;
 
 namespace WinterRose.Vectors
 {
     /// <summary>
     /// An object that represents a point in 2D worldspace
     /// </summary>
-    [GenerateSerializer]
     public struct Vector2 : ICloneable, IEquatable<Vector2>, IComparable<Vector2>
     {
         /// <summary>
@@ -19,7 +16,6 @@ namespace WinterRose.Vectors
         /// <summary>
         /// Defines a Vector2 with X and Y values at 0
         /// </summary>
-        [ExcludeFromSerialization]
         public static readonly Vector2 Zero = new(0f, 0f);
 
         /// <summary>

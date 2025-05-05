@@ -375,9 +375,9 @@ namespace WinterRose.FileManagement
             }
         }
 
-        public static void DirectoryDelete(DirectoryInfo directory, Action<ProgressReporter>? progressReport = null)
+        public static void DirectoryDelete(DirectoryInfo directory, Action<float>? progressReport = null)
         {
-            progressReport?.Invoke(new(0, "Counting files..."));
+            progressReport?.Invoke(0);
             var items = CountFilesAndDirectories(directory);
             int itemCount = items.directories + items.files;
 
@@ -385,7 +385,7 @@ namespace WinterRose.FileManagement
             P_DirectoryDelete(directory, progressReport, ref completedItems, itemCount);
             directory.Delete();
         }
-        private static void P_DirectoryDelete(DirectoryInfo directory, Action<ProgressReporter>? progressReport, ref int completedItems, int totalItems)
+        private static void P_DirectoryDelete(DirectoryInfo directory, Action<float>? progressReport, ref int completedItems, int totalItems)
         {
             foreach (var dir in directory.EnumerateDirectories())
             {
@@ -397,7 +397,7 @@ namespace WinterRose.FileManagement
             {
                 file.Delete();
                 completedItems++;
-                progressReport?.Invoke(new((float)MathS.GetPercentage(completedItems, totalItems, 2), file.FullName));
+                progressReport?.Invoke((float)MathS.GetPercentage(completedItems, totalItems, 2));
             }
         }
 

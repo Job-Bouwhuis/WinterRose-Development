@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Serialization;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.Monogame.Animations
 {
@@ -35,7 +36,7 @@ namespace WinterRose.Monogame.Animations
         /// </summary>
         public override void Load()
         {
-            result = SnowSerializer.Deserialize<Animation>(File.ReadContent()).Result;
+            result = WinterForge.DeserializeFromFile<Animation>(File.File.FullName);
 
             foreach(var key in result.Keys)
             {
@@ -48,9 +49,7 @@ namespace WinterRose.Monogame.Animations
         /// </summary>
         public override void Save()
         {
-            var serializeResult = SnowSerializer.Serialize(result);
-
-            File.WriteContent(serializeResult.Result, true);
+            WinterForge.SerializeToFile(result, File.File.FullName);
         }
 
         /// <summary>

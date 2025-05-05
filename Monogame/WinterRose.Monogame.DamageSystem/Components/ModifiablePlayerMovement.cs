@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using WinterRose.Monogame;
-using WinterRose.Serialization;
 using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.Monogame;

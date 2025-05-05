@@ -1,14 +1,13 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Diagnostics;
-using WinterRose.SourceGeneration.Serialization;
 
 namespace WinterRose.Monogame
 {
     /// <summary>
     /// A struct that represents a 2D Vector with integer values.
     /// </summary>
-    [DebuggerDisplay("X: {X} - Y: {Y}"), GenerateSerializer]
+    [DebuggerDisplay("X: {X} - Y: {Y}")]
     public struct Vector2I
     {
         /// <summary>

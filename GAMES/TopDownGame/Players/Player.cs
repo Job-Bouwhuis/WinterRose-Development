@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TopDownGame.Inventories;
+using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.Monogame.DamageSystem;
 using WinterRose.Monogame.ModdingSystem;
 using WinterRose.Monogame.Weapons;
-using WinterRose.Serialization;
 
 namespace TopDownGame.Players
 {

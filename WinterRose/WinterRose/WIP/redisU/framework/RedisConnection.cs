@@ -18,7 +18,7 @@ namespace WinterRose.WIP.Redis
         private Thread? dataListener = null;
         private bool closeCalled;
 
-        public event Action<ProgressReporter>? ProgressReporter
+        public event Action<float>? ProgressReporter
         {
             add
             {
@@ -270,7 +270,7 @@ namespace WinterRose.WIP.Redis
                     }
 
                     float progress = (float)i / chunks.Length;
-                    CallProgressReporter(new ProgressReporter(progress * 100, $"handled {i} chunks of {chunks.Length}"));
+                    CallProgressReporter(progress * 100);
                    
                 }
                 return new(RedisAnswerStatusCode.OK, true);

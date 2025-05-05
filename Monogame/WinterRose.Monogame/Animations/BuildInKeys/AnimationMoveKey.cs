@@ -1,6 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
-using WinterRose.Serialization;
 
 namespace WinterRose.Monogame.Animations;
 

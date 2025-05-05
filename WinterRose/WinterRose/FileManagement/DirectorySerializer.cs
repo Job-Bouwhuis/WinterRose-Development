@@ -1,5 +1,4 @@
-﻿using WinterRose.Serialization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -10,6 +9,7 @@ using WinterRose.WIP.TestClasses;
 using System.Collections.Concurrent;
 using WinterRose.AnonymousTypes;
 using WinterRose.Reflection;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.FileManagement
 {
@@ -23,16 +23,6 @@ namespace WinterRose.FileManagement
     /// </summary>
     public static class DirectorySerializer
     {
-        private static readonly SerializerSettings serializerSettings = new()
-        {
-            IncludeType = false,
-        };
-
-        static DirectorySerializer()
-        {
-
-        }
-
         /// <summary>
         /// serializes the given directory
         /// </summary>
@@ -69,7 +59,7 @@ namespace WinterRose.FileManagement
                 {
                     string path = Path.Combine(FileManager.PathOneUp(archivePath), "Decrypted directory archive");
                     if (Directory.Exists(path))
-                        FileManager.DirectoryDelete(new(path), reporter => settings.Value.Progress?.Invoke(reporter.Progress.ToString() + "%"));
+                        FileManager.DirectoryDelete(new(path), progress => settings.Value.Progress?.Invoke(progress.ToString() + "%"));
 
                     var set = settings.Value;
                     set.DestinationDirectory = Directory.CreateDirectory(path);
@@ -105,9 +95,7 @@ namespace WinterRose.FileManagement
                 dir.files.Add(dir.files.NextAvalible(), SerializedFile.SerializeFile(file));
             }
 
-            string serialized = SnowSerializer.Serialize(dir, serializerSettings).Result;
-            //serialized = scrambler.Encrypt(serialized);
-            //return Encryptor.Encrypt(serialized, encryotorSettings);
+            string serialized = WinterForge.SerializeToString(dir);
             return serialized;
         }
 
@@ -132,9 +120,9 @@ namespace WinterRose.FileManagement
             if (Directory.Exists(encryptedDirName))
             {
                 settings.Progress?.Invoke("Existing encrypted archive exists. Deleting it...");
-                FileManager.DirectoryDelete(new(encryptedDirName), reporter =>
+                FileManager.DirectoryDelete(new(encryptedDirName), progress =>
                 {
-                    settings.Progress?.Invoke(reporter.Progress.ToString() + "%");
+                    settings.Progress?.Invoke(progress.ToString() + "%");
                 });
             }
             DirectoryInfo newDir = Directory.CreateDirectory(encryptedDirName);
@@ -169,7 +157,7 @@ namespace WinterRose.FileManagement
             var encryptedName = ByteEncryptor.Encrypt(fileName, settings.ByteEncryptorSettings);
             encryptedName = encryptedName.Replace('/', '[').Replace('\\', ']').Replace('*', '}');
 
-            var data = SnowSerializer.Serialize(SerializedFile.SerializeFile(filePath), serializerSettings).Result;
+            var data = WinterForge.SerializeToString(SerializedFile.SerializeFile(filePath));
 
             string encrypted;
             if (settings.UseStrongerEncryption)
@@ -260,7 +248,7 @@ namespace WinterRose.FileManagement
 
             string path = Path.Combine(destination.FullName);
 
-            SerializedFile file = SnowSerializer.Deserialize<SerializedFile>(fileContent, serializerSettings).Result;
+            SerializedFile file = WinterForge.DeserializeFromString<SerializedFile>(fileContent);
             settings.Progress?.Invoke($"{path}\\{file.fileName}{file.fileExtention}");
             SerializedFile.DeserializeFile(file, path);
         }
@@ -269,9 +257,7 @@ namespace WinterRose.FileManagement
         {
             if (!File.Exists(archivePath)) return "No archive found";
 
-            string archiveContent = FileManager.Read(archivePath);
-
-            SerializedDirectory dir = SnowSerializer.Deserialize<SerializedDirectory>(archiveContent, serializerSettings).Result;
+            SerializedDirectory dir = WinterForge.DeserializeFromFile<SerializedDirectory>(archivePath);
             string directory = $"{settings.DestinationDirectory!.FullName}\\{dir.directoryName}";
             if (!Directory.Exists(directory))
                 dir.dirInfo = Directory.CreateDirectory(directory);

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using WinterRose.Serialization;
 using WinterRose.WinterThornScripting.Interpreting;
 
 namespace WinterRose.WinterThornScripting

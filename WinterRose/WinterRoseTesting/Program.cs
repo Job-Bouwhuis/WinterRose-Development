@@ -1,5 +1,4 @@
-﻿using WinterRose.Serialization;
-using WinterRose.Vectors;
+﻿using WinterRose.Vectors;
 using WinterRose.FileManagement;
 using System.Diagnostics;
 using WinterRose.WIP.TestClasses;
@@ -22,6 +21,8 @@ using WinterRose.Serialization.Things;
 using System.Text;
 using WinterRose.StaticValueModifiers;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.Legacy.Serialization;
+using WinterRose.Legacy.Serialization.Things;
 
 #pragma warning disable aaa
 new Programm().Start();

@@ -4,7 +4,7 @@ namespace WinterRose.WIP.Redis.Framework
 {
 	public interface RedisStream
 	{	
-		event Action<ProgressReporter> ProgressReporter;
+		event Action<float> ProgressReporter;
 		string[] GetResponse(byte[] bytes);
 		
 		void SendData(byte[] bytes);

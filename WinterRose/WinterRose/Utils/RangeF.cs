@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using System.Threading.Tasks;
-using WinterRose.SourceGeneration.Serialization;
 
 namespace WinterRose
 {
@@ -9,10 +8,11 @@ namespace WinterRose
     /// </summary>
     /// <param name="start"></param>
     /// <param name="end"></param>
-    [GenerateSerializer]
     public struct RangeF(IndexF start, IndexF end)
     {
+        [IncludeWithSerialization]
         public IndexF Start { get; set; } = start;
+        [IncludeWithSerialization]
         public IndexF End { get; set; } = end;
 
         public RangeF() : this(0, 0) { }

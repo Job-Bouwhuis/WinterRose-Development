@@ -4,7 +4,6 @@ using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Serialization;
 using System.Collections.ObjectModel;
 
 namespace WinterRose
@@ -26,7 +25,7 @@ namespace WinterRose
         {
             throw new NotImplementedException();
             if (initialValues is IDictionary)
-                throw new InvalidArgumentException("The initial items were of type Dictionary. which is not valid for this stack.");
+                throw new ArgumentException("The initial items were of type Dictionary. which is not valid for this stack.");
 
             _items = initialValues.Cast<object>().ToList();
         }

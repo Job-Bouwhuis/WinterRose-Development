@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using WinterRose.Serialization;
 using Microsoft.Xna.Framework;
 using WinterRose.Reflection;
 using System.Collections.Concurrent;
@@ -13,6 +12,8 @@ using WinterRose.Monogame.EditorMode.BuildInDisplays;
 using SharpDX.Direct3D9;
 using System.Collections;
 using System.Windows.Forms;
+using WinterRose.WinterForgeSerializing.Workers;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.Monogame.EditorMode
 {
@@ -198,7 +199,7 @@ namespace WinterRose.Monogame.EditorMode
                         }
                     }
 
-                    if (!SnowSerializerHelpers.SupportedPrimitives.Contains(member.Type))
+                    if (!WinterForge.SupportedPrimitives.Contains(member.Type))
                     {
                         if (member.Type.IsAssignableTo(typeof(ObjectComponent)))
                         {
