@@ -28,6 +28,18 @@ public abstract class NetworkConnection
     {
         this.logger = logger;
         pendingResponses = [];
+
+        Windows.ApplicationExit += () =>
+        {
+            try
+            {
+                Disconnect();
+            }
+            catch // ignore any exception
+            {
+
+            }
+        };
     }
 
     /// <summary>

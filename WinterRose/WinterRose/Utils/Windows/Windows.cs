@@ -61,7 +61,7 @@ public static partial class Windows
     }
 
     /// <summary>
-    /// Called when the application is about to exit.
+    /// Called when the application is about to exit. Once this event is called, the closing of the app can not be canceled
     /// </summary>
     public static event Action ApplicationExit = delegate { };
 

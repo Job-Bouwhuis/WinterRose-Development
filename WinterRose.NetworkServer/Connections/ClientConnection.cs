@@ -15,6 +15,8 @@ using WinterRose.NetworkServer.Packets.Default.Packets;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.WinterThornScripting;
 
+namespace WinterRose.NetworkServer.Connections;
+
 public class ClientConnection : NetworkConnection
 {
     private TcpClient client;

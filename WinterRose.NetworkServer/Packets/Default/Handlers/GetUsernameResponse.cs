@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
+using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets.Default.Packets;
 
 namespace WinterRose.NetworkServer.Packets.Default.Handlers;
