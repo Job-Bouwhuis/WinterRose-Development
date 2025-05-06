@@ -9,7 +9,7 @@ namespace WinterRose.NetworkServer.Packets
     /// <summary>
     /// An empty packet content class.
     /// </summary>
-    class BasicContent : PacketContent
+    public class BasicContent : PacketContent
     {
     }
 }

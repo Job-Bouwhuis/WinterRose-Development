@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,11 +11,24 @@ namespace WinterRose.NetworkServer.Packets
     {
         public abstract string Type { get; }
 
+        internal protected ILogger logger = null!;
+
         public abstract void Handle(Packet packet, NetworkConnection self, NetworkConnection sender);
 
         // New abstract method to handle response packets
         public abstract void HandleResponsePacket(ReplyPacket replyPacket, Packet packet, NetworkConnection self, NetworkConnection sender);
 
-        protected static PacketHandler? GetHandler(Packet packet) => NetworkConnection.GetHandler(packet);
+        protected PacketHandler? GetHandler(Packet packet)
+        {
+            if (NetworkConnection.packetHandlers.TryGetValue(packet.Header.GetPacketType(), out Type? handlerType))
+            {
+                PacketHandler? handler = (PacketHandler?)ActivatorExtra.CreateInstance(handlerType);
+                if (handler == null)
+                    return handler;
+                handler.logger = logger;
+                return handler;
+            }
+            return null;
+        }
     }
 }

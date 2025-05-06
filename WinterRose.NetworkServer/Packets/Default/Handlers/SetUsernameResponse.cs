@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,7 +24,9 @@ namespace WinterRose.NetworkServer.Packets.Default.Responses
             string name = ((StringContent)packet.Content).Content;
             if (Validate(name))
             {
+                logger.LogInformation($"User {sender.Username} ({sender.Identifier}) changed their username to {name}");
                 sender.Username = name;
+
                 sender.Send(replyPacket.Reply(new OkPacket(), self));
             }
             else

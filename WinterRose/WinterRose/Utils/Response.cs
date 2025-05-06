@@ -65,7 +65,7 @@ public class Response<T> : INotifyCompletion, IClearDisposable
     /// <returns></returns>
     public Response<T> GetAwaiter() => this;
 
-    public void Wait()
+    public bool Wait(TimeSpan? timeout = null)
     {
         Task t = Task.Run(() =>
         {
@@ -73,7 +73,7 @@ public class Response<T> : INotifyCompletion, IClearDisposable
                 continue;
         });
 
-        t.Wait();
+        return t.Wait(timeout is null ? Timeout.Infinite : (int)timeout.Value.TotalMilliseconds);
     }
 
     /// <summary>

@@ -2,7 +2,7 @@
 using WinterRose.NetworkServer.Packets.Default;
 
 namespace WinterRose.NetworkServer.Packets;
-internal class OkPacket : Packet
+public class OkPacket : Packet
 {
     public OkPacket()
     {

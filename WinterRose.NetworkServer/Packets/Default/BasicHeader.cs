@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WinterRose.NetworkServer.Packets
 {
-    class BasicHeader : PacketHeader
+    public class BasicHeader : PacketHeader
     {
         [IncludeWithSerialization]
         private string id;

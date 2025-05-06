@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -16,9 +18,8 @@ using WinterRose.WinterThornScripting;
 public class ClientConnection : NetworkConnection
 {
     private TcpClient client;
-    private readonly ILogger? logger;
     private NetworkStream stream;
-    private Task listenerThread;
+    private Task listenerThread = null!;
 
     private bool initialized = false;
 
@@ -32,13 +33,10 @@ public class ClientConnection : NetworkConnection
     }
 
     internal ClientConnection(TcpClient client, bool isOnServerSide, ILogger? logger)
+        : base(logger is null ? new ConsoleLogger(nameof(ClientConnection), false) : logger)
     {
         IsServer = false;
         this.client = client;
-        if (logger is null)
-            logger = new ConsoleLogger(nameof(ClientConnection), false);
-        else
-            this.logger = logger;
         stream = client.GetStream();
         if (!isOnServerSide)
             Setup();
@@ -68,14 +66,32 @@ public class ClientConnection : NetworkConnection
 
     public override void Send(Packet packet)
     {
-        //string s = WinterForge.SerializeToString(packet);
-
+        packet.SenderID = Identifier;
+        packet.SenderUsername = Username;
         WinterForge.SerializeToStream(packet, stream);
     }
 
-    public override void Send(Packet packet, Guid destination)
+    public override bool Send(Packet packet, Guid destination)
     {
+        if (packet is RelayPacket relay)
+        {
+            if (relay.Content is RelayPacket.RelayContent relayContent)
+            {
+                relayContent.sender = Identifier;
+                relayContent.destination = destination;
+                relayContent.relayedPacket.SenderID = Identifier;
+                relayContent.relayedPacket.SenderUsername = Username;
+            }
+        }
+        else
+        {
+            packet.SenderID = Identifier;
+            packet.SenderUsername = Username;
+            packet = new RelayPacket(packet, Identifier, destination);
+        }
 
+        Send(packet);
+        return true;
     }
 
     public override bool Disconnect()
@@ -152,7 +168,25 @@ public class ClientConnection : NetworkConnection
                 if (packet is null)
                     continue;
 
-                HandleReceivedPacket(packet, this, serverSourceConnection);
+                if(packet is ServerStoppedPacket)
+                {
+                    logger.LogWarning("Server stopped");
+                    break;
+                }
+
+                if(packet is RelayPacket relay)
+                {
+                    RelayPacket.RelayContent content = relay.Content as RelayPacket.RelayContent;
+                    var sender = new RelayConnection(this)
+                    {
+                        RelayIdentifier = content.sender,
+                    };
+                    var id = Identifier;
+                    sender.SetSource(ConnectionSource.ClientRelay);
+                    HandleReceivedPacket(content.relayedPacket, this, sender);
+                }
+                else
+                    HandleReceivedPacket(packet, this, serverSourceConnection);
             }
         }
         catch (Exception ex)
@@ -183,11 +217,24 @@ public class ClientConnection : NetworkConnection
         Identifier = identifier;
     }
 
-    public TimeSpan Ping()
+    public override NetworkStream GetStream() => client.GetStream();
+
+    /// <summary>
+    /// Gets all the other connected clients from the server. this collection excludes this connection
+    /// </summary>
+    /// <returns></returns>
+    public List<RelayConnection> GetOtherConnectedClients()
     {
-        DateTime now = DateTime.UtcNow;
-        PongPacket pong = (PongPacket)SendAndWaitForResponse(new PingPacket());
-        DateTime roundTrip = new DateTime(((PingPacket.PingContent)pong.Content).timestamp);
-        return roundTrip - now;
+        ConnectionListPacket? p = SendAndWaitForResponse(new ConnectionListPacket())
+            as ConnectionListPacket;
+
+        if (p == null)
+            return [];
+
+        return ((ConnectionListPacket.ConnectionListContent)p.Content)
+            .connections.Where(id => id != Identifier).Select(id => new RelayConnection(this)
+        {
+            RelayIdentifier = id
+        }).ToList();
     }
 }

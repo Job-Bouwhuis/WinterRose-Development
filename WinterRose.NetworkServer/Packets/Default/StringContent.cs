@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WinterRose.NetworkServer.Packets
 {
-    class StringContent : PacketContent
+    public class StringContent : PacketContent
     {
         public StringContent(string content)
         {

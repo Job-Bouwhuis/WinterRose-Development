@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
 using WinterRose.NetworkServer.Packets.Default.Packets;
 using WinterRose.WinterForgeSerializing;
@@ -17,7 +18,7 @@ public class ServerConnection : NetworkConnection
     private readonly List<ClientConnection> clients;
     private readonly List<Task> clientTasks;
     private readonly CancellationTokenSource cancellationTokenSource;
-    private readonly ILogger logger;
+    private readonly TunnelConnectionHandler tunnelConnectionHandler;
     private Task listenTask;
 
     public event Action<ClientConnection> OnClientConnected = delegate { };
@@ -25,16 +26,14 @@ public class ServerConnection : NetworkConnection
     public string LogPrefix { get; set; } = "WinterRoseServer: ";
 
     public ServerConnection(IPAddress ip, int port, ILogger? logger = null)
+        : base(logger is null ? new ConsoleLogger(nameof(ClientConnection), false) : logger)
     {
         serverListener = new TcpListener(ip, port);
+        tunnelConnectionHandler = new();
         clients = [];
         clientTasks = [];
         cancellationTokenSource = new CancellationTokenSource();
         IsServer = true;
-        if (logger is null)
-            this.logger = new ConsoleLogger(nameof(ServerConnection));
-        else
-            this.logger = logger;
     }
 
     public ServerConnection(string ip, int port, ILogger? logger = null) : this(IPAddress.Parse(ip), port, logger) { }
@@ -72,6 +71,9 @@ public class ServerConnection : NetworkConnection
         client.Send(ccp); // handshake packet
 
         OnClientConnected(client);
+
+        logger.LogInformation("New client connected on UUID: " + client.Identifier.ToString());
+
         try
         {
             using (NetworkStream stream = tcp.GetStream())
@@ -86,13 +88,6 @@ public class ServerConnection : NetworkConnection
                         logger.LogError("Error: Data was not a valid packet.");
                         continue;
                     }
-                    if(data is RelayPacket relay)
-                    {
-                        RelayPacket.RelayContent content = relay.Content as RelayPacket.RelayContent;
-
-                        Send(data as Packet, content.destination);
-                        continue;
-                    }
                     if(packet is DisconnectClientPacket disconnect)
                     {
                         logger.LogInformation(LogPrefix + "Client gracefully disconnected: " + client.Identifier, client);
@@ -100,8 +95,8 @@ public class ServerConnection : NetworkConnection
                     }
                     if(packet.Content is ReplyPacket.ReplyContent reply && reply.OriginalPacket is DisconnectClientPacket)
                     {
-                        logger.LogInformation(LogPrefix + "Client gracefully disconnected: " + client.Identifier, client);
                         client.Send(((ReplyPacket)packet).Reply(new OkPacket(), this));
+                        logger.LogInformation(LogPrefix + "Client gracefully disconnected: " + client.Identifier, client);
                         break;
                     }
 
@@ -122,18 +117,23 @@ public class ServerConnection : NetworkConnection
 
     public override void Send(Packet packet)
     {
+        packet.SenderID = Guid.Empty;
+        packet.SenderUsername = "SERVER";
+
         foreach (var client in clients)
             WinterForge.SerializeToStream(packet, client.GetTcp().GetStream());
     }
 
-    public override void Send(Packet packet, Guid destination)
+    public override bool Send(Packet packet, Guid destination)
     {
         foreach (var client in clients)
             if(client.Identifier == destination)
             {
                 client.Send(packet);
-                return;
+                return true;
             }
+
+        return false;
     }
 
     public ClientConnection? GetClient(Guid identifier)
@@ -150,4 +150,7 @@ public class ServerConnection : NetworkConnection
             client.Send(new ServerStoppedPacket());
         return true;
     }
+
+    public override NetworkStream GetStream() => null!; // Server doesnt open a stream by itself
+    internal List<ClientConnection> GetClients() => clients;
 }

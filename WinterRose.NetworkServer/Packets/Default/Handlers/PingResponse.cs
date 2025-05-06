@@ -34,7 +34,6 @@ namespace WinterRose.NetworkServer.Packets
 
         public override void HandleResponsePacket(ReplyPacket replyPacket, Packet packet, NetworkConnection self, NetworkConnection sender)
         {
-            sender.Send(new OkPacket());
         }
     }
 }

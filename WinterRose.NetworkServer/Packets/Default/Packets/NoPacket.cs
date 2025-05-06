@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WinterRose.NetworkServer.Packets
 {
-    internal class NoPacket : Packet
+    public class NoPacket : Packet
     {
         public NoPacket()
         {

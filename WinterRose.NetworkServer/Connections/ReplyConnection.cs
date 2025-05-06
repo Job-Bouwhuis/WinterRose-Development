@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.NetworkServer.Packets;
@@ -12,12 +13,13 @@ namespace WinterRose.NetworkServer.Connections
     {
         private readonly NetworkConnection original;
 
-        public ReplyConnection(NetworkConnection original)
+        public ReplyConnection(NetworkConnection original) : base(original.logger)
         {
             this.original = original;
         }
 
         public override bool Disconnect() => original.Disconnect();
+        public override NetworkStream GetStream() => original.GetStream();
 
         public override void Send(Packet packet)
         {
@@ -27,9 +29,9 @@ namespace WinterRose.NetworkServer.Connections
             original.Send(packet);
         }
 
-        public override void Send(Packet packet, Guid destination)
+        public override bool Send(Packet packet, Guid destination)
         {
-            original.Send(packet, destination);
+            return original.Send(packet, destination);
         }
     }
 }
