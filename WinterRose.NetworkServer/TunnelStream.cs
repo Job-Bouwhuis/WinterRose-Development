@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
+using System.IO.IsolatedStorage;
 
 namespace WinterRose.NetworkServer;
 
@@ -132,7 +133,7 @@ public class TunnelStream : Stream
                     readBuffer.Position = 0;
                     readBuffer.Write(leftover, 0, leftover.Length);
 
-                    if(leftover.Length == 0)
+                    if (leftover.Length == 0)
                     {
                         isClosed = true;
                     }
@@ -175,19 +176,33 @@ public class TunnelStream : Stream
     {
         if (isClosed) return;
 
-        if(!closedByRemote)
+        if (!closedByRemote)
         {
             remote.Write(System.Text.Encoding.UTF8.GetBytes("<TUNNEL.END>"));
             remote.Flush();
             isClosed = true;
         }
+
     }
 
     public void DoWrite(string data) => DoWrite(Encoding.UTF8.GetBytes(data));
 
     private void DoWrite(byte[] data) => DoWrite(data, data.Length);
 
-    private void DoWrite(byte[] data, int length) => remote.Write(data, 0, length);
+    readonly byte[] endMarker = [60, 69, 78, 68, 62];
+
+    private void DoWrite(byte[] data, int length)
+    {
+        Span<byte> bytes = stackalloc byte[data.Length + 5];
+
+        data.CopyTo(bytes);
+
+        for (int i = 0; i < endMarker.Length; i++)
+            bytes[data.Length + i] = endMarker[i];
+
+        ReadOnlySpan<byte> rbytes = bytes;
+        remote.Write(rbytes);
+    }
 
     public async Task DoWriteAsync(string data) =>
         await DoWriteAsync(Encoding.UTF8.GetBytes(data));
@@ -195,8 +210,11 @@ public class TunnelStream : Stream
     private async Task DoWriteAsync(byte[] data) =>
         await DoWriteAsync(data, data.Length);
 
-    private async Task DoWriteAsync(byte[] data, int length) =>
-        await remote.WriteAsync(data, 0, length);
+    private async Task DoWriteAsync(byte[] data, int length)
+    {
+        await Task.Run(() => DoWrite(data, length));
+    }
+        
 
     protected override void Dispose(bool disposing)
     {

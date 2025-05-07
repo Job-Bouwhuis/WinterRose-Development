@@ -16,9 +16,13 @@ try
     while (sw.ElapsedMilliseconds < 1000) ;
     if (c == 'a')
     {
-        client = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
+        Console.WriteLine(Network.GetLocalIPAddress());
+        client = ClientConnection.Connect("192.168.2.15", 12345);
         client.SetUsername("TheSnowOwl");
         client.OnTunnelRequestReceived.Add(req => true);
+        Console.WriteLine("enter on b connected");
+        Console.ReadLine();
+
         others = client.GetOtherConnectedClients();
     }
     else
