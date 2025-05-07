@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace WinterRose.NetworkServer.Connections;
 
-public class TunnelPair(NetworkConnection a, NetworkConnection b)
+public class TunnelPair(NetworkConnection a, NetworkConnection b, TunnelConnectionHandler handler)
 {
     public NetworkConnection A => a;
     public NetworkConnection B => b;
@@ -52,7 +52,10 @@ public class TunnelPair(NetworkConnection a, NetworkConnection b)
                         endMarkerMatch++;
                         if (endMarkerMatch == END_MARKER_BYTES.Length)
                         {
-                            // Tunnel close detected
+                            // notify destination of end
+                            await destination.WriteAsync(END_MARKER_BYTES, 0, endMarkerMatch, token);
+                            // notify source of end
+                            await source.WriteAsync(END_MARKER_BYTES, 0, endMarkerMatch, token);
                             break;
                         }
                     }
@@ -79,5 +82,7 @@ public class TunnelPair(NetworkConnection a, NetworkConnection b)
         }
         catch (IOException) { /* connection closed */ }
         catch (ObjectDisposedException) { /* stream was closed */ }
+
+        handler.CloseTunnel(a);
     }
 }

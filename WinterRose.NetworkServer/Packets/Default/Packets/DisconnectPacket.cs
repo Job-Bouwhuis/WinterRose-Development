@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.NetworkServer.Packets.Default.Packets;
+namespace WinterRose.NetworkServer.Packets;
 internal class DisconnectClientPacket : Packet
 {
     public DisconnectClientPacket()

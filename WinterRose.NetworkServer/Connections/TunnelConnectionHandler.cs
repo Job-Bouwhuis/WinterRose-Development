@@ -11,8 +11,9 @@ public class TunnelConnectionHandler
 
     public void DefineTunnel(NetworkConnection a, NetworkConnection b)
     {
-        var pair = new TunnelPair(a, b);
+        var pair = new TunnelPair(a, b, this);
         activeTunnels.Add(pair);
+        _ = pair.StartTunnelAsync();
         lookup.Add(a, pair);
         lookup.Add(b, pair);
     }

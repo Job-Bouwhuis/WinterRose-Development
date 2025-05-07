@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using WinterRose.NetworkServer.Packets.Default.Packets;
+using WinterRose.NetworkServer.Packets;
 
 namespace WinterRose.NetworkServer.Packets.Default.Handlers;
 internal class RelayPacketHandler : PacketHandler

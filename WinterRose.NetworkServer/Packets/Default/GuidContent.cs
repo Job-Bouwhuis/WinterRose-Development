@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WinterRose.NetworkServer.Packets.Default;
+namespace WinterRose.NetworkServer.Packets;
 
 public class GuidContent : PacketContent
 {

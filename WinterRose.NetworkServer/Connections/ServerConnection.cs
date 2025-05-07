@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
-using WinterRose.NetworkServer.Packets.Default.Packets;
+using WinterRose.NetworkServer.Packets;
 using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.NetworkServer;
@@ -80,6 +80,8 @@ public class ServerConnection : NetworkConnection
             {
                 while (tcp.Connected)
                 {
+                    if (tunnelConnectionHandler.InTunnel(client))
+                        continue; // skip loading packets while client is in a tunnel.
                     object data = WinterForge.DeserializeFromStream(stream);
                     if (data is Nothing)
                         logger.LogWarning(LogPrefix + $"Client '{client.Identifier}' disconnected abruptly");
@@ -99,7 +101,13 @@ public class ServerConnection : NetworkConnection
                         logger.LogInformation(LogPrefix + "Client gracefully disconnected: " + client.Identifier, client);
                         break;
                     }
+                    if(packet is RelayPacket && packet.Content is RelayPacket.RelayContent rc)
+                    {
+                        if (rc.destination == Guid.Empty)
+                            packet = rc.relayedPacket; // packet was meant for the server
+                    }
 
+                    //_ = Task.Run(() => HandleReceivedPacket(packet, this, client));
                     HandleReceivedPacket(packet, this, client);
                 }
             }
@@ -153,4 +161,20 @@ public class ServerConnection : NetworkConnection
 
     public override NetworkStream GetStream() => null!; // Server doesnt open a stream by itself
     internal List<ClientConnection> GetClients() => clients;
+    public override bool TunnelRequestReceived(TunnelRequestPacket packet, NetworkConnection sender)
+    {
+        TunnelRequestPacket.TunnelReqContent? content = packet.Content as TunnelRequestPacket.TunnelReqContent;
+        Packet response = SendAndWaitForResponse(packet, content.to);
+        if (response is TunnelAcceptedPacket)
+        {
+            var a = GetClient(content.from);
+            var b = GetClient(content.to);
+            tunnelConnectionHandler.DefineTunnel(a, b);
+
+            return true;
+        }
+        else
+            return false;
+    }
+    public override void TunnelRequestAccepted(Guid a, Guid b) { }
 }

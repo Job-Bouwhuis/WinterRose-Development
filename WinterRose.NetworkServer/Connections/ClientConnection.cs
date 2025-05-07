@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -11,7 +12,6 @@ using WinterRose.ConsoleExtentions;
 using WinterRose.NetworkServer;
 using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
-using WinterRose.NetworkServer.Packets.Default.Packets;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.WinterThornScripting;
 
@@ -22,6 +22,10 @@ public class ClientConnection : NetworkConnection
     private TcpClient client;
     private NetworkStream stream;
     private Task listenerThread = null!;
+    private bool tunnelImminent = false;
+
+    public TunnelRequestReceivedHandler OnTunnelRequestReceived { get; } = new();
+    public TunnelStream? ActiveTunnel { get; private set; }
 
     private bool initialized = false;
 
@@ -100,7 +104,7 @@ public class ClientConnection : NetworkConnection
     {
         try
         {
-            Packet response = SendAndWaitForResponse(new DisconnectClientPacket(), TimeSpan.FromSeconds(5));
+            Packet response = SendAndWaitForResponse(new DisconnectClientPacket(), timeout: TimeSpan.FromSeconds(5));
 
             stream.Close();
             client.Close();
@@ -166,17 +170,34 @@ public class ClientConnection : NetworkConnection
         {
             while (client.Connected)
             {
-                Packet? packet = ReadPacket();
+                if (tunnelImminent || ActiveTunnel is not null)
+                {
+                    if(ActiveTunnel is not null)
+                    {
+                        tunnelImminent = false;
+                        if (ActiveTunnel.Closed)
+                            ActiveTunnel = null;
+                    }
+                    continue; // let tunnel handle all the communication
+                }
+
+                    Packet? packet = ReadPacket();
                 if (packet is null)
                     continue;
 
-                if(packet is ServerStoppedPacket)
+                if (packet is TunnelAcceptedPacket)
+                    tunnelImminent = true;
+                if(packet is ReplyPacket rp)
+                    if (((ReplyPacket.ReplyContent)rp.Content).OriginalPacket is TunnelAcceptedPacket)
+                        tunnelImminent = true;
+
+                if (packet is ServerStoppedPacket)
                 {
                     logger.LogWarning("Server stopped");
                     break;
                 }
 
-                if(packet is RelayPacket relay)
+                if (packet is RelayPacket relay)
                 {
                     RelayPacket.RelayContent content = relay.Content as RelayPacket.RelayContent;
                     var sender = new RelayConnection(this)
@@ -238,5 +259,28 @@ public class ClientConnection : NetworkConnection
         {
             RelayIdentifier = id
         }).ToList();
+    }
+
+    public override bool TunnelRequestReceived(TunnelRequestPacket packet, NetworkConnection sender)
+    {
+        TunnelRequestPacket.TunnelReqContent? content = packet.Content as TunnelRequestPacket.TunnelReqContent;
+        return OnTunnelRequestReceived.Invoke(content);
+    }
+    public override void TunnelRequestAccepted(Guid a, Guid b) 
+    {
+        TunnelStream tunnel = new(this);
+        ActiveTunnel = tunnel;
+    }
+
+    public bool OpenTunnel(RelayConnection other)
+    {
+        Packet res = SendAndWaitForResponse(new TunnelRequestPacket(Identifier, other.RelayIdentifier));
+        if (res is TunnelAcceptedPacket p)
+        {
+            TunnelRequestPacket.TunnelReqContent? content = p.Content as TunnelRequestPacket.TunnelReqContent;
+            TunnelRequestAccepted(content.from, content.to);
+            return true;
+        }
+        return false;
     }
 }

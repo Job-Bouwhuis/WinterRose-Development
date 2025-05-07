@@ -8,8 +8,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using WinterRose.ConsoleExtentions;
+using WinterRose.Expressions;
 using WinterRose.NetworkServer.Packets;
-using WinterRose.NetworkServer.Packets.Default.Packets;
+using WinterRose.NetworkServer.Packets;
 
 namespace WinterRose.NetworkServer;
 
@@ -64,6 +65,9 @@ public abstract class NetworkConnection
 
     public abstract bool Send(Packet packet, Guid destination);
 
+    public abstract bool TunnelRequestReceived(TunnelRequestPacket packet, NetworkConnection sender);
+    public abstract void TunnelRequestAccepted(Guid a, Guid b);
+
     /// <summary>
     /// When overriden in a derived class. attempts to disconnect the connection from the remote host
     /// </summary>
@@ -110,16 +114,29 @@ public abstract class NetworkConnection
             Packet? p = ((ReplyPacket.ReplyContent)replyPacket.Content).OriginalPacket
                 ?? throw new NotImplementedException();
 
+            if (p is RelayPacket)
+            {
+                HandleRelayPacket(packet, self);
+                return;
+            }
+
+            if(p is TunnelAcceptedPacket)
+            {
+                TunnelRequestPacket.TunnelReqContent c = p.Content as TunnelRequestPacket.TunnelReqContent;
+                TunnelRequestAccepted(c.from, c.to);
+                return;
+            }
+
+            if(p is TunnelRequestPacket trp)
+            {
+                HandleTunnelRequest(self, sender, replyPacket, trp);
+                return;
+            }
+
             PacketHandler? h = GetHandler(p);
             if (h is null)
             {
                 self.logger.LogCritical("ReplyHandler - No handler for packet type found in the application: " + p.Header.GetPacketType());
-                return;
-            }
-
-            if (p is RelayPacket)
-            {
-                HandleRelayPacket(packet, self);
                 return;
             }
 
@@ -143,6 +160,26 @@ public abstract class NetworkConnection
         handler.Handle(packet, this, sender);
     }
 
+    private void HandleTunnelRequest(NetworkConnection self, NetworkConnection sender, ReplyPacket replyPacket, TunnelRequestPacket trp)
+    {
+        if (TunnelRequestReceived(trp, sender))
+        {
+            var ap = new TunnelAcceptedPacket();
+            ((TunnelRequestPacket.TunnelReqContent)ap.Content).from = 
+                ((TunnelRequestPacket.TunnelReqContent)trp.Content).from;
+            ((TunnelRequestPacket.TunnelReqContent)ap.Content).to = 
+                ((TunnelRequestPacket.TunnelReqContent)trp.Content).to;
+
+            sender.Send(replyPacket.Reply(ap, self));
+            TunnelRequestPacket.TunnelReqContent? content = trp.Content as TunnelRequestPacket.TunnelReqContent;
+            TunnelRequestAccepted(content!.from, content.to);
+        }
+        else
+        {
+            sender.Send(replyPacket.Reply(new NoPacket(), self));
+        }
+    }
+
     /// <summary>
     /// A method only used by server. but here anyway because of other abstractions
     /// </summary>
@@ -163,14 +200,17 @@ public abstract class NetworkConnection
         }
     }
 
-    public virtual Packet SendAndWaitForResponse(Packet packet, TimeSpan? timeout = null)
+    public virtual Packet SendAndWaitForResponse(Packet packet, Guid? destination = null, TimeSpan? timeout = null)
     {
         var response = new Response<Packet>();
         packet.Header.CorrelationId = Guid.NewGuid(); // Unique ID for this request/response pair.
         // Store the response object for the corresponding request.
         pendingResponses[packet.Header.CorrelationId] = response;
 
-        Send(ReplyPacket.CreateReply(packet, this));
+        if(destination is not null)
+            Send(ReplyPacket.CreateReply(packet, this), destination.Value);
+        else
+            Send(ReplyPacket.CreateReply(packet, this));
 
         if (!response.Wait(timeout))
             throw new TimeoutException(Username + 
@@ -182,13 +222,10 @@ public abstract class NetworkConnection
 
     public abstract NetworkStream GetStream();
 
-    public TimeSpan Ping()
+    public TimeSpan Ping(TimeSpan? timeout = null)
     {
         DateTime now = DateTime.UtcNow;
-        PongPacket pong = 
-            (PongPacket)SendAndWaitForResponse(new PingPacket()
-            //, TimeSpan.FromSeconds(2)
-            );
+        PongPacket pong = (PongPacket)SendAndWaitForResponse(new PingPacket(), timeout: timeout);
         DateTime roundTrip = new DateTime(((PingPacket.PingContent)pong.Content).timestamp);
         return roundTrip - now;
     }

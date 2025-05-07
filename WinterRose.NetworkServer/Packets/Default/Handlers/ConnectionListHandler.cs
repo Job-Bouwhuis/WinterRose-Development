@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.NetworkServer.Packets.Default.Packets;
+using WinterRose.NetworkServer.Packets;
 
 namespace WinterRose.NetworkServer.Packets.Default.Handlers;
 internal class ConnectionListHandler : PacketHandler

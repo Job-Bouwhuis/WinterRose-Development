@@ -1,38 +1,57 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using WinterRose.Networking;
+using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
-using WinterRose.NetworkServer.Packets.Default.Packets;
+using WinterRose.NetworkServer.Packets;
 
-namespace WinterRose.NetworkServer.Tests;
-
-internal class Program
+ClientConnection client = null;
+ClientConnection client2 = null;
+try
 {
-    static void Main(string[] args)
+    var sw = Stopwatch.StartNew();
+    while (sw.ElapsedMilliseconds < 1000) ;
+
+    client = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
+    client.SetUsername("TheSnowOwl");
+    client.OnTunnelRequestReceived.Add(req => true);
+
+    client2 = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
+    client2.SetUsername("TheSillyPenguin");
+    client2.OnTunnelRequestReceived.Add(req => true);
+
+    var others = client.GetOtherConnectedClients();
+    var other = others[0];
+
+    if (client.OpenTunnel(other))
     {
-        ClientConnection client = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
-        var others = client.GetOtherConnectedClients();
-        if (others.Count == 0)
-        {
-            client.SetUsername("TheSnowOwl");
-            Console.WriteLine("Waiting for other...");
-            Console.ReadLine();
-            others = client.GetOtherConnectedClients();
-        }
-        else
-        {
-            client.SetUsername("TheSillyPenguin");
+        // client a
+        var tunnela = client.ActiveTunnel!;
+        using StreamWriter wr = new(tunnela);
+        wr.WriteLine("test");
+        wr.Flush();
+        tunnela.Close();
 
-            if (others.Count == 1)
-            {
-                var o = others[0];
-                string username = o.Username;
-                Console.WriteLine("me: " + client.Username + "\nother: " + username);
-            }
-            else
-                Console.WriteLine("I was the only connection.");
-        }
+        // client b
+        var tunnelb = client2.ActiveTunnel!;
+        using StreamReader r = new(tunnelb);
+        string s = r.ReadLine();
+    }
+    else
+    {
 
-        var other = others[0];
+    }
+}
+finally
+{
+    Console.ReadLine();
+    client?.Disconnect();
+}
+
+
+// simple chat 'app'
+/*
+ var other = others[0];
 
         string message;
 
@@ -69,9 +88,4 @@ internal class Program
             // Reset color for next input
             Console.ResetColor();
         }
-
-
-        Console.ReadLine();
-        client.Disconnect();
-    }
-}
+ */
