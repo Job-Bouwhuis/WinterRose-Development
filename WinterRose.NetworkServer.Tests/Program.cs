@@ -7,39 +7,53 @@ using WinterRose.NetworkServer.Packets;
 
 ClientConnection client = null;
 ClientConnection client2 = null;
+List<RelayConnection> others;
 try
 {
+    char c = Console.ReadKey().KeyChar;
+
     var sw = Stopwatch.StartNew();
     while (sw.ElapsedMilliseconds < 1000) ;
-
-    client = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
-    client.SetUsername("TheSnowOwl");
-    client.OnTunnelRequestReceived.Add(req => true);
-
-    client2 = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
-    client2.SetUsername("TheSillyPenguin");
-    client2.OnTunnelRequestReceived.Add(req => true);
-
-    var others = client.GetOtherConnectedClients();
-    var other = others[0];
-
-    if (client.OpenTunnel(other))
+    if (c == 'a')
     {
-        // client a
-        var tunnela = client.ActiveTunnel!;
-        using StreamWriter wr = new(tunnela);
-        wr.WriteLine("test");
-        wr.Flush();
-        tunnela.Close();
+        client = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
+        client.SetUsername("TheSnowOwl");
+        client.OnTunnelRequestReceived.Add(req => true);
+        others = client.GetOtherConnectedClients();
+    }
+    else
+    {
+        client2 = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
+        client2.SetUsername("TheSillyPenguin");
+        client2.OnTunnelRequestReceived.Add(req => true);
 
         // client b
         var tunnelb = client2.ActiveTunnel!;
         using StreamReader r = new(tunnelb);
         string s = r.ReadLine();
+        Console.WriteLine(s);
+        Console.ReadLine();
+        return;
+    }
+
+    var other = others[0];
+
+    if (client.OpenTunnel(other))
+    {
+        if (c == 'a')
+        {
+            // client a
+            var tunnela = client.ActiveTunnel!;
+            using StreamWriter wr = new(tunnela);
+            Console.WriteLine("enter message");
+            wr.WriteLine(Console.ReadLine());
+            wr.Flush();
+            tunnela.Close();
+        }
     }
     else
     {
-
+        Console.WriteLine("Failed");
     }
 }
 finally
