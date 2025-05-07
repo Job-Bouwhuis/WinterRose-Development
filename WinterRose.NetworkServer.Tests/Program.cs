@@ -22,6 +22,7 @@ try
         client.SetUsername("TheSnowOwl");
         client.OnTunnelRequestReceived.Add(req => true);
         Console.WriteLine("enter on b connected");
+        
         Console.ReadLine();
 
         others = client.GetOtherConnectedClients();

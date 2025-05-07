@@ -104,6 +104,12 @@ public class ClientConnection : NetworkConnection
     {
         try
         {
+            if (ActiveTunnel != null && !ActiveTunnel.Closed)
+            {
+                ActiveTunnel.Close();
+                ActiveTunnel = null;
+            }
+
             Packet response = SendAndWaitForResponse(new DisconnectClientPacket(), timeout: TimeSpan.FromSeconds(5));
 
             stream.Close();
