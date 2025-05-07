@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Net;
+using System.Text;
 using WinterRose.Networking;
 using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
@@ -27,13 +28,19 @@ try
     }
     else
     {
-        client2 = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
+        Console.WriteLine();
+        client2 = ClientConnection.Connect("192.168.2.15", 12345);
         client2.SetUsername("TheSillyPenguin");
         client2.OnTunnelRequestReceived.Add(req => true);
 
+        while(client2.ActiveTunnel == null)
+        {
+            
+        }
+
         // client b
         var tunnelb = client2.ActiveTunnel!;
-        using StreamReader r = new(tunnelb);
+        StreamReader r = new(tunnelb);
         string s = r.ReadLine();
         Console.WriteLine(s);
         Console.ReadLine();

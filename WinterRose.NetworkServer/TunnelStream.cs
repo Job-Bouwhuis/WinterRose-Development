@@ -45,8 +45,11 @@ public class TunnelStream : Stream
     {
         try
         {
+            List<byte> messageBuffer = [];
             while (!tunnelEndDetected)
             {
+                await Task.Delay(10);
+
                 int read = await remote.ReadAsync(readTempBuffer, 0, readTempBuffer.Length);
                 if (read == 0)
                 {
@@ -54,10 +57,19 @@ public class TunnelStream : Stream
                     break;
                 }
 
+                messageBuffer.AddRange(readTempBuffer.Take(read));
+                int messageendmarker = Encoding.UTF8.GetString(messageBuffer.ToArray()).IndexOf("<END>");
+                if (messageendmarker == -1)
+                {
+                    continue;
+                }
+
+                messageBuffer.RemoveRange(messageendmarker, 5);
+
                 await readLock.WaitAsync();
                 try
                 {
-                    readBuffer.Write(readTempBuffer, 0, read);
+                    readBuffer.Write(messageBuffer.ToArray(), 0, messageBuffer.Count);
 
                     // Check for tunnel end marker in the buffer
                     string bufferString = Encoding.UTF8.GetString(readBuffer.GetBuffer(), 0, (int)readBuffer.Length);
@@ -69,6 +81,10 @@ public class TunnelStream : Stream
                         closedByRemote = true;
                         break;
                     }
+                }
+                catch(Exception ex)
+                {
+
                 }
                 finally
                 {
