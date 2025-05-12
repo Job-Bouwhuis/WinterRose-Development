@@ -13,54 +13,67 @@ namespace WinterRose
     /// </summary>
     public static class StringCompression
     {
-        /// <summary>
-        /// Compresses a string using GZip
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        public static (string CompressedData, bool WorthIt) GZipCompress(string input)
+        public static void CompressStream(Stream input, Stream output)
+        {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+            if (output == null)
+                throw new ArgumentNullException(nameof(output));
+
+            using var gzipStream = new GZipStream(output, CompressionMode.Compress, leaveOpen: true);
+            input.CopyTo(gzipStream);
+            gzipStream.Flush(); // finalize if needed
+        }
+
+        public static void DecompressStream(Stream input, Stream output)
+        {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+            if (output == null)
+                throw new ArgumentNullException(nameof(output));
+
+            using var gzipStream = new GZipStream(input, CompressionMode.Decompress, leaveOpen: true);
+            gzipStream.CopyTo(output);
+            output.Flush();
+        }
+
+        public static byte[] CompressBytes(byte[] input)
+        {
+            using var inputStream = new MemoryStream(input);
+            using var outputStream = new MemoryStream();
+            CompressStream(inputStream, outputStream);
+            return outputStream.ToArray();
+        }
+
+        public static byte[] DecompressBytes(byte[] input)
+        {
+            using var inputStream = new MemoryStream(input);
+            using var outputStream = new MemoryStream();
+            DecompressStream(inputStream, outputStream);
+            return outputStream.ToArray();
+        }
+
+        public static string CompressString(string input, Encoding? encoding = null)
         {
             if (string.IsNullOrEmpty(input))
-                return (string.Empty, false);
-
-            // Convert input string to byte array
-            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-
-            using (var outputStream = new MemoryStream())
-            {
-                // Create a new GZipStream for compression
-                using (var gzipStream = new GZipStream(outputStream, CompressionMode.Compress))
-                {
-                    gzipStream.Write(inputBytes, 0, inputBytes.Length);
-                }
-
-                // Convert compressed data to base64 string
-                var arr = outputStream.ToArray();
-                int len = input.Length;
-                return (Convert.ToBase64String(arr), len > arr.Length);
-            }
-        }
-
-        /// <summary>
-        /// Decompresses a string using GZip
-        /// </summary>
-        /// <param name="compressedInput"></param>
-        /// <returns></returns>
-        public static string GZipDecompress(string compressedInput)
-        {
-            if (string.IsNullOrEmpty(compressedInput))
                 return string.Empty;
 
-            // Convert base64 string to byte array
-            byte[] compressedBytes = Convert.FromBase64String(compressedInput);
-
-            using (var inputStream = new MemoryStream(compressedBytes))
-            using (var gzipStream = new GZipStream(inputStream, CompressionMode.Decompress))
-            using (var reader = new StreamReader(gzipStream, Encoding.UTF8))
-            {
-                // Read decompressed data as string
-                return reader.ReadToEnd();
-            }
+            encoding ??= Encoding.UTF8;
+            var bytes = encoding.GetBytes(input);
+            var compressed = CompressBytes(bytes);
+            return encoding.GetString(compressed);
         }
+
+        public static string DecompressString(string input, Encoding? encoding = null)
+        {
+            if (string.IsNullOrEmpty(input))
+                return string.Empty;
+
+            encoding ??= Encoding.UTF8;
+            var compressed = encoding.GetBytes(input);
+            var decompressed = DecompressBytes(compressed);
+            return encoding.GetString(decompressed);
+        }
+
     }
 }

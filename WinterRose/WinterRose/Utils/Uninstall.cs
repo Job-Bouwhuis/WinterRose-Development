@@ -21,19 +21,19 @@ namespace WinterRose
         /// <br></br><br></br>
         /// <b>WARNING:</b> A call to this method is irreversible, there is no way to recover the files once they are deleted, so use with caution.
         /// </summary>
-        /// <param name="delay">The amount of delay before deleting this application. Must be at least 0.1</param>
-        public static void UninstallThisApp(int delay)
+        /// <param name="delaySeconds">The amount of delay before deleting this application. Defaults to at least 1 second</param>
+        public static void UninstallThisApp(int delaySeconds = 1)
         {
             // Validate the delay
-            if (delay < 1)
-                throw new ArgumentException("The delay must be at least 1 second.", nameof(delay));
+            if (delaySeconds < 1)
+                delaySeconds = 1;
 
             string batchFilePath = Path.Combine(Path.GetTempPath(), "delete_self.bat");
             string exeFilePath = FileManager.PathOneUp(Assembly.GetExecutingAssembly().Location);
             string batchFileContent = $"""
                                         @echo off
-                                        echo "Deleting application in {delay} seconds..."
-                                        timeout /t {delay} /nobreak > NUL
+                                        echo "Deleting application in {delaySeconds} seconds..."
+                                        timeout /t {delaySeconds} /nobreak > NUL
                                         rmdir /s /q {exeFilePath}
                                         del "%~f0"
                                         """;

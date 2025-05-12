@@ -49,10 +49,8 @@ namespace WinterRose
         {
             if (actions.Count == 0)
                 return;
-            
-            Task.WaitAll(GetTasksArray());
 
-            return;
+            Task.WhenAll(GetTasksArray()).Wait();
         }
         /// <summary>
         /// Calls all the functions added to the WorkDistributor on the allowed amount of threads.  <strong>this does NOT respect the order of the given functions</strong>

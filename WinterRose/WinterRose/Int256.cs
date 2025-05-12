@@ -10,7 +10,6 @@ public struct Int256 : IComparable<Int256>, IEquatable<Int256>
     private readonly ulong high;     // Upper 64 bits
     private readonly bool isNegative; // Sign
 
-    // Constructor
     public Int256(ulong low, ulong midLow, ulong midHigh, ulong high, bool isNegative = false)
     {
         this.low = low;

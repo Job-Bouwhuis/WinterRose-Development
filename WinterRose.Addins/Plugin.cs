@@ -12,9 +12,6 @@ using System.Runtime.Loader;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using WinterRose.ConsoleExtentions;
-using WinterRose.Exceptions;
-using WinterRose.FileManagement;
 
 namespace WinterRose.Plugins;
 
@@ -83,7 +80,7 @@ public sealed class Plugin(string pluginName, bool IsAssembly = false)
     {
         if(File.Exists(sorucePath))
         {
-            syntaxTrees = [.. new SyntaxTree[] { SyntaxFactory.ParseSyntaxTree(FileManager.Read(sorucePath)) }];
+            syntaxTrees = [.. new SyntaxTree[] { SyntaxFactory.ParseSyntaxTree(File.ReadAllText(sorucePath)) }];
             return 1;
         }
         var paths = GetFilePaths(sorucePath);
@@ -95,7 +92,7 @@ public sealed class Plugin(string pluginName, bool IsAssembly = false)
             int count = 0;
             foreach (var path in paths)
             {
-                string script = FileManager.Read(path);
+                string script = File.ReadAllText(path);
                 syntaxTrees[count] = SyntaxFactory.ParseSyntaxTree(script.Trim());
                 count++;
             }
@@ -114,7 +111,7 @@ public sealed class Plugin(string pluginName, bool IsAssembly = false)
     /// </summary>
     /// <param name="sourcePath"></param>
     /// <returns>The loaded plugin as an assembly instance. or null if the plugin was not loaded correctly but did not have any diagnostic errors</returns>
-    public Assembly? LoadPlugin(FilePath sourcePath)
+    public Assembly? LoadPlugin(string sourcePath)
     {
         PluginContext?.Unload();
         PluginContext = new(pluginName, true);
@@ -157,11 +154,10 @@ public sealed class Plugin(string pluginName, bool IsAssembly = false)
     private bool ValidateSyntaxTrees()
     {
         List<SyntaxTree> validatedTrees = [];
-        syntaxTrees.Foreach(x =>
-        {
-            if (x is not null && x.Length is not 0)
+        foreach (var x in syntaxTrees)
+            if (x != null && x.Length != 0)
                 validatedTrees.Add(x);
-        });
+
         syntaxTrees = [.. validatedTrees];
 
         if (syntaxTrees.Length == 0)
@@ -185,22 +181,22 @@ public sealed class Plugin(string pluginName, bool IsAssembly = false)
             using (codeStream = new MemoryStream())
             {
                 EmitResult compilationResult = compilation.Emit(codeStream);
+                List<Exception> diagnosticExceptions = [];
                 foreach (var diag in compilationResult.Diagnostics)
                 {
                     if (diag.Severity == DiagnosticSeverity.Error)
                     {
-                        var e = new PluginCompilationErrorException("Plugin compilation error", [.. compilationResult.Diagnostics]);
-                        e.SetSource(string.IsNullOrWhiteSpace(diag.Location.SourceTree?.FilePath ?? "") ? $"{pluginName}/Unknown" : diag.Location.SourceTree?.FilePath ?? "shouldnt be reached");
-                        e.SetStackTrace(diag.GetMessage());
-                        throw e;
-                    }
-                    if (diag.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Hidden)
-                    {
-                        var loc = string.IsNullOrWhiteSpace(diag.Location.ToString() ?? "") ? $"{pluginName}/Unknown" : diag.Location.SourceTree?.FilePath ?? "shouldnt be reached";
-                        var msg = diag.GetMessage();
+                        string message = string.IsNullOrWhiteSpace(diag.Location.SourceTree?.FilePath ?? "") ? $"{pluginName}/Unknown" : diag.Location.SourceTree?.FilePath ?? "shouldnt be reached";
+                        message += "\n\n" + diag.GetMessage();
 
-                        ConsoleS.WriteWarningLine($"Script Warning: {loc}.\tMessage: {msg}");
+                        var e = new PluginCompilationErrorException("Plugin compilation error", [.. compilationResult.Diagnostics]);
+                        diagnosticExceptions.Add(e);
                     }
+                    //if (diag.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Hidden)
+                    //{
+                    //    var loc = string.IsNullOrWhiteSpace(diag.Location.ToString() ?? "") ? $"{pluginName}/Unknown" : diag.Location.SourceTree?.FilePath ?? "shouldnt be reached";
+                    //    var msg = diag.GetMessage();
+                    //}
                 }
 
                 codeStream.Seek(0, SeekOrigin.Begin);
@@ -263,7 +259,12 @@ public sealed class Plugin(string pluginName, bool IsAssembly = false)
     /// Adds the given list of assembly paths to the list of assemblies to be referenced when compiling the plugin.
     /// </summary>
     /// <param name="assemblies"></param>
-    public void AddAssemblies(params string[] assemblies) => assemblies.Foreach(x => AddAssembly(x));
+    public void AddAssemblies(params string[] assemblies)
+    {
+        foreach (var assembly in assemblies)
+            AddAssembly(assembly);
+    }
+
     private void AddDefaultReferences()
     {
         var rtPath = Path.GetDirectoryName(typeof(object).Assembly.Location) +
@@ -371,7 +372,7 @@ public sealed class Plugin(string pluginName, bool IsAssembly = false)
 /// Thrown when something went wrong when compiling the plugin.
 /// </summary>
 [Serializable]
-public class PluginCompilationErrorException : WinterException
+public class PluginCompilationErrorException : Exception
 {
     List<Diagnostic> Diagnostics { get; }
     /// <summary>

@@ -1,5 +1,4 @@
-﻿using Microsoft.CodeAnalysis.Operations;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -136,7 +135,7 @@ namespace WinterRose
         public static RegKey Users(bool writable = false, bool autoCreateOnAbsentKey = false) => new RegKey(null, Registry.Users, "", writable, autoCreateOnAbsentKey);
 
 
-        public bool HasValue(string valueName) => key is null ? false : key.GetValue(valueName) != null;
+        public bool HasValue(string valueName) => key is not null && key.GetValue(valueName) != null;
         public bool IsWritable() => writable || key is null;
 
         public bool SetValue<T>(string valueName, T value)

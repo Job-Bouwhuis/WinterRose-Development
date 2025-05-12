@@ -38,9 +38,9 @@ namespace WinterRose.Encryption
         /// </summary>
         /// <returns>The resulting string from the encrypting</returns>
         /// <param name="message"></param>
-        public MutableString Encrypt(string message)
+        public string Encrypt(string message)
         {
-            MutableString result = new();
+            StringBuilder result = new();
 
             (string main1, string wiring1) = ScramblerSettings.GetData(config1.Configuration);
             (string main2, string wiring2) = ScramblerSettings.GetData(config2.Configuration);
@@ -52,7 +52,6 @@ namespace WinterRose.Encryption
                 if (c == ' ')
                 {
                     result.Append(heart);
-
                     continue;
                 }
                 if (c == '♥')
@@ -68,10 +67,10 @@ namespace WinterRose.Encryption
                     if (config2.Turn())
                         config3.Turn();
 
-                result += cc;
+                result.Append(cc);
             }
             Reset();
-            return result;
+            return result.ToString();
         }
 
         /// <summary>
@@ -81,9 +80,9 @@ namespace WinterRose.Encryption
         /// <param name="progress"></param>
         /// <param name="reportAt"></param>
         /// <returns>The resulting string from the encrypting</returns>
-        public MutableString Encrypt(MutableString message, Action<float> progress, int reportAt = 1407900)
+        public string Encrypt(string message, Action<float> progress, int reportAt = 1407900)
         {
-            MutableString result = new();
+            StringBuilder result = new();
 
             (string main1, string wiring1) = ScramblerSettings.GetData(config1.Configuration);
             (string main2, string wiring2) = ScramblerSettings.GetData(config2.Configuration);
@@ -111,13 +110,13 @@ namespace WinterRose.Encryption
                     if (config2.Turn())
                         config3.Turn();
 
-                result += cc;
+                result.Append(cc);
 
                 if (i is not 0 && i % reportAt == 0)
                     progress((float)MathS.GetPercentage(i, message.Length, 2));
             }
             Reset();
-            return result;
+            return result.ToString();
         }
 
         /// <summary>
@@ -125,11 +124,11 @@ namespace WinterRose.Encryption
         /// </summary>
         /// <param name="message"></param>
         /// <returns>the resulting string from the decryption</returns>
-        public MutableString Decrypt(string? message)
+        public string Decrypt(string? message)
         {
             if (message == null)
                 throw new ArgumentNullException(nameof(message), "message can not be null when decrypting");
-            MutableString result = new();
+            StringBuilder result = new();
 
             (string main1, string wiring1) = ScramblerSettings.GetData(config1.Configuration);
             (string main2, string wiring2) = ScramblerSettings.GetData(config2.Configuration);
@@ -157,7 +156,7 @@ namespace WinterRose.Encryption
                 result.Append(cc);
             }
             Reset();
-            return result;
+            return result.ToString();
         }
 
 
@@ -169,11 +168,11 @@ namespace WinterRose.Encryption
         /// <param name="progress"></param>
         /// <param name="reportAt"></param>
         /// <returns>the resulting string from the decryption</returns>
-        public MutableString Decrypt(string? message, Action<float> progress, int reportAt = 1407900)
+        public string Decrypt(string? message, Action<float> progress, int reportAt = 1407900)
         {
             if (message == null)
                 throw new ArgumentNullException(nameof(message), "message can not be null when decrypting");
-            MutableString result = new();
+            StringBuilder result = new();
 
             (string main1, string wiring1) = ScramblerSettings.GetData(config1.Configuration);
             (string main2, string wiring2) = ScramblerSettings.GetData(config2.Configuration);
@@ -200,14 +199,14 @@ namespace WinterRose.Encryption
                     if (config2.Turn())
                         config3.Turn();
 
-                result += cc;
+                result.Append(cc);
 
                 if (i is not 0 && i % reportAt == 0)
                     progress((float)MathS.GetPercentage(i, message.Length, 2));
                 i++;
             }
             Reset();
-            return result;
+            return result.ToString();
         }
 
         internal void Reset()

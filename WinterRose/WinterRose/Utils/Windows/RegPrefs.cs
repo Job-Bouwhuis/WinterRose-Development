@@ -99,8 +99,7 @@ public static class RegPrefs
     /// <param name="value"></param>
     public static void SetBool(string key, bool value)
     {
-        string s = value ? "BOOLEAN_TRUE" : "BOOLEAN_FALSE";
-        rootKey[key].SetValue(s);
+        rootKey[key].SetValue(value);
     }
 
     /// <summary>
@@ -111,9 +110,9 @@ public static class RegPrefs
     /// <returns></returns>
     public static bool GetBool(string key, bool defaultValue = false)
     {
-        if (!rootKey[key].GetValue(out string s))
+        if (!rootKey[key].GetValue(out bool s))
             return defaultValue;
-        return s == "BOOLEAN_TRUE";
+        return s;
     }
 
 

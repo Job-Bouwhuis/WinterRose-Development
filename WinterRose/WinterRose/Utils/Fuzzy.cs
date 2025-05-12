@@ -70,7 +70,7 @@ namespace WinterRose
                     score += 4;
 
                 float missedChars = 0;
-                for (int j = 0; j < search.Length; i++)
+                for (int j = 0; j < search.Length; j++)
                 {
                     if (item.Length <= j)
                         break;
@@ -81,7 +81,7 @@ namespace WinterRose
                     else
                     {
                         missedChars++;
-                        score -= 1f / missedChars;
+                        score -= 0.5f * missedChars;
                     }
 
                 }
