@@ -17,7 +17,9 @@ internal class Program
 
         using FileStream original = File.Open("original.txt", FileMode.Open, FileAccess.Read);
         using FileStream newFile = File.Open("new.txt", FileMode.Open, FileAccess.Read);
-        var instructions = FileDiffGenerator.Diff(original, newFile, "myfile.txt");
+        FileChunkTree origTree = FileChunkTree.BuildFromStream(original);
+        FileChunkTree newTree = FileChunkTree.BuildFromStream(newFile);
+        var instructions = FileChunkTree.GenerateInstructions(origTree, newTree, original, newFile, "myfile.txt");
 
         using FileStream instructionFile = File.Open("instr.txt", FileMode.Create, FileAccess.ReadWrite);
         FileChangeInstructionParser.WriteBinaryInstructions(instructionFile, instructions);

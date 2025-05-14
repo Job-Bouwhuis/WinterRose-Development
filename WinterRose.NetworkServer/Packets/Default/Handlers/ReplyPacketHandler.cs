@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ConsoleExtentions;
-using WinterRose.Networking.TCP;
 
 namespace WinterRose.NetworkServer.Packets.Default.Responses
 {

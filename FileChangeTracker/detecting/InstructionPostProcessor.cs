@@ -11,75 +11,18 @@ using System.Threading.Tasks;
 //return PostProcessInstructions(instructions);
 namespace FileChangeTracker.detecting
 {
-    public static class FileDiffGenerator
+    public static class InstructionPostProcessor
     {
-        private const int CHUNK_SIZE = 4;  // You can adjust this size to optimize performance
-
-        public static List<FileChangeInstruction> Diff(FileStream originalStream, FileStream modifiedStream, string actualFile)
-        {
-            List<FileChangeInstruction> changes = new();
-            byte[] originalBuffer = new byte[CHUNK_SIZE];
-            byte[] modifiedBuffer = new byte[CHUNK_SIZE];
-
-            long originalPosition = 0;
-            long modifiedPosition = 0;
-
-            while (true)
-            {
-                int originalBytesRead = originalStream.Read(originalBuffer, 0, CHUNK_SIZE);
-                int modifiedBytesRead = modifiedStream.Read(modifiedBuffer, 0, CHUNK_SIZE);
-
-                // If no data is left in both files, we're done.
-                if (originalBytesRead == 0 && modifiedBytesRead == 0)
-                    break;
-
-                int originalIndex = 0, modifiedIndex = 0;
-                while (originalIndex < originalBytesRead && modifiedIndex < modifiedBytesRead)
-                {
-                    if (originalBuffer[originalIndex] == modifiedBuffer[modifiedIndex])
-                    {
-                        originalIndex++;
-                        modifiedIndex++;
-                    }
-                    else
-                    {
-                        // No match within this chunk, so we assume insertion or deletion
-                        int chunkLength = GetLengthWithoutTrailingZeros(modifiedBuffer);
-                        byte[] chunkData = new byte[chunkLength];
-                        Array.Copy(modifiedBuffer, chunkData, chunkLength);
-                        changes.Add(new DeleteInstruction(modifiedPosition + modifiedIndex, chunkLength));
-                        changes.Add(new InsertInstruction(modifiedPosition + modifiedIndex, chunkData));
-                        modifiedIndex += chunkLength;
-                    }
-                }
-
-                originalPosition += originalBytesRead;
-                modifiedPosition += modifiedBytesRead;
-            }
-
-            var exeDir = PathLast(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
-            changes.Insert(0, new SetFileInstruction(PathFrom(path: actualFile, from: exeDir)));
-
-            return PostProcessInstructions(changes);
-        }
-        public static int GetLengthWithoutTrailingZeros(byte[] data)
-        {
-            if (data == null || data.Length == 0)
-                return 0;
-
-            int i = data.Length - 1;
-            while (i >= 0 && data[i] == 0)
-                i--;
-
-            return i + 1;
-        }
-
-        private static List<FileChangeInstruction> PostProcessInstructions(List<FileChangeInstruction> instructions)
+        public static List<FileChangeInstruction> PostProcessInstructions(List<FileChangeInstruction> instructions, string actualFile)
         {
             var processedInstructions = TransformSequentialInsertDelete(instructions);
             processedInstructions = MergeSequentialUpdates(processedInstructions);
             processedInstructions = MergeSequentialDeletes(processedInstructions);
             processedInstructions = MergeSequentialInserts(processedInstructions);
+
+            var exeDir = PathLast(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));
+            processedInstructions.Insert(0, new SetFileInstruction(PathFrom(path: actualFile, from: exeDir)));
+
             return processedInstructions;
         }
         private static List<FileChangeInstruction> TransformSequentialInsertDelete(List<FileChangeInstruction> instructions)
