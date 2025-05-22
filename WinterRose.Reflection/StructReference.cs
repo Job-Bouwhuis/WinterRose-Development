@@ -24,5 +24,12 @@ namespace WinterRose.Reflection
         /// </summary>
         /// <returns></returns>
         public ref object Get() => ref *(object*)ptr;
+        /// <summary>
+        /// Gets the referenced value as <typeparamref name="T"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public ref T As<T>() => ref *(T*)ptr;
+        
     }
 }

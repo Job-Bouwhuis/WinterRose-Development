@@ -1,5 +1,4 @@
-﻿using WinterRose.Serialization;
-using WinterRose.Vectors;
+﻿using WinterRose.Vectors;
 
 namespace WinterRose
 {
@@ -36,9 +35,6 @@ namespace WinterRose
         [IncludeWithSerialization] public Vector3 Size { get; set; } = Vector3.Zero;
 
         public GameObject? ModelPrefab { get; set; }
-
-
-
 
         public string Source => source;
         private string source = "";

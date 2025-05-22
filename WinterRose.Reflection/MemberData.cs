@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices.ObjectiveC;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,22 +13,54 @@ namespace WinterRose.Reflection
     [DebuggerDisplay("{ToDebuggerString()}")]
     public sealed class MemberData
     {
+        private static readonly Dictionary<MemberInfo, MemberData> CACHE = new();
+
         FieldInfo? fieldsource;
         PropertyInfo? propertysource;
 
-        public MemberData(FieldInfo field)
+        private Func<object, object> getter;
+        private Action<object, object> setter;
+
+        public static MemberData FromField(FieldInfo field)
         {
-            fieldsource = field;
-            Attributes = field.GetCustomAttributes().ToArray();
-        }
-        public MemberData(PropertyInfo property)
-        {
-            propertysource = property;
-            Attributes = property.GetCustomAttributes().ToArray();
+            if (CACHE.TryGetValue(field, out var cached))
+                return cached;
+
+            var data = new MemberData
+            {
+                fieldsource = field,
+                Attributes = field.GetCustomAttributes().ToArray()
+            };
+
+            data.getter = DelegateCache.GetGetter(data);
+            data.setter = DelegateCache.GetSetter(data);
+
+            CACHE[field] = data;
+            return data;
         }
 
-        public static implicit operator MemberData(FieldInfo field) => new(field);
-        public static implicit operator MemberData(PropertyInfo property) => new(property);
+        public static MemberData FromProperty(PropertyInfo property)
+        {
+            if (CACHE.TryGetValue(property, out var cached))
+                return cached;
+
+            var data = new MemberData
+            {
+                propertysource = property,
+                Attributes = property.GetCustomAttributes().ToArray()
+            };
+
+            data.getter = DelegateCache.GetGetter(data);
+            data.setter = DelegateCache.GetSetter(data);
+
+            CACHE[property] = data;
+            return data;
+        }
+
+        private MemberData() { }
+
+        public static implicit operator MemberData(FieldInfo field) => FromField(field);
+        public static implicit operator MemberData(PropertyInfo property) => FromProperty(property);
 
         /// <summary>
         /// The identifier of the field or property.
@@ -44,7 +77,7 @@ namespace WinterRose.Reflection
         /// <summary>
         /// The custom attributes on the field or property.
         /// </summary>
-        public Attribute[] Attributes { get; }
+        public Attribute[] Attributes { get; private set; }
         /// <summary>
         /// Field attributes, if this is a field. Otherwise, throws an <see cref="InvalidOperationException"/>.
         /// </summary>
@@ -137,31 +170,44 @@ namespace WinterRose.Reflection
         /// <summary>
         /// Whether or not the type is a reference type
         /// </summary>
-        public bool ByRef => fieldsource?.FieldType.IsByRef ?? propertysource?.PropertyType.IsByRef ?? throw new InvalidOperationException("No field or property found.");
+        public bool ByRef
+        {
+            get
+            {
+                if (fieldsource != null)
+                {
+                    var type = fieldsource.FieldType;
+                    return type.IsByRef || type.IsValueType && !type.IsPrimitive && !type.IsEnum;
+                }
+                else if (propertysource != null)
+                {
+                    var type = propertysource.PropertyType;
+                    return type.IsByRef || (type.IsValueType && !type.IsPrimitive && !type.IsEnum);
+                }
+                else
+                {
+                    throw new InvalidOperationException("No field or property found.");
+                }
+            }
+        }
+
 
         /// <summary>
         /// Whether or not there actually is a field or property to read/write to.
         /// </summary>
-        public bool Exists => fieldsource != null || propertysource != null;
+        public bool IsValid => fieldsource != null || propertysource != null;
 
         /// <summary>
         /// Gets the value stored at this field or property
         /// </summary>
         /// <returns>The object stored in the field or property</returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public unsafe object? GetValue(object? obj)
+        public unsafe object? GetValue(ref object? obj)
         {
             if (propertysource is null && fieldsource is null)
                 throw new InvalidOperationException("No property or field found.");
 
-            if (IsStatic)
-                return fieldsource?.GetValue(null)
-                    ?? propertysource?.GetValue(null);
-
-            if (MemberType is MemberTypes.Property)
-                return propertysource?.GetValue(obj);
-
-            if (ByRef)
+            if (obj.GetType().IsValueType)
             {
                 TypedReference tr = __makeref(obj);
                 object? valueTypeVal = fieldsource.GetValueDirect(tr);
@@ -169,7 +215,8 @@ namespace WinterRose.Reflection
                 return valueRef;
             }
 
-            return fieldsource?.GetValue(obj);
+            return getter(obj);
+            //return fieldsource?.GetValue(obj);
         }
         /// <summary>
         /// Writes the value to the field or property. If the field or property is readonly, an <see cref="InvalidOperationException"/> is thrown.
@@ -179,53 +226,55 @@ namespace WinterRose.Reflection
         public void SetValue(ref object? obj, object? value)
         {
             if (fieldsource is not null)
-                SetFieldValue(obj, value);
+                SetFieldValue(ref obj, value);
             else if (propertysource is not null)
-                SetPropertyValue(obj, value);
+                SetPropertyValue(ref obj, value);
             else
                 throw new Exception("Field or property does not exist with name: " + Name);
         }
 
-        public void SetPropertyValue<T>(object? obj, T value)
+        public void SetPropertyValue<T>(ref object? obj, T value)
         {
+            if (setter is null)
+                throw new Exception("Member is read only");
+
             object actualValue = value;
             if (value != null)
             {
-                MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(Type, value.GetType());
-
-                if (conversionMethod != null)
-                    actualValue = conversionMethod.Invoke(null, new object[] { value })!;
+                if (TypeWorker.SupportedPrimitives.Contains(Type)
+                    && TypeWorker.SupportedPrimitives.Contains(value.GetType())
+                    && Type != value.GetType())
+                    actualValue = TypeWorker.CastPrimitive(value, Type);
+                else if (TypeWorker.FindImplicitConversionMethod(Type, value.GetType()) is MethodInfo conversionMethod)
+                    actualValue = conversionMethod.Invoke(null, [value])!;
             }
 
             if (obj is null && !propertysource.SetMethod.IsStatic && !(Type.IsAbstract && Type.IsSealed))
                 throw new Exception("Reflection helper was created type only.");
 
-            propertysource.SetValue(obj, actualValue);
+            setter.Invoke(obj, actualValue);
         }
 
-        public void SetFieldValue<T>(object obj, T value)
+        public void SetFieldValue<T>(ref object obj, T value)
         {
-            // Check if the field's type or the value type has a compatible implicit conversion operator
-            MethodInfo? conversionMethod = TypeWorker.FindImplicitConversionMethod(Type, typeof(T));
-
-            object? actualValue = value;
-
-            if (conversionMethod != null)
+            object actualValue = value;
+            if (value != null)
             {
-                actualValue = conversionMethod.Invoke(null, [value]);
+                if (TypeWorker.SupportedPrimitives.Contains(Type) 
+                    && TypeWorker.SupportedPrimitives.Contains(value.GetType())
+                    && Type != value.GetType())
+                    actualValue = TypeWorker.CastPrimitive(value, Type);
+                else if (TypeWorker.FindImplicitConversionMethod(Type, value.GetType()) is MethodInfo conversionMethod)
+                        actualValue = conversionMethod.Invoke(null, [value])!;
             }
 
             if (obj is null && !fieldsource.IsStatic && !(Type.IsAbstract && Type.IsSealed))
                 throw new Exception("Reflection helper was created type only.");
 
-            if (!Type.IsByRef)
-            {
-                fieldsource!.SetValue(obj, actualValue);
-            }
+            if (!obj.GetType().IsValueType)
+                setter.Invoke(obj, actualValue);
             else
-            {
                 fieldsource!.SetValueDirect(__makeref(obj), actualValue);
-            }
         }
 
         /// <summary>
@@ -265,5 +314,8 @@ namespace WinterRose.Reflection
             string propOrField = MemberType == MemberTypes.Field ? "Field" : "Property";
             return $"{publicOrPrivate} {propOrField} <{{{Name}}} = {writable}";
         }
+
+        public static implicit operator FieldInfo(MemberData d) => d.fieldsource ?? throw new InvalidCastException("Member was not a field");
+        public static implicit operator PropertyInfo(MemberData d) => d.propertysource ?? throw new InvalidCastException("Member was not a property");
     }
 }

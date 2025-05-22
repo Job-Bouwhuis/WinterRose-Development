@@ -32,7 +32,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\WinterRose.Legacy\WinterRose.Legacy.csproj" />
+		<ProjectReference Include="..\..\WinterRose.Reflection\WinterRose.Reflection.csproj" />
 		<ProjectReference Include="..\WinterRose\WinterRose.csproj" />
 	</ItemGroup>
 

@@ -10,7 +10,8 @@ using System.Xml;
 using WinterRose.CrystalScripting.Legacy.Interpreting;
 using WinterRose.CrystalScripting.Legacy.Interpreting.TokenHandlers;
 using WinterRose.CrystalScripting.Legacy.Objects.Base;
-using WinterRose.CrystalScripting.Legacy.Objects.Types
+using WinterRose.CrystalScripting.Legacy.Objects.Types;
+using WinterRose.Legacy.Serialization;
 using WinterRose.WIP.TestClasses;
 
 namespace WinterRose.CrystalScripting.Legacy
@@ -370,7 +371,7 @@ namespace WinterRose.CrystalScripting.Legacy
         {
             throw new Exception("Do not use.");
             error = CrystalError.NoError;
-            ///CrystalScript script = SnowSerializer.Deserialize<CrystalScript>(compiledData).Result;
+            CrystalScript script = SnowSerializer.Deserialize<CrystalScript>(compiledData).Result;
 
             foreach (var c in script.Classes)
             {

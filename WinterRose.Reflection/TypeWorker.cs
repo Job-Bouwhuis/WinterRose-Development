@@ -10,6 +10,27 @@ namespace WinterRose
     public static class TypeWorker
     {
         /// <summary>
+        /// All the types supported by the cast methods provided by <see cref="TypeWorker"/>
+        /// </summary>
+        public static List<Type> SupportedPrimitives { get; } =
+           [
+               typeof(bool),
+                        typeof(byte),
+                        typeof(sbyte),
+                        typeof(char),
+                        typeof(decimal),
+                        typeof(double),
+                        typeof(float),
+                        typeof(int),
+                        typeof(uint),
+                        typeof(long),
+                        typeof(ulong),
+                        typeof(short),
+                        typeof(ushort),
+                        typeof(string)
+           ];
+
+        /// <summary>
         /// WIP method
         /// </summary>
         /// <param name="type"></param>

@@ -141,7 +141,7 @@ namespace WinterRose.Monogame.EditorMode
                         componentValueEdits.Clear();
                         rhh.GetMembers().Foreach(member =>
                         {
-                            if (!member.Exists)
+                            if (!member.IsValid)
                             {
 
                             }

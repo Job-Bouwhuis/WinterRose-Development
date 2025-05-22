@@ -63,7 +63,7 @@ namespace WinterRose.Reflection
         public List<MemberData> GetMembers()
         {
             List<MemberData> members = [.. ObjectType.GetFields(flags), .. ObjectType.GetProperties(flags)];
-            return [.. members.Where(x => x.Exists)];
+            return [.. members.Where(x => x.IsValid)];
 
         }
         public List<FieldInfo> GetFields() => ObjectType.GetFields(flags).ToList();
@@ -119,19 +119,7 @@ namespace WinterRose.Reflection
         /// <param name="name"></param>
         /// <returns>the value</returns>
         /// <exception cref="FieldNotFoundException"></exception>
-        public object? GetValueFrom(string name)
-        {
-            return GetMember(name).GetValue(obj);
-
-            int res = GetFieldOrProperty(name, out var field, out var property);
-            if (res is -1)
-                throw new FieldNotFoundException($"field or property with name '{name}' does not exist");
-            if (res is 0)
-                return GetFieldValue(name);
-            if (res is 1)
-                return GetPropertyValue(name);
-            return null;
-        }
+        public object? GetValueFrom(string name) => GetMember(name).GetValue(ref obj);
 
         /// <summary>
         /// Gets the value of the field of the given name
