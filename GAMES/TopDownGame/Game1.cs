@@ -30,21 +30,6 @@ public class Game1 : Application
 {
     protected override World CreateWorld()
     {
-        //using Stream human = File.OpenRead("staticCallHuamn.txt");
-        //File.Delete("staticCallOpcodes.txt");
-        //using Stream opcodes = File.Open("staticCallOpcodes.txt", FileMode.CreateNew, FileAccess.ReadWrite);
-
-        //var parser = new HumanReadableParser();
-        //parser.Parse(human, opcodes);
-        //opcodes.Seek(0, SeekOrigin.Begin);
-
-        //var instr = InstructionParser.ParseOpcodes(opcodes);
-
-        //var exec = new InstructionExecutor();
-        //var result = exec.Execute(instr);
-
-        //WinterRose.Monogame.Debug.Log(CameraIndex, true);
-
         Hirarchy.Show = true;
 
         // als fyschieke scherm 2k of meer is, maak game window 1920 x 1080. anders maak hem 1280 x 720
