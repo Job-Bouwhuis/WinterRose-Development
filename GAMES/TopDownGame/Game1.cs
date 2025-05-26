@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +16,7 @@ using TopDownGame.Enemies;
 using TopDownGame.Enemies.Movement;
 using TopDownGame.Items;
 using TopDownGame.Levels;
+using TopDownGame.Loading;
 using TopDownGame.Loot;
 using TopDownGame.Resources;
 using WinterRose;
@@ -30,6 +33,7 @@ public class Game1 : Application
 {
     protected override World CreateWorld()
     {
+        Constants.Init();
         Hirarchy.Show = true;
 
         // als fyschieke scherm 2k of meer is, maak game window 1920 x 1080. anders maak hem 1280 x 720
@@ -50,7 +54,7 @@ public class Game1 : Application
 
         benchmark();
 
-        World w = World.FromTemplate("Level 1");
+        World w = World.FromTemplate<LoadingLevel>("Level 1");
         return w;
 
 
@@ -108,6 +112,20 @@ public class Game1 : Application
         return world;
     }
 
+    static byte[] AES_KEY = new byte[]
+    {
+            0x3F, 0x7A, 0xC9, 0x11, 0x5D, 0xA2, 0xB3, 0x4E,
+            0x8F, 0x01, 0xDD, 0x67, 0x3C, 0x9B, 0x20, 0xF5,
+            0x6E, 0x44, 0x19, 0xB7, 0xD2, 0x53, 0x8C, 0xA9,
+            0xE3, 0x0F, 0x5B, 0x7D, 0x02, 0x84, 0xC6, 0x1A
+    };
+
+    static byte[] AES_IV = new byte[]
+        {
+        0x7C, 0x21, 0x9D, 0xE5, 0x44, 0x3B, 0x6F, 0x8A,
+        0x10, 0xCF, 0x52, 0x77, 0xA1, 0xE0, 0x33, 0x6D
+        };
+
     private void benchmark()
     {
         WinterRose.Windows.OpenConsole();
@@ -121,11 +139,18 @@ public class Game1 : Application
 
         long bestSerializationTime = long.MaxValue;
         long worstSerializationTime = long.MinValue;
-
+        using var aes = Aes.Create();
+        aes.Key = AES_KEY;
+        aes.IV = AES_IV;
         while (i1++ < max1)
         {
             serializationSW.Restart();
-            WinterForge.SerializeToFile(w1, "Level 1");
+
+            
+            using FileStream file = File.Open("Level 1", FileMode.Create, FileAccess.Write);
+            using CryptoStream crypto = new CryptoStream(file, aes.CreateEncryptor(), CryptoStreamMode.Write);
+            using GZipStream decompressed = new GZipStream(crypto, CompressionLevel.SmallestSize);
+            WinterForge.SerializeToStream(w1, decompressed);
             serializationSW.Stop();
 
             long elapsed = serializationSW.ElapsedMilliseconds;
@@ -147,7 +172,10 @@ public class Game1 : Application
         while (i2++ < max2)
         {
             deserializationSW.Restart();
-            World d = WinterForge.DeserializeFromFile<World>("Level 1");
+            using FileStream file = File.Open("Level 1", FileMode.Open, FileAccess.Read);
+            using CryptoStream crypto = new CryptoStream(file, aes.CreateDecryptor(), CryptoStreamMode.Read);
+            using GZipStream decompressed = new GZipStream(crypto, CompressionMode.Decompress);
+            World d = WinterForge.DeserializeFromStream<World>(decompressed);
             deserializationSW.Stop();
 
             long elapsed = deserializationSW.ElapsedMilliseconds;

@@ -5,6 +5,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Configurations>Debug;Release;debug FileServer</Configurations>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>TheSnowOwl</Authors>
+    <Company>WinterRose</Company>
+    <Description>Provides a way of making mod 'items' in your games. made for WinterRose.Monogame, but may work in other environments.
+this does NOT provide a means to make 'programmed' mods. instead this is a kind of mod that applies to an ingame item to alter its stats
+its very customizable</Description>
+    <Copyright>TheSnowOwl</Copyright>
+    <Version>25.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

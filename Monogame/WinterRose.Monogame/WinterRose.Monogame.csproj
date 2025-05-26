@@ -11,18 +11,15 @@
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild> 
 		<Title>WinterRose.Monogame</Title>
-		<Authors>WinterRose</Authors>
+		<Authors>TheSnowOwl</Authors>
 		<Copyright>WinterRose</Copyright>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<Version>1.1.402</Version>
+		<Version>25.2.0</Version>
 		<Description>A framework on top of the Monogame framework made by and for myself. however you can use it for yourself aswell. there is no documentation so youll have to figure it out by trial and error</Description>
-		<PackageReleaseNotes>fixed a bug where objects would be added infinitely to a chunk.
-Fixed bug where coliders could not see the objects around them
-Fixed bug where object would be seen as 1x1 pixel size in chunk system
-
-all in all, this made colisions work again</PackageReleaseNotes>
+		<PackageReleaseNotes>a bunch of changes. i dont remember everything i changed.</PackageReleaseNotes>
 		<PackageLicenseExpression>CC-BY-4.0</PackageLicenseExpression>
 		<Configurations>Debug;Release;debug FileServer</Configurations>
+		<Company>WinterRose</Company>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -60,7 +57,7 @@ all in all, this made colisions work again</PackageReleaseNotes>
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
 		<PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.3" />
 		<PackageReference Include="SpriteFontPlus.MonoGame" Version="0.7.0.22" />
-		<PackageReference Include="WinterRose.WinterForge" Version="25.2.8" />
+		<PackageReference Include="WinterRose.WinterForge" Version="25.2.9" />
 	</ItemGroup>
 
 	<ItemGroup>

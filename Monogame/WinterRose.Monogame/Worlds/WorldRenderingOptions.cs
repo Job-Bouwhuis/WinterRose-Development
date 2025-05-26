@@ -31,7 +31,7 @@ public sealed class WorldRenderingOptions
     {
         ScissorTestEnable = true,
         CullMode = CullMode.None,
-        FillMode = FillMode.WireFrame
+        FillMode = FillMode.Solid
     };
     /// <summary>
     /// The effect for the sprite batch. Defaults to <see langword="null"/>

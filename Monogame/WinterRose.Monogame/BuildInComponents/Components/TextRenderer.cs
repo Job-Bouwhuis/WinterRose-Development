@@ -10,8 +10,12 @@ using System.Threading.Tasks;
 
 namespace WinterRose.Monogame
 {
+    /// <summary>
+    /// It renders text... what more can i say?
+    /// </summary>
+    /// <param name="text"></param>
     [method: DefaultArguments("New Text")]
-    internal class TextRenderer(string text) : Renderer
+    public class TextRenderer(string text) : Renderer
     {
         public override RectangleF Bounds
         {
@@ -22,7 +26,7 @@ namespace WinterRose.Monogame
             }
         }
 
-        public override TimeSpan DrawTime { get => throw new NotImplementedException(); protected set => throw new NotImplementedException(); }
+        public override TimeSpan DrawTime { get; protected set; }
         
         public SpriteFont Font { get; set; } = MonoUtils.DefaultFont;
         public Color Color { get; set; } = Color.White;
@@ -30,8 +34,8 @@ namespace WinterRose.Monogame
 
         public override void Render(SpriteBatch batch)
         {
-            Vector2 center = new Vector2(Bounds.X + Bounds.Width / 2, Bounds.Y + Bounds.Height / 2);
-            batch.DrawString(Font, Text, center, Color);
+            //Vector2 center = new Vector2(Bounds.X + Bounds.Width / 2, Bounds.Y + Bounds.Height / 2);
+            batch.DrawString(Font, Text, transform.position, Color);
         }
     }
 }

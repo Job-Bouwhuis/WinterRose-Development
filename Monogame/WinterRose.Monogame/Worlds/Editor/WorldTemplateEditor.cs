@@ -268,7 +268,7 @@ public static class WorldEditor
 
         if (worldTemplates[selectedItem].EndsWith(".MonoWorld"))
         {
-            World world = World.FromTemplate(worldTemplates[selectedItem]);
+            World world = World.FromTemplateFile(worldTemplates[selectedItem]);
             Universe.CurrentWorld = world;
             return;
         }

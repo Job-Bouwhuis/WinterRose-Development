@@ -9,10 +9,7 @@ using System.Threading.Tasks;
 using WinterRose;
 using WinterRose.FileManagement;
 using WinterRose.Monogame;
-using WinterRose.Plugins;
 using WinterRose.Reflection;
-using WinterRose.Serialization;
-using WinterRose.WinterForge.Formatting;
 using WinterRose.WinterForgeSerializing.Workers;
 using WinterRose.WIP.TestClasses;
 using windows = WinterRose.Windows;
@@ -106,7 +103,7 @@ static void DelegateSerializeTest()
         object value = field.GetValue(closure);
         Console.WriteLine($"Field: {field.Name}, Value: {value}");
     }
-    ObjectSerializer serializer = new();
+    ObjectSerializer serializer = new(null);
     string serialized = serializer.SerializeToString(closure);
     Console.WriteLine("\n--- Serialized Closure ---");
     Console.WriteLine(serialized);
