@@ -8,6 +8,8 @@ using Microsoft.Xna.Framework;
 using System.Net.NetworkInformation;
 using System.Diagnostics;
 
+
+
 //WinterRose.Windows.OpenConsole();
 
 //Thread serverThread = new Thread(Server);
