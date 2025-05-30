@@ -13,7 +13,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Authors>WinterRose</Authors>
     <Company>SnowyAnomaly</Company>
-    <Version>25.2.2</Version>
+    <Version>25.2.3</Version>
     <PackageId>WinterRose</PackageId>
     <Title>WinterRose</Title>
     <Product>WinterRose</Product>
@@ -23,7 +23,7 @@
     <PackageLicenseExpression>CC-BY-4.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <IncludeSymbols>False</IncludeSymbols>
-    <PackageReleaseNotes>integrated WinterForge latest update</PackageReleaseNotes>
+    <PackageReleaseNotes>Moved Anonymous Type stuff to WinterRose.Reflection</PackageReleaseNotes>
     <Configurations>Debug;Release;debug FileServer</Configurations>
   </PropertyGroup>
 
@@ -57,7 +57,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
-    <PackageReference Include="WinterRose.WinterForge" Version="25.2.9" />
+    <PackageReference Include="WinterRose.WinterForge" Version="25.2.14" />
   </ItemGroup>
 
   <ItemGroup>

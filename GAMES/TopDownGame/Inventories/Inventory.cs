@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using TopDownGame.Inventories.Base;
 using TopDownGame.Loot;
@@ -35,8 +36,8 @@ public sealed class Inventory : Asset
     }
 
     public void ValidateItemStacks()
-    { 
-        while(toBeAdded.TryTake(out IInventoryItem? newItem))
+    {
+        while (toBeAdded.TryTake(out IInventoryItem? newItem))
         {
             foreach (IInventoryItem existingItem in Items)
             {
@@ -45,8 +46,16 @@ public sealed class Inventory : Asset
                 if (existingItem.Name != newItem.Name)
                     continue;
 
-                while (newItem != null)
-                    newItem = existingItem.AddToStack(newItem);
+                var result = existingItem.AddToStack(newItem, out var remaining);
+                if (remaining is null)
+                    newItem = null;
+                if (result is InventoryAditionResult.NewStack)
+                {
+                    toBeAdded.Add(remaining);
+                    newItem = null;
+                    break;
+                }
+                
                 break;
             }
 

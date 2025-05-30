@@ -214,6 +214,9 @@ public sealed class World : IEnumerable<WorldObject>
         using var aes = Aes.Create();
         aes.Key = AES_KEY;
         aes.IV = AES_IV;
+        if (!Directory.Exists("Content/Worlds"))
+            Directory.CreateDirectory("Content/Worlds");
+
         using FileStream file = File.Open("Content/Worlds/" + Name + ".world", FileMode.Create, FileAccess.Write);
         using CryptoStream crypt = new CryptoStream(file, aes.CreateEncryptor(), CryptoStreamMode.Write);
         using GZipStream compressed = new GZipStream(crypt, CompressionLevel.SmallestSize);

@@ -54,7 +54,7 @@ public interface IInventoryItem
     /// </summary>
     /// <param name="item"></param>
     /// <returns>remaining items if the stack of this item is full</returns>
-    IInventoryItem? AddToStack(IInventoryItem item);
+    InventoryAditionResult AddToStack(IInventoryItem item, out IInventoryItem? remaining);
 
     IInventoryItem Clone();
 }

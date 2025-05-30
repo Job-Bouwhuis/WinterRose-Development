@@ -57,7 +57,7 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
 		<PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.3" />
 		<PackageReference Include="SpriteFontPlus.MonoGame" Version="0.7.0.22" />
-		<PackageReference Include="WinterRose.WinterForge" Version="25.2.9" />
+		<PackageReference Include="WinterRose.WinterForge" Version="25.2.14" />
 	</ItemGroup>
 
 	<ItemGroup>
