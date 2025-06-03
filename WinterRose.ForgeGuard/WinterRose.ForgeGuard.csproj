@@ -5,6 +5,49 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>WinterRose.ForgeGuardChecks</RootNamespace>
+    <Authors>TheSnowOwl</Authors>
+    <Company>WinterRose</Company>
+    <Version>25.2.0</Version>
+    <PackageReleaseNotes>Features
+ForgeGuard Core Class
+Automatically discovers and executes guard tests defined across loaded assemblies.
+
+Attribute-Driven Guard System
+
+[GuardClass] to mark types containing guards
+
+[Guard] for test-like methods. with an optional constructor overload to define severity. defaults to Catastrophic
+
+[GuardSetup] / [GuardTeardown] for per-class setup and teardown
+
+[GlobalSetup] / [GlobalTeardown] for once-per-run hooks
+
+[Fatal] to mark guards that should abort the app on failure
+
+Severity-Aware Execution
+Guard methods can be tagged with severity levels to reflect the criticality of a failure.
+
+ForgeGuard.RunGuards(Stream)
+Execute all guard classes and emit structured diagnostic output to a stream.
+
+Production-Safe Checks
+Ideal for runtime verification of invariants, environment sanity, or post-start health validation.
+
+ANSI Color Formatting
+Toggle ForgeGuard.IncludeColorInMessageFormat for easy-to-read terminal output.</PackageReleaseNotes>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>WinterRose.ForgeGuard</Title>
+    <Description>A unit-test-like system thats designed for production runtime application healthchecks. but can also be used for developers to unit test their app</Description>
+    <Copyright>TheSnowOwl</Copyright>
+    <PackageIcon>ForgeGuardLogo.jpg</PackageIcon>
+    <PackageTags>Unit;unit tests;tests;health checks;checks</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="ForgeGuardLogo.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>

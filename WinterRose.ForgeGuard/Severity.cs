@@ -8,6 +8,7 @@ namespace WinterRose.ForgeGuardChecks
 {
     public enum Severity
     {
+        Healthy,
         Info,
         Minor,
         Major,

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.XPath;
 
 namespace WinterRose.ForgeGuardChecks
 {
@@ -20,12 +21,13 @@ namespace WinterRose.ForgeGuardChecks
         public MethodInfo? AfterEach { get; set; }
 
         public List<(MethodInfo guard, Severity severity)> Guards { get; } = [];
+        public Type GuardClassType { get; private set; }
 
         public GuardClassAttribute FromType(Type t, out MethodInfo? globalSetup, out MethodInfo? globalTeardown)
         {
             globalSetup = null;
             globalTeardown = null;
-
+            GuardClassType = t;
             var methods = t.GetMethods();
 
             foreach (var method in methods)
@@ -74,7 +76,6 @@ namespace WinterRose.ForgeGuardChecks
 
                 else if (method.GetCustomAttribute<GuardAttribute>() is GuardAttribute c)
                 {
-
                     Guards.Add((method, c.severity));
                 }
             }
@@ -85,34 +86,47 @@ namespace WinterRose.ForgeGuardChecks
             return this;
         }
 
-        internal Severity Run(StreamWriter output) 
+        internal GuardClassResult Run(StreamWriter output) 
         {
+            GuardClassResult result = new(GuardClassType);
+
             if (Guards.Count == 0)
-                return Severity.Info;
-            Severity successful = Severity.Info;
+                return result;
 
             GuardSetup?.Invoke(null, null);
 
             foreach(var (guard, severity) in Guards)
             {
                 object guardClass = Activator.CreateInstance(guard.DeclaringType);
-                BeforeEach.Invoke(guardClass, null);
+                BeforeEach?.Invoke(guardClass, null);
                 try
                 {
                     guard.Invoke(guardClass, null);
+                    result.AddGuardResult(guard.Name, Severity.Healthy);
                 }
                 catch (TargetInvocationException tie)
                 {
                     Exception e = tie.InnerException;
-                    output.Write(ForgeGuard.Format($"{e.GetType().Name}: {e.Message}", severity));
-                    if (successful < severity)
-                        successful = severity;
+                    string possiblyWithColor = ForgeGuard.Format($"{e.GetType().Name}: {e.Message}", severity);
+                    string withoutColor = ForgeGuard.Format($"{e.GetType().Name}: {e.Message}", severity, false);
+                    
+                    output.Write(possiblyWithColor);
+
+                    if(guard.GetCustomAttribute<FatalAttribute>() is not null && severity > Severity.Info)
+                    {
+                        FatalDialog.Show(withoutColor);
+                        GuardClauseResult clause = new(Severity.Catastrophic, withoutColor, e, true);
+                        result.AddGuardresult(guard.Name, clause);
+                        return result;
+                    }
+
+                    result.AddGuardresult(guard.Name, new(severity, e.Message, e, false));
                 }
-                AfterEach.Invoke(guardClass, null);
+                AfterEach?.Invoke(guardClass, null);
             }
 
             GuardTeardown?.Invoke(null, null);
-            return successful;
+            return result;
         }
     }
 
@@ -153,7 +167,7 @@ namespace WinterRose.ForgeGuardChecks
     public class GuardTeardownAttribute : Attribute;
 
     /// <summary>
-    /// Defines a guard method in a guard class
+    /// Defines a guard method in a guard class. Severity defaults to <see cref="Severity.Catastrophic"/>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
     public class GuardAttribute : Attribute

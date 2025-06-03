@@ -1,4 +1,5 @@
 ﻿using WinterRose.ForgeGuardChecks;
+using WinterRose.WinterForgeSerializing;
 
 namespace ForgeGuardTests;
 
@@ -7,73 +8,66 @@ internal class Program
     static void Main(string[] args)
     {
         ForgeGuard.IncludeColorInMessageFormat = true;
-        ForgeGuard.IndexGuards();
         Stream s = Console.OpenStandardOutput();
-        ForgeGuard.RunGuards(s);
+        GuardResult result = ForgeGuard.RunGuards(s);
+
+        if(result.HighestSeverity > Severity.Healthy)
+            Console.WriteLine("a guard failed, that wasnt marked as fatal");
+        else
+            Console.WriteLine("nice and healthy");
+
+        Console.WriteLine("\n\n\n");
+
+        Console.WriteLine(result.ToString());
+
+        string resultString = WinterForge.SerializeToString(result, TargetFormat.FormattedHumanReadable);
+        Console.WriteLine("\n\n\n");
+        Console.WriteLine(resultString);
+    }
+}
+
+class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+
+    public bool CanDrink()
+    {
+        return Age >= 18;
     }
 }
 
 [GuardClass]
 public class ExampleGuardClass
 {
-    // Global setup method — runs before any test classes
-    [GlobalSetup]
-    public static void InitEverything()
-    {
-    }
+    Person p;
 
-    // Global teardown — cleans up after all tests are done
-    [GlobalTeardown]
-    public static void CleanUpEverything()
-    {
-    }
-
-    // Class-level setup — runs before any guard in this class
-    [GuardSetup]
-    public static void SetupGuardClass()
-    {
-    }
-
-    // Class-level teardown — runs after all guards in this class
-    [GuardTeardown]
-    public static void TeardownGuardClass()
-    {
-    }
-
-    // Instance-level setup — runs before each individual guard method
     [BeforeEach]
-    public void SetupBeforeEach()
+    public void Setup()
     {
+        p = new()
+        {
+            Age = 18
+        };
     }
 
-    // Instance-level teardown — runs after each individual guard method
-    [AfterEach]
-    public void CleanupAfterEach()
+    [Guard]
+    public void GuardTest4()
     {
+        Forge.Expect(p).Null();
     }
 
-    [Guard(Severity.Info)]
-    public void SampleGuardTest3()
+    [Guard]
+    public void MethodExpectation()
     {
-        throw new Exception("this is a test 1");
+        Forge.Expect(p.CanDrink).WhenCalled().ThatReturnValue.Not.Null();
     }
 
-    [Guard(Severity.Minor)]
-    public void SampleGuardTest4()
+    [Guard, Fatal]
+    public void FatalTest()
     {
-        throw new Exception("this is a test 2");
-    }
-
-    // A test method (a "guard" in ForgeGuard terms)
-    [Guard(Severity.Major)]
-    public void SampleGuardTest()
-    {
-        throw new Exception("this is a test 3");
-    }
-
-    [Guard(Severity.Catastrophic)]
-    public void SampleGuardTest2()
-    {
-        throw new Exception("this is a test 4");
+        // always succeeds in this demo, just there to show the way to mark a guard as absolute fatal. if it fails,
+        // ForgeGuard will close the app *immediately* after this guard has ran. with a platform dependant way to notify the user
+        // of this hard crash.
     }
 }
