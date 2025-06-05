@@ -95,7 +95,7 @@ internal class Level1 : WorldTemplate
         world.DestroyImmediately(enemy);
 
         // Spawning multiple items in a circle
-        int itemCount = 4000;
+        int itemCount = 500;
         Vector2 center = new Vector2(500, 500);
         float spawnRadius = 2000;
 

@@ -16,8 +16,15 @@ public class MethodExpectation
     protected Exception? thrownException;
     protected TimeSpan executionTime;
 
+    /// <summary>
+    /// A negative version of this expectation.
+    /// </summary>
     public virtual MethodExpectation Not => new NegatedMethodExpectation(method, args, messageStart);
 
+    /// <summary>
+    /// An <see cref="Expectation"/> for the return value of the method when it is called.<br></br>
+    /// Calls <code>Not.ToThrowAny()</code> before returning the expectation, so it is safe to chain.<br></br>
+    /// </summary>
     public Expectation ThatReturnValue
     {
         get
@@ -56,6 +63,13 @@ public class MethodExpectation
         }
     }
 
+    /// <summary>
+    /// Expects the method to have thrown an exception of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns>the same reference</returns>
+    /// <exception cref="WrongExceptionThrownException"></exception>
+    /// <exception cref="NoExceptionThrownException"></exception>
     public virtual MethodExpectation ToThrow<T>() where T : Exception
     {
         RunIfNeeded();
@@ -69,6 +83,11 @@ public class MethodExpectation
         throw new NoExceptionThrownException(messageStart, typeof(T));
     }
 
+    /// <summary>
+    /// Expects the method to have thrown any exception.
+    /// </summary>
+    /// <returns>the same reference</returns>
+    /// <exception cref="NoExceptionThrownException"></exception>
     public virtual MethodExpectation ToThrowAny()
     {
         RunIfNeeded();
@@ -79,6 +98,13 @@ public class MethodExpectation
         throw new NoExceptionThrownException(messageStart);
     }
 
+    /// <summary>
+    /// Expects the method to return the specified value.
+    /// </summary>
+    /// <param name="expectedReturnValue"></param>
+    /// <returns>the same reference</returns>
+    /// <exception cref="ExceptionThrownException"></exception>
+    /// <exception cref="InvalidReturnValueException"></exception>
     public virtual MethodExpectation ToReturn(object? expectedReturnValue)
     {
         RunIfNeeded();
@@ -95,6 +121,12 @@ public class MethodExpectation
         return this;
     }
 
+    /// <summary>
+    /// Expects the method to complete within the given <paramref name="time"/>
+    /// </summary>
+    /// <param name="time"></param>
+    /// <returns></returns>
+    /// <exception cref="MethodExecutionTimeExceededException"></exception>
     public virtual MethodExpectation ToCompleteWithin(TimeSpan time)
     {
         RunIfNeeded();
@@ -105,7 +137,16 @@ public class MethodExpectation
         return this;
     }
 
+    /// <summary>
+    /// Expects the method to complete within the given number of milliseconds.
+    /// </summary>
+    /// <param name="ms"></param>
+    /// <returns></returns>
     public MethodExpectation ToCompleteWithin(long ms) => ToCompleteWithin(TimeSpan.FromMilliseconds(ms));
 
+    /// <summary>
+    /// Returns the same reference, allowing for more readable chaining of expectations. not required for chaining.
+    /// </summary>
+    /// <returns></returns>
     public MethodExpectation And() => this;
 }

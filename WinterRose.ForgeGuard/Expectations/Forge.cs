@@ -23,7 +23,7 @@ namespace WinterRose.ForgeGuardChecks
         /// <param name="callerName">auto filled by compiler</param>
         /// <param name="expr">auto filled by compiler</param>
         /// <param name="line">auto filled by compiler</param>
-        /// <returns>an <see cref="Expectation{T}"/> of <paramref name="value"/></returns>
+        /// <returns>an <see cref="Expectation"/> of <paramref name="value"/></returns>
         public static Expectation Expect<T>(T value, 
             [CallerMemberName] string callerName = "", 
             [CallerArgumentExpression("value")] string expr = "",

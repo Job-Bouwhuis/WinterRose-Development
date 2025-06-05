@@ -12,16 +12,19 @@ namespace WinterRose.ForgeGuardChecks
     /// Applied to a guard class
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
-    public class GuardClassAttribute : Attribute
+    public class GuardClassAttribute(string tag) : Attribute
     {
-        public MethodInfo? GuardSetup { get; set; }
-        public MethodInfo? GuardTeardown { get; set; }
-
-        public MethodInfo? BeforeEach { get; set; }
-        public MethodInfo? AfterEach { get; set; }
-
-        public List<(MethodInfo guard, Severity severity)> Guards { get; } = [];
+        public string Tag => tag;
         public Type GuardClassType { get; private set; }
+
+        MethodInfo? GuardSetup { get; set; }
+        MethodInfo? GuardTeardown { get; set; }
+
+        MethodInfo? BeforeEach { get; set; }
+        MethodInfo? AfterEach { get; set; }
+
+        List<(MethodInfo guard, Severity severity)> Guards { get; } = [];
+
 
         public GuardClassAttribute FromType(Type t, out MethodInfo? globalSetup, out MethodInfo? globalTeardown)
         {

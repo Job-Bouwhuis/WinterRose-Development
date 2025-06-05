@@ -10,6 +10,9 @@ namespace WinterRose.ForgeGuardChecks.Expectations
 {
     public class NegatedMethodExpectation : MethodExpectation
     {
+        /// <summary>
+        /// A non-negated version of this expectation.
+        /// </summary>
         public override MethodExpectation Not => new MethodExpectation(method, args, messageStart);
 
         public NegatedMethodExpectation(Delegate method, object[] args, string messageStart)
@@ -17,6 +20,12 @@ namespace WinterRose.ForgeGuardChecks.Expectations
         {
         }
 
+        /// <summary>
+        /// Expects the method to not throw an exception of type <typeparamref name="T"/>. allows other exceptions to be thrown.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>the same reference</returns>
+        /// <exception cref="UnexpectedExceptionThrownException"></exception>
         public override MethodExpectation ToThrow<T>()
         {
             RunIfNeeded();
@@ -27,6 +36,11 @@ namespace WinterRose.ForgeGuardChecks.Expectations
             return this;
         }
 
+        /// <summary>
+        /// Expects the method to not throw any exception.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="UnexpectedExceptionThrownException"></exception>
         public override MethodExpectation ToThrowAny()
         {
             RunIfNeeded();
@@ -37,6 +51,12 @@ namespace WinterRose.ForgeGuardChecks.Expectations
             return this;
         }
 
+        /// <summary>
+        /// Expects the method to take longer than <paramref name="time"/> to execute.
+        /// </summary>
+        /// <param name="time"></param>
+        /// <returns></returns>
+        /// <exception cref="MethodExecutionTimeTooFastException"></exception>
         public override MethodExpectation ToCompleteWithin(TimeSpan time)
         {
             RunIfNeeded();
@@ -47,7 +67,13 @@ namespace WinterRose.ForgeGuardChecks.Expectations
             return this;
         }
 
-        public override MethodExpectation ToReturn(object? expectedReturnValue)
+        /// <summary>
+        /// Expects the return value of the method to be not equal to <paramref name="returnValue"/>
+        /// </summary>
+        /// <param name="expectedReturnValue"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidReturnValueException"></exception>
+        public override MethodExpectation ToReturn(object? returnValue)
         {
             RunIfNeeded();
 
@@ -55,16 +81,14 @@ namespace WinterRose.ForgeGuardChecks.Expectations
             if (thrownException is not null)
                 return this;
 
-            if (expectedReturnValue == null && returnValue == null)
-                throw new InvalidReturnValueException(messageStart, expectedReturnValue, returnValue);
+            if (returnValue == null && base.returnValue == null)
+                throw new InvalidReturnValueException(messageStart, returnValue, base.returnValue);
 
-            if (expectedReturnValue?.Equals(returnValue) == true)
-                throw new InvalidReturnValueException(messageStart, expectedReturnValue, returnValue);
+            if (returnValue?.Equals(base.returnValue) == true)
+                throw new InvalidReturnValueException(messageStart, returnValue, base.returnValue);
 
             return this;
         }
-
-        public new MethodExpectation And() => this;
     }
 
 }

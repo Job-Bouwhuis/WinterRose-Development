@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using TopDownGame.Items;
 using TopDownGame.Levels;
+using TopDownGame.Loading;
 using TopDownGame.Loot;
 using TopDownGame.Resources;
 using WinterRose.FileManagement;
@@ -42,8 +43,8 @@ public class Game1 : Application
         }
 
         //benchmark();
-        //World w = World.FromTemplate<LoadingLevel>("Level 1");
-        //return w;
+        World w = World.FromTemplate<LoadingLevel>("Level 1");
+        return w;
 
         World world = World.FromTemplate<Level1>();
         return world;

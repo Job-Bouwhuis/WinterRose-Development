@@ -1,4 +1,5 @@
-﻿using WinterRose.ForgeGuardChecks;
+﻿using System.Numerics;
+using WinterRose.ForgeGuardChecks;
 using WinterRose.WinterForgeSerializing;
 
 namespace ForgeGuardTests;
@@ -9,7 +10,7 @@ internal class Program
     {
         ForgeGuard.IncludeColorInMessageFormat = true;
         Stream s = Console.OpenStandardOutput();
-        GuardResult result = ForgeGuard.RunGuards(s);
+        GuardResult result = ForgeGuard.Run(s, "a");
 
         if(result.HighestSeverity > Severity.Healthy)
             Console.WriteLine("a guard failed, that wasnt marked as fatal");
@@ -37,10 +38,11 @@ class Person
     }
 }
 
-[GuardClass]
+[GuardClass("test")]
 public class ExampleGuardClass
 {
     Person p;
+    Vector2 v;
 
     [BeforeEach]
     public void Setup()
@@ -54,7 +56,7 @@ public class ExampleGuardClass
     [Guard]
     public void GuardTest4()
     {
-        Forge.Expect(p).Null();
+        Forge.Expect(v).Not.Null();
     }
 
     [Guard]
