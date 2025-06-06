@@ -33,7 +33,8 @@ public sealed class SpriteRenderer : Renderer
         set
         {
             if (value.X is > 1 or < 0 || value.Y is > 1 or < 0)
-                throw new("Origin must be between 0 and 1");
+                value /= 10;
+                //throw new("Origin must be between 0 and 1");
             origin = value;
         }
     }

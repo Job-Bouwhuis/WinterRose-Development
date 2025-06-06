@@ -20,8 +20,8 @@ public class WinterRoseServer : BackgroundService
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        //IPAddress ip = Network.GetLocalIPAddress(); // however you're getting the IP
-        IPAddress ip = IPAddress.Parse("192.168.2.15");
+        IPAddress ip = Network.GetLocalIPAddress();
+        //IPAddress ip = IPAddress.Parse("192.168.2.15");
         int port = 12345;
 
         server = new ServerConnection(ip, port, logger);

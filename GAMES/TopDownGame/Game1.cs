@@ -47,26 +47,26 @@ public class Game1 : Application
 
         Hirarchy.Show = true;
 
-        // als fyschieke scherm 2k of meer is, maak game window 1920 x 1080. anders maak hem 1280 x 720
-        if (WinterRose.Windows.GetScreenSize().x >= 2560)
-            MonoUtils.WindowResolution = new(1920, 1080);
-        else
-            MonoUtils.WindowResolution = new(1280, 720);
+        //// als fyschieke scherm 2k of meer is, maak game window 1920 x 1080. anders maak hem 1280 x 720
+        //if (WinterRose.Windows.GetScreenSize().x >= 2560)
+        //    MonoUtils.WindowResolution = new(1920, 1080);
+        //else
+        //    MonoUtils.WindowResolution = new(1280, 720);
 
-        if(!AssetDatabase.AssetExists("box"))
-        {
-            LootTable table = LootTable.WithName("box");
-            if (table.Table.Count == 0)
-                table.Add([
-                    new(.5f, new ResourceItem() { Item = new Crystal()}, 1, 2),
-                    new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
-            table.Save();
-        }
+        //if(!AssetDatabase.AssetExists("box"))
+        //{
+        //    LootTable table = LootTable.WithName("box");
+        //    if (table.Table.Count == 0)
+        //        table.Add([
+        //            new(.5f, new ResourceItem() { Item = new Crystal()}, 1, 2),
+        //            new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
+        //    table.Save();
+        //}
 
-        benchmark();
+        //benchmark();
 
-        World w = World.FromTemplate("Level 1");
-        return w;
+        //World w = World.FromTemplate("Level 1");
+        //return w;
 
 
         ////w.InstantiateExact(WorldObjectPrefab.Load("enemy", false));

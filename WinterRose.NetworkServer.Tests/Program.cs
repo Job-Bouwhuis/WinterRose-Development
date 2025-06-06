@@ -1,14 +1,13 @@
 ﻿using System.Diagnostics;
-using System.Net;
-using System.Text;
 using WinterRose.Networking;
 using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
-using WinterRose.NetworkServer.Packets;
+using WinterRose.WinterForgeSerializing;
 
 ClientConnection client = null;
 ClientConnection client2 = null;
 List<RelayConnection> others;
+
 try
 {
     char c = Console.ReadKey().KeyChar;
@@ -18,7 +17,7 @@ try
     if (c == 'a')
     {
         Console.WriteLine(Network.GetLocalIPAddress());
-        client = ClientConnection.Connect("192.168.2.15", 12345);
+        client = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
         client.SetUsername("TheSnowOwl");
         client.OnTunnelRequestReceived.Add(req => true);
         Console.WriteLine("enter on b connected");
@@ -30,7 +29,7 @@ try
     else
     {
         Console.WriteLine();
-        client2 = ClientConnection.Connect("192.168.2.15", 12345);
+        client2 = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
         client2.SetUsername("TheSillyPenguin");
         client2.OnTunnelRequestReceived.Add(req => true);
 

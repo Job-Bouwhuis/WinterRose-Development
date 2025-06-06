@@ -46,7 +46,7 @@ internal class Level1 : WorldTemplate
         vitals.Health.MaxHealth = 2500;
         vitals.Armor.BaseArmor = 0.97f;
         player.owner.Flag = "Player";
-        player.AttachComponent<Player>("Test");
+        //player.AttachComponent<Player>("Test");
 
         world.CreateObject<SmoothCameraFollow>("camera").Target = player.transform;
 
