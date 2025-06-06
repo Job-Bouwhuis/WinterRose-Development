@@ -45,6 +45,18 @@ namespace WinterRose
         }
 
         /// <summary>
+        /// Deconstructs the key value pair into a tuple of (Key, Value)
+        /// </summary>
+        /// <typeparam name="T1"></typeparam>
+        /// <typeparam name="T2"></typeparam>
+        /// <param name="kvp"></param>
+        /// <returns></returns>
+        public static (T1 Key, T2 Value) Deconstruct<T1, T2>(this KeyValuePair<T1, T2> kvp)
+        {
+            return (kvp.Key, kvp.Value);
+        }
+
+        /// <summary>
         /// Checks if the given <paramref name="str"/> ends with any of the given <paramref name="options"/>
         /// </summary>
         /// <param name="str"></param>

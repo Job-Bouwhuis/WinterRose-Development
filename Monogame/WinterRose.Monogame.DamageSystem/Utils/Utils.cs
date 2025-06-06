@@ -19,11 +19,13 @@ namespace WinterRose.Monogame.DamageSystem
         /// <param name="component"></param>
         public static void ForceAttachComponent(WorldObject obj, ObjectComponent component)
         {
-            ReflectionHelper<WorldObject> objectRef = new(ref obj);
+            object o = obj;
+            ReflectionHelper objectRef = new(ref o);
             List<ObjectComponent> components = (List<ObjectComponent>)objectRef.GetValueFrom("components");
             components.Add(component);
 
-            ReflectionHelper<ObjectComponent> compRef = new(ref component);
+            object oo = component;
+            ReflectionHelper compRef = new(ref oo);
             compRef.SetValue("_owner", obj);
         }
     }

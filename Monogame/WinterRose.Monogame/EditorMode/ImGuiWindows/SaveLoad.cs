@@ -77,7 +77,7 @@ internal static class SaveLoad
                     Editor.Opened = false;
                     Windows.OpenConsole();
                     Console.Title = $"Loading world '{Path.GetFileNameWithoutExtension(worldfile.Name)}'";
-                    Universe.CurrentWorld = World.FromTemplate(worldfile.Name);
+                    Universe.CurrentWorld = World.FromTemplateFile(worldfile.Name);
                     Windows.CloseConsole();
                     Editor.Opened = true;
                     return;

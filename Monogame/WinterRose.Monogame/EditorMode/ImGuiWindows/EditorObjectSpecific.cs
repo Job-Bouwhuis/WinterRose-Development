@@ -30,6 +30,7 @@ namespace WinterRose.Monogame.EditorMode
         static ObjectComponent? newComponentInstance;
 
         static ObjectComponent? inspectorComponent;
+        static object inspectorComponentObject;
 
         static List<string> componentValueEdits = [];
 
@@ -64,6 +65,7 @@ namespace WinterRose.Monogame.EditorMode
                 objectName = selectedObject.Name;
             selectedComponentToAdd = null;
             inspectorComponent = null;
+            inspectorComponentObject = null;
         }
 
         private static void SelectedObjectGUI()
@@ -136,18 +138,19 @@ namespace WinterRose.Monogame.EditorMode
                     if (gui.Button(component.GetType().Name))
                     {
                         inspectorComponent = component;
+                        inspectorComponentObject = component;
                         object cc = inspectorComponent;
                         ReflectionHelper rhh = new(ref cc);
                         componentValueEdits.Clear();
                         rhh.GetMembers().Foreach(member =>
                         {
-                            if (!member.Exists)
+                            if (!member.IsValid)
                             {
 
                             }
                             if (member.HasAttribute<HideAttribute>() || (!member.IsPublic && !member.HasAttribute<ShowAttribute>()))
                                 return;
-                            var value = member.GetValue(cc);
+                            var value = member.GetValue(ref cc);
                             componentValueEdits.Add(value?.ToString());
                         });
                     }
@@ -159,6 +162,7 @@ namespace WinterRose.Monogame.EditorMode
             if (gui.Button("Back"))
             {
                 inspectorComponent = null;
+                inspectorComponentObject = null;
                 return;
             }
 
@@ -183,7 +187,7 @@ namespace WinterRose.Monogame.EditorMode
                 {
                     if (displayClasses.FirstOrDefault(x => x.DisplayType == member.Type) is EditorDisplay display and not null)
                     {
-                        object value = member.GetValue(c);
+                        object value = member.GetValue(ref c);
 
                         display.I_Render(ref value, member, c);
                         continue;
@@ -193,7 +197,7 @@ namespace WinterRose.Monogame.EditorMode
                         EditorEnumDisplay enumDisplay = displayClasses.FirstOrDefault(x => x is EditorEnumDisplay) as EditorEnumDisplay;
                         if (enumDisplay != null)
                         {
-                            object value = member.GetValue(c);
+                            object value = member.GetValue(ref c);
                             enumDisplay.I_Render(ref value, member, c);
                             continue;
                         }
@@ -205,12 +209,12 @@ namespace WinterRose.Monogame.EditorMode
                         {
                             gui.TextColored(new(1, 0, 0, 1), "Unsupported Type.");
                             gui.SameLine();
-                            gui.Text(member.Name + ": " + member.GetValue(inspectorComponent)?.ToString() ?? "null");
+                            gui.Text(member.Name + ": " + member.GetValue(ref inspectorComponentObject)?.ToString() ?? "null");
                             continue;
                         }
                         if(member.Type == typeof(WorldObject))
                         {
-                            WorldObject? obj = (WorldObject)member.GetValue(c)!;
+                            WorldObject? obj = (WorldObject)member.GetValue(ref c)!;
                             if (gui.Button(member.Name) && obj != null)
                             {
                                 selectedObject = obj;
@@ -238,7 +242,7 @@ namespace WinterRose.Monogame.EditorMode
 
                         if (gui.TreeNode(member.Name))
                         {
-                            object result = RenderObjectFields(member.GetValue(c));
+                            object result = RenderObjectFields(member.GetValue(ref c));
                             if(member.Type.IsByRef)
                             {
                                 member.SetValue(ref result, c);

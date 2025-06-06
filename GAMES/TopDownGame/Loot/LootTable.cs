@@ -27,12 +27,12 @@ namespace TopDownGame.Loot
 
         public override void Load()
         {
-            Table = WinterForge.DeserializeFromFile<List<LootChance>>(File.File.FullName);
+            Table = WinterForge.DeserializeFromHumanReadableFile<List<LootChance>>(File.File.FullName);
         }
 
         public override void Save()
         {
-            WinterForge.SerializeToFile(Table, File.File.FullName);
+            WinterForge.SerializeToFile(Table, File.File.FullName, TargetFormat.FormattedHumanReadable);
         }
 
         public static LootTable WithName(string name)

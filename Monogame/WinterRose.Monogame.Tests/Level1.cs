@@ -6,8 +6,6 @@ using WinterRose.Monogame.StatusSystem;
 using WinterRose.Monogame.Tests;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
-using WinterRose.WinterForge;
-using WinterRose.WinterForge.Formatting;
 using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.Monogame.DamageSystem.Tests;
@@ -32,7 +30,7 @@ internal class Level1 : WorldTemplate
         using (Stream serialized = new MemoryStream())
         using (Stream opcodes = new FileStream("SavedWorldCodes.txt", FileMode.Create, FileAccess.ReadWrite))
         {
-            ObjectSerializer serializer = new();
+            ObjectSerializer serializer = new(null);
             serializer.Serialize(world, serialized);
             new HumanReadableParser().Parse(serialized, opcodes);
         }

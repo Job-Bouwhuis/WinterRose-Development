@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,9 +25,27 @@ internal class ParallelBehaviorHelper(Type type) : IClearDisposable
 
     public void Execute()
     {
-        Parallel.ForEach(behaviors, 
-            new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount }, 
-            behavior => behavior.CallUpdate());
+        var exceptions = new ConcurrentBag<Exception>();
+
+        Parallel.ForEach(behaviors,
+            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+            behavior =>
+            {
+                try
+                {
+                    behavior.CallUpdate();
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Add(ex);
+                }
+            });
+
+        if (!exceptions.IsEmpty)
+        {
+            // You could throw an AggregateException or just log them
+            throw new AggregateException(exceptions);
+        }
     }
 
     public void Dispose()

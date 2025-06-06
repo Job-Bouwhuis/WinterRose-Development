@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Exceptions;
 using WinterRose.FileManagement;
 using WinterRose.Plugins;
 
@@ -100,7 +99,7 @@ public static class CodeGenerator
 /// Thrown when a <see cref="ICodeGenerator"/> fails to generate code
 /// </summary>
 [Serializable]
-public class WinterCodeGeneratorException : WinterException
+public class WinterCodeGeneratorException : Exception
 {
     public WinterCodeGeneratorException() { }
     public WinterCodeGeneratorException(string message) : base(message) { }

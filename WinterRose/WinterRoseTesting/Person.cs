@@ -1,14 +1,14 @@
 ﻿using WinterRose;
-using WinterRose.SourceGeneration.Serialization;
 
 namespace SnowLibraryTesting;
 
-[GenerateSerializer]
 public class Person
 {
     public string name;
     public int age;
     public List<Person> kids;
+
+    private int a = 10;
 
     public Person(string name, int age, List<Person> kids)
     {

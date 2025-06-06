@@ -97,7 +97,7 @@ public abstract class InventoryItem<T> : IInventoryItem
     /// <returns>null if all items were able to be stacked into this instance. 
     /// or returns the reference to <paramref name="item"/> when there are items left over, and need to be stacked into the next item instance. 
     /// Or to create a new instance</returns>
-    public IInventoryItem? AddToStack(IInventoryItem item) => _AddToStack(item);
+    public InventoryAditionResult AddToStack(IInventoryItem item, out IInventoryItem? remaining) => _AddToStack(item, out remaining);
     /// <summary>
     /// Makes an exact copy of this InventoryItem instance.
     /// </summary>
@@ -111,24 +111,28 @@ public abstract class InventoryItem<T> : IInventoryItem
     }
     IInventoryItem IInventoryItem.Clone() => Clone();
     protected abstract void ConfigureClone(InventoryItem<T> clone);
-    IInventoryItem? IInventoryItem.AddToStack(IInventoryItem item) => _AddToStack(item);
+    InventoryAditionResult IInventoryItem.AddToStack(IInventoryItem item, out IInventoryItem? remaining) => _AddToStack(item, out remaining);
 
-    private IInventoryItem _AddToStack(IInventoryItem item)
+    private InventoryAditionResult _AddToStack(IInventoryItem item, out IInventoryItem? rem)
     {
+        rem = null;
         ArgumentNullException.ThrowIfNull(item);
-        if (item.Count == 0) return null;
-        if (Count == StackLimit) return item;
+        if (item.Count == 0) return InventoryAditionResult.Added;
+        if (Count == StackLimit)
+        {
+            return InventoryAditionResult.StackFull;
+        }
 
         if (item.Count + Count > StackLimit)
         {
             int remaining = item.Count + Count - StackLimit;
             item.Count = remaining;
             Count = StackLimit;
-            return item;
+            return InventoryAditionResult.NewStack;
         }
 
         Count += item.Count;
-        return null;
+        return InventoryAditionResult.Added;
     }
 }
 

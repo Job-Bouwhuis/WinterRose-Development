@@ -7,7 +7,6 @@ using WinterRose.Encryption;
 using System.Diagnostics;
 using WinterRose.WIP.TestClasses;
 using System.Collections.Concurrent;
-using WinterRose.AnonymousTypes;
 using WinterRose.Reflection;
 using WinterRose.WinterForgeSerializing;
 

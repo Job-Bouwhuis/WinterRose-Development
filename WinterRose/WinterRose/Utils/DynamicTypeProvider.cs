@@ -50,22 +50,19 @@ public class DynamicTypeProvider<T> : DynamicObject where T : new()
 
     public T GetObject()
     {
-        T obj = new T();
-        ReflectionHelper<T> rh = ReflectionHelper<T>.ForObject(ref obj);
+        object obj = new T();
+        ReflectionHelper rh = ReflectionHelper.ForObject(ref obj);
 
         foreach (var field in fields)
-        {
             rh.SetValue(field.Key, field.Value);
-            
-        }
 
-        return rh.Value;
+        return (T)obj;
     }
 
     public dynamic this[string index]
     {
         get => fields[index];
-        set { fields[index] = value; }
+        set => fields[index] = value;
     }
 
 }

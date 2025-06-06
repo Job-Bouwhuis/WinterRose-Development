@@ -291,7 +291,7 @@ namespace WinterRose.FileManagement
         #endregion
 
         /// <summary>
-        /// Creates a new file with the given path and disposes its connection to it immidiately. if the full path does not exist, it creates it
+        /// Creates a new file with the given path. if the full path does not exist, it creates it
         /// </summary>
         /// <param name="Path"></param>
         public static FileStream CreateOrOpenFile(string path, FileMode openingMode = FileMode.Create)
