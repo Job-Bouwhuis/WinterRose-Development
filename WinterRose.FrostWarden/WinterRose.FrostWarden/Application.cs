@@ -25,8 +25,11 @@ public abstract class Application
 
         SetTargetFPS(144);
 
-        Camera camera = world.GetAll<Camera>().FirstOrDefault();
+        UIContext ui = new();
 
+        Camera camera = world.GetAll<Camera>().FirstOrDefault();
+        bool b = false;
+        float f = 0;
         while (!WindowShouldClose())
         {
             ClearBackground(Color.DarkGray);
@@ -44,7 +47,16 @@ public abstract class Application
 
             BeginDrawing();
 
-            BeginMode2D(camera.Camera2D);
+            ui.Begin(new(100, 100));
+            ui.Label("This is some fancy label");
+            if (ui.Button("this is a button"))
+            {
+                Console.WriteLine("clicked");
+            }
+
+            b = ui.Checkbox("want this?", b);
+            ui.Slider("a slider", f, 0, 1);
+                BeginMode2D(camera.Camera2D);
             world.Draw(camera.ViewMatrix);
             EndMode2D();
 

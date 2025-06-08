@@ -37,7 +37,7 @@ namespace WinterRose.FrostWarden.Tests
                 if (fadeAmount < 0.0f) fadeAmount = 0.0f;
             }
 
-            Console.WriteLine(fadeAmount);
+            //Console.WriteLine(fadeAmount);
 
             owner.Get<SpriteRenderer>()!.Shader.TrySetValue("fadeAmount", fadeAmount);
 

@@ -57,11 +57,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
-    <PackageReference Include="WinterRose.WinterForge" Version="25.2.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\WinterRose.Reflection\WinterRose.Reflection.csproj" />
+    <PackageReference Include="WinterRose.WinterForge" Version="25.2.14" />
   </ItemGroup>
 
   <ItemGroup>
