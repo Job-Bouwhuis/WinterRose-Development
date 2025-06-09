@@ -4,17 +4,17 @@ using System.Reflection;
 using WinterRose.FrostWarden.Components;
 using WinterRose.FrostWarden.Entities;
 using WinterRose.FrostWarden.Worlds;
-using WinterRose.Vectors;
 using static Raylib_cs.Raylib;
 
 namespace WinterRose.FrostWarden;
 
 public abstract class Application
 {
-    public static Vector2I ScreenSize => new Vector2I(SCREEN_WIDTH, SCREEN_HEIGHT);
+    public static WinterRose.Vectors.Vector2I ScreenSize => new(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    const int SCREEN_WIDTH = 1280;
-    const int SCREEN_HEIGHT = 720;
+    const int SCREEN_WIDTH = 960;
+    const int SCREEN_HEIGHT = 540;
+
 
     public abstract World CreateWorld();
 
@@ -43,7 +43,9 @@ public abstract class Application
 
             Input.Update();
             Time.Update();
+
             world.Update();
+            DialogBox.Update(Time.deltaTime);
 
             BeginDrawing();
 
@@ -56,9 +58,24 @@ public abstract class Application
 
             b = ui.Checkbox("want this?", b);
             ui.Slider("a slider", f, 0, 1);
-                BeginMode2D(camera.Camera2D);
+            BeginMode2D(camera.Camera2D);
+
+            List<RichTextRenderer.RichChar> text = RichTextRenderer.ParseRichText("Hello rainbow world!", Color.White);
+
+// Just tint a few characters for fun
+            text[6].Color = Color.Red;
+            text[7].Color = Color.Orange;
+            text[8].Color = Color.Yellow;
+            text[9].Color = Color.Green;
+            text[10].Color = Color.Blue;
+
+            RichTextRenderer.DrawRichText(text, new Vector2(50, 100), null, 24, 400);
+
+
             world.Draw(camera.ViewMatrix);
             EndMode2D();
+
+            DialogBox.Draw();
 
             DrawFPS(10, 10);
             EndDrawing();

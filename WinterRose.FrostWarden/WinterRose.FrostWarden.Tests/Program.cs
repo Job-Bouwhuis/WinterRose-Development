@@ -27,6 +27,10 @@ internal class Program : Application
         Entity cam = new Entity();
         cam.Add(new Camera());
         world.AddEntity(cam);
+
+        DialogBox.Show("The Title", "some awesome message", DialogType.ConfirmCancel,
+            placement: DialogPlacement.LeftSmall);
+
         return world;
     }
 }
