@@ -1,6 +1,8 @@
-﻿using Raylib_cs;
+﻿using BulletSharp;
+using Raylib_cs;
 using WinterRose.FrostWarden.Components;
 using WinterRose.FrostWarden.Entities;
+using WinterRose.FrostWarden.Physics;
 using WinterRose.FrostWarden.Shaders;
 using WinterRose.FrostWarden.TextRendering;
 using WinterRose.FrostWarden.Worlds;
@@ -16,30 +18,30 @@ internal class Program : Application
 
     public override World CreateWorld()
     {
-        RichSpriteRegistry.RegisterSprite("star", new Sprite("crystalitem.png"));
-
+        RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg.png"));
         World world = new World();
-        Entity entity = new Entity();
-        world.AddEntity(entity);
-        entity.transform.scale = new Vector3(4, 4, 1);
-        var sr = new SpriteRenderer(new Sprite("crystalitem.png"));
-        entity.Add(sr);
 
         Entity cam = new Entity();
         cam.Add(new Camera());
-        world.AddEntity(cam);
         cam.Add(new Mover());
-        bool b = false;
-        DialogBox.Show("\\c[red]The Title", "some \\c[yellow]awesome message", DialogType.ConfirmCancel,
-            placement: DialogPlacement.CenterBig, onImGui: ui =>
-            {
-                ui.Label("my label");
-                if(ui.Button("this button will change your life!"))
-                {
-                    Console.WriteLine("clicked!");
-                }
-                b = ui.Checkbox("check!", b);
-            });
+        world.AddEntity(cam);
+        cam.Add(new BallSpawner());
+
+        //Entity ball = new Entity();
+        //var sr = new SpriteRenderer(Sprite.CreateCircle(25, new Color(255, 0, 255)));
+        //ball.Add(sr);
+        //ball.transform.position = new Vector3(200, 200, 0);
+        
+        //world.AddEntity(ball);
+
+        //var col = new Collider(new SphereShape(25 / 2));
+        //ball.Add(new RigidBodyComponent(col, 250));
+
+        Entity floor = new Entity();
+        floor.transform.position = new Vector3(ScreenSize.x / 2, ScreenSize.y - 10, 0);
+        floor.Add(new SpriteRenderer(Sprite.CreateRectangle(ScreenSize.x, 5, Color.Beige)));
+        world.AddEntity(floor);
+        floor.Add(new Collider(new Box2DShape(new BulletSharp.Math.Vector3(ScreenSize.x / 2, 15, 5))));
         return world;
     }
 }

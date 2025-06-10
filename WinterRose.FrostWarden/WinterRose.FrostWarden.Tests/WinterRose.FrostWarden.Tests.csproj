@@ -22,6 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="bigimg.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="crystalitem.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

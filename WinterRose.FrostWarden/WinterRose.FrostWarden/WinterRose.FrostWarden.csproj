@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="libbulletc.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BulletSharp" Version="0.11.1" />
     <PackageReference Include="Raylib-cs" Version="7.0.1" />
   </ItemGroup>
 
@@ -21,6 +28,24 @@
       <Alias>ray</Alias>
     </Using>
     <Using Include="System.Numerics" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="BulletSharp.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libbulletc-linux-x64.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libbulletc-linux-x86.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libbulletc-windows-x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="libbulletc-windows-x86.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

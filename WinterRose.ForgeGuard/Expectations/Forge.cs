@@ -34,7 +34,7 @@ namespace WinterRose.ForgeGuardChecks
 
         internal static string FormatErrorLine(string cname, string expr, int line)
         {
-            return $"in guard <{cname}> on (line {line}), '{expr}'";
+            return $"in method <{cname}> on (line {line}), '{expr}'";
         }
     }
 }

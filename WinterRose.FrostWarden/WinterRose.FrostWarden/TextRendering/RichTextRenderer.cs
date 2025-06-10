@@ -45,10 +45,10 @@ public static class RichTextRenderer
 
                     case RichSprite sprite:
                         var texture = RichSpriteRegistry.GetSprite(sprite.SpriteKey);
-                        if (texture.HasValue)
+                        if (texture is not null)
                         {
                             float spriteHeight = sprite.BaseSize * fontSize;
-                            float scale = spriteHeight / texture.Value.Height;
+                            float scale = spriteHeight / texture.Height;
 
                             // Multiply sprite tint with overall tint the same way
                             Color tintedSpriteColor = new Color(
@@ -58,8 +58,24 @@ public static class RichTextRenderer
                                 (byte)(sprite.Tint.A * overallTint.A / 255)
                             );
 
-                            Raylib.DrawTextureEx(texture.Value, new Vector2(x, y), 0, scale, tintedSpriteColor);
-                            x += texture.Value.Width * scale + lineSpacing;
+                            Raylib.DrawTextureEx(texture, new Vector2(x, y), 0, scale, tintedSpriteColor);
+                            if(sprite.Clickable)
+                            {
+                                Rectangle imageRect = new Rectangle(
+                                    (int)x,
+                                    (int)y,
+                                    (int)(texture.Width * scale),
+                                    (int)(texture.Height * scale));
+
+                                if(ray.CheckCollisionPointRec(ray.GetMousePosition(), imageRect) && ray.IsMouseButtonPressed(MouseButton.Left))
+                                {
+                                    Console.WriteLine("Sprite Clicked!");
+
+                                    DialogBox.Show("Image", sprite.SpriteSource, DialogType.Sprite, placement: DialogPlacement.CenterBig, priority: DialogPriority.AlwaysFirst);
+                                }
+                            }
+
+                            x += texture.Width * scale + lineSpacing;
                         }
                         break;
                 }
@@ -88,7 +104,7 @@ public static class RichTextRenderer
                 if (currentLineWidth + wordWidth + spaceWidth > maxWidth)
                 {
                     if (currentLine.Count > 0)
-                        lines.Add(new List<RichElement>(currentLine));
+                        lines.Add([.. currentLine]);
                     currentLine.Clear();
                     currentLineWidth = 0;
                 }
@@ -110,7 +126,7 @@ public static class RichTextRenderer
             if (currentLineWidth + wordWidth > maxWidth)
             {
                 if (currentLine.Count > 0)
-                    lines.Add(new List<RichElement>(currentLine));
+                    lines.Add([.. currentLine]);
                 currentLine.Clear();
             }
 
@@ -136,11 +152,11 @@ public static class RichTextRenderer
 
                 case RichSprite sprite:
                     var texture = RichSpriteRegistry.GetSprite(sprite.SpriteKey);
-                    if (texture.HasValue)
+                    if (texture is not null)
                     {
                         float spriteHeight = sprite.BaseSize * fontSize;
-                        float scale = spriteHeight / texture.Value.Height;
-                        width += texture.Value.Width * scale;
+                        float scale = spriteHeight / texture.Height;
+                        width += texture.Width * scale;
                     }
                     break;
             }

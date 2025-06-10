@@ -12,4 +12,6 @@ public class RichGlyph : RichElement
         Character = character;
         Color = color;
     }
+
+    public override string ToString() => Character.ToString();
 }

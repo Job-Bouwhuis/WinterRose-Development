@@ -30,12 +30,18 @@ namespace WinterRose.FrostWarden.Components
 
             Shader?.Apply(sprite.Size);
 
-            var matrix = owner.transform.worldMatrix;
-            Vector3 transformedPos = Vector3.Transform(Vector3.Zero, viewMatrix * matrix);
-            Vector2 position2D = new Vector2(transformedPos.X, transformedPos.Y);
+            var worldMatrix = owner.transform.worldMatrix;
 
-            float rotationDegrees = owner.transform.rotation.Z * (180f / MathF.PI);
-            Vector2 scale = new Vector2(owner.transform.scale.X, owner.transform.scale.Y);
+            Matrix4x4 finalMatrix = worldMatrix * viewMatrix;
+
+            Vector2 position2D = new Vector2(finalMatrix.M41, finalMatrix.M42);
+
+            float scaleX = new Vector2(finalMatrix.M11, finalMatrix.M12).Length();
+            float scaleY = new Vector2(finalMatrix.M21, finalMatrix.M22).Length();
+            Vector2 scale = new Vector2(scaleX, scaleY);
+
+            float rotationRadians = MathF.Atan2(finalMatrix.M21, finalMatrix.M11);
+            float rotationDegrees = rotationRadians * (180f / MathF.PI);
 
             Raylib.DrawTexturePro(
                 sprite.Texture,

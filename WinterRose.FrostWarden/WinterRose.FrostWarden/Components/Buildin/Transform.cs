@@ -4,6 +4,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.FrostWarden.Physics;
 
 namespace WinterRose.FrostWarden.Components
 {
@@ -13,7 +14,15 @@ namespace WinterRose.FrostWarden.Components
         public Vector3 position
         {
             get => _position;
-            set { _position = value; MarkDirty(true); }
+            set 
+            {
+                _position = value;
+                MarkDirty(true);
+
+                var phcs = owner.GetAll<PhysicsComponent>();
+                foreach (var p in phcs)
+                    p.Sync();
+            }
         }
 
         [IncludeWithSerialization]
@@ -113,6 +122,53 @@ namespace WinterRose.FrostWarden.Components
             var scale = Matrix4x4.CreateScale(_scale);
 
             _localMatrix = scale * rotation * translation;
+        }
+
+        public void Translate(BulletSharp.Math.Matrix trans)
+        {
+            // Extract position from translation elements (last row)
+            _position = new Vector3(trans.M41, trans.M42, trans.M43);
+
+            // Build a System.Numerics.Matrix4x4 rotation matrix from the bullet matrix rotation part
+            var rotationMatrix = new Matrix4x4(
+                (float)trans.M11, (float)trans.M12, (float)trans.M13, 0f,
+                (float)trans.M21, (float)trans.M22, (float)trans.M23, 0f,
+                (float)trans.M31, (float)trans.M32, (float)trans.M33, 0f,
+                0f, 0f, 0f, 1f);
+
+            // Decompose to get quaternion (ignore scale and translation)
+            if (Matrix4x4.Decompose(rotationMatrix, out Vector3 scale, out Quaternion rotQuat, out Vector3 translation))
+            {
+                _rotation = QuaternionToEuler(rotQuat);
+            }
+
+            MarkDirty(true);
+
+            var phcs = owner.GetAll<PhysicsComponent>();
+            foreach (var p in phcs)
+                if(p is not RigidBodyComponent)
+                    p.Sync();
+        }
+
+        // Quaternion to Euler (XYZ order) helper same as before
+        private Vector3 QuaternionToEuler(Quaternion q)
+        {
+            float sinr_cosp = 2 * (q.W * q.X + q.Y * q.Z);
+            float cosr_cosp = 1 - 2 * (q.X * q.X + q.Y * q.Y);
+            float roll = (float)Math.Atan2(sinr_cosp, cosr_cosp);
+
+            float sinp = 2 * (q.W * q.Y - q.Z * q.X);
+            float pitch;
+            if (Math.Abs(sinp) >= 1)
+                pitch = (float)(Math.CopySign(Math.PI / 2, sinp));
+            else
+                pitch = (float)Math.Asin(sinp);
+
+            float siny_cosp = 2 * (q.W * q.Z + q.X * q.Y);
+            float cosy_cosp = 1 - 2 * (q.Y * q.Y + q.Z * q.Z);
+            float yaw = (float)Math.Atan2(siny_cosp, cosy_cosp);
+
+            return new Vector3(roll, pitch, yaw);
         }
     }
 

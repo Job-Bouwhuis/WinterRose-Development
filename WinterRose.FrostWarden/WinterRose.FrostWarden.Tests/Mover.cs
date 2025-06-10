@@ -11,7 +11,7 @@ namespace WinterRose.FrostWarden.Tests
 {
     class Mover : Component, IUpdatable
     {
-        public float speed = 200f;
+        public float speed = 1000f;
 
         private float fadeAmount = 0f;
         private const float fadeSpeed = 5.1f;
@@ -21,21 +21,14 @@ namespace WinterRose.FrostWarden.Tests
             Vector2 input = Vector2.Zero;
 
             if (ray.IsKeyPressed(KeyboardKey.F))
-            {
                 owner.Get<SpriteRenderer>()!.Shader.TrySetValue("fade", true);
-            }
 
             if (ray.IsKeyDown(KeyboardKey.E))
-            {
                 transform.rotation -= new Vector3(0, 0, 0.01f);
-            }
 
             if (ray.IsKeyDown(KeyboardKey.Q))
-            {
                 transform.rotation += new Vector3(0, 0, 0.01f);
-            }
 
-            //Console.WriteLine(fadeAmount);
 
             owner.Get<SpriteRenderer>()?.Shader.TrySetValue("fadeAmount", fadeAmount);
 

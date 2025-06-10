@@ -1,6 +1,7 @@
 using Raylib_cs;
 using System;
 using System.Numerics;
+using WinterRose;
 using WinterRose.FrostWarden;
 using WinterRose.FrostWarden.TextRendering;
 
@@ -9,9 +10,11 @@ public enum DialogType
     ConfirmCancel,
     YesNo,
     RetryCancel,
+    Ok,
     Timed,
     Progress,
-    ImGui
+    ImGui,
+    Sprite
 }
 
 public enum DialogPlacement
@@ -32,6 +35,13 @@ public enum DialogPlacement
     BottomBig
 }
 
+public enum DialogPriority
+{
+    Normal,
+    High,
+    AlwaysFirst
+}
+
 public static class DialogBox
 {
     public class DialogInstance
@@ -40,6 +50,7 @@ public static class DialogBox
         public RichText Message { get; set; }
         public DialogType Type { get; internal set; }
         public DialogPlacement Placement { get; set; }
+        public DialogPriority Priority { get; }
 
         private float progressValue;
         public float ProgressValue
@@ -66,13 +77,13 @@ public static class DialogBox
         public DialogInstance(string title, string message, DialogType type,
                               Action? onConfirm, Action? onCancel, Action<UIContext>? onImGui,
                               float progress, float timeRemaining,
-                              DialogPlacement placement)
+                              DialogPlacement placement, DialogPriority priority)
         {
             Title = RichText.Parse(title, Color.White);
             Message = RichText.Parse(message, Color.White);
             Type = type;
             Placement = placement;
-
+            Priority = priority;
             ProgressValue = progress;
             TimeRemaining = timeRemaining;
 
@@ -111,9 +122,10 @@ public static class DialogBox
         Action<UIContext>? onImGui = null,
         float progress = 0f,
         float durationSeconds = 0f,
-        DialogPlacement placement = DialogPlacement.CenterSmall)
+        DialogPlacement placement = DialogPlacement.CenterSmall,
+        DialogPriority priority = DialogPriority.Normal)
     {
-        DialogInstance dialog = new DialogInstance(titleText, messageText, type, confirm, cancel, onImGui, progress, durationSeconds, placement);
+        DialogInstance dialog = new DialogInstance(titleText, messageText, type, confirm, cancel, onImGui, progress, durationSeconds, placement, priority);
 
         Rectangle newBounds = GetDialogBounds(placement);
         bool placementConflict = activeDialogs.Any(d => Raylib.CheckCollisionRecs(GetDialogBounds(d.Placement), newBounds));
@@ -133,6 +145,37 @@ public static class DialogBox
 
     public static void Update(float deltaTime)
     {
+        if (queuedDialogs.Count > 0)
+        {
+            Queue<DialogInstance> requeue = new Queue<DialogInstance>();
+
+            while (queuedDialogs.Count > 0)
+            {
+                DialogInstance pending = queuedDialogs.Dequeue();
+                var occupying = activeDialogs.FirstOrDefault(d => d.Placement == pending.Placement);
+
+                if (occupying != null)
+                {
+                    if (pending.Priority > occupying.Priority && occupying.Priority != DialogPriority.AlwaysFirst)
+                    {
+                        occupying.IsClosing = true;
+                        queuedDialogs.Enqueue(occupying); // Requeue booted dialog
+                        activeDialogs.Add(pending); // Allow the stronger one in
+                    }
+                    else
+                    {
+                        requeue.Enqueue(pending); // Still blocked
+                    }
+                }
+                else
+                {
+                    activeDialogs.Add(pending);
+                }
+            }
+
+            queuedDialogs = requeue;
+        }
+
         for (int i = activeDialogs.Count - 1; i >= 0; i--)
         {
             DialogInstance dialog = activeDialogs[i];
@@ -172,20 +215,35 @@ public static class DialogBox
         if (queuedDialogs.Count > 0)
         {
             Queue<DialogInstance> requeue = new Queue<DialogInstance>();
+
             while (queuedDialogs.Count > 0)
             {
                 DialogInstance pending = queuedDialogs.Dequeue();
-                if (activeDialogs.Any(d => d.Placement == pending.Placement))
+                Rectangle pendingBounds = GetDialogBounds(pending.Placement);
+
+                bool overlaps = activeDialogs.Any(active =>
                 {
-                    requeue.Enqueue(pending); // Still blocked
-                }
-                else
+                    if (active.IsClosing)
+                        return false;
+                    Rectangle activeBounds = GetDialogBounds(active.Placement);
+                    return Raylib.CheckCollisionRecs(pendingBounds, activeBounds);
+                });
+
+                if (!overlaps)
                 {
                     activeDialogs.Add(pending);
+                    pending.IsClosing = false;
+                    pending.AnimationTimeIn = 0;
+                    pending.AnimationTimeOut = 0;
+                    pending.ContentAlphaTime = 0;
                 }
+                else
+                    requeue.Enqueue(pending);
             }
+
             queuedDialogs = requeue;
         }
+
     }
 
     public static void Draw()
@@ -247,6 +305,9 @@ public static class DialogBox
             Color barFill = new Color(0, 150, 255, (int)(255 * contentAlpha));
             Color buttonTextColor = new Color(255, 255, 255, (int)(255 * contentAlpha));
             Color buttonBackground = new Color(100, 100, 100, (int)(255 * contentAlpha));
+            Color buttonBorder = new Color(255, 255, 255, (int)(255 * contentAlpha));
+            Color buttonHover = new Color(80, 80, 80, (int)(255 * contentAlpha));
+            Color buttonClick = new Color(0, 150, 255, (int)(255 * contentAlpha));
             Color timeLabelColor = new Color(150, 150, 150, (int)(255 * contentAlpha));
 
             float contentOffsetY = (1f - contentFadeT) * 10f;
@@ -280,7 +341,6 @@ public static class DialogBox
                 y += 30;
             }
 
-
             if (dialog.Type == DialogType.Timed)
             {
                 string timeLabel = $"Closing in {MathF.Round(dialog.TimeRemaining, 1)}s";
@@ -288,13 +348,52 @@ public static class DialogBox
                 y += 25;
             }
 
-            string[] labels = Array.Empty<string>();
-            switch (dialog.Type)
+            if (dialog.Type == DialogType.Sprite)
             {
-                case DialogType.ConfirmCancel: labels = new[] { "Confirm", "Cancel" }; break;
-                case DialogType.YesNo: labels = new[] { "Yes", "No" }; break;
-                case DialogType.RetryCancel: labels = new[] { "Retry", "Cancel" }; break;
+                Sprite sprite = SpriteCache.Get(dialog.Message.ToString());
+
+                float maxWidth = scaled.Width - padding * 2;
+
+                // Calculate how much vertical space is left below y, minus padding and button area
+                float reservedForButtons = 30 + 25 + padding;
+                float maxHeight = scaled.Height - (y - scaled.Y) - reservedForButtons;
+
+                float aspect = (float)sprite.Width / sprite.Height;
+
+                float targetWidth = maxWidth;
+                float targetHeight = targetWidth / aspect;
+
+                if (targetHeight > maxHeight)
+                {
+                    targetHeight = maxHeight;
+                    targetWidth = targetHeight * aspect;
+                }
+
+                float drawX = scaled.X + (scaled.Width - targetWidth) / 2;
+                float drawY = y;
+
+                Raylib.DrawTexturePro(
+                    sprite.Texture,
+                    new Rectangle(0, 0, sprite.Width, sprite.Height),
+                    new Rectangle(drawX, drawY, targetWidth, targetHeight),
+                    new Vector2(0, 0),
+                    0f,
+                    contentColor
+                );
+
+                y += (targetHeight + padding).CeilingToInt();
             }
+
+
+
+            string[] labels = dialog.Type switch
+            {
+                DialogType.ConfirmCancel => ["Confirm", "Cancel"],
+                DialogType.YesNo => ["Yes", "No"],
+                DialogType.RetryCancel => ["Retry", "Cancel"],
+                DialogType.Ok or DialogType.Sprite => ["OK"],
+                _ => [],
+            };
 
             float buttonWidth = 80;
             float buttonHeight = 30;

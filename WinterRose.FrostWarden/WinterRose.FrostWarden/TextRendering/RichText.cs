@@ -2,6 +2,7 @@
 
 using Raylib_cs;
 using System.Collections.Generic;
+using System.Text;
 
 public class RichText
 {
@@ -12,6 +13,16 @@ public class RichText
         Elements = elements;
     }
 
+    public override string ToString()
+    {
+        StringBuilder sb = new();
+        foreach (var e in Elements)
+            sb.Append(e.ToString());
+        return sb.ToString();
+    }
+
+    public static RichText Parse(string text) => Parse(text, Color.White);
+    
     public static RichText Parse(string text, Color defaultColor)
     {
         var elements = new List<RichElement>();
@@ -35,14 +46,28 @@ public class RichText
                 }
                 else if (text[i + 1] == 's' && text[i + 2] == '[')
                 {
+                   
                     int close = text.IndexOf(']', i + 3);
                     if (close > 0)
                     {
                         string spriteKey = text[(i + 3)..close];
-                        elements.Add(new RichSprite(spriteKey, 1f, currentColor));
+                        RichSprite s;
+                        elements.Add(s = new RichSprite(spriteKey, RichSpriteRegistry.GetSourceFor(spriteKey), 1f, currentColor));
                         i = close + 1;
+
+                        if (text.Length >= close + 2)
+                        {
+                            if (text[close + 1] is '\\' && text[close + 2] is '!')
+                            {
+                                s.Clickable = true;
+                                i += 2;
+                            }
+                        }
+
                         continue;
                     }
+                    
+
                 }
             }
 
@@ -67,11 +92,11 @@ public class RichText
 
                 case RichSprite sprite:
                     var texture = RichSpriteRegistry.GetSprite(sprite.SpriteKey);
-                    if (texture.HasValue)
+                    if (texture is not null)
                     {
                         float spriteHeight = sprite.BaseSize * fontSize;
-                        float scale = spriteHeight / texture.Value.Height;
-                        width += texture.Value.Width * scale;
+                        float scale = spriteHeight / texture.Height;
+                        width += texture.Width * scale;
                     }
                     break;
             }

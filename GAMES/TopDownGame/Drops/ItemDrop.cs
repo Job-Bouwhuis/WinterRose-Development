@@ -71,8 +71,6 @@ internal class ItemDrop : ObjectBehavior
 
         if(!target.HasComponent<Player>())
             throw new InvalidOperationException($"Object with {TargetFlag} does not have component Player");
-
-        // set scale to something that makes items always same size lmao
     }
 
     protected override void Update()
