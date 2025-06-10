@@ -1,6 +1,8 @@
 using Raylib_cs;
 using System;
 using System.Numerics;
+using WinterRose.FrostWarden;
+using WinterRose.FrostWarden.TextRendering;
 
 public enum DialogType
 {
@@ -8,161 +10,324 @@ public enum DialogType
     YesNo,
     RetryCancel,
     Timed,
-    Progress
+    Progress,
+    ImGui
 }
 
 public enum DialogPlacement
 {
     CenterSmall,
     CenterBig,
+
     LeftSmall,
     LeftBig,
+
     RightSmall,
     RightBig,
+
     TopSmall,
     TopBig,
+
     BottomSmall,
     BottomBig
 }
 
 public static class DialogBox
 {
-    private static bool isVisible = false;
-    private static string title = "";
-    private static string message = "";
-    private static DialogType currentType;
-    private static DialogPlacement currentPlacement;
+    public class DialogInstance
+    {
+        public RichText Title { get; set; }
+        public RichText Message { get; set; }
+        public DialogType Type { get; internal set; }
+        public DialogPlacement Placement { get; set; }
 
-    private static float progressValue = 0f;
-    private static float timeRemaining = 0f;
-    private static float animationTime = 0f;
-    private const float ANIMATION_DURATION = 0.25f;
+        private float progressValue;
+        public float ProgressValue
+        {
+            get => progressValue;
+            set => progressValue = Math.Clamp(value, 0f, 1f);
+        }
 
-    private static Action onConfirm;
-    private static Action onCancel;
+        public float TimeRemaining { get; set; }
 
-    public static void Show(
+        public float AnimationTimeIn { get; internal set; }
+        public float AnimationTimeOut { get; internal set; }
+        public float ContentAlphaTime { get; internal set; } = 0f;
+
+        public bool IsClosing { get; internal set; }
+
+        public Action? OnConfirm { get; set; }
+        public Action? OnCancel { get; set; }
+
+        public Action<UIContext>? OnImGui { get; set; }
+
+        public bool IsVisible => !IsClosing;
+
+        public DialogInstance(string title, string message, DialogType type,
+                              Action? onConfirm, Action? onCancel, Action<UIContext>? onImGui,
+                              float progress, float timeRemaining,
+                              DialogPlacement placement)
+        {
+            Title = RichText.Parse(title, Color.White);
+            Message = RichText.Parse(message, Color.White);
+            Type = type;
+            Placement = placement;
+
+            ProgressValue = progress;
+            TimeRemaining = timeRemaining;
+
+            AnimationTimeIn = 0f;
+            AnimationTimeOut = 0f;
+            ContentAlphaTime = 0f;
+
+            IsClosing = false;
+
+            OnConfirm = onConfirm;
+            OnCancel = onCancel;
+            OnImGui = onImGui;
+        }
+
+        public void Close()
+        {
+            IsClosing = true;
+        }
+    }
+
+    private const float ANIMATION_DURATION = 0.5f;
+    private const float ANIM_SPEED_ALPHA = 0.5f;         
+    private const float ANIM_SPEED_SCALE_WIDTH = 1f;   
+    private const float ANIM_SPEED_SCALE_HEIGHT = 0.5f; 
+    const float CONTENT_FADE_DURATION = 0.55f;
+
+    private static List<DialogInstance> activeDialogs = new List<DialogInstance>();
+    private static Queue<DialogInstance> queuedDialogs = new Queue<DialogInstance>();
+
+    public static DialogInstance Show(
         string titleText,
         string messageText,
         DialogType type,
-        Action confirm = null,
-        Action cancel = null,
+        Action? confirm = null,
+        Action? cancel = null,
+        Action<UIContext>? onImGui = null,
         float progress = 0f,
         float durationSeconds = 0f,
         DialogPlacement placement = DialogPlacement.CenterSmall)
     {
-        isVisible = true;
-        animationTime = 0f;
+        DialogInstance dialog = new DialogInstance(titleText, messageText, type, confirm, cancel, onImGui, progress, durationSeconds, placement);
 
-        title = titleText;
-        message = messageText;
-        currentType = type;
-        currentPlacement = placement;
+        Rectangle newBounds = GetDialogBounds(placement);
+        bool placementConflict = activeDialogs.Any(d => Raylib.CheckCollisionRecs(GetDialogBounds(d.Placement), newBounds));
 
-        onConfirm = confirm;
-        onCancel = cancel;
-        progressValue = progress;
-        timeRemaining = durationSeconds;
+        if (placementConflict)
+        {
+            queuedDialogs.Enqueue(dialog);
+        }
+        else
+        {
+            activeDialogs.Add(dialog);
+        }
+
+        return dialog;
+
     }
 
     public static void Update(float deltaTime)
     {
-        if (!isVisible) return;
-
-        animationTime = MathF.Min(animationTime + deltaTime, ANIMATION_DURATION);
-
-        if (currentType == DialogType.Timed && timeRemaining > 0f)
+        for (int i = activeDialogs.Count - 1; i >= 0; i--)
         {
-            timeRemaining -= deltaTime;
-            if (timeRemaining <= 0f)
+            DialogInstance dialog = activeDialogs[i];
+
+            if (!dialog.IsClosing)
             {
-                isVisible = false;
-                onConfirm?.Invoke();
+                dialog.AnimationTimeIn = MathF.Min(dialog.AnimationTimeIn + deltaTime, ANIMATION_DURATION);
+                if (dialog.AnimationTimeIn / ANIMATION_DURATION >= 0.9f)
+                {
+                    dialog.ContentAlphaTime = MathF.Min(dialog.ContentAlphaTime + deltaTime, CONTENT_FADE_DURATION);
+
+                }
             }
+            else
+            {
+                dialog.AnimationTimeOut += deltaTime;
+                dialog.ContentAlphaTime = MathF.Max(dialog.ContentAlphaTime - deltaTime * 2f, 0f);
+                if (dialog.AnimationTimeOut >= ANIMATION_DURATION)
+                {
+                    activeDialogs.RemoveAt(i);
+                    continue;
+                }
+            }
+
+            if (dialog.Type == DialogType.Timed && dialog.TimeRemaining > 0f)
+            {
+                dialog.TimeRemaining -= deltaTime;
+                if (dialog.TimeRemaining <= 0f)
+                {
+                    dialog.IsClosing = true;
+                    dialog.OnConfirm?.Invoke();
+                }
+            }
+        }
+
+        // Try activating queued dialogs if their placement is now free
+        if (queuedDialogs.Count > 0)
+        {
+            Queue<DialogInstance> requeue = new Queue<DialogInstance>();
+            while (queuedDialogs.Count > 0)
+            {
+                DialogInstance pending = queuedDialogs.Dequeue();
+                if (activeDialogs.Any(d => d.Placement == pending.Placement))
+                {
+                    requeue.Enqueue(pending); // Still blocked
+                }
+                else
+                {
+                    activeDialogs.Add(pending);
+                }
+            }
+            queuedDialogs = requeue;
         }
     }
 
     public static void Draw()
     {
-        if (!isVisible) return;
-
-        Rectangle bounds = GetDialogBounds();
-
-        float alpha = animationTime / ANIMATION_DURATION;
-        int borderAlpha = (int)(255 * alpha);
-        int bgAlpha = (int)(180 * alpha);
-
-        // Shadow
-        Raylib.DrawRectangle((int)bounds.X + 4, (int)bounds.Y + 4, (int)bounds.Width, (int)bounds.Height, new Color(0, 0, 0, 80));
-        // Background
-        Raylib.DrawRectangleRec(bounds, new Color(30, 30, 30, bgAlpha));
-        // Border
-        Raylib.DrawRectangleLinesEx(bounds, 2, new Color(200, 200, 200, borderAlpha));
-
-        float padding = 20;
-        float innerWidth = bounds.Width - padding * 2;
-
-        int y = (int)bounds.Y + (int)padding;
-
-        Raylib.DrawText(title, (int)bounds.X + (int)padding, y, 20, Color.White);
-        y += 30;
-
-        Raylib.DrawText(message, (int)bounds.X + (int)padding, y, 16, Color.LightGray);
-        y += 40;
-
-        if (currentType == DialogType.Progress)
+        for (int i = 0; i < activeDialogs.Count; i++)
         {
-            Rectangle barBg = new Rectangle(bounds.X + padding, y, innerWidth, 20);
-            Rectangle barFill = new Rectangle(barBg.X, barBg.Y, innerWidth * progressValue, 20);
-            Raylib.DrawRectangleRec(barBg, new Color(80, 80, 80, 255));
-            Raylib.DrawRectangleRec(barFill, new Color(0, 150, 255, 255));
-            y += 30;
-        }
+            DialogInstance dialog = activeDialogs[i];
+            Rectangle bounds = GetDialogBounds(dialog.Placement);
 
-        if (currentType == DialogType.Timed)
-        {
-            string timeLabel = $"Closing in {MathF.Ceiling(timeRemaining)}s";
-            Raylib.DrawText(timeLabel, (int)bounds.X + (int)padding, y, 16, Color.Gray);
-            y += 25;
-        }
+            // Calculate normalized animation times separately
+            float alphaT = dialog.IsClosing
+                ? MathF.Min(dialog.AnimationTimeOut / (ANIMATION_DURATION * ANIM_SPEED_ALPHA), 1f)
+                : MathF.Min(dialog.AnimationTimeIn / (ANIMATION_DURATION * ANIM_SPEED_ALPHA), 1f);
 
-        float buttonWidth = 80;
-        float buttonHeight = 30;
-        float spacing = 10;
-        float totalButtonWidth = 0;
+            float widthT = dialog.IsClosing
+                ? MathF.Min(dialog.AnimationTimeOut / (ANIMATION_DURATION * ANIM_SPEED_SCALE_WIDTH), 1f)
+                : MathF.Min(dialog.AnimationTimeIn / (ANIMATION_DURATION * ANIM_SPEED_SCALE_WIDTH), 1f);
 
-        int numButtons = 0;
-        string[] labels = Array.Empty<string>();
+            float heightT = dialog.IsClosing
+                ? MathF.Min(dialog.AnimationTimeOut / (ANIMATION_DURATION * ANIM_SPEED_SCALE_HEIGHT), 1f)
+                : MathF.Min(dialog.AnimationTimeIn / (ANIMATION_DURATION * ANIM_SPEED_SCALE_HEIGHT), 1f);
 
-        switch (currentType)
-        {
-            case DialogType.ConfirmCancel: labels = new[] { "Confirm", "Cancel" }; break;
-            case DialogType.YesNo: labels = new[] { "Yes", "No" }; break;
-            case DialogType.RetryCancel: labels = new[] { "Retry", "Cancel" }; break;
-        }
+            // Ease out lerps
+            float easedAlpha = 1 - MathF.Pow(1 - alphaT, 3);
+            float easedWidth = 1 - MathF.Pow(1 - widthT, 3);
+            float easedHeight = 1 - MathF.Pow(1 - heightT, 3);
 
-        numButtons = labels.Length;
-        totalButtonWidth = numButtons * buttonWidth + (numButtons - 1) * spacing;
-        float startX = bounds.X + (bounds.Width - totalButtonWidth) / 2;
+            float eased = (easedAlpha + easedWidth + easedHeight) / 3;
 
-        for (int i = 0; i < numButtons; i++)
-        {
-            Rectangle btn = new Rectangle(startX + i * (buttonWidth + spacing), y, buttonWidth, buttonHeight);
-            Raylib.DrawRectangleRec(btn, new Color(100, 100, 100, 255));
-            Raylib.DrawText(labels[i], (int)(btn.X + 10), (int)(btn.Y + 7), 16, Color.White);
+            // Apply easing and invert for closing
+            float alpha = dialog.IsClosing ? 1f - easedAlpha : easedAlpha;
+            float scaleWidth = dialog.IsClosing ? 1f - easedWidth : easedWidth;
+            float scaleHeight = dialog.IsClosing ? 1f - easedHeight : easedHeight;
 
-            if (Raylib.IsMouseButtonPressed(MouseButton.Left) &&
-                Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), btn))
+            Vector2 center = new Vector2(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
+            float drawWidth = bounds.Width * scaleWidth;
+            float drawHeight = bounds.Height * scaleHeight;
+            Rectangle scaled = new Rectangle(center.X - drawWidth / 2, center.Y - drawHeight / 2, drawWidth, drawHeight);
+
+            Color bgColor = new Color(30, 30, 30, (int)(180 * alpha));
+            Color borderColor = new Color(200, 200, 200, (int)(255 * alpha));
+            Color shadowColor = new Color(0, 0, 0, (int)(80 * alpha));
+
+            Raylib.DrawRectangle((int)scaled.X + 4, (int)scaled.Y + 4, (int)scaled.Width, (int)scaled.Height, shadowColor);
+            Raylib.DrawRectangleRec(scaled, bgColor);
+            Raylib.DrawRectangleLinesEx(scaled, 2, borderColor);
+
+            // Don’t draw internals until we’re past 90% of anim in
+            bool drawInternals = !dialog.IsClosing && eased >= 0.9f;
+            if (!drawInternals)
+                continue;
+
+            float contentFadeT = Math.Clamp(dialog.ContentAlphaTime / CONTENT_FADE_DURATION, 0f, 1f);
+            float contentAlpha = contentFadeT * alpha;
+
+            Color contentColor = new Color(255, 255, 255, (int)(255 * contentAlpha));
+            Color fadedGray = new Color(180, 180, 180, (int)(255 * contentAlpha));
+            Color barBackground = new Color(80, 80, 80, (int)(255 * contentAlpha));
+            Color barFill = new Color(0, 150, 255, (int)(255 * contentAlpha));
+            Color buttonTextColor = new Color(255, 255, 255, (int)(255 * contentAlpha));
+            Color buttonBackground = new Color(100, 100, 100, (int)(255 * contentAlpha));
+            Color timeLabelColor = new Color(150, 150, 150, (int)(255 * contentAlpha));
+
+            float contentOffsetY = (1f - contentFadeT) * 10f;
+
+            float padding = 20;
+            float innerWidth = scaled.Width - padding * 2;
+            int y = (int)(scaled.Y + padding + contentOffsetY);
+
+            RichTextRenderer.DrawRichText(dialog.Title, new((int)scaled.X + (int)padding, y), null, 25, innerWidth, contentColor);
+            y += 35;
+
+            RichTextRenderer.DrawRichText(dialog.Message, new((int)scaled.X + (int)padding, y), null, 16, innerWidth, contentColor);
+            y += 40;
+
+            if (dialog.Type == DialogType.Progress)
             {
-                isVisible = false;
+                Rectangle barBg = new Rectangle(scaled.X + padding, y, innerWidth, 20);
+                Rectangle barFillRect = new Rectangle(barBg.X, barBg.Y, innerWidth * dialog.ProgressValue, 20);
 
-                if (i == 0) onConfirm?.Invoke();
-                else onCancel?.Invoke();
+                Raylib.DrawRectangleRec(barBg, barBackground);
+                Raylib.DrawRectangleRec(barFillRect, barFill);
+
+                string progressText = $"{MathF.Round(dialog.ProgressValue * 100f, 1)}%";
+                int textWidth = Raylib.MeasureText(progressText, 14);
+                int textX = (int)(barBg.X + (barBg.Width - textWidth) / 2);
+                int textY = (int)(barBg.Y + 2); // a little padding from top
+
+                Color progressTextColor = new Color(255, 255, 255, (int)(255 * contentAlpha));
+                Raylib.DrawText(progressText, textX, textY, 14, progressTextColor);
+
+                y += 30;
             }
+
+
+            if (dialog.Type == DialogType.Timed)
+            {
+                string timeLabel = $"Closing in {MathF.Round(dialog.TimeRemaining, 1)}s";
+                Raylib.DrawText(timeLabel, (int)scaled.X + (int)padding, y, 16, timeLabelColor);
+                y += 25;
+            }
+
+            string[] labels = Array.Empty<string>();
+            switch (dialog.Type)
+            {
+                case DialogType.ConfirmCancel: labels = new[] { "Confirm", "Cancel" }; break;
+                case DialogType.YesNo: labels = new[] { "Yes", "No" }; break;
+                case DialogType.RetryCancel: labels = new[] { "Retry", "Cancel" }; break;
+            }
+
+            float buttonWidth = 80;
+            float buttonHeight = 30;
+            float spacing = 10;
+            float totalButtonWidth = labels.Length * buttonWidth + (labels.Length - 1) * spacing;
+            float startX = scaled.X + (scaled.Width - totalButtonWidth) / 2;
+
+            for (int j = 0; j < labels.Length; j++)
+            {
+                Rectangle btn = new Rectangle(startX + j * (buttonWidth + spacing), y, buttonWidth, buttonHeight);
+                Raylib.DrawRectangleRec(btn, buttonBackground);
+                Raylib.DrawText(labels[j], (int)(btn.X + 10), (int)(btn.Y + 7), 16, buttonTextColor);
+
+                if (Raylib.IsMouseButtonPressed(MouseButton.Left) &&
+                    Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), btn))
+                {
+                    dialog.IsClosing = true;
+                    if (j == 0) dialog.OnConfirm?.Invoke();
+                    else dialog.OnCancel?.Invoke();
+                }
+            }
+            y += 25;
+
+            UIContext c = new UIContext();
+            c.Begin(new Vector2(scaled.X, y), contentColor);
+            dialog.OnImGui?.Invoke(c);
+            c.End();
         }
+
     }
 
-    private static Rectangle GetDialogBounds()
+    // Update GetDialogBounds to accept a parameter
+    private static Rectangle GetDialogBounds(DialogPlacement placement)
     {
         int screenWidth = Raylib.GetScreenWidth();
         int screenHeight = Raylib.GetScreenHeight();
@@ -171,62 +336,48 @@ public static class DialogBox
         int minWidth = 400;
         int minHeight = 200;
 
-        switch (currentPlacement)
+        return placement switch
         {
-            case DialogPlacement.CenterSmall:
-                return new Rectangle(
-                    screenWidth * SMALL_PAD,
-                    screenHeight * SMALL_PAD,
-                    screenWidth * (1 - SMALL_PAD * 2),
-                    screenHeight * (1 - SMALL_PAD * 2));
+            DialogPlacement.CenterSmall => new Rectangle(
+                                screenWidth * SMALL_PAD,
+                                screenHeight * SMALL_PAD,
+                                screenWidth * (1 - SMALL_PAD * 2),
+                                screenHeight * (1 - SMALL_PAD * 2)),
+            DialogPlacement.CenterBig => new Rectangle(0, 0, screenWidth, screenHeight),
 
-            case DialogPlacement.CenterBig:
-                return new Rectangle(0, 0, screenWidth, screenHeight);
+            DialogPlacement.LeftSmall => new Rectangle(0,
+                                screenHeight * SMALL_PAD,
+                                screenWidth * SMALL_PAD,
+                                screenHeight * (1 - SMALL_PAD * 2)),
+            DialogPlacement.LeftBig => new Rectangle(0, 0, screenWidth * SMALL_PAD, screenHeight),
 
-            case DialogPlacement.LeftSmall:
-                return new Rectangle(0,
-                    screenHeight * SMALL_PAD,
-                    screenWidth * SMALL_PAD,
-                    screenHeight * (1 - SMALL_PAD * 2));
+            DialogPlacement.RightSmall => new Rectangle(
+                                screenWidth * (1 - SMALL_PAD),
+                                screenHeight * SMALL_PAD,
+                                screenWidth * SMALL_PAD,
+                                screenHeight * (1 - SMALL_PAD * 2)),
+            DialogPlacement.RightBig => new Rectangle(screenWidth * (1 - SMALL_PAD), 0, screenWidth * SMALL_PAD, screenHeight),
 
-            case DialogPlacement.LeftBig:
-                return new Rectangle(0, 0, screenWidth * SMALL_PAD, screenHeight);
+            DialogPlacement.TopSmall => new Rectangle(screenWidth * SMALL_PAD, 0,
+                                screenWidth * (1 - SMALL_PAD * 2),
+                                screenHeight * SMALL_PAD),
+            DialogPlacement.TopBig => new Rectangle(0, 0, screenWidth, screenHeight * SMALL_PAD),
 
-            case DialogPlacement.RightSmall:
-                return new Rectangle(
-                    screenWidth * (1 - SMALL_PAD),
-                    screenHeight * SMALL_PAD,
-                    screenWidth * SMALL_PAD,
-                    screenHeight * (1 - SMALL_PAD * 2));
+            DialogPlacement.BottomSmall => new Rectangle(screenWidth * SMALL_PAD,
+                                screenHeight * (1 - SMALL_PAD),
+                                screenWidth * (1 - SMALL_PAD * 2),
+                                screenHeight * SMALL_PAD),
+            DialogPlacement.BottomBig => new Rectangle(0,
+                                screenHeight * (1 - SMALL_PAD),
+                                screenWidth,
+                                screenHeight * SMALL_PAD),
 
-            case DialogPlacement.RightBig:
-                return new Rectangle(screenWidth * (1 - SMALL_PAD), 0, screenWidth * SMALL_PAD, screenHeight);
-
-            case DialogPlacement.TopSmall:
-                return new Rectangle(screenWidth * SMALL_PAD, 0,
-                    screenWidth * (1 - SMALL_PAD * 2),
-                    screenHeight * SMALL_PAD);
-
-            case DialogPlacement.TopBig:
-                return new Rectangle(0, 0, screenWidth, screenHeight * SMALL_PAD);
-
-            case DialogPlacement.BottomSmall:
-                return new Rectangle(screenWidth * SMALL_PAD,
-                    screenHeight * (1 - SMALL_PAD),
-                    screenWidth * (1 - SMALL_PAD * 2),
-                    screenHeight * SMALL_PAD);
-
-            case DialogPlacement.BottomBig:
-                return new Rectangle(0,
-                    screenHeight * (1 - SMALL_PAD),
-                    screenWidth,
-                    screenHeight * SMALL_PAD);
-        }
-
-        return new Rectangle(
-            screenWidth / 2 - minWidth / 2,
-            screenHeight / 2 - minHeight / 2,
-            minWidth,
-            minHeight);
+            _ => new Rectangle(
+                        screenWidth / 2 - minWidth / 2,
+                        screenHeight / 2 - minHeight / 2,
+                        minWidth,
+                        minHeight),
+        };
     }
+
 }

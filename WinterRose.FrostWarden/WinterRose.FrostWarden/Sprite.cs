@@ -51,5 +51,7 @@ namespace WinterRose.FrostWarden
                 Raylib.UnloadTexture(Texture);
             }
         }
+
+        public static implicit operator Texture2D(Sprite s) => s.Texture;
     }
 }
