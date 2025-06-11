@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using System.Linq;
 using System;
 using WinterRose.Monogame.ModdingSystem;
+using WinterRose.StaticValueModifiers;
 
 #nullable enable
 
@@ -46,7 +47,7 @@ public class Weapon : ObjectBehavior
     /// </summary>
     [field: Show]
     [IncludeWithSerialization]
-    public float FireRate { get; set; } = 10.0f;
+    public StaticCombinedModifier<float> FireRate { get; set; } = 10.0f;
 
     /// <summary>
     /// The transform to take the rotation from when creating a new bullet. when null uses the rotation value of the owner of this component

@@ -28,6 +28,9 @@
     <None Update="crystalitem.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="egg gun.gif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Scene1.obj">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

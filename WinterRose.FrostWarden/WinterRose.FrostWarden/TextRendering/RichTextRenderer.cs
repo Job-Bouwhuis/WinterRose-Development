@@ -3,6 +3,8 @@ namespace WinterRose.FrostWarden.TextRendering;
 using Raylib_cs;
 using System.Collections.Generic;
 using System.Numerics;
+using WinterRose.FrostWarden.DialogBoxes;
+using WinterRose.FrostWarden.DialogBoxes.Boxes;
 
 public static class RichTextRenderer
 {
@@ -68,11 +70,11 @@ public static class RichTextRenderer
                                     (int)(texture.Height * scale));
 
                                 if(ray.CheckCollisionPointRec(ray.GetMousePosition(), imageRect) && ray.IsMouseButtonPressed(MouseButton.Left))
-                                {
-                                    Console.WriteLine("Sprite Clicked!");
-
-                                    DialogBox.Show("Image", sprite.SpriteSource, DialogType.Sprite, placement: DialogPlacement.CenterBig, priority: DialogPriority.AlwaysFirst);
-                                }
+                                    Dialogs.Show(new SpriteDialog(
+                                        "Image", 
+                                        sprite.SpriteSource,
+                                        DialogPlacement.CenterBig, 
+                                        DialogPriority.AlwaysFirst));
                             }
 
                             x += texture.Width * scale + lineSpacing;

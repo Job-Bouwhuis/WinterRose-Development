@@ -19,7 +19,7 @@ namespace WinterRose.FrostWarden
             // Determine whether it's a generated or file-based sprite
             Sprite newSprite = source.StartsWith("Generated_")
                 ? CreateGeneratedSpriteFromKey(source)
-                : new Sprite(source);
+                : new Sprite(ray.LoadTexture(source), false);
 
             cache[source] = newSprite;
             return newSprite;

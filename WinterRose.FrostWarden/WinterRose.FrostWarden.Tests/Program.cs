@@ -1,6 +1,8 @@
 ﻿using BulletSharp;
 using Raylib_cs;
 using WinterRose.FrostWarden.Components;
+using WinterRose.FrostWarden.DialogBoxes;
+using WinterRose.FrostWarden.DialogBoxes.Boxes;
 using WinterRose.FrostWarden.Entities;
 using WinterRose.FrostWarden.Physics;
 using WinterRose.FrostWarden.Shaders;
@@ -25,23 +27,29 @@ internal class Program : Application
         cam.Add(new Camera());
         cam.Add(new Mover());
         world.AddEntity(cam);
-        cam.Add(new BallSpawner());
 
-        //Entity ball = new Entity();
-        //var sr = new SpriteRenderer(Sprite.CreateCircle(25, new Color(255, 0, 255)));
-        //ball.Add(sr);
-        //ball.transform.position = new Vector3(200, 200, 0);
-        
-        //world.AddEntity(ball);
+        SpriteGif gif = new SpriteGif("egg gun.gif");
 
-        //var col = new Collider(new SphereShape(25 / 2));
-        //ball.Add(new RigidBodyComponent(col, 250));
+        Entity gife = new Entity();
+        world.AddEntity(gife);
+        gife.transform.scale = new Vector3(2, 2, 1);
+        var sr = new SpriteRenderer(gif);
+        gife.Add(sr);
 
-        Entity floor = new Entity();
-        floor.transform.position = new Vector3(ScreenSize.x / 2, ScreenSize.y - 10, 0);
-        floor.Add(new SpriteRenderer(Sprite.CreateRectangle(ScreenSize.x, 5, Color.Beige)));
-        world.AddEntity(floor);
-        floor.Add(new Collider(new Box2DShape(new BulletSharp.Math.Vector3(ScreenSize.x / 2, 15, 5))));
+        //Dialogs.Show(new DefaultDialog("Dialog top left", "yes", DialogPlacement.TopLeft, buttons: ["Ok"]));
+        //Dialogs.Show(new DefaultDialog("Dialog top right", "yes", DialogPlacement.TopRight, buttons: ["Ok"]));
+        //Dialogs.Show(new DefaultDialog("Dialog bottom left", "yes", DialogPlacement.BottomLeft, buttons: ["Ok"]));
+        //Dialogs.Show(new DefaultDialog("Dialog bottom right", "yes", DialogPlacement.BottomRight, buttons: ["Ok"]));
+        //Dialogs.Show(new DefaultDialog("Dialog Center", "yes", DialogPlacement.CenterSmall, buttons: ["Ok"]));
+        //Dialogs.Show(new DefaultDialog("Dialog top small", "yes", DialogPlacement.TopSmall, buttons: ["Ok"]));
+        //Dialogs.Show(new DefaultDialog("Dialog left small", "yes", DialogPlacement.LeftSmall, buttons: ["Ok"]));
+        //Dialogs.Show(new DefaultDialog("Dialog right small", "yes", DialogPlacement.RightSmall, buttons: ["Ok"]));
+
+        //Dialogs.Show(new DefaultDialog("Dialog bottom small", "yes \\c[red] rode text \\c[white]  \\s[star]\\!",
+        //DialogPlacement.BottomSmall, buttons: ["Ok"]));
+
+        //Dialogs.Show(new DefaultDialog("Dialog right big", "yes", DialogPlacement.RightBig, buttons: ["Ok"]));
+
         return world;
     }
 }

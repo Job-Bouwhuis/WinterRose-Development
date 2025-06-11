@@ -7,8 +7,8 @@ namespace WinterRose.FrostWarden
     {
         public string Source { get; private set; }
 
-        public Texture2D Texture { get; private set; }
-        public Vector2 Size => new Vector2(Texture.Width, Texture.Height);
+        public virtual Texture2D Texture { get; private set; }
+        public virtual Vector2 Size => new Vector2(Texture.Width, Texture.Height);
 
         public int Width => (int)Size.X;
         public int Height => (int)Size.Y;
@@ -17,9 +17,8 @@ namespace WinterRose.FrostWarden
 
         public Sprite(string filePath)
         {
-            Texture = Raylib.LoadTexture(filePath);
+            Texture = SpriteCache.Get(filePath);
             Source = filePath;
-            ownsTexture = true;
         }
 
         public Sprite(Texture2D texture, bool ownsTexture)
@@ -27,6 +26,8 @@ namespace WinterRose.FrostWarden
             Texture = texture;
             this.ownsTexture = ownsTexture;
         }
+
+        protected Sprite() { }
 
         // Factory method for a filled rectangle sprite
         public static Sprite CreateRectangle(int width, int height, Color fillColor)
@@ -69,14 +70,13 @@ namespace WinterRose.FrostWarden
 
         private static Color ColorAlpha(byte alpha) => new Color(0, 0, 0, (int)alpha);
 
-
         public void Draw(Vector2 position, float rotation = 0f, float scale = 1f, Color? tint = null)
         {
             var color = tint ?? Color.White;
             Raylib.DrawTextureEx(Texture, position, rotation, scale, color);
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             if (ownsTexture && Texture.Id != 0)
             {

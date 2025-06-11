@@ -57,8 +57,7 @@ namespace WinterRose.FrostWarden.Physics
             var dof = new Generic6DofConstraint(
                 RigidBody,
                 BulletSharp.Math.Matrix.Identity,
-                false // world frame
-);
+                true);
 
             // ⛓ Lock movement along Z (i.e., keep it flat)
             dof.LinearLowerLimit = new BulletSharp.Math.Vector3(-float.MaxValue, -float.MaxValue, 0);
