@@ -48,116 +48,65 @@ public abstract class Application
 
         SetExitKey(KeyboardKey.Null);
 
-        
-
-        windows = new()
+        WindowHooks.RegisterHandler(WindowHooks.Messages.KeyDown, msg =>
         {
-            new Window("main", 1280, 720, "Main View", null),
-            new Window("overview", 640, 360, "Top-Down", null)
-        };
+            Console.WriteLine((char)msg.WParam.ToInt32());
+        });
 
-        foreach (var win in windows)
-            win.Create();
+        Window window = new Window(SCREEN_WIDTH, SCREEN_HEIGHT, "FrostWarden - Sprite Stress Test");
 
-        Universe.CurrentWorld = CreateWorld();
+        window.Create();
 
-        while (windows.Count != 0)
+        BeginDrawing();
+        ClearBackground(Color.Black);
+        DrawText("Initializing Engine...", 0, 0, 60, Color.White);
+        EndDrawing();
+
+        World world;
+        Universe.CurrentWorld = world = CreateWorld();
+        Camera? camera = world.GetAll<Camera>().FirstOrDefault();
+
+        RenderTexture2D worldTex = Raylib.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+        while (!window.ShouldClose())
         {
             Input.Update();
             Time.Update();
-            Universe.CurrentWorld.Update();
+
+            world.Update();
             Dialogs.Update(Time.deltaTime);
 
-            foreach (var win in windows)
-            {
-                win.BeginDraw();
-                Universe.CurrentWorld.Draw(win.Camera?.ViewMatrix ?? Matrix4x4.Identity); 
-                Dialogs.Draw(); 
-                win.EndDraw();
-            }
+            BeginDrawing();
+
+            Raylib.ClearBackground(Color.Black);
+            Raylib.BeginTextureMode(worldTex);
+            Raylib.ClearBackground(Color.DarkGray);
+
+            if (camera != null)
+                Raylib.BeginMode2D(camera.Camera2D);
+
+            world.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
+
+            if (camera != null)
+                Raylib.EndMode2D();
+
+            Raylib.EndTextureMode();
+
+            Raylib.DrawTexturePro(
+                worldTex.Texture,
+                new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),  // src rectangle flipped Y
+                new Rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),                      // dest rectangle fullscreen
+                Vector2.Zero,
+                0,
+                Color.White);
+
+            Dialogs.Draw();
+
+            Raylib.EndDrawing();
         }
 
-        foreach (var win in windows)
-            win.Close();
-    }
 
-    //public void Run()
-    //{
-    //    if (!TryLoadBulletSharp())
-    //        return;
-
-    //    SetExitKey(KeyboardKey.Null);
-
-    //    SetTargetFPS(144);
-
-    //    UIContext ui = new();
-
-    //    SetExitKey(KeyboardKey.Null);
-
-    //    WindowHooks.RegisterHandler(WindowHooks.Messages.KeyDown, msg =>
-    //    {
-    //        Console.WriteLine((char)msg.WParam.ToInt32());
-    //    });
-
-    //    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "FrostWarden - Sprite Stress Test");
-
-    //    BeginDrawing();
-    //    ClearBackground(Color.Black);
-    //    DrawText("Initializing Engine...", 0, 0, 60, Color.White);
-    //    EndDrawing();
-
-    //    World world = CreateWorld();
-    //    Camera? camera = world.GetAll<Camera>().FirstOrDefault();
-
-    //    RenderTexture2D worldTex = Raylib.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    //    while (!Raylib.WindowShouldClose())
-    //    {
-    //        Input.Update();
-    //        Time.Update();
-
-    //        world.Update();
-    //        Dialogs.Update(Time.deltaTime);
-
-    //        // 1. Render world to texture (worldTex)
-    //        Raylib.ClearBackground(Color.Black);
-    //        Raylib.BeginTextureMode(worldTex);
-    //        Raylib.ClearBackground(Color.DarkGray);
-
-    //        if (camera != null)
-    //            Raylib.BeginMode2D(camera.Camera2D);
-
-    //        world.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
-
-    //        if (camera != null)
-    //            Raylib.EndMode2D();
-
-    //        Raylib.EndTextureMode();
-
-    //        Raylib.DrawTexturePro(
-    //            worldTex.Texture,
-    //            new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),  // src rectangle flipped Y
-    //            new Rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),                      // dest rectangle fullscreen
-    //            Vector2.Zero,
-    //            0,
-    //            Color.White);
-
-    //        Dialogs.Draw();
-
-    //        Raylib.EndDrawing();
-    //    }
-
-
-    //    CloseWindow();
-    //}
-
-    private bool ShouldClose()
-    {
-        if (WindowShouldClose())
-        {
-            return true;
-        }
-        return false;
+        window.Close();
     }
 
     private static bool TryLoadBulletSharp()

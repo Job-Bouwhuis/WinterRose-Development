@@ -17,7 +17,7 @@ namespace WinterRose.FrostWarden.Tests
         {
             if (Raylib.IsKeyDown(KeyboardKey.Space))
             {
-                Entity ball = new Entity();
+                Entity ball = new Entity("ball");
 
                 var sr = new SpriteRenderer(Sprite.CreateCircle(25, new Color(255, 0, 255)));
                 ball.AddComponent(sr);

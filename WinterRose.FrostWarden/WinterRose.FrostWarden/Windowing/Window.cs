@@ -11,7 +11,6 @@ namespace WinterRose.FrostWarden.Windowing
 {
     public class Window
     {
-        public string Id { get; private set; }
         public int Width { get; private set; }
         public int Height { get; private set; }
         public string Title
@@ -27,8 +26,6 @@ namespace WinterRose.FrostWarden.Windowing
                 ray.SetWindowTitle(Title);
             }
         }
-        public Camera? Camera { get; }
-        public RenderTexture2D RenderTarget { get; private set; }
 
         public bool IsReady => ray.WindowShouldClose() == false;
         public bool IsFullscreen => ray.IsWindowFullscreen();
@@ -37,47 +34,18 @@ namespace WinterRose.FrostWarden.Windowing
         private ConfigFlags configFlags;
         private string title;
 
-        public Window(string id, int width, int height, string title, Camera? camera)
+        public Window(int width, int height, string title, ConfigFlags configFlags = 0)
         {
-            Id = id;
             Width = width;
             Height = height;
             Title = title;
-            Camera = camera;
+            this.configFlags = configFlags;
         }
 
         public void Create()
         {
+            Raylib.SetConfigFlags(configFlags);
             Raylib.InitWindow(Width, Height, Title);
-            RenderTarget = Raylib.LoadRenderTexture(Width, Height);
-        }
-
-        public void BeginDraw()
-        {
-            Raylib.BeginDrawing();
-            Raylib.ClearBackground(Color.Black);
-
-            Raylib.BeginTextureMode(RenderTarget);
-            Raylib.ClearBackground(Color.DarkGray);
-
-            if(Camera is not null)
-                Raylib.BeginMode2D(Camera.Camera2D);
-        }
-
-        public void EndDraw()
-        {
-            Raylib.EndMode2D();
-            Raylib.EndTextureMode();
-
-            Raylib.DrawTexturePro(
-                RenderTarget.Texture,
-                new Rectangle(0, 0, RenderTarget.Texture.Width, -RenderTarget.Texture.Height),
-                new Rectangle(0, 0, Width, Height),
-                Vector2.Zero,
-                0,
-                Color.White);
-
-            Raylib.EndDrawing();
         }
 
         public void Close()
@@ -116,6 +84,15 @@ namespace WinterRose.FrostWarden.Windowing
 
             // Optionally reposition and restore any GL state
             ray.SetWindowPosition(pos.X.FloorToInt(), pos.Y.FloorToInt());
+        }
+
+        internal bool ShouldClose()
+        {
+            if (ray.WindowShouldClose())
+            {
+                return true;
+            }
+            return false;
         }
     }
 }
