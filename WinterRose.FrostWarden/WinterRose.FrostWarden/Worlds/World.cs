@@ -29,51 +29,15 @@ public class World : IDisposable
         physicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
         physicsDebugDrawer = new PhysicsDebugDrawer(this);
 
-        // Set gravity (flip Y if needed depending on your coordinate system)
-        physicsWorld.Gravity = new BulletSharp.Math.Vector3(0, 9.81f * 5, 0);
+        physicsWorld.Gravity = new BulletSharp.Math.Vector3(0, 9.81f, 0);
+    }
 
-        // Your world-space rectangle bounds:
-        Vector3 worldBoundsMin = new Vector3(0, 0, 0);
-        Vector3 worldBoundsMax = new Vector3(Application.ScreenSize.x, Application.ScreenSize.y, 0.1f);
-
-        // Thickness of the walls:
-        float wallThickness = 10f;
-
-        // Helper to create a static wall collider
-        void AddWall(Vector3 position, Vector3 halfExtents)
+    internal void InitializeWorld()
+    {
+        foreach(var e in entities)
         {
-            var shape = new BoxShape(new BulletSharp.Math.Vector3(halfExtents.X, halfExtents.Y, halfExtents.Z));
-            var motionState = new DefaultMotionState(BulletSharp.Math.Matrix.Identity);
-            var rbInfo = new RigidBodyConstructionInfo(0, motionState, shape, BulletSharp.Math.Vector3.Zero);
-            var body = new RigidBody(rbInfo);
-            body.WorldTransform = BulletSharp.Math.Matrix.Translation(position.ToBullet());
-            physicsWorld.AddRigidBody(body);
-            rbInfo.Dispose();
+            e.CallAwake();
         }
-
-        // Bottom wall (along X axis, thin Y thickness)
-        AddWall(
-            new Vector3((worldBoundsMin.X + worldBoundsMax.X) / 2, worldBoundsMin.Y - wallThickness / 2, 0),
-            new Vector3((worldBoundsMax.X - worldBoundsMin.X) / 2, wallThickness / 2, 1)
-        );
-
-        // Top wall
-        AddWall(
-            new Vector3((worldBoundsMin.X + worldBoundsMax.X) / 2, worldBoundsMax.Y + wallThickness / 2, 0),
-            new Vector3((worldBoundsMax.X - worldBoundsMin.X) / 2, wallThickness / 2, 1)
-        );
-
-        // Left wall (along Y axis, thin X thickness)
-        AddWall(
-            new Vector3(worldBoundsMin.X - wallThickness / 2, (worldBoundsMin.Y + worldBoundsMax.Y) / 2, 0),
-            new Vector3(wallThickness / 2, (worldBoundsMax.Y - worldBoundsMin.Y) / 2, 1)
-        );
-
-        // Right wall
-        AddWall(
-            new Vector3(worldBoundsMax.X + wallThickness / 2, (worldBoundsMin.Y + worldBoundsMax.Y) / 2, 0),
-            new Vector3(wallThickness / 2, (worldBoundsMax.Y - worldBoundsMin.Y) / 2, 1)
-        );
     }
 
 
@@ -83,7 +47,7 @@ public class World : IDisposable
         entity.world = this;
         entity.addedToWorld = true;
 
-        var physics = entity.GetAll<PhysicsComponent>();
+        var physics = entity.GetAllComponents<PhysicsComponent>();
         foreach (var p in physics)
             if(!p.AddedToWorld)
             {
@@ -94,7 +58,7 @@ public class World : IDisposable
 
     public void RemoveEntity(Entity entity)
     {
-        var physics = entity.GetAll<PhysicsComponent>();
+        var physics = entity.GetAllComponents<PhysicsComponent>();
         foreach (var p in physics)
             p.RemoveFromWorld(Physics);
 
@@ -113,7 +77,7 @@ public class World : IDisposable
         for (int i = 0; i < entities.Count; i++)
         {
             Entity? entity = entities[i];
-            foreach (var updatable in entity.GetAll<IUpdatable>())
+            foreach (var updatable in entity.GetAllComponents<IUpdatable>())
                 updatable.Update();
         }
     }
@@ -123,7 +87,7 @@ public class World : IDisposable
         for (int i = 0; i < entities.Count; i++)
         {
             Entity? entity = entities[i];
-            foreach (var renderable in entity.GetAll<IRenderable>())
+            foreach (var renderable in entity.GetAllComponents<IRenderable>())
                 renderable.Draw(viewMatrix);
         }
 
@@ -135,7 +99,7 @@ public class World : IDisposable
         for (int i = 0; i < entities.Count; i++)
         {
             Entity? entity = entities[i];
-            foreach (var c in entity.GetAll<T>())
+            foreach (var c in entity.GetAllComponents<T>())
                 yield return c;
         }
     }

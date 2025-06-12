@@ -24,8 +24,8 @@ internal class Program : Application
         World world = new World();
 
         Entity cam = new Entity();
-        cam.Add(new Camera());
-        cam.Add(new Mover());
+        cam.AddComponent(new Camera());
+        cam.AddComponent(new Mover());
         world.AddEntity(cam);
 
         SpriteGif gif = new SpriteGif("egg gun.gif");
@@ -34,7 +34,7 @@ internal class Program : Application
         world.AddEntity(gife);
         gife.transform.scale = new Vector3(2, 2, 1);
         var sr = new SpriteRenderer(gif);
-        gife.Add(sr);
+        gife.AddComponent(sr);
 
         //Dialogs.Show(new DefaultDialog("Dialog top left", "yes", DialogPlacement.TopLeft, buttons: ["Ok"]));
         //Dialogs.Show(new DefaultDialog("Dialog top right", "yes", DialogPlacement.TopRight, buttons: ["Ok"]));

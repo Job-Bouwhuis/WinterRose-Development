@@ -287,7 +287,8 @@ public static class Universe
                     throw;
                 if (Debugger.IsAttached)
                 {
-                    var result = Windows.MessageBox("An error happened in the Debug class. this causes the buildin exception screen to fail. hence this message box.\n\n" +
+                    var result = Windows.MessageBox("An error happened in the Debug class. " +
+                        "this causes the buildin exception screen to fail. hence this message box.\n\n" +
                         $"Type: {e.GetType()}\n" +
                         $"Message: {e.Message}\n\n" +
                         "Throw this error?\n\n" +
@@ -304,7 +305,8 @@ public static class Universe
                     }
                     Environment.Exit(1000);
                 }
-                Windows.MessageBox("A fatal error has occured that caused the game to crash. normally there is a details screen, but in this case this details screen has errors.\n" +
+                Windows.MessageBox("A fatal error has occured that caused the game to crash. normally there is a details screen, " +
+                    "but in this case this details screen has errors.\n" +
                     "Please relay the following information to the developer of the game you were playing:\n\n" +
                     "$\"Type: {e.GetType()}\n" +
                     "$\"Message: {e.Message}\n\n" +

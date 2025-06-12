@@ -19,7 +19,7 @@ namespace WinterRose.FrostWarden.Components
                 _position = value;
                 MarkDirty(true);
 
-                var phcs = owner.GetAll<PhysicsComponent>();
+                var phcs = owner.GetAllComponents<PhysicsComponent>();
                 foreach (var p in phcs)
                     p.Sync();
             }
@@ -144,7 +144,7 @@ namespace WinterRose.FrostWarden.Components
 
             MarkDirty(true);
 
-            var phcs = owner.GetAll<PhysicsComponent>();
+            var phcs = owner.GetAllComponents<PhysicsComponent>();
             foreach (var p in phcs)
                 if(p is not RigidBodyComponent)
                     p.Sync();
