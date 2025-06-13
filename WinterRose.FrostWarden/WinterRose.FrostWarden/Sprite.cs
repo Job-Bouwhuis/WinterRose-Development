@@ -5,15 +5,15 @@ namespace WinterRose.FrostWarden
 {
     public class Sprite : IDisposable
     {
-        public string Source { get; private set; }
+        public string Source { get; protected set; }
 
-        public virtual Texture2D Texture { get; private set; }
+        public virtual Texture2D Texture { get; protected set; }
         public virtual Vector2 Size => new Vector2(Texture.Width, Texture.Height);
 
         public int Width => (int)Size.X;
         public int Height => (int)Size.Y;
 
-        private bool ownsTexture;
+        protected internal bool OwnsTexture { get; protected set; } = false;
 
         public Sprite(string filePath)
         {
@@ -21,10 +21,17 @@ namespace WinterRose.FrostWarden
             Source = filePath;
         }
 
+        public Sprite(string filePath, bool ownsTexture)
+        {
+            Texture = ray.LoadTexture(filePath);
+            this.OwnsTexture = ownsTexture;
+            Source = filePath;
+        }
+
         public Sprite(Texture2D texture, bool ownsTexture)
         {
             Texture = texture;
-            this.ownsTexture = ownsTexture;
+            this.OwnsTexture = ownsTexture;
         }
 
         protected Sprite() { }
@@ -35,8 +42,9 @@ namespace WinterRose.FrostWarden
             Image img = Raylib.GenImageColor(width, height, fillColor);
             Texture2D tex = Raylib.LoadTextureFromImage(img);
             Raylib.UnloadImage(img);
-            var sprite = new Sprite(tex, true);
+            var sprite = new Sprite(tex, false);
             sprite.Source = $"Generated_{width}_{height}_{fillColor.R}{fillColor.G}{fillColor.B}{fillColor.A}";
+            SpriteCache.RegisterSprite(sprite);
             return sprite;
         }
 
@@ -63,22 +71,17 @@ namespace WinterRose.FrostWarden
             Texture2D tex = Raylib.LoadTextureFromImage(img);
             Raylib.UnloadImage(img);
 
-            var sprite = new Sprite(tex, ownsTexture: true);
+            var sprite = new Sprite(tex, false);
             sprite.Source = $"Generated_Circle_{diameter}_{fillColor.R}{fillColor.G}{fillColor.B}{fillColor.A}";
+            SpriteCache.RegisterSprite(sprite);
             return sprite;
         }
 
         private static Color ColorAlpha(byte alpha) => new Color(0, 0, 0, (int)alpha);
 
-        public void Draw(Vector2 position, float rotation = 0f, float scale = 1f, Color? tint = null)
-        {
-            var color = tint ?? Color.White;
-            Raylib.DrawTextureEx(Texture, position, rotation, scale, color);
-        }
-
         public virtual void Dispose()
         {
-            if (ownsTexture && Texture.Id != 0)
+            if (OwnsTexture && Texture.Id != 0)
             {
                 Raylib.UnloadTexture(Texture);
             }

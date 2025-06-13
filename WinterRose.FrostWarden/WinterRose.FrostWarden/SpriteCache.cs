@@ -31,6 +31,8 @@ namespace WinterRose.FrostWarden
             return Get(key); // will go through CreateGeneratedSpriteFromKey internally
         }
 
+        public static void RegisterSprite(Sprite sprite) => cache[sprite.Source] = sprite;
+
         private static Sprite CreateGeneratedSpriteFromKey(string key)
         {
             // Format: "Generated_width_height_RGBA"
@@ -56,6 +58,8 @@ namespace WinterRose.FrostWarden
         {
             foreach (var sprite in cache.Values)
             {
+                if(!sprite.OwnsTexture)
+                    ray.UnloadTexture(sprite.Texture);
                 sprite.Dispose();
             }
             cache.Clear();

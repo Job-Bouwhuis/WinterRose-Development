@@ -1,5 +1,6 @@
 ﻿using BulletSharp;
 using Raylib_cs;
+using WinterRose.FrostWarden.AssetPipeline;
 using WinterRose.FrostWarden.Components;
 using WinterRose.FrostWarden.DialogBoxes;
 using WinterRose.FrostWarden.DialogBoxes.Boxes;
@@ -28,18 +29,16 @@ internal class Program : Application
         cam.AddComponent(new Mover());
         world.AddEntity(cam);
 
-        Entity cam2 = new Entity("cam2");
-        cam2.AddComponent(new Mover());
-        cam2.AddComponent(new ImportantComponent());
-        world.AddEntity(cam2);
+        Entity entity = new Entity("entity");
+        entity.AddComponent(new Mover());
+        entity.AddComponent(new SpriteRenderer(Assets.Load<Sprite>("bigimg")));
+        world.AddEntity(entity);
 
-        //SpriteGif gif = new SpriteGif("egg gun.gif");
-
-        //Entity gife = new Entity();
-        //world.AddEntity(gife);
-        //gife.transform.scale = new Vector3(2, 2, 1);
-        //var sr = new SpriteRenderer(gif);
-        //gife.AddComponent(sr);
+        Entity gife = new Entity("gif");
+        world.AddEntity(gife);
+        gife.transform.scale = new Vector3(2, 2, 1);
+        var sr = new SpriteRenderer(Assets.Load<Sprite>("egg gun"));
+        gife.AddComponent(sr);
 
         //Dialogs.Show(new DefaultDialog("Dialog top left", "yes", DialogPlacement.TopLeft, buttons: ["Ok"]));
         //Dialogs.Show(new DefaultDialog("Dialog top right", "yes", DialogPlacement.TopRight, buttons: ["Ok"]));

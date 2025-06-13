@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="libbulletc-linux-x64.so" />
+    <None Remove="libbulletc-linux-x86.so" />
+    <None Remove="libbulletc-windows-x64.dll" />
+    <None Remove="libbulletc-windows-x86.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="libbulletc.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
@@ -24,6 +31,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="libbulletc-linux-x64.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="libbulletc-linux-x86.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="libbulletc-windows-x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="libbulletc-windows-x86.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Raylib_cs.Raylib">
       <Alias>ray</Alias>
     </Using>
@@ -32,18 +54,6 @@
 
   <ItemGroup>
     <None Update="BulletSharp.dll.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libbulletc-linux-x64.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libbulletc-linux-x86.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libbulletc-windows-x64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="libbulletc-windows-x86.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

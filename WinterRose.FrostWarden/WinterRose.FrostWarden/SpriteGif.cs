@@ -34,6 +34,7 @@ namespace WinterRose.FrostWarden
 
         public SpriteGif(string path)
         {
+            Source = path;
             var gif = System.Drawing.Image.FromFile(path);
             var dimension = new System.Drawing.Imaging.FrameDimension(gif.FrameDimensionsList[0]);
             int frameCount = gif.GetFrameCount(dimension);
@@ -87,11 +88,12 @@ namespace WinterRose.FrostWarden
             }
 
             gif.Dispose();
+            SpriteCache.RegisterSprite(this);
         }
 
         //public static implicit operator Texture2D(SpriteGif gif) => gif.GetNext();
 
-        public void Dispose()
+        public override void Dispose()
         {
             foreach (var tex in frames)
                 Raylib.UnloadTexture(tex);

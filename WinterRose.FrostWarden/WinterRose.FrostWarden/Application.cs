@@ -2,6 +2,7 @@
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using WinterRose.FrostWarden.AssetPipeline;
 using WinterRose.FrostWarden.Components;
 using WinterRose.FrostWarden.DialogBoxes;
 using WinterRose.FrostWarden.Entities;
@@ -40,7 +41,7 @@ public abstract class Application
         if (!TryLoadBulletSharp())
             return;
 
-        SetExitKey(KeyboardKey.Null);
+        Assets.BuildAssetIndexes();
 
         SetTargetFPS(144);
 
@@ -102,10 +103,11 @@ public abstract class Application
 
             Dialogs.Draw();
 
+            ray.DrawFPS(10, 10);
             Raylib.EndDrawing();
         }
 
-
+        SpriteCache.DisposeAll();
         window.Close();
     }
 
