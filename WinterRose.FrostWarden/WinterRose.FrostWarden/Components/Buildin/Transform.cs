@@ -26,10 +26,30 @@ namespace WinterRose.FrostWarden.Components
         }
 
         [IncludeWithSerialization]
-        public Vector3 rotation
+        public Quaternion rotation
         {
             get => _rotation;
-            set { _rotation = value; MarkDirty(true); }
+            set
+            {
+                _rotation = value;
+                MarkDirty(true);
+            }
+        }
+
+        // Optional helper property for Euler degrees (for ease of use or editor)
+        public Vector3 rotationEulerDegrees
+        {
+            get
+            {
+                Vector3 eulerRadians = QuaternionToEuler(_rotation);
+                return eulerRadians * (180f / MathF.PI);
+            }
+            set
+            {
+                Vector3 eulerRadians = value * (MathF.PI / 180f);
+                _rotation = EulerToQuaternion(eulerRadians);
+                MarkDirty(true);
+            }
         }
 
         [IncludeWithSerialization]
@@ -74,6 +94,19 @@ namespace WinterRose.FrostWarden.Components
             }
         }
 
+        public Vector3 right => new Vector3(worldMatrix.M11, worldMatrix.M21, worldMatrix.M31);
+
+        public Vector3 left => -right;
+
+        public Vector3 up => new Vector3(worldMatrix.M12, worldMatrix.M22, worldMatrix.M32);
+
+        public Vector3 down => -up;
+
+        public Vector3 forward => new Vector3(worldMatrix.M13, worldMatrix.M23, worldMatrix.M33);
+
+        public Vector3 back => -forward;
+
+
         public void SetParent(Transform? newParent)
         {
             if (_parent == newParent)
@@ -86,7 +119,7 @@ namespace WinterRose.FrostWarden.Components
         }
 
         private Vector3 _position = Vector3.Zero;
-        private Vector3 _rotation = Vector3.Zero;
+        private Quaternion _rotation = Quaternion.Identity;
         private Vector3 _scale = Vector3.One;
 
         private Matrix4x4 _localMatrix = Matrix4x4.Identity;
@@ -115,10 +148,7 @@ namespace WinterRose.FrostWarden.Components
         private void RecalculateLocalMatrix()
         {
             var translation = Matrix4x4.CreateTranslation(_position);
-            var rotationX = Matrix4x4.CreateRotationX(_rotation.X);
-            var rotationY = Matrix4x4.CreateRotationY(_rotation.Y);
-            var rotationZ = Matrix4x4.CreateRotationZ(_rotation.Z);
-            var rotation = rotationZ * rotationY * rotationX;
+            var rotation = Matrix4x4.CreateFromQuaternion(_rotation);
             var scale = Matrix4x4.CreateScale(_scale);
 
             _localMatrix = scale * rotation * translation;
@@ -126,49 +156,58 @@ namespace WinterRose.FrostWarden.Components
 
         public void Translate(BulletSharp.Math.Matrix trans)
         {
-            // Extract position from translation elements (last row)
             _position = new Vector3(trans.M41, trans.M42, trans.M43);
 
-            // Build a System.Numerics.Matrix4x4 rotation matrix from the bullet matrix rotation part
-            var rotationMatrix = new Matrix4x4(
-                (float)trans.M11, (float)trans.M12, (float)trans.M13, 0f,
-                (float)trans.M21, (float)trans.M22, (float)trans.M23, 0f,
-                (float)trans.M31, (float)trans.M32, (float)trans.M33, 0f,
-                0f, 0f, 0f, 1f);
-
-            // Decompose to get quaternion (ignore scale and translation)
-            if (Matrix4x4.Decompose(rotationMatrix, out Vector3 scale, out Quaternion rotQuat, out Vector3 translation))
-            {
-                _rotation = QuaternionToEuler(rotQuat);
-            }
+            var bulletQuat = new BulletSharp.Math.Quaternion(trans.M11, trans.M12, trans.M13, trans.M14);
+            // Bullet quaternion is (X,Y,Z,W) - convert to System.Numerics.Quaternion (X,Y,Z,W)
+            _rotation = new Quaternion((float)bulletQuat.X, (float)bulletQuat.Y, (float)bulletQuat.Z, (float)bulletQuat.W);
 
             MarkDirty(true);
 
             var phcs = owner.GetAllComponents<PhysicsComponent>();
             foreach (var p in phcs)
-                if(p is not RigidBodyComponent)
+                if (p is not RigidBodyComponent)
                     p.Sync();
         }
 
-        // Quaternion to Euler (XYZ order) helper same as before
         private Vector3 QuaternionToEuler(Quaternion q)
         {
+            // roll (x-axis rotation)
             float sinr_cosp = 2 * (q.W * q.X + q.Y * q.Z);
             float cosr_cosp = 1 - 2 * (q.X * q.X + q.Y * q.Y);
-            float roll = (float)Math.Atan2(sinr_cosp, cosr_cosp);
+            float roll = MathF.Atan2(sinr_cosp, cosr_cosp);
 
+            // pitch (y-axis rotation)
             float sinp = 2 * (q.W * q.Y - q.Z * q.X);
             float pitch;
-            if (Math.Abs(sinp) >= 1)
-                pitch = (float)(Math.CopySign(Math.PI / 2, sinp));
+            if (MathF.Abs(sinp) >= 1)
+                pitch = MathF.CopySign(MathF.PI / 2, sinp);
             else
-                pitch = (float)Math.Asin(sinp);
+                pitch = MathF.Asin(sinp);
 
+            // yaw (z-axis rotation)
             float siny_cosp = 2 * (q.W * q.Z + q.X * q.Y);
             float cosy_cosp = 1 - 2 * (q.Y * q.Y + q.Z * q.Z);
-            float yaw = (float)Math.Atan2(siny_cosp, cosy_cosp);
+            float yaw = MathF.Atan2(siny_cosp, cosy_cosp);
 
             return new Vector3(roll, pitch, yaw);
+        }
+
+        private Quaternion EulerToQuaternion(Vector3 euler)
+        {
+            float cy = MathF.Cos(euler.Z * 0.5f);
+            float sy = MathF.Sin(euler.Z * 0.5f);
+            float cp = MathF.Cos(euler.Y * 0.5f);
+            float sp = MathF.Sin(euler.Y * 0.5f);
+            float cr = MathF.Cos(euler.X * 0.5f);
+            float sr = MathF.Sin(euler.X * 0.5f);
+
+            Quaternion q = new Quaternion();
+            q.W = cr * cp * cy + sr * sp * sy;
+            q.X = sr * cp * cy - cr * sp * sy;
+            q.Y = cr * sp * cy + sr * cp * sy;
+            q.Z = cr * cp * sy - sr * sp * cy;
+            return q;
         }
     }
 

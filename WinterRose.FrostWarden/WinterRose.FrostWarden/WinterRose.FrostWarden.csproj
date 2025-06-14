@@ -1,61 +1,55 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="libbulletc-linux-x64.so" />
-    <None Remove="libbulletc-linux-x86.so" />
-    <None Remove="libbulletc-windows-x64.dll" />
-    <None Remove="libbulletc-windows-x86.dll" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="GifLoader.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="libbulletc.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="libbulletc-linux-x64.so" />
+		<None Remove="libbulletc-linux-x86.so" />
+		<None Remove="libbulletc-windows-x64.dll" />
+		<None Remove="libbulletc-windows-x86.dll" />
+		<None Remove="libbulletc.dll" />
+		<None Remove="Resources\Lights\Lights.frag" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="BulletSharp" Version="0.11.1" />
-    <PackageReference Include="Raylib-cs" Version="7.0.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="GifLoader.cs" />
+		<EmbeddedResource Include="libbulletc-linux-x64.so" />
+		<EmbeddedResource Include="libbulletc-linux-x86.so" />
+		<EmbeddedResource Include="libbulletc-windows-x64.dll" />
+		<EmbeddedResource Include="libbulletc-windows-x86.dll" />
+		<EmbeddedResource Include="libbulletc.dll" />
+		<EmbeddedResource Include="Resources\Lights\Lights.frag" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\WinterRose.ForgeGuard\WinterRose.ForgeGuard.csproj" />
-    <ProjectReference Include="..\..\WinterRose\WinterRose\WinterRose.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="BulletSharp" Version="0.11.1" />
+		<PackageReference Include="Raylib-cs" Version="7.0.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Resource Include="libbulletc-linux-x64.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="libbulletc-linux-x86.so">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="libbulletc-windows-x64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="libbulletc-windows-x86.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Resource>
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\WinterRose.ForgeGuard\WinterRose.ForgeGuard.csproj" />
+		<ProjectReference Include="..\..\WinterRose\WinterRose\WinterRose.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Using Include="Raylib_cs.Raylib">
-      <Alias>ray</Alias>
-    </Using>
-    <Using Include="System.Numerics" />
-  </ItemGroup>
+	<ItemGroup>
+		<Using Include="Raylib_cs.Raylib">
+			<Alias>ray</Alias>
+		</Using>
+		<Using Include="System.Numerics" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="BulletSharp.dll.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
+	<ItemGroup>
+		<None Include="Cleanup.targets" Pack="true" PackagePath="buildTransitive\" />
+	</ItemGroup>
+	
 </Project>

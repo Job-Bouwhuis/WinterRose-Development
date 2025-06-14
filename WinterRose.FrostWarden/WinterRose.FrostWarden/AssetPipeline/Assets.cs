@@ -30,21 +30,43 @@ namespace WinterRose.FrostWarden.AssetPipeline
             foreach (Type type in types)
             {
                 Type[] interfaces = type.GetInterfaces();
-                Type assetType = interfaces.FirstOrDefault(i => i.Name.Contains("IAssetHandler")).GetGenericArguments()[0];
-                MethodInfo saveMethod = type.GetMethod("SaveAsset", BindingFlags.Public | BindingFlags.Static);
-                MethodInfo loadMethod = type.GetMethod("LoadAsset", BindingFlags.Public | BindingFlags.Static);
-                MethodInfo InitializeNewAssetMethod = type.GetMethod("InitializeNewAsset", BindingFlags.Public | BindingFlags.Static);
-                if (saveMethod == null || loadMethod == null)
-                    throw new InvalidOperationException($"Asset handler {type.FullName} does not have required methods.");
-                var rh = new ReflectionHelper(type);
-                var mem = rh.GetMember("InterestedInExtensions");
-                var ie = (string[])mem.GetValue();
-                handerTypeMap[assetType] = new HandlerEntry(
-                    saveMethod, 
-                    loadMethod,
-                    InitializeNewAssetMethod,
-                    ie
-                    );
+                foreach(Type interf in interfaces.Where(i => i.Name.Contains("IAssetHandler")))
+                {
+                    Type assetType = interf.GetGenericArguments()[0];
+                    MethodInfo? saveMethod = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                        .FirstOrDefault(m =>
+                            m.Name == "SaveAsset" &&
+                            m.GetParameters().Length == 2 &&
+                            m.GetParameters()[0].ParameterType == typeof(AssetHeader) &&
+                            m.GetParameters()[1].ParameterType == assetType &&
+                            m.ReturnType == typeof(bool));
+
+                    MethodInfo? loadMethod = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                        .FirstOrDefault(m =>
+                            m.Name.EndsWith("LoadAsset") &&
+                            m.GetParameters().Length == 1 &&
+                            m.GetParameters()[0].ParameterType == typeof(AssetHeader) &&
+                            m.ReturnType == assetType);
+
+                    MethodInfo? initializeNewAssetMethod = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                        .FirstOrDefault(m =>
+                            m.Name == "InitializeNewAsset" &&
+                            m.GetParameters().Length == 1 &&
+                            m.GetParameters()[0].ParameterType == typeof(AssetHeader) &&
+                            m.ReturnType == typeof(bool));
+
+                    if (saveMethod == null || loadMethod == null)
+                        throw new InvalidOperationException($"Asset handler {type.FullName} does not have required methods.");
+                    var rh = new ReflectionHelper(type);
+                    var mem = rh.GetMember("InterestedInExtensions");
+                    var ie = (string[])mem.GetValue();
+                    handerTypeMap[assetType] = new HandlerEntry(
+                        saveMethod,
+                        loadMethod,
+                        initializeNewAssetMethod,
+                        ie
+                        );
+                }
             }
 
             // Ensure the asset root directory exists
@@ -97,9 +119,9 @@ namespace WinterRose.FrostWarden.AssetPipeline
                     }
                     string headerPath = ASSET_ROOT + header.Name + ASSET_HEADER_EXTENSION;
                     WinterForge.SerializeToFile(header, headerPath);
+                    assetHeaders.Add(header.Name, header);
                 }
             }
-
 
             Console.WriteLine("INFO: Asset database initialized");
         }
@@ -136,22 +158,39 @@ namespace WinterRose.FrostWarden.AssetPipeline
             File.Create(assetPath).Close(); 
         }
 
-        public static AssetHeader? GetHeader(string name)
+        public static AssetHeader GetHeader(string name)
         {
             assetHeaders.TryGetValue(name, out AssetHeader? header);
+            if (header is null)
+                throw new AssetNotFoundException(name);
             return header;
         }
 
+        public static bool AssetExists(string name) => assetHeaders.ContainsKey(name);
+
         public static T Load<T>(AssetHeader assetHeader) where T : class
         {
-            if (assetHeader == null)
-                throw new ArgumentNullException(nameof(assetHeader), "Asset header cannot be null.");
             if (string.IsNullOrEmpty(assetHeader.Path))
                 throw new InvalidOperationException("Asset path is not set in the header.");
             if (!handerTypeMap.TryGetValue(typeof(T), out HandlerEntry? entry))
                 throw new InvalidOperationException($"No handler found for asset type {typeof(T).FullName}.");
-            // Load the asset using the handler's load method
-            return Unsafe.As<T>(entry.LoadMethod.Invoke(null, [assetHeader]));
+
+            object? assetResult;
+            try
+            {
+                assetResult = entry.LoadMethod.Invoke(null, [assetHeader]);
+            }
+            catch (TargetInvocationException e)
+            {
+                if (e.InnerException is not null)
+                    throw e.InnerException;
+                throw;
+            }
+
+            if (assetResult is null)
+                return null; 
+
+            return Unsafe.As<T>(assetResult);
         }
 
         public static T Load<T>(string name) where T : class => Load<T>(GetHeader(name));

@@ -39,6 +39,30 @@ public class World : IDisposable
         deferredActions.Add(action);
     }
 
+    public Entity CreateEntity(string name)
+    {
+        Entity entity = new Entity(name);
+        AddEntity(entity);
+        return entity;
+    }
+
+    public T CreateEntity<T>(string name, params object[] args) where T : Component
+    {
+        Entity entity = new Entity(name);
+        T component = ActivatorExtra.CreateInstance<T>(args);
+        entity.AddComponent(component);
+        AddEntity(entity);
+        return component;
+    }
+
+    public T CreateEntity<T>(string name, T component) where T : Component
+    {
+        Entity entity = new Entity(name);
+        entity.AddComponent(component);
+        AddEntity(entity);
+        return component;
+    }
+
     internal void InitializeWorld()
     {
         foreach(var e in entities)
@@ -106,7 +130,7 @@ public class World : IDisposable
         }
     }
 
-    public IEnumerable<T> GetAll<T>() where T : class, IComponent
+    public IEnumerable<T> GetAll<T>() where T : Component, IComponent
     {
         for (int i = 0; i < entities.Count; i++)
         {

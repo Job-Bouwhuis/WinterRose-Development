@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Target Name="WinterRose_CleanupBuildArtifacts" AfterTargets="Build">
+		<ItemGroup>
+			<UnwantedFiles Include="$(OutputPath)*.pdb" />
+			<UnwantedFiles Include="$(OutputPath)*.xml" />
+			<UnwantedFiles Include="$(OutputPath)*.json" Exclude="$(OutputPath)*runtimeconfig.json" />
+		</ItemGroup>
+
+		<Message Text="❄️ WinterRose: Cleaning up unneeded files..." Importance="high" />
+		<Delete Files="@(UnwantedFiles)" />
+	</Target>
+</Project>

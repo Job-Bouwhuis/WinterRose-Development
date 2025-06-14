@@ -9,12 +9,16 @@ namespace WinterRose.FrostWarden
 {
     public static class SpriteCache
     {
-        private static readonly Dictionary<string, Sprite> cache = new();
+        private static readonly Dictionary<string, Sprite> cache = [];
+        private static readonly Dictionary<string, Texture2D> rawTextureCache = [];
 
         public static Sprite Get(string source)
         {
             if (cache.TryGetValue(source, out var sprite))
                 return sprite;
+
+            if(rawTextureCache.TryGetValue(source, out Texture2D tex))
+                return new Sprite(tex, false);
 
             // Determine whether it's a generated or file-based sprite
             Sprite newSprite = source.StartsWith("Generated_")
@@ -63,7 +67,13 @@ namespace WinterRose.FrostWarden
                 sprite.Dispose();
             }
             cache.Clear();
+
+            foreach(var tex in rawTextureCache.Values)
+                ray.UnloadTexture(tex);
+            rawTextureCache.Clear();
         }
+
+        public static void RegisterTexture2D(string key, Texture2D texture) => rawTextureCache.Add(key, texture);
     }
 
 }

@@ -49,4 +49,27 @@ public abstract class Component : IComponent
         stopwatch.Stop();
         destroyTime = stopwatch.ElapsedTicks / (float)System.Diagnostics.Stopwatch.Frequency * 1000f;
     }
+
+    public T AddComponent<T>(params object[] args) where T : Component
+    {
+        return owner.AddComponent<T>(args);
+    }
+
+    public T AddComponent<T>(T component) where T : Component
+       => owner.AddComponent(component);
+
+    public void RemoveComponent<T>() where T : Component
+        => owner.RemoveComponent<T>();
+
+    public T? GetComponent<T>() where T : Component
+        => owner.GetComponent<T>();
+
+    public Component GetComponent(Type t)
+        => owner.GetComponent(t);
+
+    public bool HasComponent<T>() where T : Component
+        => owner.HasComponent<T>();
+
+    public IEnumerable<T> GetAllComponents<T>() where T : Component
+        => owner.GetAllComponents<T>();
 }

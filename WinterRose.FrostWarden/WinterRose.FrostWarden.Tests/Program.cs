@@ -23,21 +23,23 @@ internal class Program : Application
     {
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg.png"));
         World world = new World();
+        
+        var cam = world.CreateEntity<Camera>("cam");
+        cam.AddComponent<Mover>();
 
-        Entity cam = new Entity("cam");
-        cam.AddComponent(new Camera());
-        cam.AddComponent(new Mover());
-        world.AddEntity(cam);
+        var entity = world.CreateEntity("entity");
+        entity.AddComponent<SpriteRenderer>(Assets.Load<Sprite>("bigimg"));
+        entity.transform.rotation = entity.transform.rotation with
+        {
+            Z = 90
+        };
 
-        Entity entity = new Entity("entity");
-        entity.AddComponent(new Mover());
-        entity.AddComponent(new SpriteRenderer(Assets.Load<Sprite>("bigimg")));
-        world.AddEntity(entity);
+        
 
         Entity gife = new Entity("gif");
         world.AddEntity(gife);
         gife.transform.scale = new Vector3(2, 2, 1);
-        var sr = new SpriteRenderer(Assets.Load<Sprite>("egg gun"));
+        var sr = new SpriteRenderer(Assets.Load<SpriteGif>("egg gun"));
         gife.AddComponent(sr);
 
         //Dialogs.Show(new DefaultDialog("Dialog top left", "yes", DialogPlacement.TopLeft, buttons: ["Ok"]));

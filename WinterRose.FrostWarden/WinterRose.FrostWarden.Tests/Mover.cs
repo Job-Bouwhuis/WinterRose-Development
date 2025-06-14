@@ -24,12 +24,10 @@ namespace WinterRose.FrostWarden.Tests
                 owner.GetComponent<SpriteRenderer>()!.Shader.TrySetValue("fade", true);
 
             if (ray.IsKeyDown(KeyboardKey.E))
-                transform.rotation -= new Vector3(0, 0, 0.01f);
+                transform.rotation -= new Quaternion(0, 0, 1, 0);
 
             if (ray.IsKeyDown(KeyboardKey.Q))
-                transform.rotation += new Vector3(0, 0, 0.01f);
-
-            //owner.GetComponent<SpriteRenderer>()?.Shader.TrySetValue("fadeAmount", fadeAmount);
+                transform.rotation += new Quaternion(0, 0, 1, 0);
 
             if (Raylib.IsKeyDown(KeyboardKey.W)) input.Y -= 1;
             if (Raylib.IsKeyDown(KeyboardKey.S)) input.Y += 1;

@@ -8,11 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="WinterRose.WinterForge" Version="25.2.18" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\WinterRose.ForgeGuard\WinterRose.ForgeGuard.csproj" />
+    <PackageReference Include="WinterRose.FrostWarden" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

@@ -7,6 +7,7 @@ using WinterRose.FrostWarden.Components;
 using WinterRose.FrostWarden.DialogBoxes;
 using WinterRose.FrostWarden.Entities;
 using WinterRose.FrostWarden.Physics;
+using WinterRose.FrostWarden.Resources;
 using WinterRose.FrostWarden.Shaders;
 using WinterRose.FrostWarden.TextRendering;
 using WinterRose.FrostWarden.Windowing;
@@ -38,7 +39,7 @@ public abstract class Application
 
     public void Run()
     {
-        if (!TryLoadBulletSharp())
+        if (!BulletPhysicsLoader.TryLoadBulletSharp())
             return;
 
         Assets.BuildAssetIndexes();
@@ -58,6 +59,9 @@ public abstract class Application
 
         window.Create();
 
+        string lightshaderCode = EmbeddedResourceFetcher.GetResourceText("Lights/Lights.frag");
+        FrostShader lightShader = new FrostShader(LoadShaderFromMemory(null, lightshaderCode));
+
         BeginDrawing();
         ClearBackground(Color.Black);
         DrawText("Initializing Engine...", 0, 0, 60, Color.White);
@@ -66,8 +70,9 @@ public abstract class Application
         World world;
         Universe.CurrentWorld = world = CreateWorld();
         Camera? camera = world.GetAll<Camera>().FirstOrDefault();
-
+        Camera.main = camera;
         RenderTexture2D worldTex = Raylib.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+        RenderTexture2D lightMap = Raylib.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
 
         while (!window.ShouldClose())
         {
@@ -107,22 +112,12 @@ public abstract class Application
             Raylib.EndDrawing();
         }
 
-        SpriteCache.DisposeAll();
-        window.Close();
-    }
+        Console.WriteLine("INFO: Releasing all resources");
 
-    private static bool TryLoadBulletSharp()
-    {
-        try
-        {
-            Assembly a = Assembly.Load("BulletSharp");
-            string b = a.Location.Replace('\\', '/');
-            return true;
-        }
-        catch (Exception e)
-        {
-            Windows.MessageBox(e.ToString(), "Error loading BulletSharp", Windows.MessageBoxButtons.OK, Windows.MessageBoxIcon.Error);
-            return false;
-        }
+        SpriteCache.DisposeAll();
+
+        Console.WriteLine("INFO: All resources released, Closing window");
+        window.Close();
+        Console.WriteLine("INFO: Everything cleared up, Bye bye!");
     }
 }

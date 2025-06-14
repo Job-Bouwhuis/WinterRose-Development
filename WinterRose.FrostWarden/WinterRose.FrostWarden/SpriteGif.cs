@@ -83,22 +83,13 @@ namespace WinterRose.FrostWarden
                     ray.SetTextureFilter(texture, TextureFilter.Point);
 
                     frames.Add(texture);
+                    SpriteCache.RegisterTexture2D(path + frames.Count, texture);
                     frameDurations.Add(delays[i]);
                 }
             }
 
             gif.Dispose();
             SpriteCache.RegisterSprite(this);
-        }
-
-        //public static implicit operator Texture2D(SpriteGif gif) => gif.GetNext();
-
-        public override void Dispose()
-        {
-            foreach (var tex in frames)
-                Raylib.UnloadTexture(tex);
-            frames.Clear();
-            frameDurations.Clear();
         }
     }
 }

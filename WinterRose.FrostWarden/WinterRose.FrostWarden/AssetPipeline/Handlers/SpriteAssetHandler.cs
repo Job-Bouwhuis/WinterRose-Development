@@ -8,7 +8,7 @@ using WinterRose.AnonymousTypes;
 
 namespace WinterRose.FrostWarden.AssetPipeline.Handlers
 {
-    internal sealed class SpriteAssetHandler : IAssetHandler<Sprite>
+    internal sealed class SpriteAssetHandler : IAssetHandler<Sprite>, IAssetHandler<SpriteGif>
     {
         public static string[] InterestedInExtensions => [".png", ".jpg", ".gif"];
 
@@ -31,16 +31,23 @@ namespace WinterRose.FrostWarden.AssetPipeline.Handlers
         public static bool SaveAsset(AssetHeader header, Sprite asset)
         {
             Image img = ray.LoadImageFromTexture(asset.Texture);
-            ray.ExportImage(img, header.Path);
-            ray.UnloadImage(img);
 
             if(asset is SpriteGif)
             {
                 header.Metadata["type"] = "gif";
             }
+            else
+            {
+                ray.ExportImage(img, header.Path);
+                ray.UnloadImage(img);
+            }
 
             return true;
 
         }
+
+        public static bool SaveAsset(AssetHeader header, SpriteGif asset) => SaveAsset(header, asset);
+        static SpriteGif IAssetHandler<SpriteGif>.LoadAsset(AssetHeader header) => LoadAsset(header) as SpriteGif 
+            ?? throw new Exception("Given sprite was not a gif");
     }
 }

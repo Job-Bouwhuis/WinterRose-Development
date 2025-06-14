@@ -21,13 +21,15 @@ namespace WinterRose.FrostWarden.Shaders
         private bool hasResolutionUniform => uniformResolutionLocation != -1;
         private bool hasMousePosUniform => uniformMousePosLocation != -1;
 
-        public FrostShader(string vertexPath, string fragmentPath)
+        public FrostShader(string vertexPath, string fragmentPath) : this(Raylib.LoadShader(vertexPath, fragmentPath))
         {
-            ShaderHandle = Raylib.LoadShader(vertexPath, fragmentPath);
+        }
 
+        public FrostShader(Shader handle)
+        {
+            ShaderHandle = handle;
             int textureLoc = Raylib.GetShaderLocation(ShaderHandle, "texture0");
             Raylib.SetShaderValue(ShaderHandle, textureLoc, new int[] { 0 }, ShaderUniformDataType.UInt);
-
             uniformTimeLocation = Raylib.GetShaderLocation(ShaderHandle, "deltaTime");
             uniformAcumulatedTimeLocation = Raylib.GetShaderLocation(ShaderHandle, "time");
             uniformResolutionLocation = Raylib.GetShaderLocation(ShaderHandle, "resolution");

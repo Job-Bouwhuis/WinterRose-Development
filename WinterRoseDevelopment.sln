@@ -77,6 +77,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.FrostWarden", "W
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.FrostWarden.Tests", "WinterRose.FrostWarden\WinterRose.FrostWarden.Tests\WinterRose.FrostWarden.Tests.csproj", "{3E83A58F-4777-4C67-A67D-F6669746847D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetTest", "NugetTest\NugetTest.csproj", "{5944629B-E9C0-40B0-BA4C-A28441A0A604}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug FileServer|Any CPU = debug FileServer|Any CPU
@@ -205,6 +207,12 @@ Global
 		{3E83A58F-4777-4C67-A67D-F6669746847D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E83A58F-4777-4C67-A67D-F6669746847D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E83A58F-4777-4C67-A67D-F6669746847D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5944629B-E9C0-40B0-BA4C-A28441A0A604}.debug FileServer|Any CPU.ActiveCfg = Debug|Any CPU
+		{5944629B-E9C0-40B0-BA4C-A28441A0A604}.debug FileServer|Any CPU.Build.0 = Debug|Any CPU
+		{5944629B-E9C0-40B0-BA4C-A28441A0A604}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5944629B-E9C0-40B0-BA4C-A28441A0A604}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5944629B-E9C0-40B0-BA4C-A28441A0A604}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5944629B-E9C0-40B0-BA4C-A28441A0A604}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -236,6 +244,7 @@ Global
 		{30C87F4A-904C-492A-9730-C8853F59F58B} = {653D8A94-89BF-4659-9979-A3BC57A251D9}
 		{CB5D4BC9-45EB-839E-50E8-261B3676BAF0} = {01B91BF3-F7F4-4776-8F1A-C6C4FB2E4B5F}
 		{3E83A58F-4777-4C67-A67D-F6669746847D} = {01B91BF3-F7F4-4776-8F1A-C6C4FB2E4B5F}
+		{5944629B-E9C0-40B0-BA4C-A28441A0A604} = {01B91BF3-F7F4-4776-8F1A-C6C4FB2E4B5F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4476F88-F402-4E67-B4D9-6187D5BAD463}

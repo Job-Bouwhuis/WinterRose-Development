@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using WinterRose.ForgeGuardChecks;
 using WinterRose.FrostWarden.Components;
 using WinterRose.FrostWarden.Physics;
@@ -99,8 +100,14 @@ public class Entity
         }
     }
 
-
-    public void AddComponent<T>(T component) where T : Component
+    public T AddComponent<T>(params object[] args) where T : Component
+    {
+        if (typeof(T) == typeof(Transform))
+            throw new InvalidOperationException("Adding Transform component is not allowed");
+        T component = ActivatorExtra.CreateInstance<T>(args);
+        return AddComponent(component);
+    }
+    public T AddComponent<T>(T component) where T : Component
     {
         if (typeof(T) == typeof(Transform))
             throw new InvalidOperationException("Adding Transform component is not allowed");
@@ -139,8 +146,9 @@ public class Entity
             InjectIntoComponent(component);
             component.CallStart();
         }
-    }
 
+        return component;
+    }
     public void RemoveComponent<T>() where T : IComponent
     {
         if (typeof(T) == typeof(Transform))
@@ -158,32 +166,28 @@ public class Entity
             components.Remove(typeof(T));
         }
     }
-
-    public T? GetComponent<T>() where T : Component, IComponent
+    public T? GetComponent<T>() where T : Component
     {
         if (components.TryGetValue(typeof(T), out var list) && list.Count > 0)
             return (T)list[0];
         return null;
     }
-
     public Component GetComponent(Type t)
     {
         if (components.TryGetValue(t, out var list) && list.Count > 0)
             return list[0];
         return null;
     }
-
     public bool HasComponent<T>() where T : Component, IComponent
     {
         return components.TryGetValue(typeof(T), out var list) && list.Count > 0;
     }
-
-    public IEnumerable<T> GetAllComponents<T>() where T : class, IComponent
+    public IEnumerable<T> GetAllComponents<T>() where T : Component, IComponent
     {
         foreach (var (type, list) in components)
             if (type.IsAssignableTo(typeof(T)))
                 foreach (var comp in list)
-                    yield return Unsafe.As<T>(comp);
+                    yield return (T)comp;
     }
 
     internal void InjectIntoComponents(World world)
@@ -254,5 +258,11 @@ public class Entity
                 member.SetValue(ref o, componentToInject);
             }
         }
+    }
+
+    public bool TryFetchComponent<T>([NotNullWhen(true)] out T? vitals) where T : Component
+    {
+        vitals = GetComponent<T>();
+        return vitals is not null;
     }
 }

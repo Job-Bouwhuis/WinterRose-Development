@@ -34,7 +34,7 @@ namespace WinterRose.FrostWarden.Components
 
             Matrix4x4 finalMatrix = worldMatrix * viewMatrix;
 
-            Vector2 position2D = new Vector2(finalMatrix.M41, finalMatrix.M42);
+            Vector2 position2D = new Vector2(transform.position.X, transform.position.Y);
 
             float scaleX = new Vector2(finalMatrix.M11, finalMatrix.M12).Length();
             float scaleY = new Vector2(finalMatrix.M21, finalMatrix.M22).Length();
