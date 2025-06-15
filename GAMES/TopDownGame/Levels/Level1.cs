@@ -46,7 +46,7 @@ internal class Level1 : WorldTemplate
         vitals.Health.MaxHealth = 2500;
         vitals.Armor.BaseArmor = 0.97f;
         player.owner.Flag = "Player";
-        //player.AttachComponent<Player>("Test");
+        player.AttachComponent<Player>("Test");
 
         world.CreateObject<SmoothCameraFollow>("camera").Target = player.transform;
 
@@ -95,7 +95,7 @@ internal class Level1 : WorldTemplate
         world.DestroyImmediately(enemy);
 
         // Spawning multiple items in a circle
-        int itemCount = 500;
+        int itemCount = 1000;
         Vector2 center = new Vector2(500, 500);
         float spawnRadius = 2000;
 

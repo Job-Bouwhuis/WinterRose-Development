@@ -53,17 +53,17 @@ public class Game1 : Application
         //else
         //    MonoUtils.WindowResolution = new(1280, 720);
 
-        //if(!AssetDatabase.AssetExists("box"))
-        //{
-        //    LootTable table = LootTable.WithName("box");
-        //    if (table.Table.Count == 0)
-        //        table.Add([
-        //            new(.5f, new ResourceItem() { Item = new Crystal()}, 1, 2),
-        //            new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
-        //    table.Save();
-        //}
+        if (!AssetDatabase.AssetExists("box"))
+        {
+            LootTable table = LootTable.WithName("box");
+            if (table.Table.Count == 0)
+                table.Add([
+                    new(.5f, new ResourceItem() { Item = new Crystal()}, 1, 2),
+                    new(.5f, new ResourceItem() { Item = new Flesh()}, 1, 2)]);
+            table.Save();
+        }
 
-        //benchmark();
+        benchmark();
 
         //World w = World.FromTemplate("Level 1");
         //return w;
