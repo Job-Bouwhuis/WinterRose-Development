@@ -57,7 +57,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
-    <PackageReference Include="WinterRose.WinterForge" Version="25.2.18" />
+    <PackageReference Include="WinterRose.WinterForge" Version="25.2.19-alpha-2" />
   </ItemGroup>
 
   <ItemGroup>

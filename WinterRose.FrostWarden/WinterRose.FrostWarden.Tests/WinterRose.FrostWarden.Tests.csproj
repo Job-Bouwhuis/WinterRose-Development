@@ -22,13 +22,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="bigimg.png">
+    <None Update="Assets\bigimg.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="crystalitem.png">
+    <None Update="Assets\crystalitem.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="egg gun.gif">
+    <None Update="Assets\egg gun.gif">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Scene1.obj">

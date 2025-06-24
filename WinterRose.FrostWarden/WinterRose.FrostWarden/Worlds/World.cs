@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using WinterRose.Reflection;
 using WinterRose.ForgeGuardChecks;
 using System.Diagnostics;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.FrostWarden.Worlds;
 
@@ -13,8 +14,12 @@ public class World : IDisposable
 {
     public DiscreteDynamicsWorld Physics => physicsWorld;
 
-    private readonly List<Entity> entities = new();
-    internal IReadOnlyList<Entity> _Entities => entities; 
+    [IncludeWithSerialization]
+    private List<Entity> entities = new();
+    internal IReadOnlyList<Entity> _Entities => entities;
+
+    [IncludeWithSerialization]
+    public string Name { get; private set; }
 
     private CollisionConfiguration collisionConfig;
     private CollisionDispatcher dispatcher;
@@ -23,7 +28,7 @@ public class World : IDisposable
     private DiscreteDynamicsWorld physicsWorld;
     private readonly ConcurrentBag<Action> deferredActions = new();
 
-    public World()
+    public World(string name)
     {
         collisionConfig = new DefaultCollisionConfiguration();
         dispatcher = new CollisionDispatcher(collisionConfig);
@@ -32,6 +37,7 @@ public class World : IDisposable
         physicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
 
         physicsWorld.Gravity = new BulletSharp.Math.Vector3(0, 9.81f, 0);
+        Name = name;
     }
 
     public void Defer(Action action)
@@ -148,5 +154,10 @@ public class World : IDisposable
         broadphase.Dispose();
         dispatcher.Dispose();
         collisionConfig.Dispose();
+    }
+
+    public void SaveTemplate()
+    {
+        WinterForge.SerializeToFile(this, $"World/{Name}.world");
     }
 }

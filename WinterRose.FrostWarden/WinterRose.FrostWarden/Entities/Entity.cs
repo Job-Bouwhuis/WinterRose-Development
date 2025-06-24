@@ -10,10 +10,13 @@ namespace WinterRose.FrostWarden.Entities;
 
 public class Entity
 {
+    [IncludeWithSerialization]
     public string Name { get; set; }
+    [IncludeWithSerialization]
     public string[] Tags { get; set; } = [];
-
+    [IncludeWithSerialization]
     public World world { get; internal set; }
+    [IncludeWithSerialization]
     public Transform transform { get; private set; }
 
     internal bool addedToWorld = false;
@@ -26,10 +29,13 @@ public class Entity
         transform.owner = this;
         components.Add(typeof(Transform), [transform]);
     }
-    private readonly Dictionary<Type, List<Component>> components = new();
 
-    private readonly List<IUpdatable> updatables = new();
-    private readonly List<IRenderable> drawables = new();
+    [IncludeWithSerialization]
+    private Dictionary<Type, List<Component>> components = new();
+    [IncludeWithSerialization]
+    private List<IUpdatable> updatables = new();
+    [IncludeWithSerialization]
+    private List<IRenderable> drawables = new();
 
     public float updateTimeMs { get; private set; }
     public float drawTimeMs { get; private set; }

@@ -22,7 +22,7 @@ internal class Program : Application
     public override World CreateWorld()
     {
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg.png"));
-        World world = new World();
+        World world = new World("testworld");
         
         var cam = world.CreateEntity<Camera>("cam");
         cam.AddComponent<Mover>();
@@ -33,8 +33,6 @@ internal class Program : Application
         {
             Z = 90
         };
-
-        
 
         Entity gife = new Entity("gif");
         world.AddEntity(gife);
@@ -55,6 +53,8 @@ internal class Program : Application
         //DialogPlacement.BottomSmall, buttons: ["Ok"]));
 
         //Dialogs.Show(new DefaultDialog("Dialog right big", "yes", DialogPlacement.RightBig, buttons: ["Ok"]));
+
+        world.SaveTemplate();
 
         return world;
     }

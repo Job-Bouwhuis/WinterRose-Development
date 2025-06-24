@@ -10,7 +10,7 @@ internal class Program
     {
         ForgeGuard.IncludeColorInMessageFormat = true;
         Stream s = Console.OpenStandardOutput();
-        GuardResult result = ForgeGuard.Run(s, "a");
+        GuardResult result = ForgeGuard.Run(s);
 
         if(result.HighestSeverity > Severity.Healthy)
             Console.WriteLine("a guard failed, that wasnt marked as fatal");
@@ -43,14 +43,16 @@ public class ExampleGuardClass
 {
     Person p;
     Vector2 v;
+    int a;
 
     [BeforeEach]
     public void Setup()
     {
         p = new()
         {
-            Age = 18
+            Age = 18,
         };
+        a = 15;
     }
 
     [Guard]
@@ -71,5 +73,11 @@ public class ExampleGuardClass
         // always succeeds in this demo, just there to show the way to mark a guard as absolute fatal. if it fails,
         // ForgeGuard will close the app *immediately* after this guard has ran. with a platform dependant way to notify the user
         // of this hard crash.
+    }
+
+    [Guard]
+    public void intTest()
+    {
+        Forge.Expect(a).EqualTo(15);
     }
 }
