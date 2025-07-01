@@ -22,7 +22,9 @@ internal class Program : Application
     public override World CreateWorld()
     {
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg.png"));
+
         return World.FromFile("testworld");
+
         World world = new World("testworld");
         
         var cam = world.CreateEntity<Camera>("cam");

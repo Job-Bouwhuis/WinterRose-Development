@@ -13,7 +13,7 @@ namespace WinterRose.FrostWarden.WinterForgeValueProviders
     {
         public override Sprite? CreateObject(string value, InstructionExecutor executor)
         {
-            return SpriteCache.Get(value[1..^1]);
+            return SpriteCache.Get(value);
         }
         public override string CreateString(Sprite obj, ObjectSerializer serializer)
         {
