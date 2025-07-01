@@ -11,14 +11,19 @@ namespace WinterRose.FrostWarden.Components
 {
     public class SpriteRenderer : Component, IRenderable
     {
-        public Sprite sprite;
+        [IncludeWithSerialization]
+        public Sprite Sprite { get; set; }
 
         public SpriteRenderer(Sprite sprite)
         {
-            this.sprite = sprite;
+            this.Sprite = sprite;
         }
 
-        public FrostShader Shader { get; private set; }
+        private SpriteRenderer() { } // for serialization
+
+        [IncludeWithSerialization]
+        public FrostShader? Shader { get; private set; }
+
         public void SetShader(FrostShader s)
         {
             Shader = s;
@@ -26,9 +31,9 @@ namespace WinterRose.FrostWarden.Components
 
         public void Draw(Matrix4x4 viewMatrix)
         {
-            if (sprite == null) return;
+            if (Sprite == null) return;
 
-            Shader?.Apply(sprite.Size);
+            Shader?.Apply(Sprite.Size);
 
             var worldMatrix = owner.transform.worldMatrix;
 
@@ -44,10 +49,10 @@ namespace WinterRose.FrostWarden.Components
             float rotationDegrees = rotationRadians * (180f / MathF.PI);
 
             Raylib.DrawTexturePro(
-                sprite.Texture,
-                new Rectangle(0, 0, sprite.Width, sprite.Height),
-                new Rectangle(position2D.X, position2D.Y, sprite.Width * scale.X, sprite.Height * scale.Y),
-                new Vector2(sprite.Width / 2f, sprite.Height / 2f),
+                Sprite.Texture,
+                new Rectangle(0, 0, Sprite.Width, Sprite.Height),
+                new Rectangle(position2D.X, position2D.Y, Sprite.Width * scale.X, Sprite.Height * scale.Y),
+                new Vector2(Sprite.Width / 2f, Sprite.Height / 2f),
                 rotationDegrees,
                 Color.White
             );

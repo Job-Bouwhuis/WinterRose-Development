@@ -25,8 +25,14 @@ namespace WinterRose.FrostWarden.AssetPipeline.Handlers
         public static Sprite LoadAsset(AssetHeader header)
         {
             if ((header.Metadata?.TryGet("type", out string? type) ?? false) && type == "gif")
-                return new SpriteGif(header.Path);
-            return new Sprite(header.Path);
+                return new SpriteGif(header.Path)
+                {
+                    Source = header.Name
+                };
+            return new Sprite(header.Path)
+            {
+                Source = header.Name
+            };
         }
         public static bool SaveAsset(AssetHeader header, Sprite asset)
         {

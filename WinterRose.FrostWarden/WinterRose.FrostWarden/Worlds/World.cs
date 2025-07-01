@@ -28,6 +28,17 @@ public class World : IDisposable
     private DiscreteDynamicsWorld physicsWorld;
     private readonly ConcurrentBag<Action> deferredActions = new();
 
+    private World()
+    {
+        collisionConfig = new DefaultCollisionConfiguration();
+        dispatcher = new CollisionDispatcher(collisionConfig);
+        broadphase = new DbvtBroadphase();
+        solver = new SequentialImpulseConstraintSolver();
+        physicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
+
+        physicsWorld.Gravity = new BulletSharp.Math.Vector3(0, 9.81f, 0);
+    }
+
     public World(string name)
     {
         collisionConfig = new DefaultCollisionConfiguration();
@@ -159,5 +170,10 @@ public class World : IDisposable
     public void SaveTemplate()
     {
         WinterForge.SerializeToFile(this, $"World/{Name}.world");
+    }
+
+    public static World FromFile(string worldName)
+    {
+        return WinterForge.DeserializeFromFile<World>($"World/{worldName}.world");
     }
 }

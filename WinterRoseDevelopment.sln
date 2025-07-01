@@ -85,6 +85,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.Diff", "WinterRo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiffTrackerTest", "DiffTrackerTest\DiffTrackerTest.csproj", "{3EC82571-D487-4227-B2F9-6F4B5E1CA1AB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.WinterForge", "..\WinterForge\WinterRose.WinterForge\WinterRose.WinterForge\WinterRose.WinterForge.csproj", "{5403FAEB-4D37-0FEA-28D8-AA9F0A617D71}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug FileServer|Any CPU = debug FileServer|Any CPU
@@ -231,6 +233,12 @@ Global
 		{3EC82571-D487-4227-B2F9-6F4B5E1CA1AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3EC82571-D487-4227-B2F9-6F4B5E1CA1AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3EC82571-D487-4227-B2F9-6F4B5E1CA1AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5403FAEB-4D37-0FEA-28D8-AA9F0A617D71}.debug FileServer|Any CPU.ActiveCfg = Debug|Any CPU
+		{5403FAEB-4D37-0FEA-28D8-AA9F0A617D71}.debug FileServer|Any CPU.Build.0 = Debug|Any CPU
+		{5403FAEB-4D37-0FEA-28D8-AA9F0A617D71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5403FAEB-4D37-0FEA-28D8-AA9F0A617D71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5403FAEB-4D37-0FEA-28D8-AA9F0A617D71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5403FAEB-4D37-0FEA-28D8-AA9F0A617D71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

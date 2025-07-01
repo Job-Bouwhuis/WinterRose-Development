@@ -5,7 +5,7 @@ namespace WinterRose.FrostWarden
 {
     public class Sprite : IDisposable
     {
-        public string Source { get; protected set; }
+        public string Source { get; internal protected set; }
 
         public virtual Texture2D Texture { get; protected set; }
         public virtual Vector2 Size => new Vector2(Texture.Width, Texture.Height);

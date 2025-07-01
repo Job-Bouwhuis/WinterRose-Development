@@ -166,7 +166,7 @@ namespace WinterRose.FrostWarden.AssetPipeline
             return header;
         }
 
-        public static bool AssetExists(string name) => assetHeaders.ContainsKey(name);
+        public static bool Exists(string name) => assetHeaders.ContainsKey(name);
 
         public static T Load<T>(AssetHeader assetHeader) where T : class
         {

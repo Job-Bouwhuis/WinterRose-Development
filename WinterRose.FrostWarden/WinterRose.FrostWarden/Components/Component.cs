@@ -5,6 +5,7 @@ namespace WinterRose.FrostWarden;
 
 public abstract class Component : IComponent
 {
+    [IncludeWithSerialization(Priority = int.MaxValue)]
     public Entity owner { get; internal set; }
     public Transform transform => owner.transform;
 

@@ -20,18 +20,20 @@ public class Entity
     public Transform transform { get; private set; }
 
     internal bool addedToWorld = false;
-    internal List<Component> _getComponents => components.SelectMany(kv => kv.Value).ToList();
+    internal IReadOnlyList<Component> _getComponents => components;
 
     public Entity(string name)
     {
         Name = name;
         transform = new Transform();
         transform.owner = this;
-        components.Add(typeof(Transform), [transform]);
+        components.Add(transform);
     }
 
+    private Entity() { } // for serialization
+
     [IncludeWithSerialization]
-    private Dictionary<Type, List<Component>> components = new();
+    private List<Component> components = new();
     [IncludeWithSerialization]
     private List<IUpdatable> updatables = new();
     [IncludeWithSerialization]
@@ -64,46 +66,26 @@ public class Entity
 
     internal void CallAwake()
     {
-        foreach (var list in components.Values)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                list[i].CallAwake();
-            }
-        }
+        foreach (var comp in components)
+            comp.CallAwake();
     }
 
     internal void CallStart()
     {
-        foreach (var list in components.Values)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                list[i].CallStart();
-            }
-        }
+        foreach (var comp in components)
+            comp.CallStart();
     }
 
     internal void CallOnVanish()
     {
-        foreach (var list in components.Values)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                list[i].CallOnVanish();
-            }
-        }
+        foreach (var comp in components)
+            comp.CallOnVanish();
     }
 
     internal void CallOnDestroy()
     {
-        foreach (var list in components.Values)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                list[i].CallOnDestroy();
-            }
-        }
+        foreach (var comp in components)
+            comp.CallOnDestroy();
     }
 
     public T AddComponent<T>(params object[] args) where T : Component
@@ -126,14 +108,7 @@ public class Entity
 
         component.owner = this;
 
-        if (!components.TryGetValue(typeof(T), out var list))
-        {
-            list = new List<Component>();
-            components[typeof(T)] = list;
-        }
-
-
-        list.Add(component);
+        components.Add(component);
 
         if (component is IUpdatable updatable)
             updatables.Add(updatable);
@@ -149,7 +124,7 @@ public class Entity
             }
 
             component.CallAwake();
-            InjectIntoComponent(component);
+            InjectDependanciesIntoComponent(component);
             component.CallStart();
         }
 
@@ -160,52 +135,56 @@ public class Entity
         if (typeof(T) == typeof(Transform))
             throw new InvalidOperationException("Removal of the Transform component is not allowed");
 
-        if (components.TryGetValue(typeof(T), out var list))
+        foreach (var component in components)
         {
-            foreach (var component in list)
-            {
-                if (component is IUpdatable updatable)
-                    updatables.Remove(updatable);
-                if (component is IRenderable drawable)
-                    drawables.Remove(drawable);
-            }
-            components.Remove(typeof(T));
+            if (component is not T)
+                continue;
+
+            if (component is IUpdatable updatable)
+                updatables.Remove(updatable);
+            if (component is IRenderable drawable)
+                drawables.Remove(drawable);
+
+            components.Remove(component);
         }
+        
+
     }
     public T? GetComponent<T>() where T : Component
     {
-        if (components.TryGetValue(typeof(T), out var list) && list.Count > 0)
-            return (T)list[0];
+        foreach (var c in components)
+            if (c is T tc)
+                return tc;
         return null;
     }
     public Component GetComponent(Type t)
     {
-        if (components.TryGetValue(t, out var list) && list.Count > 0)
-            return list[0];
+        foreach (var c in components)
+            if (c.GetType() == t)
+                return c;
         return null;
     }
     public bool HasComponent<T>() where T : Component, IComponent
     {
-        return components.TryGetValue(typeof(T), out var list) && list.Count > 0;
+        foreach (var c in components)
+            if (c is T tc)
+                return true;
+        return false;
     }
     public IEnumerable<T> GetAllComponents<T>() where T : Component, IComponent
     {
-        foreach (var (type, list) in components)
-            if (type.IsAssignableTo(typeof(T)))
-                foreach (var comp in list)
-                    yield return (T)comp;
+        foreach (var comp in components)
+            if (comp is T c)
+                yield return c;
     }
 
     internal void InjectIntoComponents(World world)
     {
-        foreach (var (type, list) in components)
-            foreach (var comp in list)
-            {
-                InjectIntoComponent(comp);
-            }
+        foreach (var comp in components)
+            InjectDependanciesIntoComponent(comp);
     }
 
-    private void InjectIntoComponent(Component c)
+    private void InjectDependanciesIntoComponent(Component c)
     {
         object? @null = null;
         object o = c;

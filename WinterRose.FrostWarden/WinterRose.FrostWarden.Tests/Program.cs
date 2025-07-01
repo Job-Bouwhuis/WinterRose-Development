@@ -22,6 +22,7 @@ internal class Program : Application
     public override World CreateWorld()
     {
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg.png"));
+        return World.FromFile("testworld");
         World world = new World("testworld");
         
         var cam = world.CreateEntity<Camera>("cam");
@@ -29,7 +30,7 @@ internal class Program : Application
 
         var entity = world.CreateEntity("entity");
         entity.AddComponent<SpriteRenderer>(Assets.Load<Sprite>("bigimg"));
-        entity.transform.rotation = entity.transform.rotation with
+        entity.transform.rotationEulerDegrees = entity.transform.rotationEulerDegrees with
         {
             Z = 90
         };

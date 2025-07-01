@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.FrostWarden.AssetPipeline;
 
 namespace WinterRose.FrostWarden
 {
@@ -21,9 +22,14 @@ namespace WinterRose.FrostWarden
                 return new Sprite(tex, false);
 
             // Determine whether it's a generated or file-based sprite
-            Sprite newSprite = source.StartsWith("Generated_")
-                ? CreateGeneratedSpriteFromKey(source)
-                : new Sprite(ray.LoadTexture(source), false);
+            Sprite newSprite;
+
+            if (source.StartsWith("Generated_"))
+                newSprite = CreateGeneratedSpriteFromKey(source);
+            else if (Assets.Exists(source))
+                newSprite = Assets.Load<Sprite>(source);
+            else
+                newSprite = new Sprite(ray.LoadTexture(source), false);
 
             cache[source] = newSprite;
             return newSprite;
