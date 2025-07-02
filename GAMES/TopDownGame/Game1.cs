@@ -30,6 +30,9 @@ public class Game1 : Application
 {
     protected override World CreateWorld()
     {
+        Constants.Init();
+        WinterRose.Windows.OpenConsole();
+
         //using Stream human = File.OpenRead("staticCallHuamn.txt");
         //File.Delete("staticCallOpcodes.txt");
         //using Stream opcodes = File.Open("staticCallOpcodes.txt", FileMode.CreateNew, FileAccess.ReadWrite);
@@ -63,10 +66,10 @@ public class Game1 : Application
             table.Save();
         }
 
-        benchmark();
+        //benchmark();
 
-        //World w = World.FromTemplate("Level 1");
-        //return w;
+        World w = World.FromTemplateFile("Level 1");
+        return w;
 
 
         ////w.InstantiateExact(WorldObjectPrefab.Load("enemy", false));
