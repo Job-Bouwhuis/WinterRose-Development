@@ -12,12 +12,12 @@
 this does NOT provide a means to make 'programmed' mods. instead this is a kind of mod that applies to an ingame item to alter its stats
 its very customizable</Description>
     <Copyright>TheSnowOwl</Copyright>
-    <Version>25.2.0</Version>
+    <Version>25.2.2</Version>
+    <PackageReleaseNotes>Removed unrequired dependancies</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Monogame\WinterRose.Monogame\WinterRose.Monogame.csproj" />
-    <ProjectReference Include="..\WinterRose\WinterRose\WinterRose.csproj" />
+    <PackageReference Include="WinterRose.WinterForge" Version="25.2.22" />
   </ItemGroup>
 
 </Project>

@@ -48,7 +48,7 @@ public class Mod<T> where T : class
 
     public TAttribute AddAttribute<TAttribute>() where TAttribute : ModAttribute<T>
     {
-        var instance = ActivatorExtra.CreateInstance<TAttribute>();
+        var instance = Activator.CreateInstance<TAttribute>();
         AddAttribute(instance);
         return instance;
     }

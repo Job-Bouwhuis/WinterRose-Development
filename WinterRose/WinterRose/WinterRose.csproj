@@ -13,7 +13,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Authors>WinterRose</Authors>
     <Company>SnowyAnomaly</Company>
-    <Version>25.2.1</Version>
+    <Version>25.2.4</Version>
     <PackageId>WinterRose</PackageId>
     <Title>WinterRose</Title>
     <Product>WinterRose</Product>
@@ -23,7 +23,7 @@
     <PackageLicenseExpression>CC-BY-4.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <IncludeSymbols>False</IncludeSymbols>
-    <PackageReleaseNotes>Lots and lots of bugfixes. and improvements across various systems</PackageReleaseNotes>
+    <PackageReleaseNotes>Adhere to the latest WinterForge update</PackageReleaseNotes>
     <Configurations>Debug;Release;debug FileServer</Configurations>
   </PropertyGroup>
 

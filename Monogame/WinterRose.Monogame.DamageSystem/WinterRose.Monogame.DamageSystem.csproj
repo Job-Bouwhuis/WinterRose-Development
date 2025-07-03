@@ -13,12 +13,12 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
     <RootNamespace>WinterRose.Monogame</RootNamespace>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>25.2.0</Version>
+    <Version>25.2.1</Version>
     <Company>WinterRose</Company>
     <Description>A prebuild system for making weapons that use damage types, and status effects on top of WinterRose.Monogame</Description>
     <Copyright>TheSnowOwl</Copyright>
     <PackageTags>monogame; winterrose; status effect; damage; weapon</PackageTags>
-    <PackageReleaseNotes>This is the first package. holding Damage types, status system, vitals, all integrating the WinterRose's Value Modifier types so everything is changable in a dynamic way</PackageReleaseNotes>
+    <PackageReleaseNotes>Pachup update</PackageReleaseNotes>
     <IncludeSymbols>False</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Authors>TheSnowOwl</Authors>

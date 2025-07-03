@@ -14,13 +14,9 @@
 		<Authors>WinterRose</Authors>
 		<Copyright>WinterRose</Copyright>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<Version>1.1.402</Version>
+		<Version>25.2.0</Version>
 		<Description>A framework on top of the Monogame framework made by and for myself. however you can use it for yourself aswell. there is no documentation so youll have to figure it out by trial and error</Description>
-		<PackageReleaseNotes>fixed a bug where objects would be added infinitely to a chunk.
-Fixed bug where coliders could not see the objects around them
-Fixed bug where object would be seen as 1x1 pixel size in chunk system
-
-all in all, this made colisions work again</PackageReleaseNotes>
+		<PackageReleaseNotes>A patchup update to adhere to the several updates of the packages that this one relies on</PackageReleaseNotes>
 		<PackageLicenseExpression>CC-BY-4.0</PackageLicenseExpression>
 		<Configurations>Debug;Release;debug FileServer</Configurations>
 	</PropertyGroup>
