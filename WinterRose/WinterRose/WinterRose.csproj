@@ -13,7 +13,7 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Authors>WinterRose</Authors>
     <Company>SnowyAnomaly</Company>
-    <Version>25.2.4</Version>
+    <Version>25.2.5</Version>
     <PackageId>WinterRose</PackageId>
     <Title>WinterRose</Title>
     <Product>WinterRose</Product>
@@ -57,10 +57,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\WinterForge\WinterRose.WinterForge\WinterRose.WinterForge\WinterRose.WinterForge.csproj" />
+    <PackageReference Include="WinterRose.WinterForge" Version="25.2.23" />
   </ItemGroup>
 
   <ItemGroup>

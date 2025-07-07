@@ -23,7 +23,7 @@ internal class Program : Application
     {
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg.png"));
 
-        return World.FromFile("testworld");
+        //return World.FromFile("testworld");
 
         World world = new World("testworld");
         
@@ -40,7 +40,7 @@ internal class Program : Application
         Entity gife = new Entity("gif");
         world.AddEntity(gife);
         gife.transform.scale = new Vector3(2, 2, 1);
-        var sr = new SpriteRenderer(Assets.Load<SpriteGif>("egg gun"));
+        var sr = new SpriteRenderer(Assets.Load<SpriteGif>("Talking_final_(2)"));
         gife.AddComponent(sr);
 
         //Dialogs.Show(new DefaultDialog("Dialog top left", "yes", DialogPlacement.TopLeft, buttons: ["Ok"]));

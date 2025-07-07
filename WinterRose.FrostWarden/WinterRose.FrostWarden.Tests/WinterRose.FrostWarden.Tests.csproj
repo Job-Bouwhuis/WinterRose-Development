@@ -31,6 +31,9 @@
     <None Update="Assets\egg gun.gif">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\Talking_final_%282%29.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Scene1.obj">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
