@@ -11,7 +11,7 @@ namespace WinterRose.Monogame.CustomSerializers
 {
     class ColorValueProvider : CustomValueProvider<Color>
     {
-        public override Color CreateObject(string value, InstructionExecutor executor) => new Color(uint.Parse(value));
-        public override string CreateString(Color color, ObjectSerializer serializer) => color.PackedValue.ToString();
+        public override Color CreateObject(object value, InstructionExecutor executor) => new Color((uint)value);
+        public override object CreateString(Color color, ObjectSerializer serializer) => color.PackedValue;
     }
 }

@@ -11,8 +11,9 @@ namespace WinterRose.Monogame.CustomSerializers
 {
     class SpriteValueProvider : CustomValueProvider<Sprite>
     {
-        public override Sprite? CreateObject(string value, InstructionExecutor executor)
+        public override Sprite? CreateObject(object v, InstructionExecutor executor)
         {
+            string value = (string)v;
             if (value.Contains('/'))
             {
                 // Format 1: "4278190335/10/10"
@@ -55,7 +56,7 @@ namespace WinterRose.Monogame.CustomSerializers
 
             return null;
         }
-        public override string CreateString(Sprite sprite, ObjectSerializer serializer)
+        public override object CreateString(Sprite sprite, ObjectSerializer serializer)
         {
             if (sprite!.IsExternalTexture)
                 return sprite.TexturePath!;

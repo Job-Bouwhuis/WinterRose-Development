@@ -12,6 +12,49 @@ using WinterRose.Music;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.Reflection;
 using WinterRose.AnonymousTypes;
+using SnowLibraryTesting.difftest;
+
+
+const int chunkSize = 2 * 1024 * 1024; // 2 MB chunk size to force multiple chunks for 4.5 MB file
+
+// Original file data: bytes 0..4_500_000 (4.29 MB)
+byte[] original = new byte[4_500_000];
+for (int i = 0; i < original.Length; i++)
+{
+    original[i] = (byte)(i % 256);
+}
+
+// Modified file data: copy original and tweak some bytes in different chunks
+byte[] modified = new byte[4_500_000];
+Array.Copy(original, modified, original.Length);
+
+// Make some changes:
+modified[1_000_000] = 99;    // change a byte in 1st chunk
+modified[3_000_000] = 42;    // change a byte in 2nd chunk
+modified[4_499_999] = 123;   // change a byte near end
+
+File.WriteAllBytes("original.bin", original);
+File.WriteAllBytes("modified.bin", modified);
+
+var result = Differ.DiffFiles(new FileInfo("original.bin"), new FileInfo("modified.bin"), 2 * 1024 * 1024);
+PrintChunkedDiffSummary(result);
+return;
+
+static void PrintChunkedDiffSummary(List<List<DiffOp>> chunkedDiffs)
+{
+    for (int i = 0; i < chunkedDiffs.Count; i++)
+    {
+        int totalBytesChanged = 0;
+        foreach (var op in chunkedDiffs[i])
+        {
+            if (op.type == DiffOpType.Insert || op.type == DiffOpType.Update)
+                totalBytesChanged += op.count;
+            else if (op.type == DiffOpType.Delete)
+                totalBytesChanged += op.count;
+        }
+        Console.WriteLine($"Chunk {i + 1}: {chunkedDiffs[i].Count} ops, {totalBytesChanged} bytes changed");
+    }
+}
 
 #pragma warning disable aaa
 new Programm().Start();
@@ -163,11 +206,8 @@ internal class Programm
             }
         };
 
-        AnonymousObjectReader reader = new();
-        reader.Read(obj);
-        string serialized = reader.Serialize();
-        AnonymousObjectReader other = new();
-        object deser = other.Deserialize(serialized);
+        string serialized = WinterForge.SerializeToString(obj);
+        Anonymous result = WinterForge.DeserializeFromString<Anonymous>(serialized);
     }
 
     private unsafe void Megalovaina()

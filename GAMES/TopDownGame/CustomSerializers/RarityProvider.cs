@@ -10,14 +10,14 @@ using WinterRose.WinterForgeSerializing.Workers;
 namespace TopDownGame.CustomSerializers;
 internal class RarityProvider : CustomValueProvider<Rarity>
 {
-    public override Rarity? CreateObject(string value, InstructionExecutor executor)
+    public override Rarity? CreateObject(object value, InstructionExecutor executor)
     {
-        if (value == "null")
+        if (value is "null")
             return null;
-        return Rarity.GetRarity(int.Parse(value));
+        return Rarity.GetRarity((int)value);
     }
-    public override string CreateString(Rarity obj, ObjectSerializer serializer) 
+    public override object CreateString(Rarity obj, ObjectSerializer serializer) 
     {
-        return obj.Level.ToString();
+        return obj.Level;
     }
 }

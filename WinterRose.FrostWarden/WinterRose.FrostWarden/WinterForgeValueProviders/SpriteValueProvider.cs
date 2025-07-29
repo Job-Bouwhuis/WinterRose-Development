@@ -11,11 +11,11 @@ namespace WinterRose.FrostWarden.WinterForgeValueProviders
 {
     class SpriteValueProvider : CustomValueProvider<Sprite>
     {
-        public override Sprite? CreateObject(string value, InstructionExecutor executor)
+        public override Sprite? CreateObject(object value, InstructionExecutor executor)
         {
-            return SpriteCache.Get(value);
+            return SpriteCache.Get((string)value);
         }
-        public override string CreateString(Sprite obj, ObjectSerializer serializer)
+        public override object CreateString(Sprite obj, ObjectSerializer serializer)
         {
             return $"\"{obj.Source}\"";
         }

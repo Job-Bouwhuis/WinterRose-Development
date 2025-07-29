@@ -202,7 +202,7 @@ public sealed class World : IEnumerable<WorldObject>
     /// name to reference it later in <see cref=FromTemplate(string)"/>
     /// </summary>
     public void SaveTemplate()
-    {
+    { 
         HandleNewToAdd();
 
         World savingWorld = new World(Name);

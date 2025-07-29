@@ -14,8 +14,8 @@ namespace TopDownGame.CustomSerializers
 {
     class LootTableSerializer : CustomValueProvider<LootTable>
     {
-        public override LootTable? CreateObject(string value, InstructionExecutor executor) => AssetDatabase.LoadAsset<LootTable>(value);
-        public override string CreateString(LootTable obj, ObjectSerializer serializer)
+        public override LootTable? CreateObject(object value, InstructionExecutor executor) => AssetDatabase.LoadAsset<LootTable>((string)value);
+        public override object CreateString(LootTable obj, ObjectSerializer serializer)
         {
             obj.Save();
             return obj.Name;

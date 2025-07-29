@@ -66,7 +66,7 @@ public class Game1 : Application
             table.Save();
         }
 
-        //benchmark();
+        benchmark();
 
         World w = World.FromTemplateFile("Level 1");
         return w;

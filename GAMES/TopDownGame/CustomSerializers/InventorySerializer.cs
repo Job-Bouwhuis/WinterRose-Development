@@ -13,8 +13,8 @@ namespace TopDownGame.CustomSerializers
 {
     class InventorySerializer : CustomValueProvider<Inventory>
     {
-        public override Inventory? CreateObject(string value, InstructionExecutor executor) => AssetDatabase.LoadAsset<Inventory>(value);
-        public override string CreateString(Inventory inv, ObjectSerializer serializer)
+        public override Inventory? CreateObject(object value, InstructionExecutor executor) => AssetDatabase.LoadAsset<Inventory>((string)value);
+        public override object CreateString(Inventory inv, ObjectSerializer serializer)
         {
             inv.Save();
             return inv.Name;

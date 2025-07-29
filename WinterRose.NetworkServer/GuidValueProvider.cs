@@ -10,7 +10,7 @@ namespace WinterRose.NetworkServer
 {
     class GuidValueProvider : CustomValueProvider<Guid>
     {
-        public override Guid CreateObject(string value, InstructionExecutor executor) => Guid.Parse(value);
-        public override string CreateString(Guid obj, ObjectSerializer serializer) => obj.ToString();
+        public override Guid CreateObject(object value, InstructionExecutor executor) => Guid.Parse((string)value);
+        public override object CreateString(Guid obj, ObjectSerializer serializer) => obj.ToString();
     }
 }
