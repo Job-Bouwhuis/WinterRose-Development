@@ -7,6 +7,7 @@ using TopDownGame.Inventories.Base;
 using WinterRose;
 using WinterRose.Monogame;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Formatting;
 
 namespace TopDownGame.Loot
 {

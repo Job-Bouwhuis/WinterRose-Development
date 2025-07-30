@@ -173,29 +173,11 @@ public sealed class World : IEnumerable<WorldObject>
 
     public static World FromTemplateFile(string templateFile, WinterForgeProgressTracker? progressTracker = null)
     {
-        using var aes = Aes.Create();
-        aes.Key = AES_KEY;
-        aes.IV = AES_IV;
         using FileStream file = File.Open("Content/Worlds/" + templateFile + ".world", FileMode.Open, FileAccess.Read);
-        using CryptoStream crypto = new CryptoStream(file, aes.CreateDecryptor(), CryptoStreamMode.Read);
-        using GZipStream decompressed = new GZipStream(crypto, CompressionMode.Decompress);
+        using GZipStream decompressed = new GZipStream(file, CompressionMode.Decompress);
         return WinterForge.DeserializeFromStream<World>(decompressed, progressTracker);
 
     }
-
-    static byte[] AES_KEY = new byte[]
-        {
-            0x3F, 0x7A, 0xC9, 0x11, 0x5D, 0xA2, 0xB3, 0x4E,
-            0x8F, 0x01, 0xDD, 0x67, 0x3C, 0x9B, 0x20, 0xF5,
-            0x6E, 0x44, 0x19, 0xB7, 0xD2, 0x53, 0x8C, 0xA9,
-            0xE3, 0x0F, 0x5B, 0x7D, 0x02, 0x84, 0xC6, 0x1A
-        };
-
-    static byte[] AES_IV = new byte[]
-        {
-        0x7C, 0x21, 0x9D, 0xE5, 0x44, 0x3B, 0x6F, 0x8A,
-        0x10, 0xCF, 0x52, 0x77, 0xA1, 0xE0, 0x33, 0x6D
-        };
 
     /// <summary>
     /// Saves all the objects to a file with the given
@@ -211,15 +193,12 @@ public sealed class World : IEnumerable<WorldObject>
             if (obj.IncludeWithSceneSerialization)
                 savingWorld.objects.Add(obj);
         }
-        using var aes = Aes.Create();
-        aes.Key = AES_KEY;
-        aes.IV = AES_IV;
+
         if (!Directory.Exists("Content/Worlds"))
             Directory.CreateDirectory("Content/Worlds");
 
         using FileStream file = File.Open("Content/Worlds/" + Name + ".world", FileMode.Create, FileAccess.Write);
-        using CryptoStream crypt = new CryptoStream(file, aes.CreateEncryptor(), CryptoStreamMode.Write);
-        using GZipStream compressed = new GZipStream(crypt, CompressionLevel.SmallestSize);
+        using GZipStream compressed = new GZipStream(file, CompressionLevel.SmallestSize);
         WinterForge.SerializeToStream(savingWorld, compressed);
     }
     /// <summary>
