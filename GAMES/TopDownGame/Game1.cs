@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Principal;
 using System.Text;
@@ -22,6 +23,7 @@ using WinterRose.Monogame;
 using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Compiling;
 using WinterRose.WinterForgeSerializing.Workers;
 
 namespace TopDownGame;
@@ -183,8 +185,10 @@ public class Game1 : Application
         sb.AppendLine($"Serialization: Best = {bestSerializationTime} ms, Worst = {worstSerializationTime} ms");
         sb.AppendLine($"Deserialization: Best = {bestDeserializationTime} ms, Worst = {worstDeserializationTime} ms");
 
-        int lines = FileManager.ReadAllLines("Level 1").Length;
-        sb.AppendLine("Total instructions: " + lines);
+        FileStream compiledFile = File.OpenRead("Level 1");
+        int instructionCount = ByteToOpcodeParser.Parse(compiledFile).ToList().Count;
+        compiledFile.Close();
+        sb.AppendLine("Total instructions: " + instructionCount);
         sb.AppendLine("file size (bytes): " + new FileInfo("Level 1").Length);
         
         Console.WriteLine(sb.ToString());
