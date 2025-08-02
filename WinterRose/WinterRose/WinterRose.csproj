@@ -60,7 +60,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\WinterRose.WinterForge\src\WinterRose.WinterForge\WinterRose.WinterForge.csproj" />
+    <ProjectReference Include="..\..\..\WinterForge\src\WinterRose.WinterForge\WinterRose.WinterForge.csproj" />
   </ItemGroup>
 
   <ItemGroup>

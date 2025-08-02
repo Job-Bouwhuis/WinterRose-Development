@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\WinterRose.WinterForge\src\WinterRose.WinterForge\WinterRose.WinterForge.csproj" />
     <ProjectReference Include="..\..\WinterRose.ForgeGuard\WinterRose.ForgeGuard.csproj" />
   </ItemGroup>
 
