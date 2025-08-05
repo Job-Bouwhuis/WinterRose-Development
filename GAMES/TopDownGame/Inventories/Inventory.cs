@@ -15,10 +15,10 @@ namespace TopDownGame.Inventories;
 
 public sealed class Inventory : Asset
 {
-    [Show, IncludeWithSerialization]
+    [Show, WFInclude]
     public List<IInventoryItem> Items { get; private set; } = [];
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     private ConcurrentBag<IInventoryItem> toBeAdded = [];
     /// <summary>
     /// Creates a new Inventory asset. <br></br>Call <see cref="ValidateItemStacks"/> somewhere on the main thread game loop so that no duplicate item stacks remain

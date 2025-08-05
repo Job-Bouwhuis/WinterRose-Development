@@ -36,7 +36,7 @@ namespace WinterRose.CrystalScripting.Legacy
         private CrystalClass entryClass;
         public CrystalClass EntryClass { get => entryClass; set => entryClass = value; }
 
-        [ExcludeFromSerialization]
+        [WFExclude]
         private List<Token> tokens;
 
         private bool Tokenized = false;

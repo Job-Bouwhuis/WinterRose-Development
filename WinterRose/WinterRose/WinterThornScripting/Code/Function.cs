@@ -11,15 +11,15 @@ namespace WinterRose.WinterThornScripting;
 public class Function(string name, string description, AccessControl accessmodifiers)
 {
     public Class DelcaredClass { get; internal set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Name { get; protected set; } = name;
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Description { get; protected set; } = description;
-    [IncludeWithSerialization]
+    [WFInclude]
     public Parameter[] Parameters { get; protected set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public Block Body { get; protected set; } = new(null);
-    [IncludeWithSerialization]
+    [WFInclude]
     public AccessControl AccessModifiers { get; protected set; }
     public bool ReturnsValue => IsCSharpFunction ? CSharpFunction.Method.ReturnType != typeof(void) : Body.Tokens.Any(x => x.Identifier == "return");
     public bool IsCSharpFunction => func != null;

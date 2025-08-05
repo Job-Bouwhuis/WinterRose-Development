@@ -19,27 +19,27 @@ namespace TopDownGame.Players
         /// <summary>
         /// The players inventory
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public Inventory Inventory { get; private set; }
         /// <summary>
         /// The players name
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Name { get; set; }
         /// <summary>
         /// The player ID
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public long ID { get; set; }
         /// <summary>
         /// The mods for the player
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public ModContainer<Player> ModContainer { get; } = new();
         /// <summary>
         /// The players vitality component
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public Vitality Vitality { get; set; }
 
         /// <summary>

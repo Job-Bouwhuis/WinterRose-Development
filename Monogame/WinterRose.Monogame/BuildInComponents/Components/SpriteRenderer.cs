@@ -14,19 +14,19 @@ public sealed class SpriteRenderer : Renderer
     /// <summary>
     /// Gets the sprite selected for this SpriteRenderer
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Sprite Sprite { get => tex; set => tex = value; }
 
     /// <summary>
     /// When not null, only this rectangle is drawn by this sprite renderer
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Rectangle? ClipMask { get; set; } = null;
 
     /// <summary>
     /// The draw origin of this sprite, values between 0 and 1 are considered inside the bounds of the sprite. values outside 0 and 1 are accepted
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Vector2 Origin
     {
         get => origin;
@@ -66,18 +66,18 @@ public sealed class SpriteRenderer : Renderer
     /// <summary>
     /// The <see cref="SpriteEffects"/> used when rendering the sprite
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public SpriteEffects Effects { get; set; } = SpriteEffects.None;
     /// <summary>
     /// Layerdepth, used to determain what render element should be drawn in front of another
     /// </summary>
     [IncludeInTemplateCreation]
-    [IncludeWithSerialization]
+    [WFInclude]
     public float LayerDepth { get; set; } = 0.5f;
     /// <summary>
     /// The tint color of the sprite
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Color Tint { get; set; } = Color.White;
 
     private Sprite tex;

@@ -7,10 +7,10 @@ namespace TopDownGame.Enemies.Movement;
 
 public abstract class AIMovement(string name)
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public AIMovementController Controller { get; set; }
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Name { get; private set; } = name;
 
     public abstract void Move();

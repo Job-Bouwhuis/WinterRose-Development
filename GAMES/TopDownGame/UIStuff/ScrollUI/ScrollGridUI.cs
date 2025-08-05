@@ -51,7 +51,7 @@ namespace TopDownGame.UIStuff.ScrollUI
         }
     }
 
-    [IncludeAllProperties]
+    
     public class ScrollGridSettings
     {
         /// <summary>

@@ -10,7 +10,6 @@ namespace WinterRose.WinterThornScripting
     /// <summary>
     /// A namespace in WinterScript. Defines a collection of types.
     /// </summary>
-    [IncludePrivateFields]
     public class Namespace
     {
         /// <summary>
@@ -22,12 +21,12 @@ namespace WinterRose.WinterThornScripting
         /// <summary>
         /// The name of this namespace
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Name { get; private set; }
         /// <summary>
         /// The description of this namespace
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Description { get; private set; }
 
         /// <summary>

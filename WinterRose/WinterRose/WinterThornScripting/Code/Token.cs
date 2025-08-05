@@ -15,12 +15,12 @@ namespace WinterRose.WinterThornScripting
         /// <summary>
         /// The identifier of this token.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Identifier { get; private set; } = identifier;
         /// <summary>
         /// The type of this token.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public TokenType Type { get; private set; } = type;
     }
 }

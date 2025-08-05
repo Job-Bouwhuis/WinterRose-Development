@@ -17,7 +17,7 @@ namespace WinterRose.CrystalScripting.Legacy.Objects.Types
 
         public override string Name => "Number";
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public double Value
         {
             get { return value; }

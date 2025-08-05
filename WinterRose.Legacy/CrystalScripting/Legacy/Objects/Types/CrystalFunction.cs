@@ -28,7 +28,7 @@ namespace WinterRose.CrystalScripting.Legacy.Objects.Types
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private CrystalCodeBody body;
 
-        [DebuggerBrowsable(DebuggerBrowsableState.Never), ExcludeFromSerialization]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never), WFExclude]
         private CrystalClass parent;
 
         public CrystalVariable[] Arguments { get => arguments; set => arguments = value; }

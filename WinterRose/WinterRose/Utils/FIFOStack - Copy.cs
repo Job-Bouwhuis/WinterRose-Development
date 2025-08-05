@@ -11,7 +11,7 @@ namespace WinterRose
     /// <summary>
     /// A First in First Out (FIFO) stack.
     /// </summary>
-    [SerializeAs<FIFOStack>, IncludePrivateFields]
+    [SerializeAs<FIFOStack>]
     public sealed class FIFODictionaryStack : IEnumerable<object>
     {
         private readonly List<object> _items = new List<object>();

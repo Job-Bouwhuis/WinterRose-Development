@@ -15,7 +15,7 @@ public abstract class Asset
     /// <summary>
     /// The name of the asset.
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Name { get; internal set; }
     /// <summary>
     /// Creates a new <see cref="Asset"/> with the specified name.

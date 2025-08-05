@@ -27,7 +27,7 @@ namespace WinterRose.ImGuiApps
         public byte A { get; set; } = 255;
 
         // include the packed value in serialization to make the color class use up less space in the serialzied data.
-        [IncludeWithSerialization]
+        [WFInclude]
         public uint PackedValue
         {
             get => (uint)((A << 24) | (B << 16) | (G << 8) | R);

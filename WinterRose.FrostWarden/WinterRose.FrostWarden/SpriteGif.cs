@@ -91,5 +91,11 @@ namespace WinterRose.FrostWarden
             gif.Dispose();
             SpriteCache.RegisterSprite(this);
         }
+
+        //public override void Dispose()
+        //{
+        //    foreach(var frame in frames)
+        //        ray.UnloadTexture(frame);
+        //}
     }
 }

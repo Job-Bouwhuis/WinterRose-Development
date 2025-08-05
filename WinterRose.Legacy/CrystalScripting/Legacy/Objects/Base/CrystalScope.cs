@@ -17,10 +17,10 @@ namespace WinterRose.CrystalScripting.Legacy.Objects.Base
         private readonly Dictionary<string, CrystalVariable> variables;
         private readonly Dictionary<string, CrystalFunction> functions;
 
-        [ExcludeFromSerialization]
+        [WFExclude]
         internal CrystalScript script;
 
-        [ExcludeFromSerialization]
+        [WFExclude]
         private CrystalScope? parent;
 
         public IReadOnlyDictionary<string, CrystalVariable> Variables => variables;

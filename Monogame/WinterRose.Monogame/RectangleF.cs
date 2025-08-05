@@ -16,22 +16,22 @@ namespace WinterRose.Monogame
         /// <summary>
         /// The width of this rectangle
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public float Width { get; set; }
         /// <summary>
         /// The height of this rectangle
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public float Height { get; set; }
         /// <summary>
         /// The X position of this rectangle
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public float X { get; set; }
         /// <summary>
         /// The Y position of this rectangle
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public float Y { get; set; }
 
         /// <summary>

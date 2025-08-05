@@ -17,19 +17,19 @@ internal class ItemDrop : ObjectBehavior
     private bool combined = false;
     private static int count = 0;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public string TargetFlag { get; set; } = "Player";
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public float PickupDistance { get; set; } = 25;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public float FlyTowardsTargetDistance { get; set; } = 300;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public float FlySpeed { get; set; } = 200;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public required IInventoryItem Item { get; init; }
 
     private ItemDrop() { } // for serialization

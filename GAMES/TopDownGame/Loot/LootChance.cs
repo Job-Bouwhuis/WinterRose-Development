@@ -3,12 +3,10 @@ using WinterRose;
 
 namespace TopDownGame.Loot
 {
-    [IncludeAllProperties]
+    
     public class LootChance(float weight, IInventoryItem item)
     {
-        [IncludeWithSerialization]
         public IInventoryItem Item { get; private set; } = item;
-        [IncludeWithSerialization]
         public float Weight { get; private set; } = weight;
 
         public int MinDrops { get; set; } = 1;

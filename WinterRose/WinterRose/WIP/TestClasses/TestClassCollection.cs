@@ -116,7 +116,6 @@ namespace WinterRose.WIP.TestClasses
 
     }
 
-    [IncludeAllProperties]
     public class DatesAndTimeSpans
     {
         public List<DateTime> Times { get; set; } = new() { DateTime.Now, DateTime.Now, DateTime.Now, DateTime.Now };
@@ -365,7 +364,7 @@ namespace WinterRose.WIP.TestClasses
 
     public class dinges
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public Vector2 vec { get; set; }
         public dinges()
         {
@@ -387,7 +386,7 @@ namespace WinterRose.WIP.TestClasses
         Expert,
         Impossible
     }
-    [IncludeAllProperties]
+    
     public class Employee
     {
         public int MwIdnr { get; set; }

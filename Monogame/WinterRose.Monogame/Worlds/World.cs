@@ -25,14 +25,13 @@ namespace WinterRose.Monogame.Worlds;
 /// <summary>
 /// A world where objects can be placed, updated, and rendered using various <see cref="ObjectComponent"/> or <see cref="ObjectBehavior"/>
 /// </summary>
-[IncludePrivateFields]
 [SerializeAs<World>]
 public sealed class World : IEnumerable<WorldObject>
 {
     /// <summary>
     /// The name of the world
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Name { get; set; }
     /// <summary>
     /// The amount of times per second the world is updated
@@ -57,21 +56,24 @@ public sealed class World : IEnumerable<WorldObject>
     /// <summary>
     /// Gets whether the world has been initialized
     /// </summary>
+    [WFExclude]
     public bool Initialized { get; internal set; }
     public int ComponentCount => objects.Sum(x => x.ComponentCount);
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     private MultipleParallelBehaviorHelper parallelHelper = new();
 
     /// <summary>
     /// The grid of chunks for this world
     /// </summary>
+    [WFExclude]
     public WorldGrid WorldChunkGrid { get; set; }
 
     // the list of all objects in this world
+    [WFInclude]
     private List<WorldObject> objects = [];
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     private ConcurrentBag<NewObj> nextToSpawn = [];
     /// <summary>
     /// All objects in this world
@@ -89,30 +91,30 @@ public sealed class World : IEnumerable<WorldObject>
     private readonly List<WorldObject> ToDestroy = [];
 
     // the total time it took to update and draw the world
-    [ExcludeFromSerialization]
+    [WFExclude]
     private TimeSpan totalDrawTime = TimeSpan.Zero;
-    [ExcludeFromSerialization]
+    [WFExclude]
     private TimeSpan totalUpdateTime = TimeSpan.Zero;
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     private float time;
-    [ExcludeFromSerialization]
+    [WFExclude]
     private int updatesPerSecond;
-    [ExcludeFromSerialization]
+    [WFExclude]
     private int updates;
-    [ExcludeFromSerialization]
+    [WFExclude]
     private int drawsPerSecond;
-    [ExcludeFromSerialization]
+    [WFExclude]
     private int draws;
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     bool runOnce = true;
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     private Vector2I lastScreenBounds;
-    [ExcludeFromSerialization]
+    [WFExclude]
     RenderTarget2D renderTarget;
-    [ExcludeFromSerialization]
+    [WFExclude]
     internal bool rebuildParallelHelper;
 
     /// <summary>
@@ -198,8 +200,9 @@ public sealed class World : IEnumerable<WorldObject>
             Directory.CreateDirectory("Content/Worlds");
 
         using FileStream file = File.Open("Content/Worlds/" + Name + ".world", FileMode.Create, FileAccess.Write);
-        using GZipStream compressed = new GZipStream(file, CompressionLevel.SmallestSize);
-        WinterForge.SerializeToStream(savingWorld, compressed);
+        //using GZipStream compressed = new GZipStream(file, CompressionLevel.SmallestSize);
+        WinterForge.SerializeToStream(savingWorld, file);
+        ;
     }
     /// <summary>
     /// Calls the <c>Awake</c> and <c>Start</c> methods on all components on all objects that have these methods implemented

@@ -9,7 +9,7 @@ using WinterRose;
 namespace ForgeMantle.Models;
 public class ConfigSnapshot
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public Dictionary<string, IConfigValue> State { get; init; } = new();
 }
 

@@ -30,7 +30,7 @@ namespace WinterRose.Monogame
         /// <summary>
         /// Whether or not the collider should allow overlapping or not
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public bool ResolveOverlaps { get; set; } = true;
 
         /// <summary>

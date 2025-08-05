@@ -10,7 +10,7 @@ namespace WinterRose.CrystalScripting.Legacy.Objects.Types
     public sealed class CrystalString : CrystalType
     {
         public override string Name => "string";
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Value { get; set; }
 
         public CrystalString() { }

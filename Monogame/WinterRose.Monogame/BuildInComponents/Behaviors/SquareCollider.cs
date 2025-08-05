@@ -67,7 +67,7 @@ namespace WinterRose.Monogame
         /// </summary>
         public int collisions => pastColliders.Count;
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public List<string> IgnoredFlags { get; set; } = [];
 
         protected override List<CollisionInfo> CheckCollision(List<Collider> colliders)

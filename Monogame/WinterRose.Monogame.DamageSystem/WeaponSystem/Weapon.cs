@@ -11,65 +11,65 @@ namespace WinterRose.Monogame.Weapons;
 /// <summary>
 /// A weapon that can shoot projectiles.
 /// </summary>
-[RequireComponent<Magazine>(AutoAdd = true), IncludeAllProperties]
+[RequireComponent<Magazine>(AutoAdd = true)]
 public class Weapon : ObjectBehavior
 {
     /// <summary>
     /// The name of this weapon
     /// </summary>
     [field: Show]
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Name { get; set; }
 
     /// <summary>
     /// Whether the player controls the weapon, or if another piece of code controls it
     /// </summary>
     [field: Show]
-    [IncludeWithSerialization]
+    [WFInclude]
     public bool IsPlayerGun { get; set; }
 
     /// <summary>
     /// The description of this weapon
     /// </summary>
     [field: Hide]
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Description { get; set; }
 
     /// <summary>
     /// The rarity of this weapon
     /// </summary>
     [field: Show]
-    [IncludeWithSerialization]
+    [WFInclude]
     public Rarity Rarity { get; set; }
 
     /// <summary>
     /// The fire rate of the weapon (how many bullets per second)
     /// </summary>
     [field: Show]
-    [IncludeWithSerialization]
+    [WFInclude]
     public StaticCombinedModifier<float> FireRate { get; set; } = 10.0f;
 
     /// <summary>
     /// The transform to take the rotation from when creating a new bullet. when null uses the rotation value of the owner of this component
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Transform? RotationInheritor = null;
 
     /// <summary>
     /// The transform to take the position from when creating a new bullet. when null uses the position of the owner of this component
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Transform? PositionInheritor = null;
 
     /// <summary>
     /// The type of fire mode the weapon has
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public WeaponFireingMode AvailableFireingMode { get; set; } = WeaponFireingMode.Single;
     /// <summary>
     /// The current fire mode of the weapon
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public WeaponFireingMode CurrentFiringMode
     {
         get => currentFireMode;
@@ -85,13 +85,13 @@ public class Weapon : ObjectBehavior
     /// <summary>
     /// The amount of times the gun fires on burst mode
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public int BurstAmount { get; set; } = 3;
 
     /// <summary>
     /// The magazine of the weapon
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Magazine Magazine { get; private set; }
 
     [Show]
@@ -110,7 +110,7 @@ public class Weapon : ObjectBehavior
     /// The modification container for this weapon
     /// </summary>
     [Show]
-    [IncludeWithSerialization]
+    [WFInclude]
     public ModContainer<Weapon> ModContainer { get; } = new();
 
     protected override void Awake()

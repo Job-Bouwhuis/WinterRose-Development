@@ -17,7 +17,7 @@ namespace TopDownGame.Loot
     /// </summary>
     public class LootTable : Asset
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public List<LootChance> Table { get; private set; } = [];
 
         [DefaultArguments("")]

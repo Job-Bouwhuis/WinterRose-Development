@@ -19,22 +19,22 @@ public class WinterThorn
     /// <summary>
     /// The name of the script
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Name { get; set; }
     /// <summary>
     /// A description of the script
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Description { get; set; }
     /// <summary>
     /// The author of the script
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Author { get; set; }
     /// <summary>
     /// The version of the script
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Version Version { get; set; }
     /// <summary>
     /// The namespaces defined in the script
@@ -43,7 +43,7 @@ public class WinterThorn
     /// <summary>
     /// The global block of the script. here everything is defined.
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Block GlobalBlock { get; set; } = new Block(null);
 
     /// <summary>

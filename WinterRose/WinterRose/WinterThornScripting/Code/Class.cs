@@ -17,17 +17,17 @@ namespace WinterRose.WinterThornScripting
         /// <summary>
         /// The name of the class
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Name { get; private set; }
         /// <summary>
         /// The description of the class
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Description { get; private set; }
         /// <summary>
         /// The constructors the class has defined
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public List<Constructor> Constructors { get; private set; }
         /// <summary>
         /// The classes namespace
@@ -36,7 +36,7 @@ namespace WinterRose.WinterThornScripting
         /// <summary>
         /// The block of the class, here its variables, functions, ect. are defined.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public Block Block { get; private set; }
         /// <summary>
         /// Whether or not this class is a reference to a C# class.
@@ -45,7 +45,7 @@ namespace WinterRose.WinterThornScripting
         /// <summary>
         /// The C# class this class is a reference to. Null if it is not a reference to a C# class.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public CSharpClass? CSharpClass { get; set; } = null;
 
         /// <summary>

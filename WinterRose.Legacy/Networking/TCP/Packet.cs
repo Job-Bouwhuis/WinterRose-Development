@@ -9,13 +9,13 @@ namespace WinterRose.Networking.TCP
 {
     public class Packet
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public TCPClientInfo? Sender { get; internal set; }
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public bool FromServer { get; private set; }
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public string? Payload {get; private set; }
 
         public Packet(string? payload, TCPClientInfo senderInfo)

@@ -11,13 +11,13 @@ namespace SnowLibraryTesting
 {
     internal class ListPropertySerializeTests
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public string test1 { get; set; } = "THIS IS TEST 1";
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public string test2 { get; set; }
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public Vector3 Vec { get; set; } = new(1, 2, 3);
 
         public ListPropertySerializeTests()

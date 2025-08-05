@@ -15,10 +15,10 @@ namespace WinterRose.Monogame;
 /// </summary>
 public class TopDownPlayerController : ObjectBehavior
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public float Speed { get; set; } = 410f;
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     PhysicsObject physics;
 
     public TopDownPlayerController(int speed) : this() => this.Speed = speed;

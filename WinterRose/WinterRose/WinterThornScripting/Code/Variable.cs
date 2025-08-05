@@ -9,18 +9,18 @@ namespace WinterRose.WinterThornScripting
     /// <summary>
     /// A variable in WinterThorn.
     /// </summary>
-    [DebuggerDisplay("Var: {Name} = {Value}"), IncludePrivateFields]
+    [DebuggerDisplay("Var: {Name} = {Value}")]
     public class Variable
     {
         /// <summary>
         /// The name of the variable. This is used to access the variable in WinterThorn.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Name { get; private set; }
         /// <summary>
         /// A description of the variable.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Description { get; private set; }
         /// <summary>
         /// The class in which the variable was declared. currently unused.
@@ -80,12 +80,12 @@ namespace WinterRose.WinterThornScripting
         /// <summary>
         /// The type of the variable.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public VariableType Type { get; private set; }
         /// <summary>
         /// The access modifiers of the variable. currently unused.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public AccessControl AccessModifiers { get; private set; }
 
         /// <summary>

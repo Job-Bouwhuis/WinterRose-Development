@@ -11,7 +11,7 @@ public abstract class ActiveRenderer : ObjectBehavior
     /// <summary>
     /// Should the renderer draw render its contents to the screen
     /// </summary>
-    [IncludeInTemplateCreation, IncludeWithSerialization]
+    [IncludeInTemplateCreation, WFInclude]
     public bool IsVisible { get; set; } = true;
     /// <summary>
     /// The bounds of this renderer
@@ -21,7 +21,7 @@ public abstract class ActiveRenderer : ObjectBehavior
     /// <summary>
     /// The time it took to render the contents to the screen
     /// </summary>
-    [ExcludeFromSerialization]
+    [WFExclude]
     public abstract TimeSpan DrawTime { get; protected set; }
 
     /// <summary>

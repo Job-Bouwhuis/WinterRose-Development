@@ -45,7 +45,7 @@ namespace WinterRose.Monogame
         /// <summary>
         /// Whether this component is enabled or not
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public bool Enabled { get; set; } = true;
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace WinterRose.Monogame
         [Show]
         private TimeSpan closeTime;
 
-        [IncludeWithSerialization]
+        [WFInclude]
         internal WorldObject _owner;
 
         /// <summary>

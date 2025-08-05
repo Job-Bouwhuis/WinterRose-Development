@@ -11,7 +11,7 @@ namespace WinterRose.FrostWarden.Components
 {
     public class SpriteRenderer : Component, IRenderable
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public Sprite Sprite { get; set; }
 
         public SpriteRenderer(Sprite sprite)
@@ -21,7 +21,7 @@ namespace WinterRose.FrostWarden.Components
 
         private SpriteRenderer() { } // for serialization
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public FrostShader? Shader { get; private set; }
 
         public void SetShader(FrostShader s)

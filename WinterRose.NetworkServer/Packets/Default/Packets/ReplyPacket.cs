@@ -53,9 +53,9 @@ namespace WinterRose.NetworkServer.Packets
 
         public class ReplyContent : PacketContent
         {
-            [IncludeWithSerialization]
+            [WFInclude]
             public Guid SenderID { get; set; }
-            [IncludeWithSerialization]
+            [WFInclude]
             public Packet? OriginalPacket { get; internal set; }
         }
     }

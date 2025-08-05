@@ -6,21 +6,21 @@ namespace WinterRose.Monogame.Particles
 {
     public class Particle
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public Vector2 position { get; set; }
-        [IncludeWithSerialization]
+        [WFInclude]
         public ValueRange speed { get; set; }
-        [IncludeWithSerialization]
+        [WFInclude]
         public Vector2 direction { get; set; }
-        [IncludeWithSerialization]
+        [WFInclude]
         public ColorRange color { get; set; }
-        [IncludeWithSerialization]
+        [WFInclude]
         public ValueRange scale { get; set; }
-        [IncludeWithSerialization]
+        [WFInclude]
         public float rotation { get; set; }
-        [IncludeWithSerialization]
+        [WFInclude]
         public float angularVelocity { get; set; }
-        [IncludeWithSerialization]
+        [WFInclude]
         public float lifeTime
         {
             get => _lifeTime;

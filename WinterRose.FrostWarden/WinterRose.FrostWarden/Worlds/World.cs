@@ -14,11 +14,11 @@ public class World : IDisposable
 {
     public DiscreteDynamicsWorld Physics => physicsWorld;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     private List<Entity> entities = new();
     internal IReadOnlyList<Entity> _Entities => entities;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Name { get; private set; }
 
     private CollisionConfiguration collisionConfig;

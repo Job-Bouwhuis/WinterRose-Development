@@ -11,11 +11,11 @@ namespace WinterRose.Monogame.Animations
     /// </summary>
     public abstract class AnimationKey
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public Animation Animation { get; internal set; }
         public object Target { get; set; }
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Name { get; set; }
 
         public AnimationKey(string name) => Name = name;

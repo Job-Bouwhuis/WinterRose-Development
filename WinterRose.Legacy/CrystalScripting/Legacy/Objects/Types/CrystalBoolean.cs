@@ -10,7 +10,7 @@ namespace WinterRose.CrystalScripting.Legacy.Objects.Types
     public class CrystalBoolean : CrystalType
     {
         public override string Name => "boolean";
-        [IncludeWithSerialization]
+        [WFInclude]
         public bool Value { get; set; }
 
         public static CrystalBoolean False => new() { Value = false };

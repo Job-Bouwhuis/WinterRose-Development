@@ -68,7 +68,7 @@ namespace WinterRose.FrostWarden
         {
             foreach (var sprite in cache.Values)
             {
-                if(!sprite.OwnsTexture)
+                if(!sprite.OwnsTexture && sprite is not SpriteGif)
                     ray.UnloadTexture(sprite.Texture);
                 sprite.Dispose();
             }

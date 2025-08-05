@@ -5,10 +5,10 @@ namespace WinterRose.Networking.TCP;
 
 public class TCPClientInfo
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public Guid Id { get; internal set; }
     public TcpClient Client { get; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Username { get; private set; } = null;
 
     public string MachineName => Client.Client.RemoteEndPoint.ToString();

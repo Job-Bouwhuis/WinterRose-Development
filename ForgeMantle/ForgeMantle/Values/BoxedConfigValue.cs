@@ -9,7 +9,7 @@ using WinterRose;
 namespace ForgeMantle.Values;
 public class BoxedConfigValue<T> : IConfigValue
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public T? Value { get; private set; }
 
     public BoxedConfigValue(T? value)

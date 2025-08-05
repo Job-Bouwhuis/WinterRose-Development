@@ -24,7 +24,7 @@ public class WorldObject
     /// <summary>
     /// The name of this object
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Name { get; set; }
     /// <summary>
     /// The time it took to update all components of this object
@@ -41,7 +41,7 @@ public class WorldObject
     /// <summary>
     /// Whether this object is active or not
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public bool IsActive
     {
         get
@@ -103,24 +103,24 @@ public class WorldObject
     }
 
 
-    [IncludeWithSerialization]
+    [WFInclude]
     private List<ObjectComponent> components = new();
     private readonly List<Renderer> renderers = new();
     private readonly List<ActiveRenderer> activeRenderers = new();
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     internal MultipleParallelBehaviorHelper parallelHelper = new();
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     private readonly List<Action<WorldObject>> StartupBehaviors = new();
-    [ExcludeFromSerialization]
+    [WFExclude]
     private readonly List<Action<WorldObject>> UpdateBehaviors = new();
-    [ExcludeFromSerialization]
+    [WFExclude]
     private readonly List<Action<WorldObject, SpriteBatch>> DrawBehaviors = new();
 
-    [IncludeWithSerialization]
+    [WFInclude]
     private long id;
-    [IncludeWithSerialization]
+    [WFInclude]
     private Transform _transform;
 
     /// <summary>
@@ -138,7 +138,6 @@ public class WorldObject
     /// <summary>
     /// A flag that can be used to identify this object. e.g. "Player", "Enemy", "Projectile"
     /// </summary>
-    [IncludeWithSerialization]
     public string Flag { get; set; } = "";
     /// <summary>
     /// The amount of components the object has
@@ -148,9 +147,9 @@ public class WorldObject
     /// <summary>
     /// The chunk position this object is in
     /// </summary>
-    [ExcludeFromSerialization]
+    [WFExclude]
     public ObjectChunkData ChunkPositionData { get; internal set; }
-    [ExcludeFromSerialization]
+    [WFExclude]
     public bool IsDestroyed { get; internal set; }
     /// <summary>
     /// A shortcut to <see cref="Universe.CurrentWorld"/>
@@ -160,17 +159,17 @@ public class WorldObject
     /// <summary>
     /// The index in the list of objects found in <see cref="World.objects"/>
     /// </summary>
-    [ExcludeFromSerialization]
+    [WFExclude]
     internal int index = -1;
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     private int lastComponentCount = 0;
 
     [Show]
-    [ExcludeFromSerialization]
+    [WFExclude]
     private TimeSpan updateTime;
     [Show]
-    [ExcludeFromSerialization]
+    [WFExclude]
     private TimeSpan drawTime;
 
 

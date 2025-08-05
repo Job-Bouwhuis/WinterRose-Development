@@ -12,7 +12,7 @@ public class Block
     /// <summary>
     /// The tokens that make up this block
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public List<Token> Tokens { get; internal set; } = [];
     /// <summary>
     /// The parent block of this block. This will be null if the block is the root block.
@@ -22,17 +22,17 @@ public class Block
     /// <summary>
     /// The functions declared in this block.
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public virtual Function[] Functions { get; private set; } = [];
     /// <summary>
     /// The variables declared in this block.
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public virtual List<Variable> Variables { get; private set; } = [];
     /// <summary>
     /// Access to the namespaces declared in this entire script. this will be null if the block is not the root block.
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Namespace[]? Namespaces { get; internal set; } = [];
 
     /// <summary>

@@ -17,6 +17,7 @@ public class Text : Renderer
 {
     public string text { get; set; }
     public Color Color { get; set; }
+    [WFExclude]
     public SpriteFont Font { get; set; } = MonoUtils.DefaultFont;
     public Vector2 PositionOffset { get; set; } = new();
 

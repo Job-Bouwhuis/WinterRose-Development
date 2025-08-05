@@ -107,13 +107,13 @@ public sealed class Camera : ObjectComponent
     }
 
     [Hide]
-    [ExcludeFromSerialization]
+    [WFExclude]
     private SpriteBatch batch;
     [Hide]
-    [ExcludeFromSerialization]
+    [WFExclude]
     private RenderTarget2D renderTarget;
     [Hide]
-    [ExcludeFromSerialization]
+    [WFExclude]
     private Matrix trMatrix;
 
     protected override void Awake()

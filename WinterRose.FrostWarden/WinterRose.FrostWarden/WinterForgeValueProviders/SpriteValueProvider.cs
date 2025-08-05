@@ -17,7 +17,7 @@ namespace WinterRose.FrostWarden.WinterForgeValueProviders
         }
         public override object CreateString(Sprite obj, ObjectSerializer serializer)
         {
-            return $"\"{obj.Source}\"";
+            return obj.Source;
         }
     }
 }

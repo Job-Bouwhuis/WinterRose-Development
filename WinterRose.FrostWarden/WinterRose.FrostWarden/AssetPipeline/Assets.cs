@@ -17,7 +17,7 @@ namespace WinterRose.FrostWarden.AssetPipeline
 
         private static Dictionary<string, AssetHeader> assetHeaders = [];
         private static Dictionary<Type, HandlerEntry> handerTypeMap = []; 
-        private const string ASSET_HEADER_EXTENSION = ".fwassetheader";
+        private const string ASSET_HEADER_EXTENSION = ".fwah";
         private const string ASSET_EXTENSION = ".fwasset";
         private const string ASSET_ROOT = "Assets/";
 
@@ -151,10 +151,8 @@ namespace WinterRose.FrostWarden.AssetPipeline
             AssetHeader assetHeader = CreateHeader(name, null);
             assetHeaders.Add(assetHeader.Name, assetHeader);
 
-            // Serialize the asset to a file
             string assetPath = ASSET_ROOT + name + ASSET_EXTENSION;
             
-            // pre-create the file to ensure it exists whenever the asset is accessed
             File.Create(assetPath).Close(); 
         }
 

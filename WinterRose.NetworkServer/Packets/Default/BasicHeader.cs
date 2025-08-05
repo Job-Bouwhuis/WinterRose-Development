@@ -8,7 +8,7 @@ namespace WinterRose.NetworkServer.Packets
 {
     public class BasicHeader : PacketHeader
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         private string id;
 
         public BasicHeader(string id) => this.id = id;

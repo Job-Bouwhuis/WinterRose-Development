@@ -16,7 +16,7 @@ namespace WinterRose.CrystalScripting.Legacy.Objects.Base
         private ulong id;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private List<Token> bodyTokens;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never), ExcludeFromSerialization]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never), WFExclude]
         private CrystalCodeBody? parent;
         internal ulong parentID;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]

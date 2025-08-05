@@ -9,11 +9,11 @@ namespace TopDownGame.Players;
 [RequireComponent<StatusEffector>]
 internal class Dash : ObjectBehavior
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public StaticCombinedModifier<float> DashDistance { get; } = new() { BaseValue = 450f };
-    [IncludeWithSerialization]
+    [WFInclude]
     public StaticCombinedModifier<float> DashCooldown { get; } = new() { BaseValue = 5f };
-    [IncludeWithSerialization]
+    [WFInclude]
     public Keys DashKey { get; set; } = Keys.Space;
 
     private StatusEffector effector;

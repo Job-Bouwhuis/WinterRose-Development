@@ -268,11 +268,11 @@
 //                    or { CanWrite: false })
 //                    continue;
 
-//                if (member.MemberType is MemberTypes.Field && member.HasAttribute<ExcludeFromSerializationAttribute>()
-//                    || member.MemberType is MemberTypes.Property && !member.HasAttribute<IncludeWithSerializationAttribute>())
+//                if (member.MemberType is MemberTypes.Field && member.HasAttribute<WFExcludeAttribute>()
+//                    || member.MemberType is MemberTypes.Property && !member.HasAttribute<WFIncludeAttribute>())
 //                    continue;
 
-//                // if the member has the IncludeWithSerializationAttribute, we add it to the serialization
+//                // if the member has the WFIncludeAttribute, we add it to the serialization
 //                string syntax = $"builder.Append(SnowSerializerWorkers.SerializeField(obj.{member.Name}, \"{member.Name}\", typeof({GetTypeName(member.Type)}), depth, settings));";
 //                statements.Add(SyntaxFactory.ParseStatement(syntax));
 //                // add the namespace of the member to the list of namespaces to import

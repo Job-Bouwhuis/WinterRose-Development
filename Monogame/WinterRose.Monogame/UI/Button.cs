@@ -86,8 +86,6 @@ public class Button : ObjectBehavior
     [Show]
     private float currentColorFraction = 1;
 
-    private bool once = false;
-
     protected override void Awake()
     {
         var textSize = text.SizeRaw;

@@ -15,7 +15,7 @@ public abstract class ModAttribute<T>
     /// <summary>
     /// What it does expressed in text. eg: "+50% Damage"
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public abstract string EffectString { get; }
     /// <summary>
     /// The type of moddable this attribute is valid on

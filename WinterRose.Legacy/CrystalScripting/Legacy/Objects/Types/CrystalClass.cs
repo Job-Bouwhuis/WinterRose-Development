@@ -20,7 +20,7 @@ namespace WinterRose.CrystalScripting.Legacy.Objects.Types
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string name;
 
-        [ExcludeFromSerialization]
+        [WFExclude]
         public CrystalScript script;
 
         public CrystalCodeBody Body { get; }

@@ -9,13 +9,13 @@ public abstract class Resource
     public virtual string Name { get; protected set; } = "Unnamed item";
     public virtual string Description { get; protected set; } = "Unnamed item";
     public virtual Rarity Rarity { get; protected set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public Sprite ResourceSprite { get; set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public DateTime? Timeout { get; set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public Vector2 Scale { get; set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public int Amount { get; set; }
 
     public Resource Clone()

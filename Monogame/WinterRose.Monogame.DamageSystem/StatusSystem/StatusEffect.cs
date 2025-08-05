@@ -15,24 +15,24 @@ public abstract class StatusEffect() : ICloneable
     /// <summary>
     /// The description of this effect
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public abstract string Description { get; }
     /// <summary>
     /// When <see cref=""/>
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public abstract StatusEffectUpdateType UpdateType { get; }
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public abstract StatusEffectType EffectType { get; }
 
     /// <summary>
     /// The icon of this status effect. Can be null if not set.
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Sprite Icon { get; set; }
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public int MaxStacks { get; set; } = 10;
     public int Stacks
     {
@@ -47,13 +47,13 @@ public abstract class StatusEffect() : ICloneable
     internal int previousStacks = 0;
     internal bool updateStacks = false;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public float SecondsPerStack { get; set; } = 1f;
     [Show]
     protected internal float currentSeconds;
     private int stacks = 1;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public bool RemoveAllStacksOntimeout { get; set; } = false;
 
     protected internal virtual void Update(StatusEffector effector) { }

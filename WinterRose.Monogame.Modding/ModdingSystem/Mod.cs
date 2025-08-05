@@ -8,7 +8,7 @@ namespace WinterRose.Monogame.ModdingSystem;
 
 public class Mod<T> where T : class
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public List<ModAttribute<T>> attributes { get; private set; } = new();
 
     public Mod(string name, string description)
@@ -22,19 +22,19 @@ public class Mod<T> where T : class
     /// <summary>
     /// Name of the mod, e.g., "Fortified"
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Name { get; set; }
 
     /// <summary>
     /// A description of what the mod does
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public string Description { get; set; }
 
     /// <summary>
     /// The number of mod points this mod costs (for balance or inventory systems)
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public int ModPoints { get; set; }
 
     /// <summary>

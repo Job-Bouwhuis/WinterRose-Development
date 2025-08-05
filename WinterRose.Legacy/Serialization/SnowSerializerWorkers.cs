@@ -277,19 +277,19 @@ namespace WinterRose.Legacy.Serialization
             List<PropertyInfo> properties = new List<PropertyInfo>();
             foreach (var field in fieldsTemp)
             {
-                if (field.IsPrivate && field.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
+                if (field.IsPrivate && field.GetCustomAttributes().Any(x => x.GetType() == typeof(WFIncludeAttribute)))
                 {
                     fields.Add(field);
                     continue;
                 }
-                Attribute? att = objectType.GetCustomAttribute<IncludeWithSerializationAttribute>();
+                Attribute? att = objectType.GetCustomAttribute<WFIncludeAttribute>();
                 if (att is not null
                     && !field.Name.Contains('<'))
                 {
                     fields.Add(field);
                     continue;
                 }
-                att = field.GetCustomAttribute<ExcludeFromSerializationAttribute>();
+                att = field.GetCustomAttribute<WFExcludeAttribute>();
                 if (att is null
                     && !field.Name.Contains('<'))
                 {
@@ -305,9 +305,9 @@ namespace WinterRose.Legacy.Serialization
                     break;
                 }
                 if (objectType.GetCustomAttribute<IncludeAllPropertiesAttribute>() is not null
-                    || property.GetCustomAttributes().Any(x => x.GetType() == typeof(IncludeWithSerializationAttribute)))
+                    || property.GetCustomAttributes().Any(x => x.GetType() == typeof(WFIncludeAttribute)))
                     if (property.CanWrite // properties that cant be written to will be ignored always.
-                        && !property.GetCustomAttributes().Any(x => x.GetType() == typeof(ExcludeFromSerializationAttribute)))
+                        && !property.GetCustomAttributes().Any(x => x.GetType() == typeof(WFExcludeAttribute)))
                         properties.Add(property);
             }
             var events = GetAllClassEvents(item, includePrivateFields);

@@ -31,13 +31,13 @@ public abstract class DamageType : ICloneable
     /// <summary>
     /// The icon of this damage type. Can be null if not set.
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public Sprite? Icon { get; set; }
 
     /// <summary>
     /// The modifiers that dictate the actual damage
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public StaticCombinedModifier<int> DamageModifier { get; } = new();
 
     public DamageType() => BaseDamage = 5;
@@ -54,7 +54,7 @@ public abstract class DamageType : ICloneable
     /// <summary>
     /// The status effect this damage type is linked to, if any. (null if none)
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public StatusEffect? ConnectedStatusEffect { get; set; }
 
     /// <summary>

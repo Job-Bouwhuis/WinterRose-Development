@@ -95,7 +95,7 @@ internal class Level1 : WorldTemplate
         world.DestroyImmediately(enemy);
 
         // Spawning multiple items in a circle
-        int itemCount = 1000;
+        int itemCount = 100000;
         Vector2 center = new Vector2(500, 500);
         float spawnRadius = 2000;
 
@@ -132,8 +132,8 @@ internal class Level1 : WorldTemplate
                     Console.WriteLine($"Created {enemycount} enemies!");
                 }, true);
         }
-        
 
+        Console.WriteLine("Saving world...");
         world.SaveTemplate();
 
         Application.Current.CameraIndex = 0;

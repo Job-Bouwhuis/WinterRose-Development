@@ -18,13 +18,13 @@ namespace WinterRose.Legacy.Serialization.Things
     /// Makes sure that when serializing or deserializing this field will always be ignore
     /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public class ExcludeFromSerializationAttribute : Attribute { }
+    public class WFExcludeAttribute : Attribute { }
 
     /// <summary>
     /// Tells the serializer to include this property when handling its declaring class
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = true)]
-    public class IncludeWithSerializationAttribute : Attribute { }
+    public class WFIncludeAttribute : Attribute { }
 
     /// <summary>
     /// Tells the serializer to use the private fields within this class or struct even if the passed setting states not to include them
@@ -33,7 +33,7 @@ namespace WinterRose.Legacy.Serialization.Things
     public class IncludePrivateFieldsAttribute : Attribute { }
 
     /// <summary>
-    /// Tells the serializer to include all properties in the given class or struct even if they do not have the <b>IncludeWithSerializationAttribute</b> attribute
+    /// Tells the serializer to include all properties in the given class or struct even if they do not have the <b>WFIncludeAttribute</b> attribute
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = true)]
     public class IncludeAllPropertiesAttribute : Attribute { }

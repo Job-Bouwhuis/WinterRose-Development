@@ -26,43 +26,43 @@ namespace WinterRose.Monogame.Weapons
         /// <summary>
         /// The maximum amount of bullets that can be stored in the magazine.
         /// </summary>
-        [IncludeInTemplateCreation, IncludeWithSerialization]
+        [IncludeInTemplateCreation, WFInclude]
         public int MaxBullets { get; set; } = 30;
 
         /// <summary>
         /// The current amount of bullets in the magazine.
         /// </summary>
-        [IncludeInTemplateCreation, IncludeWithSerialization]
+        [IncludeInTemplateCreation, WFInclude]
         public int CurrentBullets { get; set; } = 30;
 
         /// <summary>
         /// The amount of pool of projectiles left when trying to reload
         /// </summary>
-        [IncludeInTemplateCreation, IncludeWithSerialization]
+        [IncludeInTemplateCreation, WFInclude]
         public int PoolOfProjectiles { get; set; } = 60;
 
         /// <summary>
         /// The time it takes to reload the magazine in seconds
         /// </summary>
-        [IncludeInTemplateCreation, IncludeWithSerialization]
+        [IncludeInTemplateCreation, WFInclude]
         public float ReloadTime { get; set; } = 2.0f;
 
         /// <summary>
         /// The amount of bullets that are fired per shot.
         /// </summary>
-        [IncludeInTemplateCreation, IncludeWithSerialization]
+        [IncludeInTemplateCreation, WFInclude]
         public int BulletsPerShot { get; set; } = 1;
 
         /// <summary>
         /// The amount of bullets that are consumed per shot.
         /// </summary>
-        [IncludeInTemplateCreation, IncludeWithSerialization]
+        [IncludeInTemplateCreation, WFInclude]
         public int BulletsConsumedPerShot { get; set; } = 1;
 
         /// <summary>
         /// The bullet this magazine shoots
         /// </summary>
-        [IgnoreInTemplateCreation, Show, IncludeWithSerialization]
+        [IgnoreInTemplateCreation, Show, WFInclude]
         public WorldObjectPrefab? BulletPrefab 
         { 
             get => bulletPrefab;

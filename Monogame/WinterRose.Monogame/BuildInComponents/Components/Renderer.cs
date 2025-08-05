@@ -11,17 +11,16 @@ public abstract class Renderer : ObjectComponent
     /// <summary>
     /// Whether the renderer should render its contents
     /// </summary>
-    [IncludeInTemplateCreation, IncludeWithSerialization]
     public bool IsVisible { get; set; } = true;
     /// <summary>
     /// The bounds of this renderer
     /// </summary>
-    [IncludeInTemplateCreation, IncludeWithSerialization]
     public abstract RectangleF Bounds { get; }
 
     /// <summary>
     /// The time it took to render the contents to the screen
     /// </summary>
+    [WFExclude]
     public abstract TimeSpan DrawTime { get; protected set; }
 
     /// <summary>

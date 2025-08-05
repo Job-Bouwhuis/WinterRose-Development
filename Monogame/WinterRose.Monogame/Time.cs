@@ -30,7 +30,7 @@ public static class Time
     /// <summary>
     /// The time since the last frame in seconds
     /// </summary>
-    public static float deltaTime =>(float)time.ElapsedGameTime.TotalSeconds * Timescale;
+    public static float deltaTime => (float)time.ElapsedGameTime.TotalSeconds * Timescale;
 
     /// <summary>
     /// The time since the last frame in seconds, unscaled by <see cref="Timescale"/>

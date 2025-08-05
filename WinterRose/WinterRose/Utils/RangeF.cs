@@ -10,9 +10,9 @@ namespace WinterRose
     /// <param name="end"></param>
     public struct RangeF(IndexF start, IndexF end)
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public IndexF Start { get; set; } = start;
-        [IncludeWithSerialization]
+        [WFInclude]
         public IndexF End { get; set; } = end;
 
         public RangeF() : this(0, 0) { }

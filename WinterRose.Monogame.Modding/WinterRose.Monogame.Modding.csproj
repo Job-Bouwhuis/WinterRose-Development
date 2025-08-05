@@ -17,7 +17,7 @@ its very customizable</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="WinterRose.WinterForge" Version="25.2.22" />
+    <ProjectReference Include="..\..\WinterForge\src\WinterRose.WinterForge\WinterRose.WinterForge.csproj" />
   </ItemGroup>
 
 </Project>

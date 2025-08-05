@@ -6,13 +6,13 @@ namespace WinterRose.Monogame.Tests;
 
 internal class BallSpawner : ObjectBehavior
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public Sprite Sprite { get; set; }
 
     public BallSpawner(Sprite sprite) => Sprite = sprite;
     private BallSpawner() { } // for serialization
 
-    [ExcludeFromSerialization]
+    [WFExclude]
     public List<WorldObject> spawned = [];
 
     int balls = 0;

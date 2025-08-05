@@ -38,7 +38,7 @@ namespace WinterRose.NetworkServer.Packets
             public string fileName = "";
             public int totalChunks;
             public string fileHash = "";
-            [IncludeWithSerialization]
+            [WFInclude]
             private List<FileChunk> chunks;
 
             public FileContent(FileStream file)

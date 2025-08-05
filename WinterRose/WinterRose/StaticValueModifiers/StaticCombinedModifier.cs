@@ -22,7 +22,7 @@ public class StaticCombinedModifier<T> : ICloneable where T : INumber<T>
     /// <summary>
     /// The base value for this combined modifier
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public T BaseValue
     {
         get => AdditiveModifier.BaseValue;

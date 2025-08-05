@@ -16,19 +16,19 @@ namespace TopDownGame.Enemies.Movement;
 [ParallelBehavior]
 public sealed class AIMovementController : ObjectBehavior
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public AIMovement Current { get; private set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public Dictionary<string, AIMovement> Movements { get; set; } = [];
-    [IncludeWithSerialization]
+    [WFInclude]
     public StaticCombinedModifier<float> MovementSpeed { get; private set; } = 170;
 
     public Transform Target { get; set; }
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public float VisionRange { get; set; } = 1500;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     public float EvadeDistance { get; set; } = 200;
 
     protected override void Update()

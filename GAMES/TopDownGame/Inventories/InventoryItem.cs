@@ -11,9 +11,9 @@ namespace TopDownGame.Inventories;
 /// <typeparam name="T"></typeparam>
 public abstract class InventoryItem<T> : IInventoryItem
 {
-    [Hide, ExcludeFromSerialization]
+    [Hide, WFExclude]
     protected Type itemType;
-    [Hide, ExcludeFromSerialization]
+    [Hide, WFExclude]
     public virtual Type ItemType => itemType ??= typeof(T);
 
     public InventoryItem() { }
@@ -25,12 +25,12 @@ public abstract class InventoryItem<T> : IInventoryItem
     /// <summary>
     /// The storage of what this item carries.
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public abstract T Item { get; set; }
     /// <summary>
     /// The amount of this item kind is inventory item represents
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public virtual int Count { get; set; } = 0;
 
     /// <summary>

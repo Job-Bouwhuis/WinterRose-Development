@@ -14,7 +14,7 @@ namespace TopDownGame.Drops
     [RequireComponent<Vitality>]
     class DropOnDeath : ObjectComponent
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public LootTable LootTable { get; set; }
 
         protected override void Awake()

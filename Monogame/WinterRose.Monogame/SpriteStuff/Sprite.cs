@@ -45,11 +45,11 @@ public class Sprite
     /// <summary>
     /// The name of the sprite
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public string? Name { get; set; }
-    [ExcludeFromSerialization] private Texture2D? texture;
+    [WFExclude] private Texture2D? texture;
 
-    [IncludeWithSerialization]
+    [WFInclude]
     private string? texturePath;
 
     /// <summary>
@@ -85,9 +85,9 @@ public class Sprite
         }
     }
 
-    [IncludeWithSerialization]
+    [WFInclude]
     internal bool IsExternalTexture { get; private set; } = false;
-    [IncludeWithSerialization]
+    [WFInclude]
     internal GeneratedTextureData? GeneratedTextureData;
     internal Sprite(Texture2D texture, string name)
     {

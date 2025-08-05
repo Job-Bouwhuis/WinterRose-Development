@@ -9,7 +9,8 @@ namespace WinterRose.Monogame.TextRendering;
 
 public class Text : ICollection<Word>
 {
-    private readonly List<Word> words = [];
+    [WFInclude]
+    private List<Word> words = [];
 
     public Text()
     {

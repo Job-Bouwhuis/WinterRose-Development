@@ -14,7 +14,7 @@ public class WeaponDamageMod : ModAttribute<Weapon>
     /// <summary>
     /// A percentage value how much base damage this attribute adds to the weapon
     /// </summary>
-    [Show, IncludeInTemplateCreation, IncludeWithSerialization]
+    [Show, IncludeInTemplateCreation, WFInclude]
     public float DamageBoost
     {
         get => damageBoost;

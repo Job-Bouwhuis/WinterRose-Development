@@ -27,7 +27,7 @@ public abstract class StaticModifier<T> : ICloneable
     /// <summary>
     /// The base value of the modifier
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public T BaseValue { get => baseValue; set => SetBaseValue(value); }
     T baseValue;
 

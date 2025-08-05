@@ -10,7 +10,7 @@ namespace WinterRose
     [System.Diagnostics.DebuggerDisplay("Panel: {Name} -- Brand: {Brand}")]
     public class SolarPanel
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public string ModelName
         {
             get
@@ -26,13 +26,13 @@ namespace WinterRose
             }
         }
 
-        [IncludeWithSerialization] public string Name { get; set; } = "New Panel";
-        [IncludeWithSerialization] public string Brand { get; set; } = "";
+        [WFInclude] public string Name { get; set; } = "New Panel";
+        [WFInclude] public string Brand { get; set; } = "";
 
-        [IncludeWithSerialization] public float WattPerHour { get; set; } = 0;
-        [IncludeWithSerialization] public float CostPerHour { get; set; } = 0;
-        [IncludeWithSerialization] public float ProfitPerHour { get; set; } = 0;
-        [IncludeWithSerialization] public Vector3 Size { get; set; } = Vector3.Zero;
+        [WFInclude] public float WattPerHour { get; set; } = 0;
+        [WFInclude] public float CostPerHour { get; set; } = 0;
+        [WFInclude] public float ProfitPerHour { get; set; } = 0;
+        [WFInclude] public Vector3 Size { get; set; } = Vector3.Zero;
 
         public GameObject? ModelPrefab { get; set; }
 

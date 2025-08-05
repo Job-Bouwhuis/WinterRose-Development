@@ -19,7 +19,7 @@ public sealed class AnimationMoveKey : AnimationKey
     /// <summary>
     /// The position to move the <see cref="Transform"/> from
     /// </summary>
-    [ExcludeFromSerialization]
+    [WFExclude]
     public Vector2 Start;
     /// <summary>
     /// The position to move the <see cref="Transform"/> to

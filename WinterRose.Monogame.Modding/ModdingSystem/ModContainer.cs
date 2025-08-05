@@ -15,13 +15,13 @@ public class ModContainer<T> where T : class
     /// <summary>
     /// The mods that are in this container
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public List<Mod<T>> Mods { get; private set; } = new();
 
     /// <summary>
     /// The total capacity of mods this container can hold
     /// </summary>
-    [IncludeWithSerialization]
+    [WFInclude]
     public int TotalModCapacity { get; set; }
 
     /// <summary>

@@ -4,12 +4,12 @@ namespace WinterRose.NetworkServer.Packets;
 
 public class Packet
 {
-    [IncludeWithSerialization]
+    [WFInclude]
     public PacketHeader Header { get; set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public PacketContent Content { get; set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public Guid SenderID { get; set; }
-    [IncludeWithSerialization]
+    [WFInclude]
     public string SenderUsername {  get; set; }
 }

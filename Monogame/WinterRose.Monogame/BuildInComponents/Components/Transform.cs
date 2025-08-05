@@ -13,7 +13,7 @@ namespace WinterRose.Monogame
     /// <summary>
     /// The transform of a <see cref="WorldObject"/>
     /// </summary>
-    [ComponentLimit, IncludePrivateFields, SerializeAs<Transform>]
+    [ComponentLimit, SerializeAs<Transform>]
     public class Transform : ObjectComponent
     {
         private Transform() { }
@@ -140,7 +140,7 @@ namespace WinterRose.Monogame
             }
         }
 
-        [IncludeWithSerialization]
+        [WFInclude]
         internal Transform? _parent;
         public Transform? parent
         {
@@ -177,14 +177,14 @@ namespace WinterRose.Monogame
         /// </summary>
         public bool HasChildren => children.Count is not 0;
 
-        [IncludeWithSerialization]
+        [WFInclude]
         private List<Transform> children = new();
 
-        [IncludeWithSerialization]
+        [WFInclude]
         private Vector2 _position;
-        [IncludeWithSerialization]
+        [WFInclude]
         private float _rotation;
-        [IncludeWithSerialization]
+        [WFInclude]
         private Vector2 _scale = new(1, 1);
 
         /// <summary>

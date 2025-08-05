@@ -7,7 +7,7 @@ namespace WinterRose.Monogame;
 
 public class ModifiablePlayerMovement : ObjectBehavior
 {
-    [IncludeInTemplateCreation, IncludeWithSerialization]
+    [IncludeInTemplateCreation, WFInclude]
     public StaticCombinedModifier<float> SpeedModifier { get; private set; } = 200;
 
     public ModifiablePlayerMovement(float speed) => SpeedModifier = speed;

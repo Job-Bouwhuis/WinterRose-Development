@@ -14,7 +14,7 @@ namespace WinterRose.NetworkServer.Packets
         }
         private StringContent() { } // for serialization
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Content { get; private set; }
     }
 }

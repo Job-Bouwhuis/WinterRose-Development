@@ -14,33 +14,33 @@ namespace WinterRose.Monogame.Animations
         /// <summary>
         /// The name of the animation.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public string Name { get; set; }
         /// <summary>
         /// The length of the animation in seconds.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public float AnimationLength { get; set; } = 1f;
         public float AnimationTime { get; private set; }
         /// <summary>
         /// Whether or not the animation is paused.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public bool Paused { get; set; }
         /// <summary>
         /// The current key index.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public int CurrentKeyIndex { get; set; } = 0;
         /// <summary>
         /// Whether or not the animation should loop when it reaches the end.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public bool Loop { get; set; } = false;
         /// <summary>
         /// The keys that make up the animation.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public List<AnimationKey> Keys { get; private set; } = new();
         bool newKey = true;
 

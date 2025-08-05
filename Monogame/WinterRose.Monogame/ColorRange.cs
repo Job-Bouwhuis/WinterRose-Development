@@ -12,7 +12,7 @@ namespace WinterRose.Monogame
     /// </summary>
     public sealed class ColorRange
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         private List<ColorRangePoint> points;
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace WinterRose.Monogame
         /// <summary>
         /// The color at this fraction.
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public Color Color 
         {
             get => color;
@@ -148,7 +148,7 @@ namespace WinterRose.Monogame
         /// <summary>
         /// The fraction
         /// </summary>
-        [IncludeWithSerialization]
+        [WFInclude]
         public float Fraction
         {
             get => fraction;

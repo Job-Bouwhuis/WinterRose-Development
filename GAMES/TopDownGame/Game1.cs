@@ -24,6 +24,7 @@ using WinterRose.Monogame.Weapons;
 using WinterRose.Monogame.Worlds;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.WinterForgeSerializing.Compiling;
+using WinterRose.WinterForgeSerializing.Instructions;
 using WinterRose.WinterForgeSerializing.Workers;
 
 namespace TopDownGame;
@@ -137,7 +138,7 @@ public class Game1 : Application
 
         Stopwatch serializationSW = new();
         int i1 = 0;
-        int max1 = 20;
+        int max1 = 5;
 
         long bestSerializationTime = long.MaxValue;
         long worstSerializationTime = long.MinValue;
@@ -159,7 +160,7 @@ public class Game1 : Application
 
         Stopwatch deserializationSW = new();
         int i2 = 0;
-        int max2 = 20;
+        int max2 = 5;
 
         long bestDeserializationTime = long.MaxValue;
         long worstDeserializationTime = long.MinValue;
@@ -186,11 +187,13 @@ public class Game1 : Application
         sb.AppendLine($"Deserialization: Best = {bestDeserializationTime} ms, Worst = {worstDeserializationTime} ms");
 
         FileStream compiledFile = File.OpenRead("Level 1");
-        int instructionCount = ByteToOpcodeParser.Parse(compiledFile).ToList().Count;
+        var instructions = ByteToOpcodeParser.Parse(compiledFile).ToList();
         compiledFile.Close();
-        sb.AppendLine("Total instructions: " + instructionCount);
+        sb.AppendLine("Total instructions: " + instructions.Count);
         sb.AppendLine("file size (bytes): " + new FileInfo("Level 1").Length);
-        
+        sb.AppendLine($"With a total of {instructions.Count(x => x.OpCode is OpCode.DEFINE)} instances");
+        sb.AppendLine($"With a total of {instructions.Count(x => x.OpCode is OpCode.SET)} SET instructions");
+
         Console.WriteLine(sb.ToString());
 
         Console.WriteLine("Press enter to copy to clipboard and close");

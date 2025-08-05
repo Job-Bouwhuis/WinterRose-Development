@@ -10,7 +10,7 @@ namespace WinterRose.FrostWarden.Components
 {
     public class Transform : Component
     {
-        [IncludeWithSerialization]
+        [WFInclude]
         public Vector3 position
         {
             get => _position;
@@ -25,7 +25,7 @@ namespace WinterRose.FrostWarden.Components
             }
         }
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public Quaternion rotation
         {
             get => _rotation;
@@ -52,14 +52,14 @@ namespace WinterRose.FrostWarden.Components
             }
         }
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public Vector3 scale
         {
             get => _scale;
             set { _scale = value; MarkDirty(true); }
         }
 
-        [IncludeWithSerialization]
+        [WFInclude]
         public Transform? parent => _parent;
 
         public IReadOnlyList<Transform> Children => children;
@@ -130,7 +130,7 @@ namespace WinterRose.FrostWarden.Components
 
         private Transform? _parent;
 
-        [IncludeWithSerialization]
+        [WFInclude]
         private List<Transform> children = new();
 
         private void MarkDirty(bool recursive = false)
