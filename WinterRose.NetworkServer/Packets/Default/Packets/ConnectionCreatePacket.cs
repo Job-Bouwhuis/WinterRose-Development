@@ -10,23 +10,20 @@ namespace WinterRose.NetworkServer.Packets
     {
         internal ConnectionCreatePacket(Guid guid)
         {
-            Header = new PHeader();
-            Content = new PContent()
-            {
-                guid = guid
-            };
+            Header = new BasicHeader("CONNECTIONCREATE");
+            Content = new PContent(guid);
         }
 
         private ConnectionCreatePacket() { } // for serialization
 
-        public class PHeader : PacketHeader
-        {
-            public override string GetPacketType() => "CONNECTIONCREATE";
-        }
-
         public class PContent : PacketContent
         {
             public Guid guid;
+
+            public PContent(Guid guid)
+            {
+                this.guid = guid;
+            }
         }
     }
 }

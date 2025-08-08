@@ -1,16 +1,17 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
 using WinterRose.NetworkServer.Packets;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Compiling;
 
-namespace WinterRose.NetworkServer;
+namespace WinterRose.NetworkServer.Connections;
 
 public class ServerConnection : NetworkConnection
 {
@@ -36,7 +37,9 @@ public class ServerConnection : NetworkConnection
         IsServer = true;
     }
 
-    public ServerConnection(string ip, int port, ILogger? logger = null) : this(IPAddress.Parse(ip), port, logger) { }
+    public ServerConnection(string ip, int port, ILogger? logger = null) : this(IPAddress.Parse(ip), port, logger)
+    {
+    }
 
     public void Start(CancellationToken cancellationToken)
     {
@@ -68,6 +71,9 @@ public class ServerConnection : NetworkConnection
         TcpClient tcp = client.GetTcp();
 
         ConnectionCreatePacket ccp = new(client.Identifier);
+        var s = client.GetTcp().GetStream();
+        s.Write(new ReadOnlySpan<byte>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]));
+        s.Flush();
         client.Send(ccp); // handshake packet
 
         OnClientConnected(client);
@@ -78,11 +84,25 @@ public class ServerConnection : NetworkConnection
         {
             using (NetworkStream stream = tcp.GetStream())
             {
+                object first = ReadFromNetworkStream(stream);
+                if (first is ClusterHelloPacket hello)
+                {
+                    var helloData = (ClusterHelloPacket.ClusterHelloContent)hello.Content;
+                    logger.LogInformation(
+                        $"[ClusterNode] Node connected: ID={helloData.NodeId}, Cluster={helloData.ClusterId}, Version={helloData.Version}");
+                }
+                else if (first is ClientHelloPacket clientHello)
+                {
+                    var helloData = (ClientHelloPacket.ClientHelloContent)clientHello.Content;
+                    logger.LogInformation($"Connected: {helloData.Username}");
+                }
+
+
                 while (tcp.Connected)
                 {
                     if (tunnelConnectionHandler.InTunnel(client))
                         continue; // skip loading packets while client is in a tunnel.
-                    object data = WinterForge.DeserializeFromStream(stream);
+                    object data = ReadFromNetworkStream(stream);
                     if (data is Nothing)
                         logger.LogWarning(LogPrefix + $"Client '{client.Identifier}' disconnected abruptly");
                     if (data is not Packet packet)
@@ -90,18 +110,24 @@ public class ServerConnection : NetworkConnection
                         logger.LogError("Error: Data was not a valid packet.");
                         continue;
                     }
-                    if(packet is DisconnectClientPacket disconnect)
+
+                    if (packet is DisconnectClientPacket disconnect)
                     {
-                        logger.LogInformation(LogPrefix + "Client gracefully disconnected: " + client.Identifier, client);
+                        logger.LogInformation(LogPrefix + "Client gracefully disconnected: " + client.Identifier,
+                            client);
                         break;
                     }
-                    if(packet.Content is ReplyPacket.ReplyContent reply && reply.OriginalPacket is DisconnectClientPacket)
+
+                    if (packet.Content is ReplyPacket.ReplyContent reply &&
+                        reply.OriginalPacket is DisconnectClientPacket)
                     {
                         client.Send(((ReplyPacket)packet).Reply(new OkPacket(), this));
-                        logger.LogInformation(LogPrefix + "Client gracefully disconnected: " + client.Identifier, client);
+                        logger.LogInformation(LogPrefix + "Client gracefully disconnected: " + client.Identifier,
+                            client);
                         break;
                     }
-                    if(packet is RelayPacket && packet.Content is RelayPacket.RelayContent rc)
+
+                    if (packet is RelayPacket && packet.Content is RelayPacket.RelayContent rc)
                     {
                         if (rc.destination == Guid.Empty)
                             packet = rc.relayedPacket; // packet was meant for the server
@@ -128,14 +154,19 @@ public class ServerConnection : NetworkConnection
         packet.SenderID = Guid.Empty;
         packet.SenderUsername = "SERVER";
 
+
         foreach (var client in clients)
-            WinterForge.SerializeToStream(packet, client.GetTcp().GetStream());
+        {
+            var stream = client.GetTcp().GetStream();
+            WinterForge.SerializeToStream(packet, stream);
+            stream.Flush();
+        }
     }
 
     public override bool Send(Packet packet, Guid destination)
     {
         foreach (var client in clients)
-            if(client.Identifier == destination)
+            if (client.Identifier == destination)
             {
                 client.Send(packet);
                 return true;
@@ -161,6 +192,7 @@ public class ServerConnection : NetworkConnection
 
     public override NetworkStream GetStream() => null!; // Server doesnt open a stream by itself
     internal List<ClientConnection> GetClients() => clients;
+
     public override bool TunnelRequestReceived(TunnelRequestPacket packet, NetworkConnection sender)
     {
         TunnelRequestPacket.TunnelReqContent? content = packet.Content as TunnelRequestPacket.TunnelReqContent;
@@ -176,5 +208,8 @@ public class ServerConnection : NetworkConnection
         else
             return false;
     }
-    public override void TunnelRequestAccepted(Guid a, Guid b) { }
+
+    public override void TunnelRequestAccepted(Guid a, Guid b)
+    {
+    }
 }

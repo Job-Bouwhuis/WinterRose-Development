@@ -1,15 +1,13 @@
 ﻿using System;
+using System.Net;
 
 namespace WinterRose.NetworkServer.Packets;
 
 public class Packet
 {
-    [WFInclude]
     public PacketHeader Header { get; set; }
-    [WFInclude]
+    public IPAddress SenderIP { get; set; }
     public PacketContent Content { get; set; }
-    [WFInclude]
     public Guid SenderID { get; set; }
-    [WFInclude]
     public string SenderUsername {  get; set; }
 }

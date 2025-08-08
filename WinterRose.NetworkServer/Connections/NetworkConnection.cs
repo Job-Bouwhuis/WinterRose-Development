@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -11,6 +12,8 @@ using WinterRose.ConsoleExtentions;
 using WinterRose.Expressions;
 using WinterRose.NetworkServer.Packets;
 using WinterRose.NetworkServer.Packets;
+using WinterRose.WinterForgeSerializing.Compiling;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.NetworkServer;
 
@@ -27,6 +30,7 @@ public abstract class NetworkConnection
 
     public NetworkConnection(ILogger logger)
     {
+        ByteToOpcodeParser.WaitIndefinitelyForData = true;
         this.logger = logger;
         pendingResponses = [];
 
@@ -56,6 +60,15 @@ public abstract class NetworkConnection
     public virtual Guid Identifier { get; internal set; }
 
     public virtual string Username { get; set; } = "UNSET";
+
+    public object ReadFromNetworkStream(NetworkStream stream)
+    {
+        using BinaryReader reader = new(stream);
+        while (reader.PeekChar() == -1) ;
+        using MemoryStream mem = new();
+        var instr = ByteToOpcodeParser.Parse(stream);
+        return new InstructionExecutor().Execute(instr);
+    }
 
     /// <summary>
     /// Sends the given packet to this connection
@@ -96,7 +109,7 @@ public abstract class NetworkConnection
     {
         if (packet.Header.GetPacketType() == "")
         {
-            sender.Send(new OkPacket());
+            sender.Send(new NoPacket());
             return;
         }
 

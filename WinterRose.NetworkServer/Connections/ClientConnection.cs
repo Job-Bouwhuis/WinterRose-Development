@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using WinterRose;
@@ -13,12 +14,15 @@ using WinterRose.NetworkServer;
 using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.WinterForgeSerializing.Compiling;
 using WinterRose.WinterThornScripting;
 
 namespace WinterRose.NetworkServer.Connections;
 
 public class ClientConnection : NetworkConnection
 {
+    private string domainUsed;
+    private IPAddress ipAddressUsed;
     private TcpClient client;
     private NetworkStream stream;
     private Task listenerThread = null!;
@@ -48,21 +52,25 @@ public class ClientConnection : NetworkConnection
             Setup();
     }
 
-    public static ClientConnection Connect(IPAddress ip, int port, ILogger? logger = null)
+    public static ClientConnection Connect(IPAddress ip, int port, string? username = null, ILogger? logger = null)
     {
         var client = new TcpClient();
         client.Connect(ip, port);
 
         var con = new ClientConnection(client, false, logger);
-
+        con.ipAddressUsed = ip;
         while (!con.initialized) ;
 
         return con;
     }
 
-    public static ClientConnection Connect(string ip, int port, ILogger? logger = null)
+    public static ClientConnection Connect(string hostname, int port, string? username = null, ILogger? logger = null)
     {
-        return Connect(IPAddress.Parse(ip), port, logger);
+        IPAddress[] addresses = Dns.GetHostAddresses(hostname);
+
+        var client = Connect(addresses.FirstOrDefault(), port, username, logger);
+        client.domainUsed = hostname;
+        return client;
     }
 
     private void Setup()
@@ -75,6 +83,7 @@ public class ClientConnection : NetworkConnection
         packet.SenderID = Identifier;
         packet.SenderUsername = Username;
         WinterForge.SerializeToStream(packet, stream);
+        stream.Flush();
     }
 
     public override bool Send(Packet packet, Guid destination)
@@ -132,10 +141,6 @@ public class ClientConnection : NetworkConnection
 
             }
         }
-        finally
-        {
-            
-        }
         return true;
     }
 
@@ -147,7 +152,7 @@ public class ClientConnection : NetworkConnection
 
         if (t.Exception is not null)
         {
-
+            throw t.Exception;
         }
     }
 
@@ -157,12 +162,27 @@ public class ClientConnection : NetworkConnection
         serverSourceConnection.SetSource(ConnectionSource.Server);
 
         {
-            Packet packet = ReadPacket();
+            Packet packet;
+            while ((packet = ReadPacket()) == null)
+            {
+
+            }
 
             if (packet is ConnectionCreatePacket ccp)
             {
                 var content = ccp.Content as ConnectionCreatePacket.PContent;
                 Identifier = content.guid;
+
+                Send(new ClientHelloPacket(
+                    domainUsed,
+                    ipAddressUsed,
+                    "1",
+                    Assembly.GetEntryAssembly().GetName().Version.ToString(),
+                    Username is "UNSET" ? null : Username));
+
+                packet = ReadPacket();
+                if (packet is not OkPacket)
+                    throw new NotAllowedException("Server did not accept the client connection");
                 initialized = true;
             }
             else
@@ -187,7 +207,7 @@ public class ClientConnection : NetworkConnection
                     continue; // let tunnel handle all the communication
                 }
 
-                    Packet? packet = ReadPacket();
+                Packet? packet = ReadPacket();
                 if (packet is null)
                     continue;
 
@@ -210,7 +230,6 @@ public class ClientConnection : NetworkConnection
                     {
                         RelayIdentifier = content.sender,
                     };
-                    var id = Identifier;
                     sender.SetSource(ConnectionSource.ClientRelay);
                     HandleReceivedPacket(content.relayedPacket, this, sender);
                 }
@@ -224,20 +243,22 @@ public class ClientConnection : NetworkConnection
         }
     }
 
-    private Packet? ReadPacket()
+    private Packet ReadPacket()
     {
-        var data = WinterForge.DeserializeFromStream(stream);
-        if(data is Nothing)
+        while (true)
         {
-            logger.LogCritical("Server closed abruptly");
-            return null;
+            var data = ReadFromNetworkStream(stream);
+            if(data is Nothing)
+            {
+                continue;
+            }
+            if (data is not Packet packet)
+            {
+                logger.LogError("Error: Data was not a valid packet.");
+                continue;
+            }
+            return packet;
         }
-        if (data is not Packet packet)
-        {
-            logger.LogError("Error: Data was not a valid packet.");
-            return null;
-        }
-        return packet;
     }
 
     internal TcpClient GetTcp() => client;
@@ -288,5 +309,14 @@ public class ClientConnection : NetworkConnection
             return true;
         }
         return false;
+    }
+}
+
+internal class NotAllowedException : Exception
+{
+    public NotAllowedException(string message)
+        :base(message)
+    {
+        
     }
 }

@@ -1,76 +1,34 @@
 ﻿using System.Diagnostics;
+using System.Net;
 using WinterRose.Networking;
+using WinterRose.NetworkServer;
 using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
 using WinterRose.WinterForgeSerializing;
 
-ClientConnection client = null;
-ClientConnection client2 = null;
-List<RelayConnection> others;
+
+
 
 try
 {
-    char c = Console.ReadKey().KeyChar;
+    ServerConnection server = new(IPAddress.Any, 3000);
+    server.Start();
 
-    var sw = Stopwatch.StartNew();
-    while (sw.ElapsedMilliseconds < 1000) ;
-    if (c == 'a')
-    {
-        Console.WriteLine(Network.GetLocalIPAddress());
-        client = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
-        client.SetUsername("TheSnowOwl");
-        client.OnTunnelRequestReceived.Add(req => true);
-        Console.WriteLine("enter on b connected");
-        
-        Console.ReadLine();
+    ClientConnection client = ClientConnection.Connect(IPAddress.Loopback, 3000, "Snow");
+    //ClientConnection client2 = ClientConnection.Connect(IPAddress.Loopback, 3000, "Penguin");
 
-        others = client.GetOtherConnectedClients();
-    }
-    else
-    {
-        Console.WriteLine();
-        client2 = ClientConnection.Connect(Network.GetLocalIPAddress(), 12345);
-        client2.SetUsername("TheSillyPenguin");
-        client2.OnTunnelRequestReceived.Add(req => true);
 
-        while(client2.ActiveTunnel == null)
-        {
-            
-        }
+    // RelayConnection? other =
+    //     client.GetOtherConnectedClients()
+    //         .Where(connection => connection.Identifier != client.Identifier)
+    //         .FirstOrDefault();
 
-        // client b
-        var tunnelb = client2.ActiveTunnel!;
-        StreamReader r = new(tunnelb);
-        string s = r.ReadLine();
-        Console.WriteLine(s);
-        Console.ReadLine();
-        return;
-    }
 
-    var other = others[0];
 
-    if (client.OpenTunnel(other))
-    {
-        if (c == 'a')
-        {
-            // client a
-            var tunnela = client.ActiveTunnel!;
-            using StreamWriter wr = new(tunnela);
-            Console.WriteLine("enter message");
-            wr.WriteLine(Console.ReadLine());
-            wr.Flush();
-            tunnela.Close();
-        }
-    }
-    else
-    {
-        Console.WriteLine("Failed");
-    }
 }
-finally
+catch (Exception ex)
 {
-    Console.ReadLine();
-    client?.Disconnect();
+    Console.WriteLine(ex.Message);
 }
 
 
