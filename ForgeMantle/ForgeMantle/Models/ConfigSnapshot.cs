@@ -1,12 +1,12 @@
-﻿using ForgeMantle.Values;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose;
+using WinterRose.ForgeMantle.Values;
 
-namespace ForgeMantle.Models;
+namespace WinterRose.ForgeMantle.Models;
 public class ConfigSnapshot
 {
     [WFInclude]

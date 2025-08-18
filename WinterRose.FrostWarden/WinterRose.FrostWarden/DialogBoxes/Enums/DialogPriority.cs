@@ -1,9 +1,10 @@
-﻿namespace WinterRose.FrostWarden.DialogBoxes
+﻿namespace WinterRose.ForgeWarden.DialogBoxes
 {
     public enum DialogPriority
     {
         Normal,
         High,
-        AlwaysFirst
+        AlwaysFirst,
+        EngineNotifications
     }
 }

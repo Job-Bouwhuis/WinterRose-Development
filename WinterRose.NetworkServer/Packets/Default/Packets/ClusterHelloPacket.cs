@@ -16,6 +16,8 @@ public class ClusterHelloPacket : Packet
             ClusterId = clusterId;
             Version = version;
         }
+
+        private ClusterHelloContent() { } // for serialization
     }
 
     public ClusterHelloPacket(Guid nodeId, string clusterId, string version)
@@ -23,4 +25,6 @@ public class ClusterHelloPacket : Packet
         Header = new BasicHeader("ClusterHello");
         Content = new ClusterHelloContent(nodeId, clusterId, version);
     }
+
+    private ClusterHelloPacket() { } // for serialization
 }

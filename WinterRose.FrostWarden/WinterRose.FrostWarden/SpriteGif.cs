@@ -1,6 +1,6 @@
 ﻿using Raylib_cs;
 
-namespace WinterRose.FrostWarden
+namespace WinterRose.ForgeWarden
 {
     public class SpriteGif : Sprite
     {

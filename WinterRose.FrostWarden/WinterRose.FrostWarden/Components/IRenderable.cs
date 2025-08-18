@@ -1,4 +1,4 @@
-﻿namespace WinterRose.FrostWarden.Components;
+﻿namespace WinterRose.ForgeWarden.Components;
 
 public interface IRenderable : IComponent
 {

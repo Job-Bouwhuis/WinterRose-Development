@@ -1,16 +1,18 @@
 ﻿using Raylib_cs;
-using WinterRose.FrostWarden.TextRendering;
+using WinterRose.ForgeWarden.TextRendering;
 
-namespace WinterRose.FrostWarden.DialogBoxes.Boxes
+namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
 {
     public abstract class Dialog
     {
-        private Rectangle btn;
+        List<Rectangle> buttonSizes = [];
 
         public RichText Title { get; set; }
         public RichText Message { get; set; }
         public DialogPlacement Placement { get; set; }
         public DialogPriority Priority { get; }
+
+        public Rectangle Bounds => Dialogs.GetDialogBounds(Placement);
 
         public float AnimationTimeIn { get; internal set; }
         public float AnimationTimeOut { get; internal set; }
@@ -20,16 +22,17 @@ namespace WinterRose.FrostWarden.DialogBoxes.Boxes
 
         public Action<UIContext>? OnImGui { get; set; }
 
-        private readonly int buttonWidth;
-        private readonly int buttonHeight;
-        private readonly int spacing;
+        private const int spacing = 10;
+        private const int paddingX = 12;
+        private const int paddingY = 6;
 
-        public DialogButton[] Buttons { get; }
+        public List<DialogButton> Buttons { get; }
 
         public bool IsVisible => !IsClosing;
 
         public DialogStyle Style { get; set; } = new();
         public float YAnimateTime { get; internal set; }
+        internal bool WasBumped { get; set; }
 
         protected Dialog(
             string title,
@@ -41,7 +44,11 @@ namespace WinterRose.FrostWarden.DialogBoxes.Boxes
             Action<UIContext>? onImGui)
         {
             Title = RichText.Parse(title, Color.White);
+            Title.FontSize = 25;
+
             Message = RichText.Parse(message, Color.White);
+            Message.FontSize = 16;
+
             Placement = placement;
             Priority = priority;
             AnimationTimeIn = 0f;
@@ -51,7 +58,7 @@ namespace WinterRose.FrostWarden.DialogBoxes.Boxes
             buttons ??= [];
             onButtonClick ??= [];
 
-            Buttons = new DialogButton[buttons.Length];
+            Buttons = new List<DialogButton>(buttons.Length);
 
             for (int i = 0; i < buttons.Length; i++)
             {
@@ -60,15 +67,11 @@ namespace WinterRose.FrostWarden.DialogBoxes.Boxes
                 if (onButtonClick.Length < i)
                     onClick = onButtonClick[i]!;
 
-                Buttons[i] = new DialogButton(label, onClick);
+                Buttons.Add(new DialogButton(label, onClick));
             }
 
             IsClosing = false;
             OnImGui = onImGui;
-
-            buttonWidth = 80;
-            buttonHeight = 30;
-            spacing = 10;
         }
 
         public virtual void Close()
@@ -78,23 +81,48 @@ namespace WinterRose.FrostWarden.DialogBoxes.Boxes
 
         internal void RenderBox(Rectangle bounds, float contentAlpha, ref int padding, ref float innerWidth, ref int y)
         {
-            RichTextRenderer.DrawRichText(Title, new((int)bounds.X + padding, y), null, 25, innerWidth, Style.ContentColor);
-            y += 35;
+            RichTextRenderer.DrawRichText(Title, new((int)bounds.X + padding, y), innerWidth, Style.ContentColor);
+            y += 35 + (int)Title.CalculateBounds(innerWidth).Height;
 
-            RichTextRenderer.DrawRichText(Message, new((int)bounds.X + padding, y), null, 16, innerWidth, Style.ContentColor);
-            y += 40;
+            RichTextRenderer.DrawRichText(Message, new((int)bounds.X + padding, y), innerWidth, Style.ContentColor);
+            y += 40 + (int)Message.CalculateBounds(innerWidth).Height;
 
             DrawContent(bounds, contentAlpha, ref padding, ref innerWidth, ref y);
 
-            float totalButtonWidth = Buttons.Length * buttonWidth + (Buttons.Length - 1) * spacing;
+            float totalButtonWidth = 0;
+            buttonSizes.Clear();
+            for (int i = 0; i < Buttons.Count; i++)
+            {
+                Rectangle textSize = Buttons[i].text.CalculateBounds(innerWidth);
+                int btnWidth = (int)textSize.Width + paddingX * 2;
+                int btnHeight = (int)textSize.Height + paddingY * 2;
+                buttonSizes.Add(new Rectangle(0, 0, btnWidth, btnHeight));
+
+                totalButtonWidth += btnWidth;
+                if (i < Buttons.Count - 1)
+                    totalButtonWidth += spacing;
+            }
+
+
             float startX = bounds.X + (bounds.Width - totalButtonWidth) / 2;
 
-            for (int i = 0; i < Buttons.Length; i++)
+            int yIncreaseAfterButtons = 25;
+            float x = startX;
+
+            for (int i = 0; i < Buttons.Count; i++)
             {
-                btn = new Rectangle(startX + i * (buttonWidth + spacing), y, buttonWidth, buttonHeight);
-                Buttons[i].Draw(Style, btn);
+                Rectangle size = buttonSizes[i];
+                Rectangle btn = new((int)x, y, size.Width, size.Height);
+
+                if (size.Height > yIncreaseAfterButtons)
+                    yIncreaseAfterButtons = (int)size.Height;
+
+                Buttons[i].Draw(this, Style, btn);
+                x += size.Width + spacing;
             }
-            y += 25;
+
+            y += yIncreaseAfterButtons;
+
 
             UIContext c = new UIContext();
             c.Begin(new Vector2(bounds.X, y), Style.ContentColor);
@@ -104,9 +132,6 @@ namespace WinterRose.FrostWarden.DialogBoxes.Boxes
 
         internal void UpdateBox()
         {
-            for (int i = 0; i < Buttons.Length; i++)
-                Buttons[i].Update(this, btn);
-
             Update();
         }
 

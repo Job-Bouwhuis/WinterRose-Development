@@ -1,8 +1,8 @@
 ﻿using Raylib_cs;
 using System.Formats.Tar;
-using WinterRose.FrostWarden.TextRendering;
+using WinterRose.ForgeWarden.TextRendering;
 
-namespace WinterRose.FrostWarden.DialogBoxes.Boxes
+namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
 {
     public class ProgressDialog : Dialog
     {

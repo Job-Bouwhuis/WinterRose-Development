@@ -1,4 +1,4 @@
-﻿namespace ForgeMantle.Values;
+﻿namespace WinterRose.ForgeMantle.Values;
 
 public interface IConfigValue
 {

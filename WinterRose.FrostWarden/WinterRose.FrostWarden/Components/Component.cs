@@ -1,7 +1,7 @@
-﻿using WinterRose.FrostWarden.Components;
-using WinterRose.FrostWarden.Entities;
+﻿using WinterRose.ForgeWarden.Components;
+using WinterRose.ForgeWarden.Entities;
 
-namespace WinterRose.FrostWarden;
+namespace WinterRose.ForgeWarden;
 
 public abstract class Component : IComponent
 {

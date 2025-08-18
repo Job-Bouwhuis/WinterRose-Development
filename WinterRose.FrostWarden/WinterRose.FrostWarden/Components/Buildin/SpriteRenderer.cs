@@ -5,9 +5,9 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FrostWarden.Shaders;
+using WinterRose.ForgeWarden.Shaders;
 
-namespace WinterRose.FrostWarden.Components
+namespace WinterRose.ForgeWarden.Components
 {
     public class SpriteRenderer : Component, IRenderable
     {

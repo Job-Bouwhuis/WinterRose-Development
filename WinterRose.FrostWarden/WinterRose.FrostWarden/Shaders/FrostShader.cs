@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.FrostWarden.Shaders
+namespace WinterRose.ForgeWarden.Shaders
 {
     public class FrostShader
     {

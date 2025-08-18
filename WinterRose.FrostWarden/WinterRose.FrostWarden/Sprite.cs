@@ -1,7 +1,7 @@
 ﻿using Raylib_cs;
 using System.Numerics;
 
-namespace WinterRose.FrostWarden
+namespace WinterRose.ForgeWarden
 {
     public class Sprite : IDisposable
     {

@@ -1,12 +1,139 @@
-﻿namespace WinterRose.FrostWarden.TextRendering;
+﻿namespace WinterRose.ForgeWarden.TextRendering;
 
 using Raylib_cs;
 using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.Text;
+using WinterRose.WinterThornScripting.Interpreting;
 
 public class RichText
 {
+    public Font Font { get; set; } = ray.GetFontDefault();
+    public float Spacing { get; set; } = 2;
+    public int FontSize { get; set; } = 12;
     public List<RichElement> Elements { get; }
+
+    public Color lastColorInSequence
+    {
+        get
+        {
+            for (int i = Elements.Count; i >= 0; i--)
+            {
+                RichElement? element = Elements[i];
+                if (element is RichGlyph glyph)
+                    return glyph.Color;
+                if (element is RichSprite sprite)
+                    return sprite.Tint;
+            }
+            return Color.White;
+        }
+    }
+
+    public static implicit operator RichText(string text)
+    {
+        return Parse(text, Color.White);
+    }
+
+    public static RichText operator +(RichText a, RichText b)
+    {
+        var combinedElements = new List<RichElement>(a.Elements);
+        combinedElements.AddRange(b.Elements);
+        return new RichText(combinedElements) { Font = a.Font, Spacing = a.Spacing, FontSize = a.FontSize };
+    }
+
+    public static RichText operator +(RichText a, RichElement b)
+    {
+        var combinedElements = new List<RichElement>(a.Elements) { b };
+        return new RichText(combinedElements) { Font = a.Font, Spacing = a.Spacing, FontSize = a.FontSize };
+    }
+
+    public static RichText operator +(RichElement a, RichText b)
+    {
+        var combinedElements = new List<RichElement> { a };
+        combinedElements.AddRange(b.Elements);
+        return new RichText(combinedElements) { Font = b.Font, Spacing = b.Spacing, FontSize = b.FontSize };
+    }
+
+    public static RichText operator +(RichText a, string b)
+    {
+        var combinedElements = new List<RichElement>(a.Elements);
+        combinedElements.AddRange(RichText.Parse(b).Elements);
+        return new RichText(combinedElements) { Font = a.Font, Spacing = a.Spacing, FontSize = a.FontSize };
+    }
+
+    public static RichText operator +(string a, RichText b)
+    {
+        var combinedElements = new List<RichElement>(RichText.Parse(a).Elements);
+        combinedElements.AddRange(b.Elements);
+        return new RichText(combinedElements) { Font = b.Font, Spacing = b.Spacing, FontSize = b.FontSize };
+    }
+
+    public static RichText operator +(RichText a, char b)
+    {
+
+        var combinedElements = new List<RichElement>(a.Elements) { new RichGlyph(b,  a.lastColorInSequence)};
+        return new RichText(combinedElements) { Font = a.Font, Spacing = a.Spacing, FontSize = a.FontSize };
+    }
+
+    public static RichText operator +(char a, RichText b)
+    {
+        var combinedElements = new List<RichElement> { new RichGlyph(a, b.lastColorInSequence) };
+        combinedElements.AddRange(b.Elements);
+        return new RichText(combinedElements) { Font = b.Font, Spacing = b.Spacing, FontSize = b.FontSize };
+    }
+
+    public static RichText operator +(RichText a, object? o)
+    {
+        return a + (o?.ToString() ?? "{null}");
+    }
+
+    public Rectangle CalculateBounds(float maxWidth)
+    {
+        var lines = RichTextRenderer.WrapText(this, maxWidth);
+
+        List<Rectangle> lineSizes = [];
+
+        foreach (var line in lines)
+            lineSizes.Add(CalculateLineSize(line));
+        float width = lineSizes.Count > 0 ? lineSizes.Max(r => r.Width) : 0;
+        return new Rectangle(0, 0, width, lines.Count * (FontSize) + lines.Count * Spacing);
+    }
+
+    internal Rectangle CalculateLineSize(List<RichElement> elements)
+    {
+        Rectangle r = new();
+        bool first = true;
+        foreach (RichElement element in elements)
+        {
+            if (element is RichGlyph rg)
+            {
+                var size = ray.MeasureTextEx(Font, "" + rg.Character, FontSize, Spacing);
+
+                if (first)
+                {
+                    first = false;
+                    r.Height = size.Y;
+                }
+                if (size.X > 0)
+                    r.Width += size.X + Spacing;
+                if (rg.Character is '\n')
+                    r.Height += size.Y;
+                continue;
+            }
+
+            if (element is RichSprite rs && RichSpriteRegistry.GetSprite(rs.SpriteKey) is Sprite s)
+            {
+                float spriteHeight = rs.BaseSize * FontSize;
+                float scale = spriteHeight / s.Height;
+                r.Width += s.Width * scale;
+                continue;
+            }
+        }
+
+        if (r.X >= Spacing)
+            r.X -= Spacing;
+        return r;
+    }
 
     public RichText(List<RichElement> elements)
     {
@@ -21,9 +148,9 @@ public class RichText
         return sb.ToString();
     }
 
-    public static RichText Parse(string text) => Parse(text, Color.White);
+    public static RichText Parse(string text, int fontSize = 12) => Parse(text, Color.White, fontSize);
     
-    public static RichText Parse(string text, Color defaultColor)
+    public static RichText Parse(string text, Color defaultColor, int fontSize = 12)
     {
         var elements = new List<RichElement>();
         Color currentColor = defaultColor;
@@ -75,10 +202,12 @@ public class RichText
             i++;
         }
 
-        return new RichText(elements);
+        return new RichText(elements) {
+            FontSize = fontSize
+        };
     }
 
-    public float MeasureText(Font? font, float fontSize)
+    public float MeasureText(Font? font)
     {
         font ??= ray.GetFontDefault();
         float width = 0;
@@ -87,14 +216,14 @@ public class RichText
             switch (element)
             {
                 case RichGlyph glyph:
-                    width += Raylib.MeasureTextEx(font.Value, glyph.Character.ToString(), fontSize, 1).X;
+                    width += Raylib.MeasureTextEx(font.Value, glyph.Character.ToString(), FontSize, 1).X;
                     break;
 
                 case RichSprite sprite:
                     var texture = RichSpriteRegistry.GetSprite(sprite.SpriteKey);
                     if (texture is not null)
                     {
-                        float spriteHeight = sprite.BaseSize * fontSize;
+                        float spriteHeight = sprite.BaseSize * FontSize;
                         float scale = spriteHeight / texture.Height;
                         width += texture.Width * scale;
                     }
@@ -127,6 +256,33 @@ public class RichText
             "black" => Color.Black,
             "yellow" => Color.Yellow,
             _ => fallback
+        };
+    }
+
+    public RichText Clone()
+    {
+        List<RichElement> clonedElements = new();
+
+        foreach (var element in Elements)
+        {
+            if (element is RichGlyph glyph)
+            {
+                clonedElements.Add(new RichGlyph(glyph.Character, glyph.Color));
+            }
+            else if (element is RichSprite sprite)
+            {
+                clonedElements.Add(new RichSprite(sprite.SpriteKey, sprite.SpriteSource, sprite.BaseSize, sprite.Tint)
+                {
+                    Clickable = sprite.Clickable
+                });
+            }
+        }
+
+        return new RichText(clonedElements)
+        {
+            Font = this.Font,
+            Spacing = this.Spacing,
+            FontSize = this.FontSize
         };
     }
 }

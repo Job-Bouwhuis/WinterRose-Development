@@ -5,9 +5,9 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FrostWarden.Components;
+using WinterRose.ForgeWarden.Components;
 
-namespace WinterRose.FrostWarden.Tests
+namespace WinterRose.ForgeWarden.Tests
 {
     class Mover : Component, IUpdatable
     {
@@ -18,10 +18,11 @@ namespace WinterRose.FrostWarden.Tests
 
         public void Update()
         {
+            
             Vector2 input = Vector2.Zero;
 
             if (ray.IsKeyPressed(KeyboardKey.F))
-                owner.GetComponent<SpriteRenderer>()!.Shader.TrySetValue("fade", true);
+                throw new InvalidOperationException("this is a test exception");
 
             if (ray.IsKeyDown(KeyboardKey.E))
                 transform.rotation -= new Quaternion(0, 0, 1, 0);

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.AnonymousTypes;
 
-namespace WinterRose.FrostWarden.AssetPipeline
+namespace WinterRose.ForgeWarden.AssetPipeline
 {
     public sealed class AssetHeader : IEquatable<AssetHeader>
     {

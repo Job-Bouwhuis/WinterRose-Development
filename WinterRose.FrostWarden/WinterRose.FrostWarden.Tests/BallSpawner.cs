@@ -5,11 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FrostWarden.Components;
-using WinterRose.FrostWarden.Entities;
-using WinterRose.FrostWarden.Physics;
+using WinterRose.ForgeWarden.Components;
+using WinterRose.ForgeWarden.Entities;
+using WinterRose.ForgeWarden.Physics;
 
-namespace WinterRose.FrostWarden.Tests
+namespace WinterRose.ForgeWarden.Tests
 {
     public class BallSpawner : Component, IUpdatable
     {

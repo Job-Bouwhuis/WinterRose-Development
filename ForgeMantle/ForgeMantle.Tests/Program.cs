@@ -1,6 +1,7 @@
-﻿using ForgeMantle;
-using ForgeMantle.Values;
-using ForgeMantle.Serialization;
+﻿using WinterRose.ForgeMantle;
+using WinterRose.ForgeMantle.Values;
+using WinterRose.ForgeMantle.Serialization;
+using WinterRose.ForgeMantle.Models;
 
 internal class Program
 {
@@ -8,13 +9,13 @@ internal class Program
     {
         var configManager = new ConfigManager();
 
-        var memoryLayer = new ConfigLayer(new FileStorage("Config.wfbin", new WinterForgeSerializer()));
+        var memoryLayer = new ConfigLayer(new WindowsRegistryStorage("Config", new WinterForgeStringSerializer<ConfigSnapshot>()));
         configManager.AddLayer(memoryLayer);
 
         configManager.Update(snap =>
         {
-            snap.State["player.health"] = new BoxedConfigValue<int>(100);
-            snap.State["player.name"] = new BoxedConfigValue<string>("Snow");
+            snap.State["player.health"] = new ConfigValue<int>(100);
+            snap.State["player.name"] = new ConfigValue<string>("Snow");
         });
 
         configManager.ApplyChanges();
@@ -22,7 +23,7 @@ internal class Program
         Console.WriteLine(configManager.GetValue("player.health")); // 100
         Console.WriteLine(configManager.GetValue("player.name"));   // Snow
 
-        configManager.Update(snap => snap.State["player.health"] = new BoxedConfigValue<int>(50));
+        configManager.Update(snap => snap.State["player.health"] = new ConfigValue<int>(50));
         configManager.ApplyChanges();
 
         Console.WriteLine(configManager.GetValue("player.health")); // 50

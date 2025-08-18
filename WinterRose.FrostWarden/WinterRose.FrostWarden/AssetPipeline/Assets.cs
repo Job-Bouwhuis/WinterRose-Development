@@ -9,7 +9,7 @@ using WinterRose.AnonymousTypes;
 using WinterRose.Reflection;
 using WinterRose.WinterForgeSerializing;
 
-namespace WinterRose.FrostWarden.AssetPipeline
+namespace WinterRose.ForgeWarden.AssetPipeline
 {
     public static class Assets
     {

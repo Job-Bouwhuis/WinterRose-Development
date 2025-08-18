@@ -1,12 +1,11 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace WinterRose.FrostWarden;
+namespace WinterRose.ForgeWarden;
 
 internal static class BulletPhysicsLoader
 {
     private static readonly string LIB_DIR = Path.Combine(AppContext.BaseDirectory, "runtimes/native");
-    private static readonly string CONFIG_NAME = "BulletSharp.dll.config";
 
     public static void LoadBulletLibrary()
     {
@@ -37,6 +36,8 @@ internal static class BulletPhysicsLoader
         string resourceName = GetPlatformResourceName();
         string outputPath = Path.Combine(LIB_DIR, GetPlatformFileName());
 
+        var names = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+
         using var dllStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
         if (dllStream == null)
             throw new Exception($"Embedded native library '{resourceName}' not found.");
@@ -64,11 +65,11 @@ internal static class BulletPhysicsLoader
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             bool is64 = RuntimeInformation.OSArchitecture == Architecture.X64;
-            return $"WinterRose.FrostWarden.libbulletc-windows-{(is64 ? "x64" : "x86")}.dll";
+            return $"WinterRose.ForgeWarden.libbulletc-windows-{(is64 ? "x64" : "x86")}.dll";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            return "WinterRose.FrostWarden.libbulletc-linux-x64.so";
+            return "WinterRose.ForgeWarden.libbulletc-linux-x64.so";
         }
 
         throw new PlatformNotSupportedException("Unsupported platform.");

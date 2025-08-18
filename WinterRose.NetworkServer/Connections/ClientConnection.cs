@@ -15,6 +15,7 @@ using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.WinterForgeSerializing.Compiling;
+using WinterRose.WinterForgeSerializing.Formatting;
 using WinterRose.WinterThornScripting;
 
 namespace WinterRose.NetworkServer.Connections;
@@ -24,12 +25,13 @@ public class ClientConnection : NetworkConnection
     private string domainUsed;
     private IPAddress ipAddressUsed;
     private TcpClient client;
-    private NetworkStream stream;
+    internal NetworkStream stream;
     private Task listenerThread = null!;
     private bool tunnelImminent = false;
 
     public TunnelRequestReceivedHandler OnTunnelRequestReceived { get; } = new();
     public TunnelStream? ActiveTunnel { get; private set; }
+    public override bool IsConnected => client.Connected;
 
     private bool initialized = false;
 
@@ -42,9 +44,10 @@ public class ClientConnection : NetworkConnection
         return true;
     }
 
-    internal ClientConnection(TcpClient client, bool isOnServerSide, ILogger? logger)
-        : base(logger is null ? new ConsoleLogger(nameof(ClientConnection), false) : logger)
+    internal ClientConnection(TcpClient client, bool isOnServerSide, ILogger? logger, string? username)
+        : base(logger is null ? new ConsoleLogger(nameof(ClientConnection), true) : logger)
     {
+        Username = username ?? "UNSET";
         IsServer = false;
         this.client = client;
         stream = client.GetStream();
@@ -57,7 +60,19 @@ public class ClientConnection : NetworkConnection
         var client = new TcpClient();
         client.Connect(ip, port);
 
-        var con = new ClientConnection(client, false, logger);
+        var con = new ClientConnection(client, false, logger, username);
+        con.ipAddressUsed = ip;
+        while (!con.initialized) ;
+
+        return con;
+    }
+
+    public static ClientConnection Connect(IPAddress ip, int port, bool server, string? username = null, ILogger? logger = null)
+    {
+        var client = new TcpClient();
+        client.Connect(ip, port);
+
+        var con = new ClientConnection(client, server, logger, username);
         con.ipAddressUsed = ip;
         while (!con.initialized) ;
 
@@ -82,7 +97,7 @@ public class ClientConnection : NetworkConnection
     {
         packet.SenderID = Identifier;
         packet.SenderUsername = Username;
-        WinterForge.SerializeToStream(packet, stream);
+        WinterForge.SerializeToStream(packet, stream/*, TargetFormat.IntermediateRepresentation*/);
         stream.Flush();
     }
 
@@ -162,11 +177,7 @@ public class ClientConnection : NetworkConnection
         serverSourceConnection.SetSource(ConnectionSource.Server);
 
         {
-            Packet packet;
-            while ((packet = ReadPacket()) == null)
-            {
-
-            }
+            Packet packet = ReadPacket();
 
             if (packet is ConnectionCreatePacket ccp)
             {
@@ -198,7 +209,7 @@ public class ClientConnection : NetworkConnection
             {
                 if (tunnelImminent || ActiveTunnel is not null)
                 {
-                    if(ActiveTunnel is not null)
+                    if (ActiveTunnel is not null)
                     {
                         tunnelImminent = false;
                         if (ActiveTunnel.Closed)
@@ -213,9 +224,11 @@ public class ClientConnection : NetworkConnection
 
                 if (packet is TunnelAcceptedPacket)
                     tunnelImminent = true;
-                if(packet is ReplyPacket rp)
+                if (packet is ReplyPacket rp)
+                {
                     if (((ReplyPacket.ReplyContent)rp.Content).OriginalPacket is TunnelAcceptedPacket)
                         tunnelImminent = true;
+                }
 
                 if (packet is ServerStoppedPacket)
                 {
@@ -248,7 +261,7 @@ public class ClientConnection : NetworkConnection
         while (true)
         {
             var data = ReadFromNetworkStream(stream);
-            if(data is Nothing)
+            if (data is Nothing)
             {
                 continue;
             }
@@ -283,9 +296,9 @@ public class ClientConnection : NetworkConnection
 
         return ((ConnectionListPacket.ConnectionListContent)p.Content)
             .connections.Where(id => id != Identifier).Select(id => new RelayConnection(this)
-        {
-            RelayIdentifier = id
-        }).ToList();
+            {
+                RelayIdentifier = id
+            }).ToList();
     }
 
     public override bool TunnelRequestReceived(TunnelRequestPacket packet, NetworkConnection sender)
@@ -293,7 +306,7 @@ public class ClientConnection : NetworkConnection
         TunnelRequestPacket.TunnelReqContent? content = packet.Content as TunnelRequestPacket.TunnelReqContent;
         return OnTunnelRequestReceived.Invoke(content);
     }
-    public override void TunnelRequestAccepted(Guid a, Guid b) 
+    public override void TunnelRequestAccepted(Guid a, Guid b)
     {
         TunnelStream tunnel = new(this);
         ActiveTunnel = tunnel;
@@ -310,13 +323,18 @@ public class ClientConnection : NetworkConnection
         }
         return false;
     }
+
+    internal void StopListener()
+    {
+        listenerThread?.Dispose();
+    }
 }
 
 internal class NotAllowedException : Exception
 {
     public NotAllowedException(string message)
-        :base(message)
+        : base(message)
     {
-        
+
     }
 }

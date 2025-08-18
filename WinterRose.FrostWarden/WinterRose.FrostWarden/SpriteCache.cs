@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FrostWarden.AssetPipeline;
+using WinterRose.ForgeWarden.AssetPipeline;
 
-namespace WinterRose.FrostWarden
+namespace WinterRose.ForgeWarden
 {
     public static class SpriteCache
     {

@@ -1,4 +1,4 @@
-﻿namespace WinterRose.FrostWarden.TextRendering;
+﻿namespace WinterRose.ForgeWarden.TextRendering;
 
 using Raylib_cs;
 

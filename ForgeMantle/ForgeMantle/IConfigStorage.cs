@@ -1,12 +1,12 @@
-﻿using ForgeMantle.Models;
-using ForgeMantle.Serialization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeMantle.Models;
+using WinterRose.ForgeMantle.Serialization;
 
-namespace ForgeMantle;
+namespace WinterRose.ForgeMantle;
 
 public interface IConfigStorage
 {

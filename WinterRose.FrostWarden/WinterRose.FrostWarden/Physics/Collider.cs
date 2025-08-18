@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.FrostWarden.Physics
+namespace WinterRose.ForgeWarden.Physics
 {
     public class Collider : PhysicsComponent
     {

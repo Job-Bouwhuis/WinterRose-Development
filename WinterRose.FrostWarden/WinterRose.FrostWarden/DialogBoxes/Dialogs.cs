@@ -2,11 +2,11 @@ using Raylib_cs;
 using System;
 using System.Numerics;
 using WinterRose;
-using WinterRose.FrostWarden;
-using WinterRose.FrostWarden.DialogBoxes.Boxes;
-using WinterRose.FrostWarden.TextRendering;
+using WinterRose.ForgeWarden;
+using WinterRose.ForgeWarden.DialogBoxes.Boxes;
+using WinterRose.ForgeWarden.TextRendering;
 
-namespace WinterRose.FrostWarden.DialogBoxes
+namespace WinterRose.ForgeWarden.DialogBoxes
 {
     public static class Dialogs
     {
@@ -19,6 +19,10 @@ namespace WinterRose.FrostWarden.DialogBoxes
 
         private static List<Dialog> activeDialogs = new List<Dialog>();
         private static Queue<Dialog> queuedDialogs = new Queue<Dialog>();
+
+        public static int OpenDialogs => activeDialogs.Count;
+        public static int QueuedDialogs => queuedDialogs.Count;
+        public static int TotalDialogs => OpenDialogs + QueuedDialogs;
 
         public static Dialog Show(Dialog dialog)
         {
@@ -56,10 +60,10 @@ namespace WinterRose.FrostWarden.DialogBoxes
 
                         foreach (var oc in occupying)
                         {
-                            if (pending.Priority > oc.Priority && oc.Priority != DialogPriority.AlwaysFirst)
+                            if (pending.Priority > oc.Priority)
                             {
                                 oc.IsClosing = true;
-                                requeue = new Queue<Dialog>(new[] { oc }.Concat(requeue));
+                                oc.WasBumped = true;
                             }
                             else
                             {
@@ -116,6 +120,15 @@ namespace WinterRose.FrostWarden.DialogBoxes
                     if (dialog.AnimationTimeOut >= ANIMATION_DURATION)
                     {
                         activeDialogs.RemoveAt(i);
+                        if(dialog.WasBumped)
+                        {
+                            // If the dialog was bumped, we don't want to requeue it
+                            dialog.WasBumped = false;
+                            queuedDialogs = new Queue<Dialog>(new[] { dialog }.Concat(queuedDialogs));
+                        }
+                        else
+                        {
+                        }
                         continue;
                     }
                 }
@@ -216,8 +229,7 @@ namespace WinterRose.FrostWarden.DialogBoxes
             }
         }
 
-        // Update GetDialogBounds to accept a parameter
-        private static Rectangle GetDialogBounds(DialogPlacement placement)
+        internal static Rectangle GetDialogBounds(DialogPlacement placement)
         {
             int screenWidth = ray.GetScreenWidth();
             int screenHeight = ray.GetScreenHeight();
@@ -229,6 +241,7 @@ namespace WinterRose.FrostWarden.DialogBoxes
 
             return placement switch
             {
+                // center
                 DialogPlacement.CenterSmall => new Rectangle(
                     screenWidth * SMALL_PAD,
                     screenHeight * SMALL_PAD,
@@ -237,6 +250,8 @@ namespace WinterRose.FrostWarden.DialogBoxes
 
                 DialogPlacement.CenterBig => new Rectangle(0, 0, screenWidth, screenHeight),
 
+
+                // left
                 DialogPlacement.LeftSmall => new Rectangle(0,
                     screenHeight * SMALL_PAD,
                     smallWidth,
@@ -244,6 +259,8 @@ namespace WinterRose.FrostWarden.DialogBoxes
 
                 DialogPlacement.LeftBig => new Rectangle(0, 0, smallWidth, screenHeight),
 
+
+                // right
                 DialogPlacement.RightSmall => new Rectangle(
                     screenWidth * (1 - SMALL_PAD),
                     screenHeight * SMALL_PAD,
@@ -252,12 +269,14 @@ namespace WinterRose.FrostWarden.DialogBoxes
 
                 DialogPlacement.RightBig => new Rectangle(screenWidth - smallWidth, 0, smallWidth, screenHeight),
 
+                // top
                 DialogPlacement.TopSmall => new Rectangle(screenWidth * SMALL_PAD, 0,
                     screenWidth * (1 - SMALL_PAD * 2),
                     smallHeight),
 
                 DialogPlacement.TopBig => new Rectangle(0, 0, screenWidth, smallHeight),
 
+                // bottom
                 DialogPlacement.BottomSmall => new Rectangle(screenWidth * SMALL_PAD,
                     screenHeight - smallHeight,
                     screenWidth * (1 - SMALL_PAD * 2),
@@ -268,7 +287,7 @@ namespace WinterRose.FrostWarden.DialogBoxes
                     screenWidth,
                     smallHeight),
 
-                // New corner placements for overlapping corners
+                // corners
                 DialogPlacement.TopLeft => new Rectangle(0, 0, smallWidth, smallHeight),
 
                 DialogPlacement.TopRight => new Rectangle(screenWidth - smallWidth, 0, smallWidth, smallHeight),
@@ -277,14 +296,36 @@ namespace WinterRose.FrostWarden.DialogBoxes
 
                 DialogPlacement.BottomRight => new Rectangle(screenWidth - smallWidth, screenHeight - smallHeight, smallWidth, smallHeight),
 
+                // more center ones
+                DialogPlacement.HorizontalBig => new Rectangle(
+                    0,
+                    screenHeight * SMALL_PAD,
+                    screenWidth,
+                    screenHeight * (1 - SMALL_PAD * 2)),
+
+                DialogPlacement.VerticalBig => new Rectangle(
+                    screenWidth * SMALL_PAD,
+                    0,
+                    screenWidth * (1 - SMALL_PAD * 2),
+                    screenHeight),
+
+
                 _ => new Rectangle(
-                    screenWidth / 2 - 400 / 2,
-                    screenHeight / 2 - 200 / 2,
+                    screenWidth / 2 - 200,
+                    screenHeight / 2 - 100,
                     400,
                     200),
             };
         }
 
+        public static void CloseAll(bool includeQueued = false)
+        {
+            foreach(var d in activeDialogs)
+                d.Close();
+            if(includeQueued)
+                queuedDialogs.Clear();
+        }
 
+        internal static List<Dialog> GetActiveDialogs() => activeDialogs;
     }
 }

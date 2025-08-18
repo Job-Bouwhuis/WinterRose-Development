@@ -2,28 +2,31 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FrostWarden.DialogBoxes.Boxes;
+using WinterRose.ForgeWarden.DialogBoxes.Boxes;
+using WinterRose.ForgeWarden.TextRendering;
 
-namespace WinterRose.FrostWarden.DialogBoxes
+namespace WinterRose.ForgeWarden.DialogBoxes
 {
     public class DialogButton
     {
-        public string text;
+        public RichText text;
         public Action? OnClick;
 
         public DialogButton(string text, Action? onClick)
         {
-            this.text = text;
+            this.text = RichText.Parse(text);
             OnClick = onClick;
         }
 
-        internal void Draw(DialogStyle style, Rectangle bounds)
+        internal void Draw(Dialog dialog, DialogStyle style, Rectangle bounds)
         {
             Vector2 mouse = ray.GetMousePosition();
             bool hovered = ray.CheckCollisionPointRec(mouse, bounds);
             bool mouseDown = ray.IsMouseButtonDown(MouseButton.Left);
+            bool mouseReleased = ray.IsMouseButtonReleased(MouseButton.Left);
 
             Color backgroundColor;
             if (hovered && mouseDown)
@@ -35,15 +38,7 @@ namespace WinterRose.FrostWarden.DialogBoxes
 
             ray.DrawRectangleRec(bounds, backgroundColor);
             ray.DrawRectangleLinesEx(bounds, 1, style.ButtonBorder);
-            ray.DrawText(text, (int)(bounds.X + 10), (int)(bounds.Y + 7), 16, style.ButtonTextColor);
-        }
-
-        internal void Update(Dialog dialog, Rectangle bounds)
-        {
-            Vector2 mouse = ray.GetMousePosition();
-            bool hovered = ray.CheckCollisionPointRec(mouse, bounds);
-            bool mouseDown = ray.IsMouseButtonDown(MouseButton.Left);
-            bool mouseReleased = ray.IsMouseButtonReleased(MouseButton.Left);
+            RichTextRenderer.DrawRichText(text, new(bounds.X + 10, bounds.Y + 7), bounds.Width);
 
             if (hovered && mouseReleased)
             {

@@ -1,36 +1,50 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
+using WinterRose;
 using WinterRose.Networking;
 using WinterRose.NetworkServer;
 using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
 using WinterRose.WinterForgeSerializing;
 
-
-
-
 try
 {
-    ServerConnection server = new(IPAddress.Any, 3000);
-    server.Start();
+    if (Debugger.IsAttached)
+    {// 53802
+        ServerConnection server = new(IPAddress.Any, 53802, clusterID: "c1");
+        server.Username = "Server1";
+        server.Start();
+        server.logger.LogInformation("Server running on port {port}", server.Port);
+        while (server.IsConnected) ;
 
-    ClientConnection client = ClientConnection.Connect(IPAddress.Loopback, 3000, "Snow");
-    //ClientConnection client2 = ClientConnection.Connect(IPAddress.Loopback, 3000, "Penguin");
+        Windows.ApplicationExit += () =>
+        {
+            server.Disconnect();
+            Console.WriteLine("Server1 stopped.");
+        };
+    }
+    else
+    {
+        ServerConnection server = new(IPAddress.Any, 53803, clusterID: "c1");
+        server.Username = "Server2";
+        server.Start();
+        server.logger.LogInformation("Server running on port {port}", server.Port);
+        while (server.IsConnected) ;
 
-
-    // RelayConnection? other =
-    //     client.GetOtherConnectedClients()
-    //         .Where(connection => connection.Identifier != client.Identifier)
-    //         .FirstOrDefault();
-
-
+        Windows.ApplicationExit += () =>
+        {
+            server.Disconnect();
+            Console.WriteLine("Server2 stopped.");
+        };
+    }
 
 }
 catch (Exception ex)
 {
     Console.WriteLine(ex.Message);
 }
-
 
 // simple chat 'app'
 /*

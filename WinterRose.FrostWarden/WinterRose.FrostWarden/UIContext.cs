@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.FrostWarden
+namespace WinterRose.ForgeWarden
 {
     using Raylib_cs;
     using System.Numerics;
-    using WinterRose.FrostWarden.TextRendering;
+    using WinterRose.ForgeWarden.TextRendering;
 
     public class UIContext
     {
@@ -35,8 +35,6 @@ namespace WinterRose.FrostWarden
             RichTextRenderer.DrawRichText(
                 RichText.Parse(text, Color.White), 
                 new Vector2(position.X, position.Y), 
-                null, 
-                20, 
                 Raylib.GetScreenWidth(), 
                 tinted);
             position.Y += lineHeight;
@@ -45,7 +43,8 @@ namespace WinterRose.FrostWarden
         public bool Button(string text)
         {
             RichText t = RichText.Parse(text, MultiplyColor(Color.White, tintColor));
-            float width = t.MeasureText(null, 20);
+            t.FontSize = 20;
+            float width = t.MeasureText(null);
             Rectangle rect = new Rectangle(position.X, position.Y, width + contentWidth, lineHeight);
             bool pressed = Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), rect) &&
                            Raylib.IsMouseButtonPressed(MouseButton.Left);
@@ -55,8 +54,6 @@ namespace WinterRose.FrostWarden
             RichTextRenderer.DrawRichText(
                 t,
                 new Vector2(position.X + 10, position.Y + 2),
-                null,
-                20,
                 Raylib.GetScreenWidth(),
                 tintColor);
             position.Y += lineHeight + padding;
@@ -77,8 +74,6 @@ namespace WinterRose.FrostWarden
             RichTextRenderer.DrawRichText(
                 RichText.Parse(label, MultiplyColor(Color.White, tintColor)),
                 new Vector2(box.X + 30, box.Y),
-                null,
-                20,
                 Raylib.GetScreenWidth(),
                 tintColor);
             position.Y += lineHeight + padding;

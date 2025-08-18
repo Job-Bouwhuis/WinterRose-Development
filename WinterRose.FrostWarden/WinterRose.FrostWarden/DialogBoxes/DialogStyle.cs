@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.FrostWarden.DialogBoxes
+namespace WinterRose.ForgeWarden.DialogBoxes
 {
     public class DialogStyle
     {
@@ -88,5 +88,4 @@ namespace WinterRose.FrostWarden.DialogBoxes
             set => timeLabelColorRaw = value;
         }
     }
-
 }

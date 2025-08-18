@@ -1,5 +1,4 @@
-﻿using ForgeMantle.Models;
-using ForgeMantle.Serialization;
+﻿using WinterRose.ForgeMantle.Serialization;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,8 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using WinterRose.ForgeMantle.Models;
 
-namespace ForgeMantle;
+namespace WinterRose.ForgeMantle;
 public class ConfigManager
 {
     private readonly List<ConfigLayer> layers = new();

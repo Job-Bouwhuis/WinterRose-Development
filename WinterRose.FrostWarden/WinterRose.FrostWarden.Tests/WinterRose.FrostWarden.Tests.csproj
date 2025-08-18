@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WinterRose.FrostWarden\WinterRose.FrostWarden.csproj" />
+    <ProjectReference Include="..\WinterRose.FrostWarden\WinterRose.ForgeWarden.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,7 +16,7 @@
       <Alias>ray</Alias>
     </Using>
     <Using Include="System.Numerics" />
-    <Using Include="WinterRose.FrostWarden.Components.Transform">
+    <Using Include="WinterRose.ForgeWarden.Components.Transform">
       <Alias>Transform</Alias>
     </Using>
   </ItemGroup>

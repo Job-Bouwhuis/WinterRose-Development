@@ -23,6 +23,8 @@ public abstract class NetworkConnection
 
     internal virtual Dictionary<Guid, Response<Packet>> pendingResponses { get; }
 
+    public abstract bool IsConnected { get; }
+
     static NetworkConnection() =>
         TypeWorker.FindTypesWithBase<PacketHandler>().Where(handler => handler != typeof(PacketHandler))
             .Foreach(handler => packetHandlers.Add(
@@ -50,7 +52,7 @@ public abstract class NetworkConnection
     /// <summary>
     /// Whether or not this connection is a server connection
     /// </summary>
-    public bool IsServer { get; protected set; }
+    public bool IsServer { get; internal protected set; }
 
     public readonly ILogger logger;
 
@@ -61,10 +63,8 @@ public abstract class NetworkConnection
 
     public virtual string Username { get; set; } = "UNSET";
 
-    public object ReadFromNetworkStream(NetworkStream stream)
+    internal object ReadFromNetworkStream(NetworkStream stream)
     {
-        using BinaryReader reader = new(stream);
-        while (reader.PeekChar() == -1) ;
         using MemoryStream mem = new();
         var instr = ByteToOpcodeParser.Parse(stream);
         return new InstructionExecutor().Execute(instr);
@@ -216,8 +216,7 @@ public abstract class NetworkConnection
     public virtual Packet SendAndWaitForResponse(Packet packet, Guid? destination = null, TimeSpan? timeout = null)
     {
         var response = new Response<Packet>();
-        packet.Header.CorrelationId = Guid.NewGuid(); // Unique ID for this request/response pair.
-        // Store the response object for the corresponding request.
+        packet.Header.CorrelationId = Guid.CreateVersion7();
         pendingResponses[packet.Header.CorrelationId] = response;
 
         if(destination is not null)

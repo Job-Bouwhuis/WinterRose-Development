@@ -1,4 +1,4 @@
-﻿namespace WinterRose.FrostWarden.DialogBoxes
+﻿namespace WinterRose.ForgeWarden.DialogBoxes
 {
     public enum DialogPlacement
     {
@@ -16,6 +16,9 @@
 
         BottomSmall,
         BottomBig,
+
+        HorizontalBig,
+        VerticalBig,
 
         TopRight,
         BottomLeft,

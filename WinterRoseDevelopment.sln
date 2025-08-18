@@ -73,7 +73,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NewFolder1", "NewFolder1", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WinterRose.FrostWarden", "WinterRose.FrostWarden", "{01B91BF3-F7F4-4776-8F1A-C6C4FB2E4B5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.FrostWarden", "WinterRose.FrostWarden\WinterRose.FrostWarden\WinterRose.FrostWarden.csproj", "{CB5D4BC9-45EB-839E-50E8-261B3676BAF0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.ForgeWarden", "WinterRose.FrostWarden\WinterRose.FrostWarden\WinterRose.ForgeWarden.csproj", "{CB5D4BC9-45EB-839E-50E8-261B3676BAF0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.FrostWarden.Tests", "WinterRose.FrostWarden\WinterRose.FrostWarden.Tests\WinterRose.FrostWarden.Tests.csproj", "{3E83A58F-4777-4C67-A67D-F6669746847D}"
 EndProject
@@ -85,13 +85,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiffTrackerTest", "DiffTrac
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ForgeMantle", "ForgeMantle", "{369CB01D-A1A7-72D2-AABC-3F0945D148A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForgeMantle", "ForgeMantle\ForgeMantle\ForgeMantle.csproj", "{E36AA9A3-95AB-4570-845E-EBE9E0002755}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.ForgeMantle", "ForgeMantle\ForgeMantle\WinterRose.ForgeMantle.csproj", "{E36AA9A3-95AB-4570-845E-EBE9E0002755}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForgeMantle.Tests", "ForgeMantle\ForgeMantle.Tests\ForgeMantle.Tests.csproj", "{55730C6A-FF0C-42AA-8003-B19616AF723B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.WinterForge", "..\WinterForge\src\WinterRose.WinterForge\WinterRose.WinterForge.csproj", "{E0F92791-A770-C061-A9D1-3FD5F14F086A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.Reflection", "..\WinterForge\src\WinterRose.Reflection\WinterRose.Reflection.csproj", "{3E8EC891-044C-E44D-AABA-69A3E4655F0B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.ForgeVein", "WinterRose.ForgeVein\WinterRose.ForgeVein\WinterRose.ForgeVein.csproj", "{ABEEA24B-D00B-4D36-9A26-354BFC8F3B19}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ForgeVein", "ForgeVein", "{7427C55F-70F9-4579-B88A-2DDCD3ABE65C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.ForgeVein.Tests", "WinterRose.ForgeVein\WinterRose.ForgeVein.Tests\WinterRose.ForgeVein.Tests.csproj", "{579D1A5C-AC79-4D54-A1AB-C85A337373C9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -257,6 +263,18 @@ Global
 		{3E8EC891-044C-E44D-AABA-69A3E4655F0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E8EC891-044C-E44D-AABA-69A3E4655F0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E8EC891-044C-E44D-AABA-69A3E4655F0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABEEA24B-D00B-4D36-9A26-354BFC8F3B19}.debug FileServer|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABEEA24B-D00B-4D36-9A26-354BFC8F3B19}.debug FileServer|Any CPU.Build.0 = Debug|Any CPU
+		{ABEEA24B-D00B-4D36-9A26-354BFC8F3B19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABEEA24B-D00B-4D36-9A26-354BFC8F3B19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABEEA24B-D00B-4D36-9A26-354BFC8F3B19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABEEA24B-D00B-4D36-9A26-354BFC8F3B19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{579D1A5C-AC79-4D54-A1AB-C85A337373C9}.debug FileServer|Any CPU.ActiveCfg = Debug|Any CPU
+		{579D1A5C-AC79-4D54-A1AB-C85A337373C9}.debug FileServer|Any CPU.Build.0 = Debug|Any CPU
+		{579D1A5C-AC79-4D54-A1AB-C85A337373C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{579D1A5C-AC79-4D54-A1AB-C85A337373C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{579D1A5C-AC79-4D54-A1AB-C85A337373C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{579D1A5C-AC79-4D54-A1AB-C85A337373C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -274,7 +292,6 @@ Global
 		{E14D78F9-08CA-4135-A395-F52744D73EF8} = {19A0AC95-7859-4E04-9367-152D5F5D3016}
 		{A539355D-7CEE-4038-BB62-EB8BDDAE1315} = {CEEC716A-A273-4111-8622-209F54DA8E14}
 		{45D61AA4-8945-4A0A-ABB3-DCB872B1A81D} = {8C66A3DD-1A47-4526-B197-CB465052BBEF}
-		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {8C66A3DD-1A47-4526-B197-CB465052BBEF}
 		{BF370AA7-7F97-49CE-852B-E28541228758} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{28CC2E47-1686-4C55-A90E-76857456A4DD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{1A250D6B-AD12-4491-8A11-AB756124A1D7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
@@ -292,6 +309,8 @@ Global
 		{3EC82571-D487-4227-B2F9-6F4B5E1CA1AB} = {C32B1E62-EA26-42DF-BC5A-78D7A4C016F7}
 		{E36AA9A3-95AB-4570-845E-EBE9E0002755} = {369CB01D-A1A7-72D2-AABC-3F0945D148A2}
 		{55730C6A-FF0C-42AA-8003-B19616AF723B} = {369CB01D-A1A7-72D2-AABC-3F0945D148A2}
+		{ABEEA24B-D00B-4D36-9A26-354BFC8F3B19} = {7427C55F-70F9-4579-B88A-2DDCD3ABE65C}
+		{579D1A5C-AC79-4D54-A1AB-C85A337373C9} = {7427C55F-70F9-4579-B88A-2DDCD3ABE65C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4476F88-F402-4E67-B4D9-6187D5BAD463}

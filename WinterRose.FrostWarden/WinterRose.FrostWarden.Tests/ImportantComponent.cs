@@ -4,14 +4,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.FrostWarden.Tests
+namespace WinterRose.ForgeWarden.Tests
 {
     class ImportantComponent : Component
     {
-        [InjectFromOwner]
+        [InjectFromParent]
+        public Transform parent;
+
+        [InjectFromSelf]
         public Mover mover;
 
         [InjectFrom(EntityName = "cam")]
         public Camera cam;
+
+        [InjectFromChildren]
+        public Transform MyKid;
+
+        [InjectAsset("bigimg")]
+        public Sprite sprite;
     }
 }

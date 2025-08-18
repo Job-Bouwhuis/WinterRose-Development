@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ForgeMantle\ForgeMantle.csproj" />
+    <ProjectReference Include="..\ForgeMantle\WinterRose.ForgeMantle.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,14 +1,14 @@
-﻿using WinterRose.FrostWarden.Components;
-using WinterRose.FrostWarden.Entities;
+﻿using WinterRose.ForgeWarden.Components;
+using WinterRose.ForgeWarden.Entities;
 using BulletSharp;
-using WinterRose.FrostWarden.Physics;
+using WinterRose.ForgeWarden.Physics;
 using System.Collections.Concurrent;
 using WinterRose.Reflection;
 using WinterRose.ForgeGuardChecks;
 using System.Diagnostics;
 using WinterRose.WinterForgeSerializing;
 
-namespace WinterRose.FrostWarden.Worlds;
+namespace WinterRose.ForgeWarden.Worlds;
 
 public class World : IDisposable
 {

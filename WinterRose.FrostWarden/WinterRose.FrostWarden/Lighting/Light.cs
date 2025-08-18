@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.FrostWarden.Lighting
+namespace WinterRose.ForgeWarden.Lighting
 {
     public struct Light
     {

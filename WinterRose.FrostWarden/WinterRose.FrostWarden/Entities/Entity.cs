@@ -1,12 +1,14 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using WinterRose.ForgeGuardChecks;
-using WinterRose.FrostWarden.Components;
-using WinterRose.FrostWarden.Physics;
-using WinterRose.FrostWarden.Worlds;
+using WinterRose.ForgeWarden.Components;
+using WinterRose.ForgeWarden.DependencyInjection;
+using WinterRose.ForgeWarden.DependencyInjection.Handlers;
+using WinterRose.ForgeWarden.Physics;
+using WinterRose.ForgeWarden.Worlds;
 using WinterRose.Reflection;
 
-namespace WinterRose.FrostWarden.Entities;
+namespace WinterRose.ForgeWarden.Entities;
 
 public class Entity
 {
@@ -124,7 +126,7 @@ public class Entity
             }
 
             component.CallAwake();
-            InjectDependanciesIntoComponent(component);
+            InjectDependenciesIntoComponent(component);
             component.CallStart();
         }
 
@@ -181,69 +183,39 @@ public class Entity
     internal void InjectIntoComponents(World world)
     {
         foreach (var comp in components)
-            InjectDependanciesIntoComponent(comp);
+            InjectDependenciesIntoComponent(comp);
     }
 
-    private void InjectDependanciesIntoComponent(Component c)
+    private static readonly Dictionary<Type, IInjectionHandler> HANDLERS = new()
+        {
+            { typeof(InjectFromSelfAttribute), new InjectFromOwnerHandler() },
+            { typeof(InjectFromChildrenAttribute), new InjectFromChildrenHandler() },
+            { typeof(InjectFromAttribute), new InjectFromWorldHandler() },
+            { typeof(InjectAssetAttribute), new InjectAssetHandler() },
+            { typeof(InjectFromParentAttribute), new InjectFromParentHandler() }
+        };
+
+
+    private void InjectDependenciesIntoComponent(Component component)
     {
-        object? @null = null;
-        object o = c;
-        ReflectionHelper rh = new ReflectionHelper(ref o);
+        var rh = new ReflectionHelper(component);
         var members = rh.GetMembers();
 
         foreach (var member in members)
         {
-            if (member.GetAttribute<InjectFromOwnerAttribute>() is InjectFromOwnerAttribute ifo)
+            foreach (var kvp in HANDLERS)
             {
-                Component? componentToInject = c.owner.GetComponent(member.Type);
-                Forge.Expect(componentToInject).Not.Null();
-                member.SetValue(ref o, componentToInject);
-            }
-            else if (member.GetAttribute<InjectFromChildrenAttribute>() is InjectFromChildrenAttribute ifc)
-            {
-                Entity? targetEntity = null;
-
-                // Search children of c.owner matching EntityName or Tags
-                foreach (var child in c.owner.transform.Children)
+                var attr = member.GetAttribute(kvp.Key);
+                if (attr != null)
                 {
-                    bool nameMatch = string.IsNullOrEmpty(ifc.EntityName) || child.owner.Name == ifc.EntityName;
-                    bool tagsMatch = ifc.Tags == null || ifc.Tags.Length == 0 || ifc.Tags.All(tag => child.owner.Tags.Contains(tag));
-
-                    if (nameMatch && tagsMatch)
-                    {
-                        targetEntity = child.owner;
-                        break;
-                    }
+                    IInjectionHandler handler = kvp.Value;
+                    handler.Inject(component, member, attr);
+                    break;
                 }
-
-                Forge.Expect(targetEntity).Not.Null();
-                object? componentToInject = targetEntity.GetComponent(member.Type);
-                Forge.Expect(componentToInject).Not.Null();
-                member.SetValue(ref o, componentToInject);
-            }
-            else if (member.GetAttribute<InjectFromAttribute>() is InjectFromAttribute ifa)
-            {
-                Entity? targetEntity = null;
-
-                foreach (var entity in c.owner.world._Entities)
-                {
-                    bool nameMatch = string.IsNullOrEmpty(ifa.EntityName) || entity.Name == ifa.EntityName;
-                    bool tagsMatch = ifa.Tags == null || ifa.Tags.Length == 0 || ifa.Tags.All(tag => entity.Tags.Contains(tag));
-
-                    if (nameMatch && tagsMatch)
-                    {
-                        targetEntity = entity;
-                        break;
-                    }
-                }
-
-                Forge.Expect(targetEntity).Not.Null();
-                object? componentToInject = targetEntity.GetComponent(member.Type);
-                Forge.Expect(componentToInject).Not.Null();
-                member.SetValue(ref o, componentToInject);
             }
         }
     }
+
 
     public bool TryFetchComponent<T>([NotNullWhen(true)] out T? vitals) where T : Component
     {

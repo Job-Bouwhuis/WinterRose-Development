@@ -1,5 +1,4 @@
-﻿using ForgeMantle.Models;
-using ForgeMantle.Values;
+﻿using WinterRose.ForgeMantle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +6,11 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose;
 using WinterRose.ForgeGuardChecks;
+using WinterRose.ForgeMantle.Models;
+using WinterRose.ForgeMantle.Values;
 using WinterRose.WinterForgeSerializing;
 
-namespace ForgeMantle;
+namespace WinterRose.ForgeMantle;
 public class ConfigLayer
 {
     public bool IsWritable { get; init; } = true;
@@ -48,9 +49,9 @@ public class ConfigLayer
     {
         return new ConfigLayer
         {
-            IsWritable = this.IsWritable,
+            IsWritable = IsWritable,
             Storage = Storage,
-            current = CloneSnapshot(this.current)
+            current = CloneSnapshot(current)
         };
     }
 

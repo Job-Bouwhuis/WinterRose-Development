@@ -16,6 +16,8 @@ public class RelayConnection : NetworkConnection
 
     public ConnectionSource Source { get; private set; } = ConnectionSource.Unknown;
 
+    public override bool IsConnected => sendPoint.IsConnected;
+
     /// <summary>
     /// <see cref="Guid.Empty"/> when <see cref="Source"/> is not <see cref="ConnectionSource.ClientRelay"/>
     /// </summary>

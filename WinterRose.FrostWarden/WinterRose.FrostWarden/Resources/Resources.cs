@@ -5,16 +5,16 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.FrostWarden.Resources
+namespace WinterRose.ForgeWarden.Resources
 {
-    internal static class EmbeddedResourceFetcher
+    internal static class Resources
     {
-        internal static string GetResourceText(string resourceName)
+        internal static string GetResourceText(string assemblyName, string resourceName)
         {
             resourceName = resourceName.Replace(" ", "_").Replace("-", "_").Replace("\\", ".").Replace("/", ".");
-            string fullResourceName = "WinterRose.FrostWarden.Resources." + resourceName;
+            string fullResourceName = assemblyName + resourceName;
 
-            var assembly = typeof(EmbeddedResourceFetcher).Assembly;
+            var assembly = typeof(Resources).Assembly;
 
             using Stream? stream = assembly.GetManifestResourceStream(fullResourceName);
             if (stream == null)

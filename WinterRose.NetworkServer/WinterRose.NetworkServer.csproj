@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WinterRose.ForgeGuard\WinterRose.ForgeGuard.csproj" />
     <ProjectReference Include="..\WinterRose\WinterRose\WinterRose.csproj" />
   </ItemGroup>
 

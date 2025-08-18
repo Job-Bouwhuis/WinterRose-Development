@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.AnonymousTypes;
 
-namespace WinterRose.FrostWarden.AssetPipeline.Handlers
+namespace WinterRose.ForgeWarden.AssetPipeline.Handlers
 {
     internal sealed class SpriteAssetHandler : IAssetHandler<Sprite>, IAssetHandler<SpriteGif>
     {

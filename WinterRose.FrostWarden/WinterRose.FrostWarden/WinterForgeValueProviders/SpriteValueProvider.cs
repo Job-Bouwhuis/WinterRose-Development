@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FrostWarden.AssetPipeline;
+using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.WinterForgeSerializing.Workers;
 
-namespace WinterRose.FrostWarden.WinterForgeValueProviders
+namespace WinterRose.ForgeWarden.WinterForgeValueProviders
 {
     class SpriteValueProvider : CustomValueProvider<Sprite>
     {

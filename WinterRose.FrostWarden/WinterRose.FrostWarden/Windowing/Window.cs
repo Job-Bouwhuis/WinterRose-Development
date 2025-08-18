@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FrostWarden.DialogBoxes;
-using WinterRose.FrostWarden.Worlds;
+using WinterRose.ForgeWarden.DialogBoxes;
+using WinterRose.ForgeWarden.Worlds;
 
-namespace WinterRose.FrostWarden.Windowing
+namespace WinterRose.ForgeWarden.Windowing
 {
     public class Window
     {

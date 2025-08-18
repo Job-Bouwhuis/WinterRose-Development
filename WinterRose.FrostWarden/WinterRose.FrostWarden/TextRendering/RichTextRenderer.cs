@@ -1,29 +1,27 @@
-namespace WinterRose.FrostWarden.TextRendering;
+namespace WinterRose.ForgeWarden.TextRendering;
 
 using Raylib_cs;
 using System.Collections.Generic;
 using System.Numerics;
-using WinterRose.FrostWarden.DialogBoxes;
-using WinterRose.FrostWarden.DialogBoxes.Boxes;
+using WinterRose.ForgeWarden.DialogBoxes;
+using WinterRose.ForgeWarden.DialogBoxes.Boxes;
 
 public static class RichTextRenderer
 {
-    public static void DrawRichText(string text, Vector2 position, Font? font, float fontSize, float maxWidth)
-        => DrawRichText(RichText.Parse(text, Color.White), position, font, fontSize, maxWidth);
+    public static void DrawRichText(string text, Vector2 position, float maxWidth)
+        => DrawRichText(RichText.Parse(text, Color.White), position, maxWidth);
 
-    public static void DrawRichText(RichText richText, Vector2 position, Font? font, float fontSize, float maxWidth)
-        => DrawRichText(richText, position, font, fontSize, maxWidth, Color.White);
+    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth)
+        => DrawRichText(richText, position, maxWidth, Color.White);
 
-    public static void DrawRichText(RichText richText, Vector2 position, Font? font, float fontSize, float maxWidth, Color overallTint)
+    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth, Color overallTint)
     {
-        Font actualFont = font ?? Raylib.GetFontDefault();
-        var lines = WrapText(richText.Elements, actualFont, fontSize, maxWidth);
-        float lineSpacing = fontSize * 0.15f;
+        var lines = WrapText(richText, maxWidth);
 
         for (int lineIndex = 0; lineIndex < lines.Count; lineIndex++)
         {
             float x = position.X;
-            float y = position.Y + lineIndex * (fontSize + lineSpacing);
+            float y = position.Y + lineIndex * (richText.FontSize + richText.Spacing);
 
             foreach (var element in lines[lineIndex])
             {
@@ -31,28 +29,26 @@ public static class RichTextRenderer
                 {
                     case RichGlyph glyph:
                         string ch = glyph.Character.ToString();
-                        var glyphSize = Raylib.MeasureTextEx(actualFont, ch, fontSize, 1);
+                        var glyphSize = Raylib.MeasureTextEx(richText.Font, ch, richText.FontSize, richText.Spacing);
 
-                        // Multiply glyph color with overall tint, clamping per channel
-                        Color tintedColor = new Color(
+                        Color tintedColor = new(
                             (byte)(glyph.Color.R * overallTint.R / 255),
                             (byte)(glyph.Color.G * overallTint.G / 255),
                             (byte)(glyph.Color.B * overallTint.B / 255),
                             (byte)(glyph.Color.A * overallTint.A / 255)
                         );
 
-                        Raylib.DrawTextEx(actualFont, ch, new Vector2(x, y), fontSize, 1, tintedColor);
-                        x += glyphSize.X + lineSpacing;
+                        Raylib.DrawTextEx(richText.Font, ch, new Vector2(x, y), richText.FontSize, 1, tintedColor);
+                        x += glyphSize.X + richText.Spacing;
                         break;
 
                     case RichSprite sprite:
                         var texture = RichSpriteRegistry.GetSprite(sprite.SpriteKey);
                         if (texture is not null)
                         {
-                            float spriteHeight = sprite.BaseSize * fontSize;
+                            float spriteHeight = sprite.BaseSize * richText.FontSize;
                             float scale = spriteHeight / texture.Height;
 
-                            // Multiply sprite tint with overall tint the same way
                             Color tintedSpriteColor = new Color(
                                 (byte)(sprite.Tint.R * overallTint.R / 255),
                                 (byte)(sprite.Tint.G * overallTint.G / 255),
@@ -61,7 +57,7 @@ public static class RichTextRenderer
                             );
 
                             Raylib.DrawTextureEx(texture, new Vector2(x, y), 0, scale, tintedSpriteColor);
-                            if(sprite.Clickable)
+                            if (sprite.Clickable)
                             {
                                 Rectangle imageRect = new Rectangle(
                                     (int)x,
@@ -69,15 +65,15 @@ public static class RichTextRenderer
                                     (int)(texture.Width * scale),
                                     (int)(texture.Height * scale));
 
-                                if(ray.CheckCollisionPointRec(ray.GetMousePosition(), imageRect) && ray.IsMouseButtonPressed(MouseButton.Left))
+                                if (ray.CheckCollisionPointRec(ray.GetMousePosition(), imageRect) && ray.IsMouseButtonPressed(MouseButton.Left))
                                     Dialogs.Show(new SpriteDialog(
-                                        "Image", 
+                                        "Image",
                                         sprite.SpriteSource,
-                                        DialogPlacement.CenterBig, 
-                                        DialogPriority.AlwaysFirst));
+                                        DialogPlacement.CenterBig,
+                                        DialogPriority.EngineNotifications));
                             }
 
-                            x += texture.Width * scale + lineSpacing;
+                            x += texture.Width * scale + richText.Spacing;
                         }
                         break;
                 }
@@ -85,16 +81,14 @@ public static class RichTextRenderer
         }
     }
 
-
-
-
-    private static List<List<RichElement>> WrapText(List<RichElement> elements, Font font, float fontSize, float maxWidth)
+    internal static List<List<RichElement>> WrapText(RichText text, float maxWidth)
     {
+        var elements = text.Elements;
         var lines = new List<List<RichElement>>();
         var currentLine = new List<RichElement>();
         var currentWord = new List<RichElement>();
         float currentLineWidth = 0;
-        float spaceWidth = Raylib.MeasureTextEx(font, " ", fontSize, 1).X;
+        float spaceWidth = Raylib.MeasureTextEx(text.Font, " ", text.FontSize, text.Spacing).X;
 
         foreach (var element in elements)
         {
@@ -102,7 +96,7 @@ public static class RichTextRenderer
 
             if (isSpace)
             {
-                float wordWidth = MeasureWord(currentWord, font, fontSize);
+                float wordWidth = text.CalculateLineSize(currentWord).X;
                 if (currentLineWidth + wordWidth + spaceWidth > maxWidth)
                 {
                     if (currentLine.Count > 0)
@@ -118,13 +112,26 @@ public static class RichTextRenderer
             }
             else
             {
+                if (element is RichGlyph gg && gg.Character == '\n')
+                {
+                    float wordWidth = text.CalculateLineSize(currentWord).X;
+                    currentLine.AddRange(currentWord);
+                    currentLine.Add(element); // the newline itself
+                    currentLineWidth += wordWidth + spaceWidth;
+                    currentWord.Clear();
+
+                    if (currentLine.Count > 0)
+                        lines.Add([.. currentLine]);
+                    currentLine.Clear();
+                    continue;
+                }
                 currentWord.Add(element);
             }
         }
 
         if (currentWord.Count > 0)
         {
-            float wordWidth = MeasureWord(currentWord, font, fontSize);
+            float wordWidth = text.CalculateLineSize(currentWord).X;
             if (currentLineWidth + wordWidth > maxWidth)
             {
                 if (currentLine.Count > 0)
@@ -139,30 +146,5 @@ public static class RichTextRenderer
             lines.Add(currentLine);
 
         return lines;
-    }
-
-    public static float MeasureWord(List<RichElement> word, Font font, float fontSize)
-    {
-        float width = 0;
-        foreach (var element in word)
-        {
-            switch (element)
-            {
-                case RichGlyph glyph:
-                    width += Raylib.MeasureTextEx(font, glyph.Character.ToString(), fontSize, 1).X;
-                    break;
-
-                case RichSprite sprite:
-                    var texture = RichSpriteRegistry.GetSprite(sprite.SpriteKey);
-                    if (texture is not null)
-                    {
-                        float spriteHeight = sprite.BaseSize * fontSize;
-                        float scale = spriteHeight / texture.Height;
-                        width += texture.Width * scale;
-                    }
-                    break;
-            }
-        }
-        return width;
     }
 }

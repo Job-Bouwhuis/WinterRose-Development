@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.WinterForgeSerializing.Workers;
 
-namespace WinterRose.FrostWarden.AssetPipeline;
+namespace WinterRose.ForgeWarden.AssetPipeline;
 
 public interface IAssetHandler<T>
 {

@@ -1,6 +1,6 @@
-﻿using WinterRose.FrostWarden.Components;
+﻿using WinterRose.ForgeWarden.Components;
 
-namespace WinterRose.FrostWarden;
+namespace WinterRose.ForgeWarden;
 
 public interface IUpdatable : IComponent
 {

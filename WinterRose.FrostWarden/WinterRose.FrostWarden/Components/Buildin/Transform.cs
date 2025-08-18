@@ -4,9 +4,9 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FrostWarden.Physics;
+using WinterRose.ForgeWarden.Physics;
 
-namespace WinterRose.FrostWarden.Components
+namespace WinterRose.ForgeWarden.Components
 {
     public class Transform : Component
     {
@@ -60,7 +60,10 @@ namespace WinterRose.FrostWarden.Components
         }
 
         [WFInclude]
-        public Transform? parent => _parent;
+        public Transform? parent
+        {
+            get => _parent; set => SetParent(value);
+        }
 
         public IReadOnlyList<Transform> Children => children;
 

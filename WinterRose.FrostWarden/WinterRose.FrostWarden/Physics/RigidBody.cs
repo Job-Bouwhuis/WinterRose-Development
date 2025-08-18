@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FrostWarden.Components;
+using WinterRose.ForgeWarden.Components;
 using Vector3 = BulletSharp.Math.Vector3;
 
-namespace WinterRose.FrostWarden.Physics
+namespace WinterRose.ForgeWarden.Physics
 {
     public class RigidBodyComponent : PhysicsComponent, IUpdatable
     {
@@ -59,15 +59,12 @@ namespace WinterRose.FrostWarden.Physics
                 BulletSharp.Math.Matrix.Identity,
                 true);
 
-            // ⛓ Lock movement along Z (i.e., keep it flat)
             dof.LinearLowerLimit = new BulletSharp.Math.Vector3(-float.MaxValue, -float.MaxValue, 0);
             dof.LinearUpperLimit = new BulletSharp.Math.Vector3(float.MaxValue, float.MaxValue, 0);
 
-            // 🔒 Lock rotation around X and Y (so it doesn't flip or wobble), allow Z
             dof.AngularLowerLimit = new BulletSharp.Math.Vector3(0, 0, -float.MaxValue);
             dof.AngularUpperLimit = new BulletSharp.Math.Vector3(0, 0, float.MaxValue);
 
-            // ✅ Finally, add the constraint to the world
             physicsWorld.AddConstraint(dof, disableCollisionsBetweenLinkedBodies: true);
         }
 

@@ -24,6 +24,8 @@ namespace WinterRose.NetworkServer.Packets
             {
                 this.guid = guid;
             }
+
+            private PContent() { } // for serialization
         }
     }
 }

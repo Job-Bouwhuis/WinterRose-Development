@@ -1,7 +1,7 @@
 ﻿using Raylib_cs;
-using WinterRose.FrostWarden.TextRendering;
+using WinterRose.ForgeWarden.TextRendering;
 
-namespace WinterRose.FrostWarden.DialogBoxes.Boxes
+namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
 {
     // Implement DefaultDialogInstance for dialogs that don't require special behavior
     public class DefaultDialog : Dialog

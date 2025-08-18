@@ -24,6 +24,8 @@ public class ClientHelloPacket : Packet
             AppVersion = appVersion;
             Username = username;
         }
+
+        private ClientHelloContent() { } // for serialization
     }
 
     public ClientHelloPacket(string  connectedUsingString, IPAddress connectedUsingIPAddress, string handshakeVersion, string appVersion, string? username)
@@ -31,4 +33,6 @@ public class ClientHelloPacket : Packet
         Header = new BasicHeader("ClientHello");
         Content = new ClientHelloContent(connectedUsingString, connectedUsingIPAddress, handshakeVersion, appVersion, username);
     }
+
+    private ClientHelloPacket() { } // for serialization
 }
