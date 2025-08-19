@@ -2,6 +2,7 @@
 using Raylib_cs;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DialogBoxes;
@@ -14,7 +15,6 @@ using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Windowing;
 using WinterRose.ForgeWarden.Worlds;
 using static Raylib_cs.Raylib;
-using static WinterRose.Windows;
 
 namespace WinterRose.ForgeWarden;
 
@@ -25,13 +25,14 @@ public abstract class Application
     public static WinterRose.Vectors.Vector2I ScreenSize => new(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // for on PC
-    //const int SCREEN_WIDTH = 1920;
-     //const int SCREEN_HEIGHT = 1080;
+    const int SCREEN_WIDTH = 1920;
+    const int SCREEN_HEIGHT = 1080;
     private readonly bool useBrowser;
-
+    private Exception? capturedException = null;
+    internal bool AllowThrow = false;
     // for on laptop
-    const int SCREEN_WIDTH = 1280;
-    const int SCREEN_HEIGHT = 720;
+    //const int SCREEN_WIDTH = 1280;
+    //const int SCREEN_HEIGHT = 720;
 
     // for on steam deck
     //const int SCREEN_WIDTH = 960;
@@ -63,24 +64,21 @@ public abstract class Application
 
         SetTargetFPS(144);
 
-        UIContext ui = new();
-
-        SetExitKey(KeyboardKey.Null);
-
         Window window = new Window(SCREEN_WIDTH, SCREEN_HEIGHT, "FrostWarden - Sprite Stress Test");
 
         // wait with creating the window until the embedded browser is set up
 
         window.Create();
-       
-        if(!browserTask.IsCompleted)
+
+        SetExitKey(KeyboardKey.Null);
+
+        if (!browserTask.IsCompleted)
         {
             DefaultDialog dialog = new("Loading embedded browser...", "This may take a while",
            DialogPlacement.CenterSmall, DialogPriority.EngineNotifications);
             Dialogs.Show(dialog);
             while (!browserTask.IsCompleted)
             {
-
                 BeginDrawing();
                 Time.Update();
                 ClearBackground(Color.Black);
@@ -93,7 +91,12 @@ public abstract class Application
             dialog.Close();
             if (browserTask.IsFaulted)
             {
-                HandleException(null, browserTask.Exception.InnerExceptions.FirstOrDefault());
+                var ex = browserTask.Exception.InnerExceptions.FirstOrDefault();
+                if (ex != null)
+                {
+                    HandleException(null, ex, ExceptionDispatchInfo.Capture(ex));
+                }
+                
             }
         }
 
@@ -146,22 +149,27 @@ public abstract class Application
                 ray.DrawFPS(10, 10);
                 
             //}
-           // catch (Exception ex)
+            //catch (Exception ex)
             //{
-            //    HandleException(worldTex, ex);
-           //     break;
-           // }
+              //  throw;
+              //  capturedException = ex;
+              //  HandleException(worldTex, ex, ExceptionDispatchInfo.Capture(ex));
+              //  break;
+            //}
         }
 
         Console.WriteLine("INFO: Releasing all resources");
 
         SpriteCache.DisposeAll();
+        browser.Dispose();
 
         Console.WriteLine("INFO: All resources released, Closing window");
         window.Close();
         Console.WriteLine("INFO: Everything cleared up, Bye bye!");
     }
 
+    public virtual void Update() { }
+    public virtual void Draw() { }
     private Task SetupEmbeddedBrowser()
     {
         return Task.Run(async () =>
@@ -175,6 +183,9 @@ public abstract class Application
                 {
                     Headless = true
                 });
+
+                if (OperatingSystem.IsWindows())
+                    Windows.ApplicationExit += () => browser.Dispose();
             }
             catch (Exception ex)
             {
@@ -183,13 +194,13 @@ public abstract class Application
         });
     }
 
-    private static void HandleException(RenderTexture2D? worldTex, Exception ex)
+    private void HandleException(RenderTexture2D? worldTex, Exception ex, ExceptionDispatchInfo info)
     {
         try
         {
             ray.EndDrawing();
             Dialogs.CloseAll(true);
-            Dialogs.Show(new ExceptionDialog(ex));
+            Dialogs.Show(new ExceptionDialog(ex, info));
             while (Dialogs.OpenDialogs > 0)
             {
                 if (ray.WindowShouldClose())
@@ -233,6 +244,12 @@ public abstract class Application
         }
         catch (Exception innerEx)
         {
+            SpriteCache.DisposeAll();
+            browser.Dispose();
+
+            if (AllowThrow)
+                throw;
+
             // deal with the inner exception that not even the exception dialog could handle.
             // preferably on windows a message box.
             // but its a cross-platform engine, so we need a multi platform solution,

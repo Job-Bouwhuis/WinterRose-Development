@@ -1,5 +1,6 @@
 using Raylib_cs;
 using System;
+using System.Diagnostics.Tracing;
 using System.Numerics;
 using WinterRose;
 using WinterRose.ForgeWarden;
@@ -24,79 +25,31 @@ namespace WinterRose.ForgeWarden.DialogBoxes
         public static int QueuedDialogs => queuedDialogs.Count;
         public static int TotalDialogs => OpenDialogs + QueuedDialogs;
 
-        public static Dialog Show(Dialog dialog)
+        public static DialogShowState Show(Dialog dialog)
         {
             Rectangle newBounds = GetDialogBounds(dialog.Placement);
             bool placementConflict = activeDialogs.Any(d => ray.CheckCollisionRecs(GetDialogBounds(d.Placement), newBounds));
 
-            if (placementConflict)
-                queuedDialogs.Enqueue(dialog);
-            else
-            {
-                activeDialogs.Add(dialog);
-            }
+            if (activeDialogs.Contains(dialog))
+                return DialogShowState.Active;
+            if (queuedDialogs.Contains(dialog))
+                return DialogShowState.Queued;
 
-            return dialog;
+            dialog.CurrentAnim = new DialogAnimation();
+            dialog.IsClosing = false;
+
+            if (placementConflict)
+            {
+                queuedDialogs.Enqueue(dialog);
+                return DialogShowState.Queued;
+            }
+            activeDialogs.Add(dialog);
+            return DialogShowState.Active;
         }
 
         public static void Update(float deltaTime)
         {
-            if (queuedDialogs.Count > 0)
-            {
-                Queue<Dialog> requeue = new Queue<Dialog>();
-
-                while (queuedDialogs.Count > 0)
-                {
-                    Dialog pending = queuedDialogs.Dequeue();
-                    Rectangle newBounds = GetDialogBounds(pending.Placement);
-
-                    var occupying = activeDialogs
-                        .Where(d => !d.IsClosing && ray.CheckCollisionRecs(GetDialogBounds(d.Placement), newBounds))
-                        .ToArray();
-
-                    if (occupying.Length > 0)
-                    {
-                        bool allowAdd = true;
-
-                        foreach (var oc in occupying)
-                        {
-                            if (pending.Priority > oc.Priority)
-                            {
-                                oc.IsClosing = true;
-                                oc.WasBumped = true;
-                            }
-                            else
-                            {
-                                allowAdd = false;
-                                break;
-                            }
-                        }
-
-                        if (allowAdd)
-                        {
-                            activeDialogs.Add(pending);
-                            pending.IsClosing = false;
-                            pending.AnimationTimeIn = 0;
-                            pending.AnimationTimeOut = 0;
-                            pending.ContentAlphaTime = 0;
-                        }
-                        else
-                        {
-                            requeue.Enqueue(pending);
-                        }
-                    }
-                    else
-                    {
-                        activeDialogs.Add(pending);
-                        pending.IsClosing = false;
-                        pending.AnimationTimeIn = 0;
-                        pending.AnimationTimeOut = 0;
-                        pending.ContentAlphaTime = 0;
-                    }
-                }
-
-                queuedDialogs = requeue;
-            }
+            HandlePriorityDialogs();
 
             for (int i = activeDialogs.Count - 1; i >= 0; i--)
             {
@@ -104,30 +57,20 @@ namespace WinterRose.ForgeWarden.DialogBoxes
 
                 if (!dialog.IsClosing)
                 {
-                    dialog.AnimationTimeIn = MathF.Min(dialog.AnimationTimeIn + deltaTime, ANIMATION_DURATION);
-                    if (dialog.AnimationTimeIn / ANIMATION_DURATION >= 0.9f)
-                    {
-                        dialog.ContentAlphaTime = MathF.Min(dialog.ContentAlphaTime + deltaTime, CONTENT_FADE_DURATION);
-                        dialog.YAnimateTime = MathF.Min(dialog.YAnimateTime + deltaTime, CONTENT_Y_MOVE_DURATION);
-                    }
-
+                    UpdateDialogAnimation(dialog, deltaTime);
                     dialog.UpdateBox();
                 }
                 else
                 {
-                    dialog.AnimationTimeOut += deltaTime;
-                    dialog.ContentAlphaTime = MathF.Max(dialog.ContentAlphaTime - deltaTime * 2f, 0f);
-                    if (dialog.AnimationTimeOut >= ANIMATION_DURATION)
+                    UpdateDialogAnimation(dialog, deltaTime);
+                    if (dialog.CurrentAnim.Completed)
                     {
                         activeDialogs.RemoveAt(i);
-                        if(dialog.WasBumped)
+                        if (dialog.WasBumped)
                         {
                             // If the dialog was bumped, we don't want to requeue it
                             dialog.WasBumped = false;
                             queuedDialogs = new Queue<Dialog>(new[] { dialog }.Concat(queuedDialogs));
-                        }
-                        else
-                        {
                         }
                         continue;
                     }
@@ -156,9 +99,11 @@ namespace WinterRose.ForgeWarden.DialogBoxes
                     {
                         activeDialogs.Add(pending);
                         pending.IsClosing = false;
-                        pending.AnimationTimeIn = 0;
-                        pending.AnimationTimeOut = 0;
-                        pending.ContentAlphaTime = 0;
+                        pending.CurrentAnim = pending.CurrentAnim with
+                        {
+                            Elapsed = 0,
+                            Completed = false
+                        };
                     }
                     else
                         requeue.Enqueue(pending);
@@ -169,6 +114,111 @@ namespace WinterRose.ForgeWarden.DialogBoxes
 
         }
 
+        private static void HandlePriorityDialogs()
+        {
+            if (queuedDialogs.Count > 0)
+            {
+                Queue<Dialog> requeue = new Queue<Dialog>();
+
+                while (queuedDialogs.Count > 0)
+                {
+                    Dialog pending = queuedDialogs.Dequeue();
+                    Rectangle newBounds = GetDialogBounds(pending.Placement);
+
+                    var occupying = activeDialogs
+                        .Where(d => !d.IsClosing && ray.CheckCollisionRecs(GetDialogBounds(d.Placement), newBounds))
+                        .ToArray();
+
+                    if (occupying.Length > 0)
+                    {
+                        bool allowAdd = true;
+
+                        foreach (var oc in occupying)
+                        {
+                            if (pending.Priority > oc.Priority)
+                            {
+                                oc.Close();
+                                oc.WasBumped = true;
+                            }
+                            else
+                            {
+                                allowAdd = false;
+                                break;
+                            }
+                        }
+
+                        if (allowAdd)
+                        {
+                            activeDialogs.Add(pending);
+                            pending.IsClosing = false;
+                            pending.CurrentAnim = pending.CurrentAnim with
+                            {
+                                Elapsed = 0,
+                                Completed = false
+                            };
+                        }
+                        else
+                        {
+                            requeue.Enqueue(pending);
+                        }
+                    }
+                    else
+                    {
+                        activeDialogs.Add(pending);
+                        pending.IsClosing = false;
+                        pending.CurrentAnim = pending.CurrentAnim with
+                        {
+                            Elapsed = 0,
+                            Completed = false
+                        };
+                    }
+                }
+
+                queuedDialogs = requeue;
+            }
+        }
+
+        static void UpdateDialogAnimation(Dialog dialog, float deltaTime)
+        {
+            DialogAnimation anim = dialog.CurrentAnim;
+            anim.Elapsed += deltaTime;
+
+            var style = dialog.Style;
+
+            float duration = dialog.IsClosing ? style.AnimateOutDuration : style.AnimateInDuration;
+            float elapsed = anim.Elapsed;
+            float t = Math.Clamp(elapsed / duration, 0f, 1f);
+
+            float width = 1f, height = 1f, alpha = 1f;
+
+            if (style.AnimationMode == DialogAnimationMode.Curve)
+            {
+                width = style.WidthCurve?.Evaluate(t) ?? t;
+                height = style.HeightCurve?.Evaluate(t) ?? t;
+                alpha = style.AlphaCurve?.Evaluate(t) ?? t;
+            }
+            else
+            {
+                width = 1 - MathF.Pow(1 - t / style.ScaleWidthSpeed, 3);
+                height = 1 - MathF.Pow(1 - t / style.ScaleHeightSpeed, 3);
+                alpha = 1 - MathF.Pow(1 - t / style.AlphaSpeed, 3);
+            }
+
+            if (dialog.IsClosing)
+            {
+                width = 1f - width;
+                height = 1f - height;
+                alpha = 1f - alpha;
+            }
+
+            anim.Alpha = alpha;
+            anim.ScaleWidth = width;
+            anim.ScaleHeight = height;
+            anim.Completed = t >= 1f; // mark completion
+            dialog.CurrentAnim = anim;
+        }
+
+
         public static void Draw()
         {
             for (int i = 0; i < activeDialogs.Count; i++)
@@ -176,58 +226,51 @@ namespace WinterRose.ForgeWarden.DialogBoxes
                 Dialog dialog = activeDialogs[i];
                 Rectangle bounds = GetDialogBounds(dialog.Placement);
 
-                float alphaT = dialog.IsClosing
-                    ? MathF.Min(dialog.AnimationTimeOut / (ANIMATION_DURATION * ANIM_SPEED_ALPHA), 1f)
-                    : MathF.Min(dialog.AnimationTimeIn / (ANIMATION_DURATION * ANIM_SPEED_ALPHA), 1f);
+                // Use the animation state calculated in UpdateDialogAnimation
+                float alpha = dialog.CurrentAnim.Alpha;
+                float scaleWidth = dialog.CurrentAnim.Completed ? 1 : dialog.CurrentAnim.ScaleWidth;
+                float scaleHeight = dialog.CurrentAnim.Completed ? 1 : dialog.CurrentAnim.ScaleHeight;
 
-                float widthT = dialog.IsClosing
-                    ? MathF.Min(dialog.AnimationTimeOut / (ANIMATION_DURATION * ANIM_SPEED_SCALE_WIDTH), 1f)
-                    : MathF.Min(dialog.AnimationTimeIn / (ANIMATION_DURATION * ANIM_SPEED_SCALE_WIDTH), 1f);
-
-                float heightT = dialog.IsClosing
-                    ? MathF.Min(dialog.AnimationTimeOut / (ANIMATION_DURATION * ANIM_SPEED_SCALE_HEIGHT), 1f)
-                    : MathF.Min(dialog.AnimationTimeIn / (ANIMATION_DURATION * ANIM_SPEED_SCALE_HEIGHT), 1f);
-
-                float easedAlpha = 1 - MathF.Pow(1 - alphaT, 3);
-                float easedWidth = 1 - MathF.Pow(1 - widthT, 3);
-                float easedHeight = 1 - MathF.Pow(1 - heightT, 3);
-
-                float eased = (easedAlpha + easedWidth + easedHeight) / 3;
-
-                float alpha = dialog.IsClosing ? 1f - easedAlpha : easedAlpha;
-                float scaleWidth = dialog.IsClosing ? 1f - easedWidth : easedWidth;
-                float scaleHeight = dialog.IsClosing ? 1f - easedHeight : easedHeight;
-
+                // Center and scale the dialog box
                 Vector2 center = new Vector2(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
-                float drawWidth = bounds.Width * scaleWidth;
-                float drawHeight = bounds.Height * scaleHeight;
+                float drawWidth = Math.Max(bounds.Width * scaleWidth, 0);
+                float drawHeight = Math.Max(bounds.Height * scaleHeight, 0);
                 Rectangle scaled = new Rectangle(center.X - drawWidth / 2, center.Y - drawHeight / 2, drawWidth, drawHeight);
 
-                Color bgColor = new Color(30, 30, 30, (int)(180 * alpha));
-                Color borderColor = new Color(200, 200, 200, (int)(255 * alpha));
-                Color shadowColor = new Color(0, 0, 0, (int)(80 * alpha));
+                if (drawWidth == 0 && drawHeight == 0)
+                    continue;
 
-                ray.DrawRectangle((int)scaled.X + 4, (int)scaled.Y + 4, (int)scaled.Width, (int)scaled.Height, shadowColor);
-                ray.DrawRectangleRec(scaled, bgColor);
-                ray.DrawRectangleLinesEx(scaled, 2, borderColor);
+                float shadowX = scaled.X - dialog.Style.ShadowSizeLeft;
+                float shadowY = scaled.Y - dialog.Style.ShadowSizeTop;
+                float shadowWidth = scaled.Width + dialog.Style.ShadowSizeLeft + dialog.Style.ShadowSizeRight;
+                float shadowHeight = scaled.Height + dialog.Style.ShadowSizeTop + dialog.Style.ShadowSizeBottom;
 
-                bool drawInternals = !dialog.IsClosing && eased >= 0.9f;
+
+                ray.DrawRectangle((int)shadowX, (int)shadowY, (int)shadowWidth, (int)shadowHeight, dialog.Style.Shadow);
+                ray.DrawRectangleRec(scaled, dialog.Style.DialogBackground);
+                ray.DrawRectangleLinesEx(scaled, 2, dialog.Style.DialogBorder);
+
+                // Only draw internals when dialog is mostly visible
+                bool drawInternals = !dialog.IsClosing && alpha >= 0.9f;
                 if (!drawInternals)
                     continue;
 
-                float contentFadeT = Math.Clamp(dialog.ContentAlphaTime / CONTENT_FADE_DURATION, 0f, 1f);
+                // Content fade & Y-move driven by style durations
+                float contentFadeT = Math.Clamp((dialog.Style.AlphaSpeed += Time.deltaTime) / dialog.Style.ContentFadeDuration, 0f, 1f);
                 float contentAlpha = contentFadeT * alpha;
                 dialog.Style.contentAlpha = contentAlpha;
 
-                float contentYT = Math.Clamp(dialog.ContentAlphaTime / CONTENT_Y_MOVE_DURATION, 0f, 1f);
+                float contentYT = Math.Clamp(dialog.Style.AlphaSpeed / dialog.Style.ContentMoveDuration, 0f, 1f);
                 int padding = 20;
                 float innerWidth = scaled.Width - padding * 2;
                 float contentOffsetY = (1f - contentYT) * 10f;
                 int y = (int)(scaled.Y + padding + contentOffsetY);
 
+                // Render title, message, buttons, and ImGui stuff
                 dialog.RenderBox(scaled, contentAlpha, ref padding, ref innerWidth, ref y);
             }
         }
+
 
         internal static Rectangle GetDialogBounds(DialogPlacement placement)
         {
@@ -320,9 +363,9 @@ namespace WinterRose.ForgeWarden.DialogBoxes
 
         public static void CloseAll(bool includeQueued = false)
         {
-            foreach(var d in activeDialogs)
+            foreach (var d in activeDialogs)
                 d.Close();
-            if(includeQueued)
+            if (includeQueued)
                 queuedDialogs.Clear();
         }
 

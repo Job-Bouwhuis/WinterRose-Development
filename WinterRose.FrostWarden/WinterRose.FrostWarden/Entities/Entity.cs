@@ -12,13 +12,9 @@ namespace WinterRose.ForgeWarden.Entities;
 
 public class Entity
 {
-    [WFInclude]
     public string Name { get; set; }
-    [WFInclude]
     public string[] Tags { get; set; } = [];
-    [WFInclude]
     public World world { get; internal set; }
-    [WFInclude]
     public Transform transform { get; private set; }
 
     internal bool addedToWorld = false;
@@ -196,23 +192,25 @@ public class Entity
         };
 
 
-    private void InjectDependenciesIntoComponent(Component component)
+    internal void InjectDependenciesIntoComponent(Component component, bool asReset = false)
     {
         var rh = new ReflectionHelper(component);
         var members = rh.GetMembers();
 
         foreach (var member in members)
         {
-            foreach (var kvp in HANDLERS)
-            {
-                var attr = member.GetAttribute(kvp.Key);
-                if (attr != null)
+            // skip member if it already has a value (possible through Serialization or manual construction)
+            if(member.GetValue(component) == null || asReset)
+                foreach (var kvp in HANDLERS)
                 {
-                    IInjectionHandler handler = kvp.Value;
-                    handler.Inject(component, member, attr);
-                    break;
+                    var attr = member.GetAttribute(kvp.Key);
+                    if (attr != null)
+                    {
+                        IInjectionHandler handler = kvp.Value;
+                        handler.Inject(component, member, attr);
+                        break;
+                    }
                 }
-            }
         }
     }
 

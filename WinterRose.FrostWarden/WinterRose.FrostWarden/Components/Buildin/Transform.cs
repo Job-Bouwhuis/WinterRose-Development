@@ -25,6 +25,8 @@ namespace WinterRose.ForgeWarden.Components
             }
         }
 
+        public ref Vector3 positionRef => ref _position;
+
         [WFInclude]
         public Quaternion rotation
         {
@@ -35,6 +37,8 @@ namespace WinterRose.ForgeWarden.Components
                 MarkDirty(true);
             }
         }
+
+        public ref Quaternion rotationRef => ref _rotation;
 
         // Optional helper property for Euler degrees (for ease of use or editor)
         public Vector3 rotationEulerDegrees
@@ -58,6 +62,8 @@ namespace WinterRose.ForgeWarden.Components
             get => _scale;
             set { _scale = value; MarkDirty(true); }
         }
+
+        public ref Vector3 scaleRef => ref _scale;
 
         [WFInclude]
         public Transform? parent

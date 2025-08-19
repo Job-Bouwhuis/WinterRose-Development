@@ -8,9 +8,9 @@ namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
     {
         private readonly Action? onTimeout;
 
-        public float TimeRemaining { get; private set; }
+        public float TimeRemaining => TotalTime - timeShown;
         public float TotalTime { get; }
-
+        private float timeShown;
         public TimedDialog(
              string title,
              string message,
@@ -29,10 +29,10 @@ namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
 
         public override void Update()
         {
-            TimeRemaining -= Time.deltaTime;
+            timeShown += Time.deltaTime;
             if (TimeRemaining <= 0f)
             {
-                IsClosing = true;
+                Close();
                 onTimeout?.Invoke();
             }
         }

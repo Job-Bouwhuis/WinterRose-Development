@@ -21,7 +21,6 @@ namespace WinterRose.ForgeWarden
             if(rawTextureCache.TryGetValue(source, out Texture2D tex))
                 return new Sprite(tex, false);
 
-            // Determine whether it's a generated or file-based sprite
             Sprite newSprite;
 
             if (source.StartsWith("Generated_"))

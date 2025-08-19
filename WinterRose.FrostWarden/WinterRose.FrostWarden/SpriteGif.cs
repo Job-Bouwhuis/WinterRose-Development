@@ -1,4 +1,8 @@
 ﻿using Raylib_cs;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Gif;
+using SixLabors.ImageSharp.PixelFormats;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace WinterRose.ForgeWarden
 {
@@ -35,67 +39,38 @@ namespace WinterRose.ForgeWarden
         public SpriteGif(string path)
         {
             Source = path;
-            var gif = System.Drawing.Image.FromFile(path);
-            var dimension = new System.Drawing.Imaging.FrameDimension(gif.FrameDimensionsList[0]);
-            int frameCount = gif.GetFrameCount(dimension);
 
-            // Extract delay info
-            const int PROPERTY_TAG_FRAME_DELAY = 0x5100;
-            var delaysProp = gif.GetPropertyItem(PROPERTY_TAG_FRAME_DELAY);
-            var delays = new int[frameCount];
-            for (int i = 0; i < frameCount; i++)
-                delays[i] = BitConverter.ToInt32(delaysProp.Value, i * 4) * 10; // to ms
+            using var gif = Image.Load<Rgba32>(path);
 
-            for (int i = 0; i < frameCount; i++)
+            foreach (var frame in gif.Frames)
             {
-                gif.SelectActiveFrame(dimension, i);
+                int delay = frame.Metadata.GetGifMetadata().FrameDelay * 10; // in ms
+                frameDurations.Add(delay);
 
-                using var frameBmp = new System.Drawing.Bitmap(gif.Width, gif.Height);
-                using (var g = System.Drawing.Graphics.FromImage(frameBmp))
-                    g.DrawImage(gif, new System.Drawing.Rectangle(0, 0, gif.Width, gif.Height));
-
-                System.Drawing.Imaging.BitmapData bmpData = frameBmp.LockBits(
-                    new System.Drawing.Rectangle(0, 0, frameBmp.Width, frameBmp.Height),
-                    System.Drawing.Imaging.ImageLockMode.ReadOnly,
-                    System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-
-                int size = bmpData.Stride * bmpData.Height;
-                byte[] pixels = new byte[size];
-                System.Runtime.InteropServices.Marshal.Copy(bmpData.Scan0, pixels, 0, size);
-                frameBmp.UnlockBits(bmpData);
-
-                for (int p = 0; p < size; p += 4)
-                    (pixels[p], pixels[p + 2]) = (pixels[p + 2], pixels[p]); // BGR → RGB
+                var imageData = new byte[frame.Width * frame.Height * 4];
+                frame.CopyPixelDataTo(imageData);
 
                 unsafe
                 {
-                    var rayImage = new Image
+                    var rayImage = new Raylib_cs.Image
                     {
-                        Data = System.Runtime.InteropServices.Marshal.AllocHGlobal(size).ToPointer(),
-                        Width = frameBmp.Width,
-                        Height = frameBmp.Height,
+                        Data = System.Runtime.InteropServices.Marshal.AllocHGlobal(imageData.Length).ToPointer(),
+                        Width = frame.Width,
+                        Height = frame.Height,
                         Mipmaps = 1,
                         Format = PixelFormat.UncompressedR8G8B8A8
                     };
 
-                    System.Runtime.InteropServices.Marshal.Copy(pixels, 0, (nint)rayImage.Data, size);
+                    System.Runtime.InteropServices.Marshal.Copy(imageData, 0, (nint)rayImage.Data, imageData.Length);
                     var texture = Raylib.LoadTextureFromImage(rayImage);
                     ray.SetTextureFilter(texture, TextureFilter.Point);
 
                     frames.Add(texture);
                     SpriteCache.RegisterTexture2D(path + frames.Count, texture);
-                    frameDurations.Add(delays[i]);
                 }
             }
 
-            gif.Dispose();
             SpriteCache.RegisterSprite(this);
         }
-
-        //public override void Dispose()
-        //{
-        //    foreach(var frame in frames)
-        //        ray.UnloadTexture(frame);
-        //}
     }
 }

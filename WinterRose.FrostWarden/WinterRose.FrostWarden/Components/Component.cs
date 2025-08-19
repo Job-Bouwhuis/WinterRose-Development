@@ -73,4 +73,12 @@ public abstract class Component : IComponent
 
     public IEnumerable<T> GetAllComponents<T>() where T : Component
         => owner.GetAllComponents<T>();
+
+    /// <summary>
+    /// Any member decorated with <see cref="InjectFromSelfAttribute"/> or other such attributes will have their value reset and re fetched
+    /// </summary>
+    protected void ReInjectMembers()
+    {
+        owner.InjectDependenciesIntoComponent(this, true);
+    }
 }
