@@ -39,6 +39,24 @@ public static class RichTextRenderer
                         );
 
                         Raylib.DrawTextEx(richText.Font, ch, new Vector2(x, y), richText.FontSize, 1, tintedColor);
+                        
+                            // Draw underline if it's a link
+                        if (glyph.GlyphLinkUrl != null)
+                        {
+                            Raylib.DrawLineEx(
+                                new Vector2(x, y + glyphSize.Y + 2),
+                                new Vector2(x + glyphSize.X, y + glyphSize.Y + 2),
+                                1, tintedColor
+                            );
+                        }
+
+                        // Click detection
+                        Rectangle glyphRect = new Rectangle(x, y, glyphSize.X, glyphSize.Y);
+                        if (glyph.GlyphLinkUrl != null && ray.CheckCollisionPointRec(ray.GetMousePosition(), glyphRect) && ray.IsMouseButtonPressed(MouseButton.Left))
+                        {
+                            Dialogs.Show(new BrowserDialog(glyph.GlyphLinkUrl, DialogPlacement.CenterBig, DialogPriority.EngineNotifications)); // your method to open the URL
+                        }
+                        
                         x += glyphSize.X + richText.Spacing;
                         break;
 

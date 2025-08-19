@@ -13,12 +13,12 @@ namespace WinterRose.ForgeWarden.DialogBoxes
     public class DialogButton
     {
         public RichText text;
-        public Action? OnClick;
+        public Func<bool> OnClick;
 
-        public DialogButton(string text, Action? onClick)
+        public DialogButton(string text, Func<bool>? onClick)
         {
             this.text = RichText.Parse(text);
-            OnClick = onClick;
+            OnClick = onClick ?? (() => true);
         }
 
         internal void Draw(Dialog dialog, DialogStyle style, Rectangle bounds)
@@ -42,8 +42,8 @@ namespace WinterRose.ForgeWarden.DialogBoxes
 
             if (hovered && mouseReleased)
             {
-                dialog.IsClosing = true;
-                OnClick?.Invoke();
+                if (OnClick())
+                    dialog.Close();
             }
         }
     }

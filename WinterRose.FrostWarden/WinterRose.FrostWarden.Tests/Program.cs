@@ -35,9 +35,10 @@ internal class Program : Application
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
 
-        Dialogs.Show(new BrowserDialog("https://www.youtube.com/watch?v=LnmY5Rgpb1Y", DialogPlacement.CenterBig, DialogPriority.Normal));
+        //Dialogs.Show(new BrowserDialog("https://www.google.com", DialogPlacement.CenterBig, DialogPriority.Normal));
 
-        //Dialogs.Show(new DefaultDialog("Horizontal Big", "this is a cool dialog box", DialogPlacement.HorizontalBig, buttons: ["Ok"], priority: DialogPriority.High));
+        Dialogs.Show(new DefaultDialog("Horizontal Big",
+            "\\L[https://github.com/malware-dev/MDK-SE/wiki/Api-Index|MalwareSDK Wiki]", DialogPlacement.HorizontalBig, buttons: ["Ok"], priority: DialogPriority.High));
         //Dialogs.Show(new DefaultDialog("Vertical Big", "this is a cool dialog box\n\n\\s[star]\\!", DialogPlacement.VerticalBig, buttons: ["Ok"], priority: DialogPriority.AlwaysFirst));
 
         //Dialogs.Show(new DefaultDialog("Dialog top left", "yes", DialogPlacement.TopLeft, buttons: ["Ok"]));

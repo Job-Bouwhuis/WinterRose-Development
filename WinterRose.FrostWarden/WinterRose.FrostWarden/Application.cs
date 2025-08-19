@@ -25,13 +25,13 @@ public abstract class Application
     public static WinterRose.Vectors.Vector2I ScreenSize => new(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // for on PC
-     const int SCREEN_WIDTH = 1920;
-     const int SCREEN_HEIGHT = 1080;
+    //const int SCREEN_WIDTH = 1920;
+     //const int SCREEN_HEIGHT = 1080;
     private readonly bool useBrowser;
 
     // for on laptop
-    //const int SCREEN_WIDTH = 1280;
-    //const int SCREEN_HEIGHT = 720;
+    const int SCREEN_WIDTH = 1280;
+    const int SCREEN_HEIGHT = 720;
 
     // for on steam deck
     //const int SCREEN_WIDTH = 960;

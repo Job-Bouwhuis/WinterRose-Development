@@ -40,7 +40,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
             DialogPlacement placement,
             DialogPriority priority,
             string[]? buttons,
-            Action[]? onButtonClick,
+            Func<bool>[]? onButtonClick,
             Action<UIContext>? onImGui)
         {
             Title = RichText.Parse(title, Color.White);
@@ -63,7 +63,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
             for (int i = 0; i < buttons.Length; i++)
             {
                 string label = buttons[i];
-                Action? onClick = null;
+                Func<bool>? onClick = null;
                 if (onButtonClick.Length < i)
                     onClick = onButtonClick[i]!;
 

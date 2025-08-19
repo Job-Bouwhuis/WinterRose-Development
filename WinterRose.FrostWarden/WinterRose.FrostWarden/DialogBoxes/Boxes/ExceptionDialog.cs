@@ -13,10 +13,7 @@ internal class ExceptionDialog : Dialog
             DialogPriority.EngineNotifications,
             [], [], null)
     {
-        Buttons.Add(new DialogButton("Ok, and close game", () =>
-        {
-            Close();
-        }));
+        Buttons.Add(new DialogButton("Ok, and close game", null));
         if (Debugger.IsAttached)
             Buttons.Add(new DialogButton("Throw exception", null));
 

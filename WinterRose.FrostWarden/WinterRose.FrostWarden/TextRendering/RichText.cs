@@ -193,8 +193,35 @@ public class RichText
 
                         continue;
                     }
-                    
+                }
+                else if (text[i + 1] == 'L' && text[i + 2] == '[')
+                {
+                    int close = text.IndexOf(']', i + 3);
+                    if (close > 0)
+                    {
+                        string content = text[(i + 3)..close];
+                        string linkUrl = content;
+                        string displayText = content;
 
+                        int eq = content.IndexOf('|');
+                        if (eq >= 0)
+                        {
+                            linkUrl = content[..eq];
+                            displayText = content[(eq + 1)..];
+                        }
+
+                        // Add each character as a RichGlyph but attach link metadata
+                        foreach (char c in displayText)
+                        {
+                            elements.Add(new RichGlyph(c, currentColor)
+                            {
+                                GlyphLinkUrl = linkUrl
+                            });
+                        }
+
+                        i = close + 1;
+                        continue;
+                    }
                 }
             }
 

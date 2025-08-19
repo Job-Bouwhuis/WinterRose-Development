@@ -19,7 +19,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
              DialogPlacement placement = DialogPlacement.CenterSmall,
              DialogPriority priority = DialogPriority.Normal,
              string[]? buttons = null,
-             Action[]? onButtonClick = null,
+             Func<bool>[]? onButtonClick = null,
              Action<UIContext>? onImGui = null)
              : base(title, message, placement, priority, buttons ?? [], onButtonClick ?? [], onImGui)
         {
