@@ -4,7 +4,6 @@ using System.Diagnostics.Tracing;
 using System.Numerics;
 using WinterRose;
 using WinterRose.ForgeWarden;
-using WinterRose.ForgeWarden.DialogBoxes.Boxes;
 using WinterRose.ForgeWarden.TextRendering;
 
 namespace WinterRose.ForgeWarden.DialogBoxes
@@ -54,6 +53,9 @@ namespace WinterRose.ForgeWarden.DialogBoxes
             for (int i = activeDialogs.Count - 1; i >= 0; i--)
             {
                 Dialog dialog = activeDialogs[i];
+
+                if (dialog.DrawContentOnly)
+                    continue;
 
                 if (!dialog.IsClosing)
                 {
@@ -114,6 +116,10 @@ namespace WinterRose.ForgeWarden.DialogBoxes
 
         }
 
+        internal static bool IsDialogSpotAvailible(DialogPlacement placement) => activeDialogs
+                        .Where(d => !d.IsClosing && ray.CheckCollisionRecs(GetDialogBounds(d.Placement), GetDialogBounds(placement)))
+                        .ToArray().Length == 0;
+
         private static void HandlePriorityDialogs()
         {
             if (queuedDialogs.Count > 0)
@@ -135,7 +141,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes
 
                         foreach (var oc in occupying)
                         {
-                            if (pending.Priority > oc.Priority)
+                            if (pending.Priority > oc.Priority && !oc.DrawContentOnly)
                             {
                                 oc.Close();
                                 oc.WasBumped = true;
@@ -236,7 +242,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes
                 float drawWidth = Math.Max(bounds.Width * scaleWidth, 0);
                 float drawHeight = Math.Max(bounds.Height * scaleHeight, 0);
                 Rectangle scaled = new Rectangle(center.X - drawWidth / 2, center.Y - drawHeight / 2, drawWidth, drawHeight);
-
+                dialog.LastScaledBoudningBox = scaled;
                 if (drawWidth == 0 && drawHeight == 0)
                     continue;
 
@@ -245,13 +251,15 @@ namespace WinterRose.ForgeWarden.DialogBoxes
                 float shadowWidth = scaled.Width + dialog.Style.ShadowSizeLeft + dialog.Style.ShadowSizeRight;
                 float shadowHeight = scaled.Height + dialog.Style.ShadowSizeTop + dialog.Style.ShadowSizeBottom;
 
-
-                ray.DrawRectangle((int)shadowX, (int)shadowY, (int)shadowWidth, (int)shadowHeight, dialog.Style.Shadow);
-                ray.DrawRectangleRec(scaled, dialog.Style.DialogBackground);
-                ray.DrawRectangleLinesEx(scaled, 2, dialog.Style.DialogBorder);
+                if(!dialog.DrawContentOnly)
+                {
+                    ray.DrawRectangle((int)shadowX, (int)shadowY, (int)shadowWidth, (int)shadowHeight, dialog.Style.Shadow);
+                    ray.DrawRectangleRec(scaled, dialog.Style.DialogBackground);
+                    ray.DrawRectangleLinesEx(scaled, 2, dialog.Style.DialogBorder);
+                }
 
                 // Only draw internals when dialog is mostly visible
-                bool drawInternals = !dialog.IsClosing && alpha >= 0.9f;
+                bool drawInternals = !dialog.IsClosing && alpha >= 0.6f;
                 if (!drawInternals)
                     continue;
 
@@ -260,14 +268,15 @@ namespace WinterRose.ForgeWarden.DialogBoxes
                 float contentAlpha = contentFadeT * alpha;
                 dialog.Style.contentAlpha = contentAlpha;
 
-                float contentYT = Math.Clamp(dialog.Style.AlphaSpeed / dialog.Style.ContentMoveDuration, 0f, 1f);
                 int padding = 20;
                 float innerWidth = scaled.Width - padding * 2;
+                float contentYT = Math.Clamp(dialog.Style.AlphaSpeed / dialog.Style.ContentMoveDuration, 0f, 1f);
                 float contentOffsetY = (1f - contentYT) * 10f;
                 int y = (int)(scaled.Y + padding + contentOffsetY);
 
                 // Render title, message, buttons, and ImGui stuff
                 dialog.RenderBox(scaled, contentAlpha, ref padding, ref innerWidth, ref y);
+                dialog.lastInnerWidth = innerWidth;
             }
         }
 
@@ -370,5 +379,9 @@ namespace WinterRose.ForgeWarden.DialogBoxes
         }
 
         internal static List<Dialog> GetActiveDialogs() => activeDialogs;
+        internal static void AddImmediately(Dialog dialog)
+        {
+            activeDialogs.Add(dialog);
+        }
     }
 }

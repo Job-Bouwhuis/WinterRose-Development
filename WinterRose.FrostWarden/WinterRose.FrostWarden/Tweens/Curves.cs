@@ -42,11 +42,24 @@ public static class Curves
     public static readonly Curve EaseOutQuint = EaseInCubic; // reuse
     public static readonly Curve EaseInOutQuint = EaseInCubic; // reuse
 
-    // Back / Overshoot
+    public static readonly Curve EaseOutBackLow = new Curve(new SortedDictionary<float, float>
+    {
+        { 0f, 0f },
+        { 0.7f, 1.05f },
+        { 1f, 1f }
+    }, 2);
+
     public static readonly Curve EaseOutBack = new Curve(new SortedDictionary<float, float>
     {
         { 0f, 0f },
         { 0.7f, 1.2f },
+        { 1f, 1f }
+    }, 2);
+
+    public static readonly Curve EaseOutBackFar = new Curve(new SortedDictionary<float, float>
+    {
+        { 0f, 0f },
+        { 0.7f, 1.7f },
         { 1f, 1f }
     }, 2);
 
@@ -60,13 +73,27 @@ public static class Curves
         { 1f, 1f }
     }, 2);
 
+    public static readonly Curve ElasticOutLong = new Curve(new SortedDictionary<float, float>
+    {
+        { 0f, 0f },
+        { 0.15f, 1.02f },
+        { 0.3f, 0.97f },
+        { 0.45f, 1.05f },
+        { 0.6f, 0.98f },
+        { 0.75f, 1.02f },
+        { 0.9f, 0.995f },
+        { 1f, 1f }
+    }, 2f);
+
+
+
     // Elastic
     public static readonly Curve ElasticOut = new Curve(new SortedDictionary<float, float>
     {
         { 0f, 0f },
-        { 0.3f, 1.2f },
+        { 0.3f, 1.5f },
         { 0.5f, 0.8f },
-        { 0.7f, 1.05f },
+        { 0.7f, 1.2f },
         { 1f, 1f }
     }, 2);
 

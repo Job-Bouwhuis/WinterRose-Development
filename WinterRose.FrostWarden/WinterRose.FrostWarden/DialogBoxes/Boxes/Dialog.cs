@@ -1,7 +1,7 @@
 ﻿using Raylib_cs;
 using WinterRose.ForgeWarden.TextRendering;
 
-namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
+namespace WinterRose.ForgeWarden.DialogBoxes
 {
     public abstract class Dialog
     {
@@ -30,6 +30,19 @@ namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
         public float YAnimateTime { get; internal set; }
         internal bool WasBumped { get; set; }
         public DialogAnimation CurrentAnim { get; internal set; } = new() { Elapsed = 0f };
+
+        /// <summary>
+        /// Used for Toast to dialog morph
+        /// </summary>
+        internal bool DrawContentOnly { get; set; }
+        /// <summary>
+        /// Used for Toast to dialog morph
+        /// </summary>
+        internal Rectangle LastScaledBoudningBox { get; set; }
+        /// <summary>
+        /// Used for Toast to dialog morph
+        /// </summary>
+        internal float lastInnerWidth { get; set; }
 
         protected Dialog(
             string title,
@@ -86,8 +99,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
 
         internal void RenderBox(Rectangle bounds, float contentAlpha, ref int padding, ref float innerWidth, ref int y)
         {
-            // Scale Title + Message fonts based on dialog size
-            float baseFontScale = (bounds.Height / 600f + bounds.Width / 800f) / 2f; // avg scale from height+width
+            float baseFontScale = (bounds.Height / 600f + bounds.Width / 800f) / 2f;
 
             RichTextRenderer.DrawRichText(Title, new((int)bounds.X + padding, y), innerWidth, Style.ContentColor);
             y += 35 + (int)Title.CalculateBounds(innerWidth).Height;
@@ -96,7 +108,6 @@ namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
             y += 40 + (int)Message.CalculateBounds(innerWidth).Height;
 
             DrawContent(bounds, contentAlpha, ref padding, ref innerWidth, ref y);
-
 
             // --- Buttons ---
             buttonSizes.Clear();
@@ -177,7 +188,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
                 rowY += rowHeights[r] + spacing;
             }
 
-            y = (int)rowY; 
+            y = (int)rowY;
 
             // --- ImGui / Additional UI ---
             UIContext c = new UIContext();

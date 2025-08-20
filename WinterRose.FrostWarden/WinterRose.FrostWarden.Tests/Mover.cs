@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DialogBoxes;
-using WinterRose.ForgeWarden.DialogBoxes.Boxes;
+using WinterRose.ForgeWarden.ToastNotifications;
 
 namespace WinterRose.ForgeWarden.Tests
 {
@@ -34,7 +34,7 @@ namespace WinterRose.ForgeWarden.Tests
             Vector2 input = Vector2.Zero;
 
             if (ray.IsKeyPressed(KeyboardKey.F))
-                Dialogs.Show(d);
+                Toasts.ShowToast(new Toast("test", ToastType.Info, Random.Shared.Next(70, 220)));
 
             if (ray.IsKeyDown(KeyboardKey.E))
                 transform.rotation -= new Quaternion(0, 0, 1, 0);

@@ -11,8 +11,8 @@ namespace WinterRose.ForgeWarden.Windowing
 {
     public class Window
     {
-        public int Width { get; private set; }
-        public int Height { get; private set; }
+        public int Width => ray.GetScreenWidth();
+        public int Height => ray.GetScreenHeight();
         public string Title
         {
             get
@@ -34,18 +34,16 @@ namespace WinterRose.ForgeWarden.Windowing
         private ConfigFlags configFlags;
         private string title;
 
-        public Window(int width, int height, string title, ConfigFlags configFlags = 0)
+        public Window(string title, ConfigFlags configFlags = 0)
         {
-            Width = width;
-            Height = height;
             Title = title;
             this.configFlags = configFlags;
         }
 
-        public void Create()
+        public void Create(int width, int height)
         {
             Raylib.SetConfigFlags(configFlags);
-            Raylib.InitWindow(Width, Height, Title);
+            Raylib.InitWindow(width, height, Title);
         }
 
         public void Close()
@@ -60,8 +58,6 @@ namespace WinterRose.ForgeWarden.Windowing
 
         public void SetSize(int newWidth, int newHeight)
         {
-            Width = newWidth;
-            Height = newHeight;
             ray.SetWindowSize(Width, Height);
         }
 
@@ -75,12 +71,13 @@ namespace WinterRose.ForgeWarden.Windowing
 
         public void RequestRecreate(ConfigFlags newFlags)
         {
-            // Capture state you want to restore later here, like window position
             var pos = ray.GetWindowPosition();
+
+            int width = Width, height = Height;
 
             Close();
             configFlags = newFlags;
-            Create();
+            Create(width, height);
 
             // Optionally reposition and restore any GL state
             ray.SetWindowPosition(pos.X.FloorToInt(), pos.Y.FloorToInt());

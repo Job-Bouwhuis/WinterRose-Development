@@ -3,11 +3,11 @@ using Raylib_cs;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DialogBoxes;
-using WinterRose.ForgeWarden.DialogBoxes.Boxes;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Shaders;
 using WinterRose.ForgeWarden.TextRendering;
+using WinterRose.ForgeWarden.ToastNotifications;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.Worlds;
 
@@ -43,21 +43,11 @@ internal class Program : Application
         entity.transform.scale = new();
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
-        entity.AddComponent<EntityTweener>().Sequence(
-            entity.transform,
-            t => t.scale,
-            new Vector3(1, 1, 1),
-            2,
-            Curves.Bounce)
-            .Then(
-            ref entity.transform.rotationRef,
-            t => t.Z,
-            MathF.PI / 2,
-            10,
-            Curves.Bounce);
 
-        Dialogs.Show(new ProgressDialog("Awesome Title", "message", 4, 
-            placement: DialogPlacement.HorizontalBig) { UnknownProgress = true});
+        
+
+        //Dialogs.Show(new ProgressDialog("Awesome Title", "message", 4, 
+        //    placement: DialogPlacement.TopLeft) { UnknownProgress = true});
 
         //Dialogs.Show(new BrowserDialog(
         //    "https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-14",

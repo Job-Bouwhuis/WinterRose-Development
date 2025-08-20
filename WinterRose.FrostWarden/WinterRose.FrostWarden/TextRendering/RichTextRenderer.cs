@@ -4,7 +4,6 @@ using Raylib_cs;
 using System.Collections.Generic;
 using System.Numerics;
 using WinterRose.ForgeWarden.DialogBoxes;
-using WinterRose.ForgeWarden.DialogBoxes.Boxes;
 
 public static class RichTextRenderer
 {

@@ -6,12 +6,12 @@ using System.Runtime.ExceptionServices;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DialogBoxes;
-using WinterRose.ForgeWarden.DialogBoxes.Boxes;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Resources;
 using WinterRose.ForgeWarden.Shaders;
 using WinterRose.ForgeWarden.TextRendering;
+using WinterRose.ForgeWarden.ToastNotifications;
 using WinterRose.ForgeWarden.Windowing;
 using WinterRose.ForgeWarden.Worlds;
 using static Raylib_cs.Raylib;
@@ -22,12 +22,14 @@ public abstract class Application
 {
     public static Application Current { get; private set; }
 
-    public static WinterRose.Vectors.Vector2I ScreenSize => new(SCREEN_WIDTH, SCREEN_HEIGHT);
+    public bool ShowFPS { get; set; }
+    public Window Window { get; private set; }
 
     // for on PC
     const int SCREEN_WIDTH = 1920;
     const int SCREEN_HEIGHT = 1080;
     private readonly bool useBrowser;
+    private readonly bool gracefulErrorHandling;
     private Exception? capturedException = null;
     internal bool AllowThrow = false;
     // for on laptop
@@ -38,12 +40,18 @@ public abstract class Application
     //const int SCREEN_WIDTH = 960;
     //const int SCREEN_HEIGHT = 540;
 
-    public Application(bool UseBrowser = true)
+    public Application(bool UseBrowser = true, bool GracefulErrorHandling =
+#if RELEASE
+         true) // use try catch with graceful error dialog box upon error rather than just closing without reason
+#else
+         false) // allow the game to throw errors so that stack trace and local variables are maintained in exception debugging
+#endif
     {
         if (Current is not null)
             throw new InvalidOperationException("Application instance already exists. Only one instance is allowed.");
         Current = this;
         useBrowser = UseBrowser;
+        gracefulErrorHandling = GracefulErrorHandling;
     }
 
     internal volatile IBrowser browser;
@@ -64,11 +72,11 @@ public abstract class Application
 
         SetTargetFPS(144);
 
-        Window window = new Window(SCREEN_WIDTH, SCREEN_HEIGHT, "FrostWarden - Sprite Stress Test");
+        Window = new Window("FrostWarden - Sprite Stress Test", ConfigFlags.ResizableWindow);
 
         // wait with creating the window until the embedded browser is set up
 
-        window.Create();
+        Window.Create(SCREEN_WIDTH, SCREEN_HEIGHT);
 
         SetExitKey(KeyboardKey.Null);
 
@@ -108,54 +116,37 @@ public abstract class Application
         Universe.CurrentWorld = world = CreateWorld();
         Camera? camera = world.GetAll<Camera>().FirstOrDefault();
         Camera.main = camera;
-        RenderTexture2D worldTex = Raylib.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+        RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
 
-        while (!window.ShouldClose())
+        while (!Window.ShouldClose())
         {
             Input.Update();
             Time.Update();
 
-            //try
-            //{
-                world.Update();
-                Dialogs.Update(Time.deltaTime);
+            if(ray.IsWindowResized())
+            {
+                ray.UnloadRenderTexture(worldTex);
+                worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
+            }
 
-                BeginDrawing();
+            if(gracefulErrorHandling)
+            {
+                try
+                {
+                    MainApplicationLoop(world, camera, worldTex);
 
-                Raylib.ClearBackground(Color.Black);
-                Raylib.BeginTextureMode(worldTex);
-                Raylib.ClearBackground(Color.DarkGray);
-
-                if (camera != null)
-                    Raylib.BeginMode2D(camera.Camera2D);
-
-                world.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
-
-                if (camera != null)
-                    Raylib.EndMode2D();
-
-                Raylib.EndTextureMode();
-
-                Raylib.DrawTexturePro(
-                    worldTex.Texture,
-                    new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),  // src rectangle flipped Y
-                    new Rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),                      // dest rectangle fullscreen
-                    Vector2.Zero,
-                    0,
-                    Color.White);
-
-                Dialogs.Draw();
-                ray.EndDrawing();
-                ray.DrawFPS(10, 10);
-                
-            //}
-            //catch (Exception ex)
-            //{
-              //  throw;
-              //  capturedException = ex;
-              //  HandleException(worldTex, ex, ExceptionDispatchInfo.Capture(ex));
-              //  break;
-            //}
+                }
+                catch (Exception ex)
+                {
+                    capturedException = ex;
+                    HandleException(worldTex, ex, ExceptionDispatchInfo.Capture(ex));
+                    break;
+                }
+            }
+            else
+            {
+                MainApplicationLoop(world, camera, worldTex);
+            }
         }
 
         Console.WriteLine("INFO: Releasing all resources");
@@ -164,8 +155,47 @@ public abstract class Application
         browser.Dispose();
 
         Console.WriteLine("INFO: All resources released, Closing window");
-        window.Close();
+        Window.Close();
         Console.WriteLine("INFO: Everything cleared up, Bye bye!");
+    }
+
+    private void MainApplicationLoop(World world, Camera? camera, RenderTexture2D worldTex)
+    {
+        world.Update();
+        Dialogs.Update(Time.deltaTime);
+        Toasts.Update(Time.deltaTime);
+        ToastToDialogMorpher.Update();
+        BeginDrawing();
+
+        Raylib.ClearBackground(Color.Black);
+        Raylib.BeginTextureMode(worldTex);
+        Raylib.ClearBackground(Color.DarkGray);
+
+        if (camera != null)
+            Raylib.BeginMode2D(camera.Camera2D);
+
+        world.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
+
+        if (camera != null)
+            Raylib.EndMode2D();
+
+        Raylib.EndTextureMode();
+
+        Raylib.DrawTexturePro(
+            worldTex.Texture,
+            new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),  // src rectangle flipped Y
+            new Rectangle(0, 0, Window.Width, Window.Height),                      // dest rectangle fullscreen
+            Vector2.Zero,
+            0,
+            Color.White);
+
+        Toasts.Draw();
+        ToastToDialogMorpher.Draw();
+        Dialogs.Draw();
+        
+        if(ShowFPS)
+            ray.DrawFPS(10, 10);
+        ray.EndDrawing();
     }
 
     public virtual void Update() { }
@@ -217,21 +247,21 @@ public abstract class Application
                     if (exDialog.IsClosing)
                     {
                         var text = RichText.Parse("An error occurred, the application will now close.", Color.Red, 50);
-                        var size = text.CalculateBounds(SCREEN_WIDTH - 20);
+                        var size = text.CalculateBounds(Window.Width - 20);
 
                         RichTextRenderer.DrawRichText(
                             text,
                             new Vector2(
-                                (SCREEN_WIDTH - size.Width) / 2,
-                                (SCREEN_HEIGHT - size.Height) / 2),
-                            SCREEN_WIDTH - 20);
+                                (Window.Width - size.Width) / 2,
+                                (Window.Height - size.Height) / 2),
+                            Window.Width - 20);
                     }
                     else if(worldTex is not null)
                     {
                         Raylib.DrawTexturePro(
                              worldTex.Value.Texture,
                              new Rectangle(0, 0, worldTex.Value.Texture.Width, -worldTex.Value.Texture.Height),  // src rectangle flipped Y
-                             new Rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),                      // dest rectangle fullscreen
+                             new Rectangle(0, 0, Window.Width, Window.Height),                      // dest rectangle fullscreen
                              Vector2.Zero,
                              0,
                              Color.White);

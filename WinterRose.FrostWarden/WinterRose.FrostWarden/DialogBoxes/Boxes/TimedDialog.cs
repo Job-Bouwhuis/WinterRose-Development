@@ -2,7 +2,7 @@
 using System.Threading;
 using WinterRose.ForgeWarden.TextRendering;
 
-namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
+namespace WinterRose.ForgeWarden.DialogBoxes
 {
     public class TimedDialog : Dialog
     {

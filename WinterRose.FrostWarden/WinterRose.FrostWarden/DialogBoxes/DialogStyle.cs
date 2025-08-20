@@ -12,20 +12,20 @@ namespace WinterRose.ForgeWarden.DialogBoxes
     {
         internal float contentAlpha = 1f;
 
-        private Color DialogBackgroundRaw = new(30, 30, 30, 180);
-        private Color DialogBorderRaw = new(200, 200, 200, 255);
-        private Color ShadowRaw = new(0, 0, 0, 80);
-        private Color contentColorRaw = new(255, 255, 255);
-        private Color fadedGrayRaw = new(180, 180, 180);
-        private Color barBackgroundRaw = new(80, 80, 80);
-        private Color barFillRaw = new(0, 150, 255);
-        private Color BarTextColor = Color.White;
-        private Color buttonTextColorRaw = new(255, 255, 255);
-        private Color buttonBackgroundRaw = new(100, 100, 100);
-        private Color buttonBorderRaw = new(255, 255, 255);
-        private Color buttonHoverRaw = new(80, 80, 80);
-        private Color buttonClickRaw = new(0, 150, 255);
-        private Color timeLabelColorRaw = new(150, 150, 150);
+        internal Color DialogBackgroundRaw = new(30, 30, 30, 180);
+        internal Color DialogBorderRaw = new(200, 200, 200, 255);
+        internal Color ShadowRaw = new(0, 0, 0, 80);
+        internal Color contentColorRaw = new(255, 255, 255);
+        internal Color fadedGrayRaw = new(180, 180, 180);
+        internal Color barBackgroundRaw = new(80, 80, 80);
+        internal Color barFillRaw = new(0, 150, 255);
+        internal Color BarTextColor = Color.White;
+        internal Color buttonTextColorRaw = new(255, 255, 255);
+        internal Color buttonBackgroundRaw = new(100, 100, 100);
+        internal Color buttonBorderRaw = new(255, 255, 255);
+        internal Color buttonHoverRaw = new(80, 80, 80);
+        internal Color buttonClickRaw = new(0, 150, 255);
+        internal Color timeLabelColorRaw = new(150, 150, 150);
 
         public DialogStyle()
         {

@@ -13,7 +13,7 @@ public class Camera : Component
     public bool is3D = false;
     public static Camera main { get; internal set; }
 
-    public Vector2 Resolution { get; set; } = Application.ScreenSize;
+    public Vector2 Resolution { get; set; } = Application.Current.Window.Size;
 
     // Returns a Raylib-style Camera2D for 2D rendering
     public Camera2D Camera2D => new Camera2D

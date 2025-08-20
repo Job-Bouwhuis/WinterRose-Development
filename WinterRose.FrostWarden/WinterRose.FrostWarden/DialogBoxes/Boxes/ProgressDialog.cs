@@ -2,7 +2,7 @@
 using System.Formats.Tar;
 using WinterRose.ForgeWarden.TextRendering;
 
-namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
+namespace WinterRose.ForgeWarden.DialogBoxes
 {
     public class ProgressDialog : Dialog
     {

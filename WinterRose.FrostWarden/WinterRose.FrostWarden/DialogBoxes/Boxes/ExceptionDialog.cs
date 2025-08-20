@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using WinterRose.ForgeWarden.DialogBoxes;
-using WinterRose.ForgeWarden.DialogBoxes.Boxes;
 
 namespace WinterRose.ForgeWarden;
 internal class ExceptionDialog : Dialog

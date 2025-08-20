@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.ForgeWarden.DialogBoxes.Boxes
+namespace WinterRose.ForgeWarden.DialogBoxes
 {
     class SpriteDialog : Dialog
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.ForgeWarden.DialogBoxes.Boxes;
+using WinterRose.ForgeWarden.DialogBoxes;
 using WinterRose.ForgeWarden.TextRendering;
 
 namespace WinterRose.ForgeWarden.DialogBoxes
@@ -15,10 +15,16 @@ namespace WinterRose.ForgeWarden.DialogBoxes
         public RichText text;
         public Func<bool> OnClick;
 
-        public DialogButton(string text, Func<bool>? onClick)
+        public DialogButton(string text, Func<bool> onClick)
         {
             this.text = RichText.Parse(text);
-            OnClick = onClick ?? (() => true);
+            OnClick = onClick;
+        }
+
+        public DialogButton(string text)
+        {
+            this.text = text;
+            OnClick = () => true;
         }
 
         internal void Draw(Dialog dialog, DialogStyle style, Rectangle bounds)

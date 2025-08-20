@@ -12,7 +12,7 @@ using Color = Raylib_cs.Color;
 using Image = Raylib_cs.Image;
 using Rectangle = Raylib_cs.Rectangle;
 
-namespace WinterRose.ForgeWarden.DialogBoxes.Boxes;
+namespace WinterRose.ForgeWarden.DialogBoxes;
 
 public class BrowserDialog : Dialog, IDisposable
 {
