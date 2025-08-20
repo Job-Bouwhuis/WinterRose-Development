@@ -144,11 +144,22 @@ public static class RichTextRenderer
                 }
                 currentWord.Add(element);
             }
+
+            if (currentWord.Count > 0)
+            {
+                float wordWidth = text.CalculateLineSize(currentWord).Width;
+                if (currentLineWidth + wordWidth > maxWidth)
+                {
+                    if (currentLine.Count > 0)
+                        lines.Add([.. currentLine]);
+                    currentLine.Clear();
+                }
+            }
         }
 
         if (currentWord.Count > 0)
         {
-            float wordWidth = text.CalculateLineSize(currentWord).X;
+            float wordWidth = text.CalculateLineSize(currentWord).Width;
             if (currentLineWidth + wordWidth > maxWidth)
             {
                 if (currentLine.Count > 0)

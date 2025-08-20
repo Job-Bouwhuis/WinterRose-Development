@@ -18,7 +18,7 @@ public class BrowserDialog : Dialog, IDisposable
 {
     private static volatile int favicoNum = 0;
 
-    private IBrowser browser => Application.Current.browser;
+    private IBrowser browser;
     private Texture2D? webTexture;
     private DateTime lastUpdateTime = DateTime.MinValue;
     private const float updateInterval = .1f; // seconds between updates
@@ -52,7 +52,11 @@ public class BrowserDialog : Dialog, IDisposable
         InitializeBrowserPage(link);
 
         ButtonCreation();
+
+        AppDomain.CurrentDomain.ProcessExit += PanickedAppClose;
     }
+
+    private void PanickedAppClose(object? sender, EventArgs e) => Dispose();
 
     private void ButtonCreation()
     {
@@ -213,10 +217,13 @@ public class BrowserDialog : Dialog, IDisposable
 
     private async void InitializeBrowserPage(string link)
     {
-        if (browser == null) return;
-
         try
         {
+            browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true
+            });
+
             page = await browser.NewPageAsync();
 
             await page.SetViewportAsync(new ViewPortOptions
@@ -673,8 +680,7 @@ public class BrowserDialog : Dialog, IDisposable
 
     public override void Close()
     {
-        page?.CloseAsync().GetAwaiter().GetResult();
-        DisposeFavicon();
+        Dispose();
         base.Close();
     }
 
@@ -682,5 +688,7 @@ public class BrowserDialog : Dialog, IDisposable
     {
         page?.CloseAsync().GetAwaiter().GetResult();
         DisposeFavicon();
+        browser.Dispose();
+        AppDomain.CurrentDomain.ProcessExit -= PanickedAppClose;
     }
 }

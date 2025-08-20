@@ -1,5 +1,6 @@
 ﻿using Raylib_cs;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -48,7 +49,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes
 
             if (hovered && mouseReleased)
             {
-                if (OnClick())
+                if (OnClick?.Invoke() ?? true)
                     dialog.Close();
             }
         }

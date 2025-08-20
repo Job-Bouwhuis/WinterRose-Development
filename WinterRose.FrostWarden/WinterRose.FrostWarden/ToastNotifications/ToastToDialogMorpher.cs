@@ -45,8 +45,9 @@ internal static class ToastToDialogMorpher
             return false;
         }
 
-        Toasts.RemoveImmediately(toast);
-        dialog.DrawContentOnly = true; // assume this flag exists
+        Toasts.RemoveImmediately(toast, toast.Region);
+        toast.IsMorphDrawing = true;
+        dialog.DrawContentOnly = true;
         Dialogs.AddImmediately(dialog);
         dialog.Style.contentAlpha = 0;
         dialog.CurrentAnim = new()
@@ -142,8 +143,9 @@ internal static class ToastToDialogMorpher
 
     public static void Draw()
     {
-        foreach (var ctx in activeMorphs)
+        for (int i = 0; i < activeMorphs.Count; i++)
         {
+            MorphContext? ctx = activeMorphs[i];
             DrawMorph(ctx);
         }
     }

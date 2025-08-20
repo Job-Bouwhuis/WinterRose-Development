@@ -2,8 +2,13 @@
 
 public enum ToastType
 {
+    Neutral,
+    Success,
     Info,
     Warning,
     Error,
-    Fatal
+    Fatal,
+    Highlight,
+    Question,
+    CriticalAction,
 }

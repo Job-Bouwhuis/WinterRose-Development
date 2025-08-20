@@ -32,6 +32,7 @@ public abstract class Application
     private readonly bool gracefulErrorHandling;
     private Exception? capturedException = null;
     internal bool AllowThrow = false;
+
     // for on laptop
     //const int SCREEN_WIDTH = 1280;
     //const int SCREEN_HEIGHT = 720;
@@ -53,8 +54,6 @@ public abstract class Application
         useBrowser = UseBrowser;
         gracefulErrorHandling = GracefulErrorHandling;
     }
-
-    internal volatile IBrowser browser;
 
     public abstract World CreateWorld();
 
@@ -82,30 +81,16 @@ public abstract class Application
 
         if (!browserTask.IsCompleted)
         {
-            DefaultDialog dialog = new("Loading embedded browser...", "This may take a while",
-           DialogPlacement.CenterSmall, DialogPriority.EngineNotifications);
-            Dialogs.Show(dialog);
-            while (!browserTask.IsCompleted)
-            {
-                BeginDrawing();
-                Time.Update();
-                ClearBackground(Color.Black);
-                Dialogs.Update(Time.deltaTime);
-                Dialogs.Draw();
-                DrawFPS(10, 10);
-                EndDrawing();
-                Task.Delay(16).Wait();
-            }
-            dialog.Close();
-            if (browserTask.IsFaulted)
-            {
-                var ex = browserTask.Exception.InnerExceptions.FirstOrDefault();
-                if (ex != null)
-                {
-                    HandleException(null, ex, ExceptionDispatchInfo.Capture(ex));
-                }
-                
-            }
+            Toasts.ShowToast(
+                new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
+                    .AddContent("Browser is being downloaded", ToastMessageFontPreset.Title)
+                    .AddContent("This can take a while.\nhowever the game is still playable", ToastMessageFontPreset.Subtext)
+                    .AddProgressBar(-1, pref => browserTask.IsCompleted ? 1 : -1, infiniteSpinText: "Waiting for browser download..."))
+                .ContinueWith(t => browserTask.IsCompletedSuccessfully ? 0 : 1,
+                new Toast(ToastType.Success, ToastRegion.Left, ToastStackSide.Top)
+                    .AddContent("Browser Successfully Downloaded!")
+                , new Toast(ToastType.Error, ToastRegion.Left, ToastStackSide.Top)
+                    .AddContent("Browser download failed", ToastMessageFontPreset.Message));
         }
 
         BeginDrawing();
@@ -152,7 +137,6 @@ public abstract class Application
         Console.WriteLine("INFO: Releasing all resources");
 
         SpriteCache.DisposeAll();
-        browser.Dispose();
 
         Console.WriteLine("INFO: All resources released, Closing window");
         Window.Close();
@@ -193,7 +177,7 @@ public abstract class Application
         ToastToDialogMorpher.Draw();
         Dialogs.Draw();
         
-        if(ShowFPS)
+        if (ShowFPS)
             ray.DrawFPS(10, 10);
         ray.EndDrawing();
     }
@@ -208,14 +192,6 @@ public abstract class Application
             {
                 var browserFetcher = new BrowserFetcher();
                 await browserFetcher.DownloadAsync();
-
-                browser = await Puppeteer.LaunchAsync(new LaunchOptions
-                {
-                    Headless = true
-                });
-
-                if (OperatingSystem.IsWindows())
-                    Windows.ApplicationExit += () => browser.Dispose();
             }
             catch (Exception ex)
             {
@@ -275,7 +251,6 @@ public abstract class Application
         catch (Exception innerEx)
         {
             SpriteCache.DisposeAll();
-            browser.Dispose();
 
             if (AllowThrow)
                 throw;

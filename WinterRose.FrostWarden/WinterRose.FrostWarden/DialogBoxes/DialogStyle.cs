@@ -12,20 +12,21 @@ namespace WinterRose.ForgeWarden.DialogBoxes
     {
         internal float contentAlpha = 1f;
 
-        internal Color DialogBackgroundRaw = new(30, 30, 30, 180);
-        internal Color DialogBorderRaw = new(200, 200, 200, 255);
-        internal Color ShadowRaw = new(0, 0, 0, 80);
-        internal Color contentColorRaw = new(255, 255, 255);
-        internal Color fadedGrayRaw = new(180, 180, 180);
-        internal Color barBackgroundRaw = new(80, 80, 80);
-        internal Color barFillRaw = new(0, 150, 255);
-        internal Color BarTextColor = Color.White;
-        internal Color buttonTextColorRaw = new(255, 255, 255);
-        internal Color buttonBackgroundRaw = new(100, 100, 100);
-        internal Color buttonBorderRaw = new(255, 255, 255);
-        internal Color buttonHoverRaw = new(80, 80, 80);
-        internal Color buttonClickRaw = new(0, 150, 255);
-        internal Color timeLabelColorRaw = new(150, 150, 150);
+        internal Color DialogBackgroundRaw = new(28, 28, 32, 200);   // dark, with slight blue hint
+        internal Color DialogBorderRaw = new(90, 90, 95, 255);       // subtle, not pure white border
+        internal Color ShadowRaw = new(0, 0, 0, 100);                // slightly stronger shadow
+        internal Color contentColorRaw = new(235, 235, 240);         // softer white for text
+        internal Color fadedGrayRaw = new(160, 160, 165);            // more natural muted gray
+        internal Color barBackgroundRaw = new(60, 60, 65);           // darker background for contrast
+        internal Color barFillRaw = new(0, 140, 230);                // calmer blue accent
+        internal Color BarTextColor = new(240, 240, 240);            // soft white, less harsh
+        internal Color buttonTextColorRaw = new(240, 240, 240);
+        internal Color buttonBackgroundRaw = new(70, 70, 75);        // softer, blends with background
+        internal Color buttonBorderRaw = new(120, 120, 130);         // subtle border, not pure white
+        internal Color buttonHoverRaw = new(95, 95, 105);            // light hover contrast
+        internal Color buttonClickRaw = new(0, 140, 230);            // matches barFill accent
+        internal Color timeLabelColorRaw = new(130, 130, 135);       // muted gray for less attention
+
 
         public DialogStyle()
         {

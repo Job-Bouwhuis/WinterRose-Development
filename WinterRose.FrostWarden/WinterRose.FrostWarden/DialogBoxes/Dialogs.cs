@@ -197,17 +197,25 @@ namespace WinterRose.ForgeWarden.DialogBoxes
 
             float width = 1f, height = 1f, alpha = 1f;
 
+            float alphaT = t; 
+
+            if (dialog.IsClosing)
+            {
+                alphaT *= 2f; 
+                if (alphaT > 1f) alphaT = 1f;
+            }
+
             if (style.AnimationMode == DialogAnimationMode.Curve)
             {
                 width = style.WidthCurve?.Evaluate(t) ?? t;
                 height = style.HeightCurve?.Evaluate(t) ?? t;
-                alpha = style.AlphaCurve?.Evaluate(t) ?? t;
+                alpha = style.AlphaCurve?.Evaluate(alphaT) ?? alphaT;
             }
             else
             {
                 width = 1 - MathF.Pow(1 - t / style.ScaleWidthSpeed, 3);
                 height = 1 - MathF.Pow(1 - t / style.ScaleHeightSpeed, 3);
-                alpha = 1 - MathF.Pow(1 - t / style.AlphaSpeed, 3);
+                alpha = 1 - MathF.Pow(1 - alphaT / style.AlphaSpeed, 3);
             }
 
             if (dialog.IsClosing)
@@ -216,6 +224,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes
                 height = 1f - height;
                 alpha = 1f - alpha;
             }
+
 
             anim.Alpha = alpha;
             anim.ScaleWidth = width;
@@ -259,7 +268,7 @@ namespace WinterRose.ForgeWarden.DialogBoxes
                 }
 
                 // Only draw internals when dialog is mostly visible
-                bool drawInternals = !dialog.IsClosing && alpha >= 0.6f;
+                bool drawInternals = alpha >= (dialog.IsClosing ?  0.3f : 0.7f);
                 if (!drawInternals)
                     continue;
 
