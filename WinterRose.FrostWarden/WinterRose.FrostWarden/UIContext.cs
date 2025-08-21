@@ -9,6 +9,7 @@ namespace WinterRose.ForgeWarden
     using Raylib_cs;
     using System.Numerics;
     using WinterRose.ForgeWarden.TextRendering;
+    using WinterRose.ForgeWarden.Worlds;
 
     public class UIContext
     {
@@ -36,7 +37,8 @@ namespace WinterRose.ForgeWarden
                 RichText.Parse(text, Color.White), 
                 new Vector2(position.X, position.Y), 
                 Raylib.GetScreenWidth(), 
-                tinted);
+                tinted,
+                Universe.Input);
             position.Y += lineHeight;
         }
 
@@ -55,7 +57,8 @@ namespace WinterRose.ForgeWarden
                 t,
                 new Vector2(position.X + 10, position.Y + 2),
                 Raylib.GetScreenWidth(),
-                tintColor);
+                tintColor,
+                Universe.Input);
             position.Y += lineHeight + padding;
             return pressed;
         }
@@ -75,7 +78,8 @@ namespace WinterRose.ForgeWarden
                 RichText.Parse(label, MultiplyColor(Color.White, tintColor)),
                 new Vector2(box.X + 30, box.Y),
                 Raylib.GetScreenWidth(),
-                tintColor);
+                tintColor,
+                Universe.Input);
             position.Y += lineHeight + padding;
             return value;
         }

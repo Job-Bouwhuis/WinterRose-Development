@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeWarden.Input;
 
 namespace WinterRose.ForgeWarden.Worlds
 {
@@ -10,6 +11,13 @@ namespace WinterRose.ForgeWarden.Worlds
     {
         private static World currentWorld = null;
         private static World? nextWorld = null;
+
+        public static InputContext Input { get; }
+
+        static Universe()
+        {
+            Input = new InputContext(new RaylibInputProvider(), 0);
+        }
 
         public static World CurrentWorld
         {

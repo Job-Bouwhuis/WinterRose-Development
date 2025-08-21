@@ -7,12 +7,15 @@ using WinterRose.Reflection;
 using WinterRose.ForgeGuardChecks;
 using System.Diagnostics;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.ForgeWarden.Input;
 
 namespace WinterRose.ForgeWarden.Worlds;
 
 public class World : IDisposable
 {
     public DiscreteDynamicsWorld Physics => physicsWorld;
+
+    public InputContext Input => Universe.Input;
 
     [WFInclude]
     private List<Entity> entities = new();
@@ -122,6 +125,8 @@ public class World : IDisposable
 
     public void Update()
     {
+        Input.IsRequestingKeyboardFocus = Input.IsRequestingMouseFocus = true;
+
         const float fixedTimeStep = 1f / 60f;
         physicsWorld.StepSimulation(Time.deltaTime, 10, fixedTimeStep);
 

@@ -3,17 +3,20 @@ namespace WinterRose.ForgeWarden.TextRendering;
 using Raylib_cs;
 using System.Collections.Generic;
 using System.Numerics;
-using WinterRose.ForgeWarden.DialogBoxes;
+using WinterRose.ForgeWarden.Input;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
+using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
 public static class RichTextRenderer
 {
-    public static void DrawRichText(string text, Vector2 position, float maxWidth)
-        => DrawRichText(RichText.Parse(text, Color.White), position, maxWidth);
+    public static void DrawRichText(string text, Vector2 position, float maxWidth, InputContext input)
+        => DrawRichText(RichText.Parse(text, Color.White), position, maxWidth, input);
 
-    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth)
-        => DrawRichText(richText, position, maxWidth, Color.White);
+    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth, InputContext input)
+        => DrawRichText(richText, position, maxWidth, Color.White, input);
 
-    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth, Color overallTint)
+    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth, Color overallTint, InputContext input)
     {
         var lines = WrapText(richText, maxWidth);
 
@@ -51,9 +54,10 @@ public static class RichTextRenderer
 
                         // Click detection
                         Rectangle glyphRect = new Rectangle(x, y, glyphSize.X, glyphSize.Y);
-                        if (glyph.GlyphLinkUrl != null && ray.CheckCollisionPointRec(ray.GetMousePosition(), glyphRect) && ray.IsMouseButtonPressed(MouseButton.Left))
+                        if (glyph.GlyphLinkUrl != null && ray.CheckCollisionPointRec(input.MousePosition, glyphRect) && ray.IsMouseButtonPressed(MouseButton.Left))
                         {
-                            Dialogs.Show(new BrowserDialog(glyph.GlyphLinkUrl, DialogPlacement.CenterBig, DialogPriority.EngineNotifications)); // your method to open the URL
+                            Toasts.Error("Browser dialog is temporarily out of order");
+                            //Dialogs.Show(new BrowserDialog(glyph.GlyphLinkUrl, DialogPlacement.CenterBig, DialogPriority.EngineNotifications)); // your method to open the URL
                         }
                         
                         x += glyphSize.X + richText.Spacing;
@@ -82,12 +86,15 @@ public static class RichTextRenderer
                                     (int)(texture.Width * scale),
                                     (int)(texture.Height * scale));
 
-                                if (ray.CheckCollisionPointRec(ray.GetMousePosition(), imageRect) && ray.IsMouseButtonPressed(MouseButton.Left))
-                                    Dialogs.Show(new SpriteDialog(
-                                        "Image",
-                                        sprite.SpriteSource,
-                                        DialogPlacement.CenterBig,
-                                        DialogPriority.EngineNotifications));
+                                if (ray.CheckCollisionPointRec(input.MousePosition, imageRect) && ray.IsMouseButtonPressed(MouseButton.Left))
+                                {
+                                    Toasts.Error("Sprite dialog is temporarily out of order");
+                                    //Dialogs.Show(new SpriteDialog(
+                                    //    "Image",
+                                    //    sprite.SpriteSource,
+                                    //    DialogPlacement.CenterBig,
+                                    //    DialogPriority.EngineNotifications));
+                                }
                             }
 
                             x += texture.Width * scale + richText.Spacing;

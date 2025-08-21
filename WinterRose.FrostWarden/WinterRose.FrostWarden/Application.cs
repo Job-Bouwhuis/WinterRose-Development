@@ -5,13 +5,16 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
-using WinterRose.ForgeWarden.DialogBoxes;
 using WinterRose.ForgeWarden.Entities;
+using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Resources;
 using WinterRose.ForgeWarden.Shaders;
 using WinterRose.ForgeWarden.TextRendering;
-using WinterRose.ForgeWarden.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.Content;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
+using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.Windowing;
 using WinterRose.ForgeWarden.Worlds;
 using static Raylib_cs.Raylib;
@@ -32,6 +35,12 @@ public abstract class Application
     private readonly bool gracefulErrorHandling;
     private Exception? capturedException = null;
     internal bool AllowThrow = false;
+
+    private InputContext EngineLevelInput = new(new RaylibInputProvider(), int.MaxValue)
+    {
+        HasKeyboardFocus = true,
+        HasMouseFocus = true
+    };
 
     // for on laptop
     //const int SCREEN_WIDTH = 1280;
@@ -105,7 +114,7 @@ public abstract class Application
 
         while (!Window.ShouldClose())
         {
-            Input.Update();
+            InputManager.Update();
             Time.Update();
 
             if(ray.IsWindowResized())
@@ -230,7 +239,8 @@ public abstract class Application
                             new Vector2(
                                 (Window.Width - size.Width) / 2,
                                 (Window.Height - size.Height) / 2),
-                            Window.Width - 20);
+                            Window.Width - 20,
+                            EngineLevelInput);
                     }
                     else if(worldTex is not null)
                     {

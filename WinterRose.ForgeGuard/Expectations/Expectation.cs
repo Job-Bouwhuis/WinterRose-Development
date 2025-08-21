@@ -158,6 +158,17 @@ namespace WinterRose.ForgeGuardChecks.Expectations
         }
 
         /// <summary>
+        /// Expects the value to be of the specified <typeparamref name="T"/>.<br></br>
+        /// </summary>
+        /// <param name="expectedType"></param>
+        /// <exception cref="ValueNotOfTypeException"></exception>
+        public virtual void OfType<T>()
+        {
+            if (item is null || !typeof(T).IsInstanceOfType(item))
+                throw new ValueNotOfTypeException(messageStart, typeof(T));
+        }
+
+        /// <summary>
         /// Expects the value to be assignable to the specified <paramref name="expectedBaseType"/>.<br></br>
         /// </summary>
         /// <param name="expectedBaseType"></param>

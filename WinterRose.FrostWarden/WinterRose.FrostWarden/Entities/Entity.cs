@@ -4,6 +4,7 @@ using WinterRose.ForgeGuardChecks;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DependencyInjection;
 using WinterRose.ForgeWarden.DependencyInjection.Handlers;
+using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Worlds;
 using WinterRose.Reflection;
@@ -16,6 +17,8 @@ public class Entity
     public string[] Tags { get; set; } = [];
     public World world { get; internal set; }
     public Transform transform { get; private set; }
+
+    public InputContext Input => world.Input;
 
     internal bool addedToWorld = false;
     internal IReadOnlyList<Component> _getComponents => components;
@@ -199,6 +202,9 @@ public class Entity
 
         foreach (var member in members)
         {
+            if (!member.CanWrite)
+                continue;
+
             // skip member if it already has a value (possible through Serialization or manual construction)
             if(member.GetValue(component) == null || asReset)
                 foreach (var kvp in HANDLERS)

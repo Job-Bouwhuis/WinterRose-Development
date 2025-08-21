@@ -1,5 +1,6 @@
 ﻿using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Entities;
+using WinterRose.ForgeWarden.Input;
 
 namespace WinterRose.ForgeWarden;
 
@@ -8,6 +9,8 @@ public abstract class Component : IComponent
     [WFInclude(Priority = int.MaxValue)]
     public Entity owner { get; internal set; }
     public Transform transform => owner.transform;
+
+    public InputContext Input => owner.Input;
 
     public float awakeTime { get; private set; }
     public float startTime { get; private set; }

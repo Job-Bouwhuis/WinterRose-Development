@@ -1,0 +1,696 @@
+﻿using PuppeteerSharp;
+using Raylib_cs;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using WinterRose;
+using WinterRose.ForgeWarden.TextRendering;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
+using Color = Raylib_cs.Color;
+using Image = Raylib_cs.Image;
+using Rectangle = Raylib_cs.Rectangle;
+
+namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
+
+//public class BrowserDialog : Dialog, IDisposable
+//{
+//    private static volatile int favicoNum = 0;
+
+//    private IBrowser browser;
+//    private Texture2D? webTexture;
+//    private DateTime lastUpdateTime = DateTime.MinValue;
+//    private const float updateInterval = .1f; // seconds between updates
+//    private const string FavIconsPath = @"Data\Browser\Favicons";
+//    private IPage page;
+
+//    private bool navigationFailed;
+//    private string? failedUrl;
+
+//    private int favicoId = favicoNum++;
+
+//    private Texture2D? faviconTexture;
+//    private string? currentFaviconPath;
+
+//    private Task? screenshottingTask;
+
+//    // Thread-safe buffer for pending screenshot
+//    private byte[]? pendingScreenshot;
+//    private bool favIcoUpdateRequired;
+//    private Image img;
+//    private readonly object screenshotLock = new();
+
+//    public BrowserDialog(string link,
+//        DialogPlacement placement = DialogPlacement.CenterSmall,
+//        DialogPriority priority = DialogPriority.Normal)
+//        : base("Unknown", "Cookies and logins are \\c[red]NOT\\c[white] saved.", placement, priority)
+//    {
+//        if (!Directory.Exists(FavIconsPath))
+//            Directory.CreateDirectory(FavIconsPath);
+
+//        InitializeBrowserPage(link);
+
+//        ButtonCreation();
+
+//        AppDomain.CurrentDomain.ProcessExit += PanickedAppClose;
+//    }
+
+//    private void PanickedAppClose(object? sender, EventArgs e) => Dispose();
+
+//    private void ButtonCreation()
+//    {
+//        Buttons.Add(new DialogButton("Reload Page", () =>
+//        {
+//            _ = page?.ReloadAsync();
+//            return false;
+//        }));
+
+//        Buttons.Add(new DialogButton("Reload Dialog", () =>
+//        {
+//            if (page == null) return true;
+
+//            string urlToReload = failedUrl ?? page.Url;
+//            BrowserDialog newDialog = new BrowserDialog(urlToReload, Placement, Priority);
+//            Dialogs.Show(newDialog);
+
+//            return true;
+//        }));
+
+//        // --- Back Button ---
+//        Buttons.Add(new DialogButton("Back", () =>
+//        {
+//            if (page != null)
+//            {
+//                _ = page.GoBackAsync().ContinueWith(t =>
+//                {
+//                    if (t.Exception != null) Console.WriteLine("GoBackAsync failed: " + t.Exception);
+//                });
+//            }
+//            return false;
+//        }));
+
+//        // --- Forward Button ---
+//        Buttons.Add(new DialogButton("Forward", () =>
+//        {
+//            if (page != null)
+//            {
+//                _ = page.GoForwardAsync().ContinueWith(t =>
+//                {
+//                    if (t.Exception != null) Console.WriteLine("GoForwardAsync failed: " + t.Exception);
+//                });
+//            }
+//            return false;
+//        }));
+
+//        // --- Open in External Browser ---
+//        Buttons.Add(new DialogButton("Open Externally", () =>
+//        {
+//            string urlToOpen = failedUrl ?? page?.Url ?? "";
+//            if (!string.IsNullOrWhiteSpace(urlToOpen))
+//            {
+//                try
+//                {
+//                    Process.Start(new ProcessStartInfo
+//                    {
+//                        FileName = urlToOpen,
+//                        UseShellExecute = true
+//                    });
+//                }
+//                catch (Exception ex)
+//                {
+//                    Console.WriteLine("Failed to open external browser: " + ex);
+//                }
+//            }
+//            return false;
+//        }));
+
+//        // --- Copy URL ---
+//        Buttons.Add(new DialogButton("Copy URL", () =>
+//        {
+//            string urlToCopy = failedUrl ?? page?.Url ?? "";
+//            if (string.IsNullOrWhiteSpace(urlToCopy)) return false;
+
+//            try
+//            {
+//                if (OperatingSystem.IsWindows())
+//                {
+//                    // Windows
+//                    var psi = new ProcessStartInfo("cmd", $"/c echo {urlToCopy} | clip")
+//                    {
+//                        CreateNoWindow = true,
+//                        UseShellExecute = false
+//                    };
+//                    Process.Start(psi);
+//                }
+//                else if (OperatingSystem.IsLinux())
+//                {
+//                    // Linux, requires xclip or xsel installed
+//                    var psi = new ProcessStartInfo("bash", $"-c \"echo '{urlToCopy}' | xclip -selection clipboard\"")
+//                    {
+//                        CreateNoWindow = true,
+//                        UseShellExecute = false
+//                    };
+//                    Process.Start(psi);
+//                }
+//                else if (OperatingSystem.IsMacOS())
+//                {
+//                    // macOS
+//                    var psi = new ProcessStartInfo("bash", $"-c \"echo '{urlToCopy}' | pbcopy\"")
+//                    {
+//                        CreateNoWindow = true,
+//                        UseShellExecute = false
+//                    };
+//                    Process.Start(psi);
+//                }
+//                else
+//                {
+//                    Console.WriteLine("Clipboard copy not supported on this OS.");
+//                }
+//            }
+//            catch (Exception ex)
+//            {
+//                Console.WriteLine("Failed to copy URL: " + ex);
+//            }
+
+//            return false;
+//        }));
+
+//        // --- Zoom controls ---
+//        float zoomLevel = 1f; // default zoom
+
+//        Buttons.Add(new DialogButton("Zoom In", () =>
+//        {
+//            zoomLevel += 0.1f;
+//            if (page != null)
+//                _ = page.EvaluateExpressionAsync($"document.body.style.zoom='{zoomLevel}'");
+//            return false;
+//        }));
+
+//        Buttons.Add(new DialogButton("Zoom Out", () =>
+//        {
+//            zoomLevel = Math.Max(0.1f, zoomLevel - 0.1f);
+//            if (page != null)
+//                _ = page.EvaluateExpressionAsync($"document.body.style.zoom='{zoomLevel}'");
+//            return false;
+//        }));
+
+//        Buttons.Add(new DialogButton("Reset Zoom", () =>
+//        {
+//            zoomLevel = 1f;
+//            if (page != null)
+//                _ = page.EvaluateExpressionAsync("document.body.style.zoom='1'");
+//            return false;
+//        }));
+
+//        Buttons.Add(new DialogButton("Close", () =>
+//        {
+//            return true;
+//        }));
+//    }
+
+//    private async void InitializeBrowserPage(string link)
+//    {
+//        try
+//        {
+//            browser = await Puppeteer.LaunchAsync(new LaunchOptions
+//            {
+//                Headless = true
+//            });
+
+//            page = await browser.NewPageAsync();
+
+//            if (page == null)
+//                return;
+
+//            await page.SetViewportAsync(new ViewPortOptions
+//            {
+//                Width = (int)DialogPlacementBounds.Width - 100,
+//                Height = (int)DialogPlacementBounds.Height - 200
+//            });
+
+//            if (page == null)
+//                return;
+
+//            try
+//            {
+//                await page.GoToAsync(link);
+//            }
+//            catch (NavigationException nex)
+//            {
+//                Console.WriteLine($"Navigation failed: {nex.Message}");
+//                navigationFailed = true;
+//                failedUrl = link;
+//                return; // stop initialization here
+//            }
+//            if (page == null)
+//                return;
+//            UpdateTitle(await page.GetTitleAsync());
+//            UpdateFaviconAsync().ContinueWith(t =>
+//            {
+//                if (t.Exception != null)
+//                    Console.WriteLine("Exception in UpdateFaviconAsync: " + t.Exception);
+//            });
+
+//            if (page == null)
+//                return;
+
+//            page.Console += (sender, e) => { Console.WriteLine("BROWSER: " + e.Message.Text); };
+//            page.DOMContentLoaded += async (sender, e) =>
+//            {
+//                try
+//                {
+//                    string title = await page.GetTitleAsync();
+//                    UpdateTitle(title);
+//                    UpdateFaviconAsync().ContinueWith(t =>
+//                    {
+//                        if (t.Exception != null)
+//                            Console.WriteLine("Exception in UpdateFaviconAsync: " + t.Exception);
+//                    });
+//                }
+//                catch (Exception ex)
+//                {
+//                    Console.WriteLine("Exception in DOMContentLoaded handler: " + ex);
+//                }
+//            };
+
+//            screenshottingTask = CaptureScreenshotAsync()
+//                .ContinueWith(t =>
+//                {
+//                    if (t.Exception != null)
+//                        Console.WriteLine("Screenshot task failed: " + t.Exception);
+//                });
+//        }
+//        catch (Exception ex)
+//        {
+//            Console.WriteLine("Exception in InitializeBrowserPage: " + ex);
+//        }
+//    }
+
+//    private void UpdateTitle(string title)
+//    {
+//        int fontSize = Title.FontSize;
+//        string t = string.IsNullOrWhiteSpace(title) ? "Unknown" : title;
+//        if (!string.IsNullOrWhiteSpace(currentFaviconPath))
+//            title = $"\\s[favicon{favicoId}]\\!  -  " + title;
+//        Title = title;
+//        Title.FontSize = fontSize;
+//    }
+
+//    private async Task UpdateFaviconAsync()
+//    {
+//        if (page == null) return;
+
+//        string? faviconUrl = await page.EvaluateExpressionAsync<string>(
+//            @"(() => {
+//            const icon = document.querySelector('link[rel~=""icon""]');
+//            return icon ? icon.href : null;
+//        })()"
+//        );
+
+//        if (string.IsNullOrWhiteSpace(faviconUrl) || faviconUrl == currentFaviconPath) return;
+
+//        if (IsClosing)
+//            return;
+
+//        try
+//        {
+//            if (faviconTexture.HasValue)
+//            {
+//                ray.UnloadTexture(faviconTexture.Value);
+//                faviconTexture = null;
+//            }
+
+//            var client = new HttpClient();
+//            byte[] data = await client.GetByteArrayAsync(faviconUrl);
+//            client.Dispose();
+//            try
+//            {
+//                string ext = Path.GetExtension(faviconUrl) ?? ".png";
+//                string path = FavIconsPath + $"\\{favicoId}{ext}";
+//                await File.WriteAllBytesAsync(path, data);
+//                favIcoUpdateRequired = true;
+//                currentFaviconPath = path;
+//            }
+//            catch
+//            {
+//            }
+//        }
+//        catch (Exception ex)
+//        {
+//            Console.WriteLine("Exception in UpdateFaviconAsync: " + ex);
+//        }
+//    }
+
+//    private void DisposeFavicon()
+//    {
+//        if (faviconTexture.HasValue)
+//        {
+//            ray.UnloadTexture(faviconTexture.Value);
+//            faviconTexture = null;
+//        }
+
+//        if (!string.IsNullOrWhiteSpace(currentFaviconPath) && File.Exists(currentFaviconPath))
+//        {
+//            File.Delete(currentFaviconPath);
+//            currentFaviconPath = null;
+//        }
+//    }
+
+//    protected internal override void Update()
+//    {
+//        if (page == null) return;
+
+//        // Trigger screenshot capture every update interval
+//        if ((DateTime.Now - lastUpdateTime).TotalSeconds >= updateInterval)
+//        {
+//            screenshottingTask ??= CaptureScreenshotAsync(); // async capture
+//            lastUpdateTime = DateTime.Now;
+//        }
+
+//        // Apply screenshot to texture on main thread
+//        byte[]? bytesToLoad = null;
+//        lock (screenshotLock)
+//        {
+//            if (pendingScreenshot != null)
+//            {
+//                bytesToLoad = pendingScreenshot;
+//                pendingScreenshot = null;
+//            }
+//        }
+
+//        if (bytesToLoad != null)
+//        {
+//            using var ms = new MemoryStream(bytesToLoad);
+//            Image img = ray.LoadImageFromMemory(".png", ms.ToArray());
+
+//            // Resize to fit dialog bounds if needed
+//            // Raylib_cs.Raylib.ImageResize(ref img, (int)bounds.width, (int)bounds.height);
+//            unsafe
+//            {
+//                if (webTexture.HasValue)
+//                {
+//                    ray.UpdateTexture(webTexture.Value, img.Data);
+//                    ray.UnloadImage(img);
+//                }
+//                else
+//                {
+//                    webTexture = ray.LoadTextureFromImage(img);
+//                    ray.UnloadImage(img);
+//                }
+//            }
+//        }
+
+//        if (favIcoUpdateRequired)
+//        {
+//            favIcoUpdateRequired = false;
+//            var tex = ray.LoadTexture(currentFaviconPath);
+//            if (tex.Id == 0)
+//            {
+//                Console.WriteLine("BROWSER: Failed to load Favico for website");
+//                return;
+//            }
+//            faviconTexture = tex;
+//            RichSpriteRegistry.RegisterSprite(
+//                "favicon" + favicoId,
+//                new(tex, false)
+//            );
+
+//            UpdateTitle(page.GetTitleAsync().GetAwaiter().GetResult());
+//        }
+//    }
+
+//    protected internal override void DrawContent(Rectangle bounds)
+//    {
+//        if (navigationFailed)
+//        {
+//            string msg = $"Invalid link: {failedUrl}";
+//            int fontSize = 20;
+//            Vector2 textSize = ray.MeasureTextEx(
+//                ray.GetFontDefault(),
+//                msg,
+//                fontSize,
+//                1
+//            );
+
+//            float drawX = bounds.X + (bounds.Width - textSize.X) / 2;
+//            float drawY = y + (bounds.Height - textSize.Y) / 3;
+
+//            ray.DrawTextEx(
+//                ray.GetFontDefault(),
+//                msg,
+//                new Vector2(drawX, drawY),
+//                fontSize,
+//                1,
+//                new Color(255, 100, 100, (int)(255 * Style.ContentAlpha))
+//            );
+
+//            bounds.y += (int)(textSize.Y + padding);
+//            return;
+//        }
+
+//        // standard drawing of the website page
+//        {
+//            if (!webTexture.HasValue) return;
+
+//            HandleInput(bounds, y, padding);
+
+//            float maxWidth = bounds.Width - padding * 2;
+
+//            // Calculate how much vertical space is left below y, minus padding and button area
+//            float reservedForButtons = 30 + 25 + padding; // same as your sprite example
+//            float maxHeight = bounds.Height - (y - bounds.Y) - reservedForButtons;
+
+//            float aspect = (float)webTexture.Value.Width / webTexture.Value.Height;
+
+//            float targetWidth = maxWidth;
+//            float targetHeight = targetWidth / aspect;
+
+//            if (targetHeight > maxHeight)
+//            {
+//                targetHeight = maxHeight;
+//                targetWidth = targetHeight * aspect;
+//            }
+
+//            float drawX = bounds.X + (bounds.Width - targetWidth) / 2;
+//            float drawY = bounds.Y;
+
+//            ray.DrawTexturePro(
+//                webTexture.Value,
+//                new Rectangle(0, 0, webTexture.Value.Width, webTexture.Value.Height),
+//                new Rectangle(drawX, drawY, targetWidth, targetHeight),
+//                new Vector2(0, 0),
+//                0f,
+//                Style.White
+//            );
+
+//            y += (targetHeight + UIConstants.CONTENT_PADDING).CeilingToInt();
+//        }
+//    }
+
+//    private Rectangle GetWebTextureDrawRect(Rectangle bounds, int y, int padding)
+//    {
+//        if (!webTexture.HasValue) return new Rectangle();
+
+//        float maxWidth = bounds.Width - padding * 2;
+//        float reservedForButtons = 30 + 25 + padding;
+//        float maxHeight = bounds.Height - (y - bounds.Y) - reservedForButtons;
+
+//        float aspect = (float)webTexture.Value.Width / webTexture.Value.Height;
+
+//        float targetWidth = maxWidth;
+//        float targetHeight = targetWidth / aspect;
+
+//        if (targetHeight > maxHeight)
+//        {
+//            targetHeight = maxHeight;
+//            targetWidth = targetHeight * aspect;
+//        }
+
+//        float drawX = bounds.X + (bounds.Width - targetWidth) / 2;
+//        float drawY = y;
+
+//        return new Rectangle(drawX, drawY, targetWidth, targetHeight);
+//    }
+
+//    public void HandleInput(Rectangle bounds, int y, int padding)
+//    {
+//        if (page == null || !webTexture.HasValue) return;
+
+//        Vector2 mousePos = ray.GetMousePosition();
+//        Rectangle texRect = GetWebTextureDrawRect(bounds, y, padding);
+
+//        if (mousePos.X >= texRect.X && mousePos.X <= texRect.X + texRect.Width &&
+//            mousePos.Y >= texRect.Y && mousePos.Y <= texRect.Y + texRect.Height)
+//        {
+//            float scaleX = page.Viewport.Width / texRect.Width;
+//            float scaleY = page.Viewport.Height / texRect.Height;
+
+//            float pageX = (mousePos.X - texRect.X) * scaleX;
+//            float pageY = (mousePos.Y - texRect.Y) * scaleY;
+
+//            if (ray.IsMouseButtonPressed(MouseButton.Left))
+//            {
+//                _ = page.Mouse.ClickAsync((decimal)pageX, (decimal)pageY)
+//                    .ContinueWith(t =>
+//                    {
+//                        if (t.Exception != null)
+//                            Console.WriteLine("Mouse.ClickAsync failed: " + t.Exception);
+//                    });
+//            }
+
+//            float wheel = ray.GetMouseWheelMove();
+//            if (wheel != 0)
+//            {
+//                _ = page.Mouse.WheelAsync(0, (decimal)(-wheel * 50))
+//                    .ContinueWith(t =>
+//                    {
+//                        if (t.Exception != null)
+//                            Console.WriteLine("Mouse.WheelAsync failed: " + t.Exception);
+//                    });
+//            }
+//        }
+
+//        // --- KEYBOARD INPUT ---
+//        while (ray.GetKeyPressed() is int keyCode && keyCode != 0)
+//        {
+//            if (RaylibToPuppeteerKey.TryGetValue((KeyboardKey)keyCode, out string puppeteerKey))
+//            {
+//                if (puppeteerKey.Length == 1 &&
+//                    char.IsLetter(puppeteerKey[0]) &&
+//                    (ray.IsKeyDown(KeyboardKey.LeftShift) ||
+//                     ray.IsKeyDown(KeyboardKey.RightShift)))
+//                {
+//                    puppeteerKey = puppeteerKey.ToUpper();
+//                }
+
+//                _ = page.Keyboard.PressAsync(puppeteerKey)
+//                    .ContinueWith(t =>
+//                    {
+//                        if (t.Exception != null)
+//                            Console.WriteLine("Keyboard.PressAsync failed: " + t.Exception);
+//                    });
+//            }
+//        }
+//    }
+
+//    private async Task CaptureScreenshotAsync()
+//    {
+//        if (page == null) return;
+
+//        try
+//        {
+//            byte[] imageBytes = await page.ScreenshotDataAsync();
+//            lock (screenshotLock)
+//            {
+//                pendingScreenshot = imageBytes;
+//            }
+//        }
+//        catch (Exception ex)
+//        {
+//            Console.WriteLine("Exception in CaptureScreenshotAsync: " + ex);
+//        }
+//        finally
+//        {
+//            screenshottingTask = null;
+//        }
+//    }
+
+//    private static readonly Dictionary<KeyboardKey, string> RaylibToPuppeteerKey = new()
+//    {
+//        // Letters A-Z
+//        { KeyboardKey.A, "a" },
+//        { KeyboardKey.B, "b" },
+//        { KeyboardKey.C, "c" },
+//        { KeyboardKey.D, "d" },
+//        { KeyboardKey.E, "e" },
+//        { KeyboardKey.F, "f" },
+//        { KeyboardKey.G, "g" },
+//        { KeyboardKey.H, "h" },
+//        { KeyboardKey.I, "i" },
+//        { KeyboardKey.J, "j" },
+//        { KeyboardKey.K, "k" },
+//        { KeyboardKey.L, "l" },
+//        { KeyboardKey.M, "m" },
+//        { KeyboardKey.N, "n" },
+//        { KeyboardKey.O, "o" },
+//        { KeyboardKey.P, "p" },
+//        { KeyboardKey.Q, "q" },
+//        { KeyboardKey.R, "r" },
+//        { KeyboardKey.S, "s" },
+//        { KeyboardKey.T, "t" },
+//        { KeyboardKey.U, "u" },
+//        { KeyboardKey.V, "v" },
+//        { KeyboardKey.W, "w" },
+//        { KeyboardKey.X, "x" },
+//        { KeyboardKey.Y, "y" },
+//        { KeyboardKey.Z, "z" },
+
+//        // Control keys
+//        { KeyboardKey.Enter, "Enter" },
+//        { KeyboardKey.Backspace, "Backspace" },
+//        { KeyboardKey.Tab, "Tab" },
+//        { KeyboardKey.Delete, "Delete" },
+//        { KeyboardKey.Escape, "Escape" },
+//        { KeyboardKey.CapsLock, "CapsLock" },
+//        { KeyboardKey.LeftShift, "Shift" },
+//        { KeyboardKey.RightShift, "Shift" },
+//        { KeyboardKey.LeftControl, "Control" },
+//        { KeyboardKey.RightControl, "Control" },
+//        { KeyboardKey.LeftAlt, "Alt" },
+//        { KeyboardKey.RightAlt, "Alt" },
+
+//        // Arrow keys
+//        { KeyboardKey.Up, "ArrowUp" },
+//        { KeyboardKey.Down, "ArrowDown" },
+//        { KeyboardKey.Left, "ArrowLeft" },
+//        { KeyboardKey.Right, "ArrowRight" },
+
+//        // Function keys
+//        { KeyboardKey.F1, "F1" },
+//        { KeyboardKey.F2, "F2" },
+//        { KeyboardKey.F3, "F3" },
+//        { KeyboardKey.F4, "F4" },
+//        { KeyboardKey.F5, "F5" },
+//        { KeyboardKey.F6, "F6" },
+//        { KeyboardKey.F7, "F7" },
+//        { KeyboardKey.F8, "F8" },
+//        { KeyboardKey.F9, "F9" },
+//        { KeyboardKey.F10, "F10" },
+//        { KeyboardKey.F11, "F11" },
+//        { KeyboardKey.F12, "F12" },
+
+//        // Symbols / punctuation
+//        { KeyboardKey.Semicolon, ";" },
+//        { KeyboardKey.Comma, "," },
+//        { KeyboardKey.Period, "." },
+//        { KeyboardKey.Slash, "/" },
+//        { KeyboardKey.Backslash, "\\" },
+//        { KeyboardKey.Apostrophe, "'" },
+//        { KeyboardKey.Minus, "-" },
+//        { KeyboardKey.Equal, "=" },
+//        { KeyboardKey.LeftBracket, "[" },
+//        { KeyboardKey.RightBracket, "]" },
+//        { KeyboardKey.Grave, "`" },
+
+//        // Optional: more symbols
+//        { KeyboardKey.Space, " " },
+//    };
+
+//    public override void Close()
+//    {
+//        Dispose();
+//        base.Close();
+//    }
+
+//    public void Dispose()
+//    {
+//        page?.CloseAsync().GetAwaiter().GetResult();
+//        DisposeFavicon();
+//        browser.Dispose();
+//        AppDomain.CurrentDomain.ProcessExit -= PanickedAppClose;
+//    }
+//}

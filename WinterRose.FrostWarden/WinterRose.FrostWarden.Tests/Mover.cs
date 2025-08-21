@@ -6,8 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Components;
-using WinterRose.ForgeWarden.DialogBoxes;
-using WinterRose.ForgeWarden.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
 namespace WinterRose.ForgeWarden.Tests
 {
@@ -35,7 +34,7 @@ namespace WinterRose.ForgeWarden.Tests
             
             Vector2 input = Vector2.Zero;
 
-            if (ray.IsKeyPressed(KeyboardKey.F))
+            if (Input.IsUp(KeyboardKey.F))
             {
                 // Neutral
                 Toasts.ShowToast(
@@ -91,21 +90,25 @@ namespace WinterRose.ForgeWarden.Tests
                     new Toast(ToastType.CriticalAction, ToastRegion.Center, ToastStackSide.Bottom)
                         .AddContent("This action is irreversible. Continue?")
                         .AddButton("Yes", (toast, button) => true)
-                        .AddButton("Cancel", (toast, button) => true)
-                );
+                        .AddButton("Cancel", (toast, button) => true));
 
             }
 
-            if (ray.IsKeyDown(KeyboardKey.E))
+            if(Input.IsDown(MouseButton.Left))
+            {
+                
+            }
+
+            if (Input.IsDown(KeyboardKey.E))
                 transform.rotation -= new Quaternion(0, 0, 1, 0);
 
-            if (ray.IsKeyDown(KeyboardKey.Q))
+            if (Input.IsDown(KeyboardKey.Q))
                 transform.rotation += new Quaternion(0, 0, 1, 0);
 
-            if (Raylib.IsKeyDown(KeyboardKey.W)) input.Y -= 1;
-            if (Raylib.IsKeyDown(KeyboardKey.S)) input.Y += 1;
-            if (Raylib.IsKeyDown(KeyboardKey.A)) input.X -= 1;
-            if (Raylib.IsKeyDown(KeyboardKey.D)) input.X += 1;
+            if (Input.IsDown(KeyboardKey.W)) input.Y -= 1;
+            if (Input.IsDown(KeyboardKey.S)) input.Y += 1;
+            if (Input.IsDown(KeyboardKey.A)) input.X -= 1;
+            if (Input.IsDown(KeyboardKey.D)) input.X += 1;
 
             if (input != Vector2.Zero)
             {
