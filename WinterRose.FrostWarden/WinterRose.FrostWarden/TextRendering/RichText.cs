@@ -11,7 +11,7 @@ public class RichText
     public Font Font { get; set; } = ray.GetFontDefault();
     public float Spacing { get; set; } = 2;
     public int FontSize { get; set; } = 12;
-    public List<RichElement> Elements { get; }
+    public List<RichElement> Elements { get; private set; }
 
     public Color lastColorInSequence
     {
@@ -26,6 +26,18 @@ public class RichText
                     return sprite.Tint;
             }
             return Color.White;
+        }
+    }
+
+    public void SetText(RichText title, bool copyMetadata = false)
+    {
+        Elements = title.Elements;
+
+        if(copyMetadata)
+        {
+            Font = title.Font;
+            Spacing = title.Spacing;
+            FontSize = title.FontSize;
         }
     }
 
@@ -125,7 +137,7 @@ public class RichText
             {
                 float spriteHeight = rs.BaseSize * FontSize;
                 float scale = spriteHeight / s.Height;
-                r.Width += s.Width * scale;
+                r.Width += s.Width * scale + Spacing;
                 continue;
             }
         }

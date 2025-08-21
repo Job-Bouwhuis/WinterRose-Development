@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeGuardChecks;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
@@ -56,10 +57,12 @@ public static class Toasts
         regions[ToastRegion.Center] = new ToastCenterRegionManager();
     }
 
-    public static Toast ShowToast(Toast toast)
+    public static Toast ShowToast<T>(T toast) where T : UIContainer
     {
-        regions[toast.Region].EnqueueToast(toast);
-        return toast;
+        Forge.Expect(toast).OfType<Toast>();
+        Toast t = toast as Toast;
+        regions[t.Region].EnqueueToast(t);
+        return t;
     }
 
     public static void Update(float deltaTime)
@@ -107,7 +110,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Neutral(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Neutral, region, side).AddContent(message));
+        return ShowToast(new Toast(ToastType.Neutral, region, side).AddText(message));
     }
 
     /// <summary>
@@ -119,7 +122,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Success(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Success, region, side).AddContent(message));
+        return ShowToast(new Toast(ToastType.Success, region, side).AddText(message));
     }
 
     /// <summary>
@@ -131,7 +134,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Info(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Info, region, side).AddContent(message));
+        return ShowToast(new Toast(ToastType.Info, region, side).AddText(message));
     }
 
     /// <summary>
@@ -143,7 +146,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Warning(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Warning, region, side).AddContent(message));
+        return ShowToast(new Toast(ToastType.Warning, region, side).AddText(message));
     }
 
     /// <summary>
@@ -155,7 +158,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Error(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Error, region, side).AddContent(message));
+        return ShowToast(new Toast(ToastType.Error, region, side).AddText(message));
     }
 
     /// <summary>
@@ -167,7 +170,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Fatal(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Fatal, region, side).AddContent(message));
+        return ShowToast(new Toast(ToastType.Fatal, region, side).AddText(message));
     }
 
     /// <summary>
@@ -179,7 +182,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Highlight(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Highlight, region, side).AddContent(message));
+        return ShowToast(new Toast(ToastType.Highlight, region, side).AddText(message));
     }
 
 

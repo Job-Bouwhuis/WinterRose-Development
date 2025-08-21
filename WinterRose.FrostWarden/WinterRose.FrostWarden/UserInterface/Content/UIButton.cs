@@ -1,12 +1,13 @@
-﻿using Raylib_cs;
+﻿using BulletSharp;
+using Raylib_cs;
 using WinterRose;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.WIP.TestClasses;
 
-namespace WinterRose.ForgeWarden.UserInterface.Content;
+namespace WinterRose.ForgeWarden.UserInterface;
 
-public delegate bool ButtonClickHandler(UIContainer container, UIButton button);
+public delegate void ButtonClickHandler(UIContainer container, UIButton button);
 
 public class UIButton : UIContent
 {
@@ -20,7 +21,7 @@ public class UIButton : UIContent
     protected internal const int PaddingY = 6;
     protected internal const int Spacing = 10;
 
-    private static readonly ButtonClickHandler alwaysTrueFunc = (t, b) => true;
+    private static readonly ButtonClickHandler alwaysTrueFunc = (container, button) => container.Close();
     private Color backgroundColor;
 
     public ButtonClickHandler OnClick { get; set; }
@@ -56,7 +57,7 @@ public class UIButton : UIContent
     /// </summary>
     /// <param name="btnRect"></param>
     /// <returns>True when the button has been clicked</returns>
-    internal protected override void Draw(Rectangle btnRect)
+    protected override void Draw(Rectangle btnRect)
     {
         ray.DrawRectangleRec(btnRect, backgroundColor);
         ray.DrawRectangleLinesEx(btnRect, 1, Style.ButtonBorder);

@@ -1,22 +1,19 @@
 ﻿using Raylib_cs;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
-using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
+using Color = Raylib_cs.Color;
+using Rectangle = Raylib_cs.Rectangle;
 
 namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 
 public class Dialog : UIContainer
 {
-    private readonly List<Rectangle> buttonSizes = new();
-
     public DialogPlacement Placement { get; set; }
     public DialogPriority Priority { get; }
 
     public Rectangle DialogPlacementBounds => Dialogs.GetDialogBounds(Placement);
-
-    public List<UIContent> Content { get; } = [];
 
     public const float DIALOG_CONTENT_PADDING = 4;
 
@@ -28,13 +25,14 @@ public class Dialog : UIContainer
 
     /// <summary> Used for Toast-to-Dialog morph </summary>
     internal bool DrawContentOnly { get; set; }
-    internal Rectangle LastScaledBoudningBox { get; set; }
+
+    public RichText Title { get; private set; }
 
     public Dialog(
         string title,
         string message,
-        DialogPlacement placement,
-        DialogPriority priority)
+        DialogPlacement placement = DialogPlacement.CenterSmall,
+        DialogPriority priority = DialogPriority.Normal)
     {
         Placement = placement;
         Priority = priority;
@@ -45,16 +43,31 @@ public class Dialog : UIContainer
         SetupMessage(message);
     }
 
+    public Dialog(
+    string title,
+    DialogPlacement placement,
+    DialogPriority priority)
+    {
+        Placement = placement;
+        Priority = priority;
+
+        Style = new DialogStyle();
+
+        SetupTitle(title);
+    }
+
     protected virtual void SetupTitle(string title)
     {
         Rectangle bounds = Dialogs.GetDialogBounds(Placement);
         float scaleRef = Math.Min(bounds.Width, bounds.Height);
         float titleScale = scaleRef * 0.09f;
 
-        UIMessageContent message = new UIMessageContent(title, ToastMessageFontPreset.Title);
-        message.Text.FontSize = (int)Math.Clamp(titleScale, 14, 36);
+        UIMessageContent titleContent = new UIMessageContent(title, UIFontSizePreset.Title);
+        titleContent.Text.FontSize = (int)Math.Clamp(titleScale, 14, 36);
 
-
+        titleContent.owner = this;
+        Contents.Insert(0, titleContent);
+        Title = titleContent.Text;
     }
 
     protected virtual void SetupMessage(string message)
@@ -63,14 +76,11 @@ public class Dialog : UIContainer
         float scaleRef = Math.Min(bounds.Width, bounds.Height);
         float messageScale = scaleRef * 0.04f;
 
-        UIMessageContent m = new UIMessageContent(message, ToastMessageFontPreset.Message);
-        m.Text.FontSize = (int)Math.Clamp(messageScale, 10, 24);
-    }
+        UIMessageContent messageContent = new UIMessageContent(message, UIFontSizePreset.Message);
+        messageContent.Text.FontSize = (int)Math.Clamp(messageScale, 10, 24);
 
-    public virtual Dialog AddContent(UIContent content)
-    {
-        Content.Add(content);
-        return this;
+        messageContent.owner = this;
+        Contents.Insert(1, messageContent);
     }
 
     public override void Close()
@@ -159,17 +169,69 @@ public class Dialog : UIContainer
     //    return (rows, heights);
     //}
 
-    public Dialog AddButton(string text)
+    public virtual new Dialog AddContent(UIContent content)
     {
-        Content.Add(new UIButton(text));
+        return (Dialog)base.AddContent(content);
+    }
+
+    public new Dialog AddButton(RichText text, ButtonClickHandler? onClick = null)
+    {
+        ButtonRowContent? btns = null;
+        foreach (var item in Contents)
+        {
+            if (item is ButtonRowContent b)
+            {
+                btns = b;
+                break;
+            }
+        }
+
+        if (btns is null)
+        {
+            btns = new();
+            AddContent(btns);
+        }
+
+        btns.AddButton(text, onClick);
         return this;
     }
 
-    public Dialog AddButton(string text, ButtonClickHandler? handler)
+    /// <summary>
+    /// Adds a button to the toast
+    /// </summary>
+    /// <param name="text"></param>
+    /// <param name="onClick">Should return true when the toast should close, false if not</param>
+    /// <returns></returns>
+    public new Dialog AddButton(string text, ButtonClickHandler? onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
+
+    /// <summary>
+    /// Adds a progress bar to the toast
+    /// </summary>
+    /// <param name="initialProgress">The progress in a 0-1 range. set to -1 to have it do a infinite working animation</param>
+    /// <param name="ProgressProvider">The function that provides further values</param>
+    /// <param name="closesToastWhenComplete">When true, and the progress becomes 1, it requests the toast to close.</param>
+    /// <returns></returns>
+    public new Dialog AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, bool closesToastWhenComplete = true, string infiniteSpinText = "Working...")
     {
-        Content.Add(new UIButton(text, handler));
-        return this;
+        return AddContent(new UIProgressContent(initialProgress, ProgressProvider, closesToastWhenComplete, infiniteSpinText));
     }
+
+    /// <summary>
+    /// Adds the sprite to the dialog
+    /// </summary>
+    /// <param name="sprite"></param>
+    /// <returns></returns>
+    public new Dialog AddSprite(Sprite sprite) => AddContent(new UISpriteContent(sprite));
+
+    public new Dialog AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
+    => AddText(RichText.Parse(text, Color.White), preset);
+    public new Dialog AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
+        => AddContent(new UIMessageContent(text, preset));
+    public new Dialog AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
+        => AddContent(new UIMessageContent(text, preset));
+
+    public new Dialog AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
+        => AddText(RichText.Parse(text, Color.White), preset);
 }
 
 //public abstract class Dialog

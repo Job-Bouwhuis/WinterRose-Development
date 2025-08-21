@@ -11,7 +11,7 @@ using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Resources;
 using WinterRose.ForgeWarden.Shaders;
 using WinterRose.ForgeWarden.TextRendering;
-using WinterRose.ForgeWarden.UserInterface.Content;
+using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
@@ -92,14 +92,14 @@ public abstract class Application
         {
             Toasts.ShowToast(
                 new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
-                    .AddContent("Browser is being downloaded", ToastMessageFontPreset.Title)
-                    .AddContent("This can take a while.\nhowever the game is still playable", ToastMessageFontPreset.Subtext)
+                    .AddText("Browser is being downloaded", UIFontSizePreset.Title)
+                    .AddText("This can take a while.\nhowever the game is still playable", UIFontSizePreset.Subtext)
                     .AddProgressBar(-1, pref => browserTask.IsCompleted ? 1 : -1, infiniteSpinText: "Waiting for browser download..."))
                 .ContinueWith(t => browserTask.IsCompletedSuccessfully ? 0 : 1,
                 new Toast(ToastType.Success, ToastRegion.Left, ToastStackSide.Top)
-                    .AddContent("Browser Successfully Downloaded!")
+                    .AddText("Browser Successfully Downloaded!")
                 , new Toast(ToastType.Error, ToastRegion.Left, ToastStackSide.Top)
-                    .AddContent("Browser download failed", ToastMessageFontPreset.Message));
+                    .AddText("Browser download failed", UIFontSizePreset.Message));
         }
 
         BeginDrawing();

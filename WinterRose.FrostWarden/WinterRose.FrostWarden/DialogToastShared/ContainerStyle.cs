@@ -109,9 +109,10 @@ namespace WinterRose.ForgeWarden
         public float ContentMoveDuration { get; set; }
         public float ContentFadeDuration { get; set; }
 
-        public Curve HoverCurve { get; set; } = Curves.EaseOutBack;
-        public float HoverDuration { get; set; } = 0.25f;
-        
+        public Curve RaiseCurve { get; set; } = Curves.EaseOutBack;
+        public float RaiseDuration { get; set; } = 0.25f;
+        public bool RaiseOnHover { get; internal set; }
+
         public float AnimateInDuration { get; set; } = 0.4f;
         public float AnimateOutDuration { get; set; } = 0.4f;
 
@@ -124,6 +125,5 @@ namespace WinterRose.ForgeWarden
 
         public Color TimerBarBackground { get; internal set; }
         public Color TimerBarFill { get; internal set; }
-
     }
 }

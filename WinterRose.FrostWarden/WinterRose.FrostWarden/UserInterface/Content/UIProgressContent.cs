@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.UserInterface;
 
-namespace WinterRose.ForgeWarden.UserInterface.Content;
+namespace WinterRose.ForgeWarden.UserInterface;
 public class UIProgressContent : UIContent
 {
     public float ProgressValue { get; set; }
@@ -72,7 +72,7 @@ public class UIProgressContent : UIContent
             Close();
     }
 
-    protected internal override void Draw(Rectangle bounds)
+    protected override void Draw(Rectangle bounds)
     {
         owner.TimeUntilAutoDismiss = 0;
 

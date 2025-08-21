@@ -68,7 +68,7 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
                 if (!dialog.IsClosing)
                 {
                     UpdateDialogAnimation(dialog, deltaTime);
-                    dialog.Update();
+                    dialog.UpdateContainer();
                 }
                 else
                 {
@@ -253,7 +253,6 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
                 float drawWidth = Math.Max(bounds.Width * scaleWidth, 0);
                 float drawHeight = Math.Max(bounds.Height * scaleHeight, 0);
                 Rectangle scaled = new Rectangle(center.X - drawWidth / 2, center.Y - drawHeight / 2, drawWidth, drawHeight);
-                dialog.LastScaledBoudningBox = scaled;
                 if (drawWidth == 0 && drawHeight == 0)
                     continue;
 

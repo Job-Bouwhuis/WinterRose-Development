@@ -19,7 +19,6 @@ internal class ExceptionDialog : Dialog
             {
                 Application.Current.AllowThrow = true;
                 info.Throw();
-                return false;
             });
 
     }

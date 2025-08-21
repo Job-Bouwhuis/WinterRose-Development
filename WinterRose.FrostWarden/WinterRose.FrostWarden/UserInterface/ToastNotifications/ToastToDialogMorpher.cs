@@ -172,14 +172,12 @@ internal static class ToastToDialogMorpher
         Color bord = ctx.Toast.Style.Border.WithAlpha(ctx.Dialog.Style.BorderRaw.A);
         ray.DrawRectangleLinesEx(toastRect, 2, bord);
 
-        int padding = 20;
-
         // Content area with padding
         Rectangle contentArea = new Rectangle(
-            toastRect.X + padding,
-            toastRect.Y + padding,
-            toastRect.Width - padding * 2,
-            toastRect.Height - padding * 2
+            toastRect.X + UIConstants.CONTENT_PADDING,
+            toastRect.Y + UIConstants.CONTENT_PADDING,
+            toastRect.Width - UIConstants.CONTENT_PADDING * 2,
+            toastRect.Height - UIConstants.CONTENT_PADDING * 2
             );
 
 
@@ -189,11 +187,7 @@ internal static class ToastToDialogMorpher
 
         // Draw dialog content only if alpha > 0
         if (ctx.Dialog.Style.ContentAlpha > 0f)
-        {
-            float innerwidth = ctx.Dialog.LastScaledBoudningBox.Width;
-            int y = (int)(ctx.Dialog.LastScaledBoudningBox.Y + padding);
-            ctx.Dialog.Draw();
-        }
+            ctx.Dialog.DrawContent(contentArea);
     }
 
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;

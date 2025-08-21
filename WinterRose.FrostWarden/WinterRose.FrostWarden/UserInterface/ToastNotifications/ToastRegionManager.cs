@@ -181,7 +181,7 @@ public abstract class ToastRegionManager
                 continue;
             }
 
-            toast.Update();
+            toast.UpdateContainer();
         }
     }
 

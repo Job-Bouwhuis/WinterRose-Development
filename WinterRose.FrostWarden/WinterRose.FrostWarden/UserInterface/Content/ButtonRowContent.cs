@@ -8,11 +8,11 @@ using WinterRose;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
-namespace WinterRose.ForgeWarden.UserInterface.Content;
+namespace WinterRose.ForgeWarden.UserInterface;
 
 public class ButtonRowContent : UIContent
 {
-    private static readonly ButtonClickHandler alwaysTrueFunc = (t, b) => true;
+    private static readonly ButtonClickHandler alwaysTrueFunc = (container, button) => container.Close();
     List<List<Rectangle>> buttonRows = [];
 
     public List<UIButton> Buttons { get; } = new();
@@ -158,7 +158,7 @@ public class ButtonRowContent : UIContent
         }
     }
 
-    protected internal override void Draw(Rectangle bounds)
+    protected override void Draw(Rectangle bounds)
     {
         if (Buttons.Count == 0) return;
 
@@ -225,7 +225,7 @@ public class ButtonRowContent : UIContent
             {
                 Rectangle btnRect = buttonRows[r][b] = new((int)rowX, (int)rowY, buttonRows[r][b].Width, buttonRows[r][b].Height);
 
-                Buttons[buttonIndex++].Draw(btnRect);
+                Buttons[buttonIndex++].InternalDraw(btnRect);
                 rowX += buttonRows[r][b].Width + Spacing;
             }
 

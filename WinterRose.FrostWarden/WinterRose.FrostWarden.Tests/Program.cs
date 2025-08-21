@@ -7,7 +7,7 @@ using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Shaders;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
-using WinterRose.ForgeWarden.UserInterface.Content;
+using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
@@ -33,7 +33,7 @@ internal class Program : Application
         //return World.FromFile("testworld");
 
         World world = new World("testworld");
-        
+
         var cam = world.CreateEntity<Camera>("cam");
         cam.AddComponent<Mover>();
 
@@ -43,39 +43,48 @@ internal class Program : Application
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
 
-        Toasts.ShowToast(
-            new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
-                .AddContent("Right?")
-                .AddButton("btn", (t, b) =>
-                    {
-                        ((Toast)t).OpenAsDialog(new Dialog("Horizontal Big",
-                        "refer to \\L[https://github.com/Job-Bouwhuis/WinterRose.WinterForge|WinterForge github page] for info",
-                        DialogPlacement.HorizontalBig, priority: DialogPriority.High).AddContent(new UIButton("OK")));
-                        return true;
-                    })
-                .AddButton("btn2", (t, b) =>
-                {
-                    Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Top);
-                    return false;
-                })
-                .AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
-                .AddSprite(Assets.Load<Sprite>("bigimg")));
+        Dialogs.Show(new BrowserDialog("https://github.com/Job-Bouwhuis/WinterRose.WinterForge"));
 
-        //Dialogs.Show(new Dialog("Vertical Big", "this is a cool dialog box\n\n\\s[star]\\!", DialogPlacement.VerticalBig, priority: DialogPriority.AlwaysFirst).AddButton("OK"));
+        //ShowToast();
 
-        //Dialogs.Show(new DefaultDialog("Dialog top left", "yes", DialogPlacement.TopLeft, buttons: ["Ok"]));
-        //Dialogs.Show(new DefaultDialog("Dialog top right", "yes", DialogPlacement.TopRight, buttons: ["Ok"]));
-        //Dialogs.Show(new DefaultDialog("Dialog bottom left", "yes", DialogPlacement.BottomLeft, buttons: ["Ok"]));
-        //Dialogs.Show(new DefaultDialog("Dialog bottom right", "yes", DialogPlacement.BottomRight, buttons: ["Ok"]));
-        //Dialogs.Show(new DefaultDialog("Dialog Center", "yes", DialogPlacement.CenterSmall, buttons: ["Ok"]));
-        //Dialogs.Show(new DefaultDialog("Dialog top small", "yes", DialogPlacement.TopSmall, buttons: ["Ok"]));
-        //Dialogs.Show(new DefaultDialog("Dialog left small", "yes", DialogPlacement.LeftSmall, buttons: ["Ok"]));
-        //Dialogs.Show(new DefaultDialog("Dialog right small", "yes", DialogPlacement.RightSmall, buttons: ["Ok"]));
+        void ShowToast()
+        {
+            Toasts.ShowToast(
+                new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
+                    .AddText("Right?")
+                    .AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(
+                            new Dialog("Horizontal Big",
+                                "refer to \\L[https://github.com/Job-Bouwhuis/WinterRose.WinterForge|WinterForge github page] for info",
+                                DialogPlacement.RightBig, priority: DialogPriority.High)
+                            .AddContent(new UIButton("OK", (c, b) =>
+                            {
+                                ShowToast();
+                                c.Close();
+                            }))
+                            .AddProgressBar(-1)))
+                    .AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Top))
+                    .AddButton("btn3")
+                    .AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
+                    .AddSprite(Assets.Load<Sprite>("bigimg")));
+        }
 
-        //Dialogs.Show(new DefaultDialog("Dialog bottom small", "yes \\c[red] rode text \\c[white]  \\s[star]\\!",
-        //DialogPlacement.BottomSmall, buttons: ["Ok"]));
 
-        //Dialogs.Show(new DefaultDialog("Dialog right big", "yes", DialogPlacement.RightBig, buttons: ["Ok"]));
+        //Dialogs.Show(new Dialog("Vertical Big", "this is a cool dialog box\n\n\\s[star]\\!", DialogPlacement.HorizontalBig, priority: DialogPriority.AlwaysFirst).AddButton("Ok"));
+
+        //Dialogs.Show(new Dialog("Dialog top left", "yes", DialogPlacement.TopLeft).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog top right", "yes", DialogPlacement.TopRight).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog bottom left", "yes", DialogPlacement.BottomLeft).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog bottom right", "yes", DialogPlacement.BottomRight).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog Center", "yes", DialogPlacement.CenterSmall).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog top small", "yes", DialogPlacement.TopSmall).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog left small", "yes", DialogPlacement.LeftSmall).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog right small", "yes", DialogPlacement.RightSmall).AddButton("Ok"));
+
+        //Dialogs.Show(new Dialog("Dialog bottom small", "yes \\c[red] rode text \\c[white]  \\s[star]\\!", DialogPlacement.BottomSmall).AddButton("Ok"));
+
+        //Dialogs.Show(new Dialog("Dialog right big", "yes", DialogPlacement.RightBig).AddButton("Ok"));
+
+
 
         //world.SaveTemplate();
 

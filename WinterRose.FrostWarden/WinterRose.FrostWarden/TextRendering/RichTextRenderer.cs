@@ -120,7 +120,7 @@ public static class RichTextRenderer
 
             if (isSpace)
             {
-                float wordWidth = text.CalculateLineSize(currentWord).X;
+                float wordWidth = text.CalculateLineSize(currentWord).Width;
                 if (currentLineWidth + wordWidth + spaceWidth > maxWidth)
                 {
                     if (currentLine.Count > 0)
@@ -160,6 +160,7 @@ public static class RichTextRenderer
                     if (currentLine.Count > 0)
                         lines.Add([.. currentLine]);
                     currentLine.Clear();
+                    currentLineWidth = 0;
                 }
             }
         }

@@ -6,29 +6,25 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.UserInterface;
 
-namespace WinterRose.ForgeWarden.UserInterface.Content;
-public class ToastSpriteContent : UIContent
+namespace WinterRose.ForgeWarden.UserInterface;
+public class UISpriteContent : UIContent
 {
-    public string SpriteSource { get; private set; }
-    private Sprite? sprite;
+    public Sprite? Sprite { get; set; }
 
-    public ToastSpriteContent(string spriteSource)
-    {
-        SpriteSource = spriteSource;
-        sprite = SpriteCache.Get(spriteSource);
-    }
+    public UISpriteContent(string spriteSource) => Sprite = SpriteCache.Get(spriteSource);
 
-    public ToastSpriteContent(Sprite sprite)
+    public UISpriteContent(Sprite sprite) => Sprite = sprite;
+
+    public UISpriteContent()
     {
-        SpriteSource = sprite.Source;
-        this.sprite = sprite;
+
     }
 
     protected internal override float GetHeight(float width)
     {
-        if (sprite == null) return 0f;
+        if (Sprite == null) return 0f;
 
-        float aspect = (float)sprite.Width / sprite.Height;
+        float aspect = (float)Sprite.Width / Sprite.Height;
         float targetWidth = width;
         float targetHeight = targetWidth / aspect;
 
@@ -40,11 +36,11 @@ public class ToastSpriteContent : UIContent
         return new(availableArea.Width, GetHeight(availableArea.Width));
     }
 
-    protected internal override void Draw(Rectangle bounds)
+    protected override void Draw(Rectangle bounds)
     {
-        if (sprite == null) return;
+        if (Sprite == null) return;
 
-        float aspect = (float)sprite.Width / sprite.Height;
+        float aspect = (float)Sprite.Width / Sprite.Height;
 
         float targetWidth = bounds.Width;
         float targetHeight = targetWidth / aspect;
@@ -61,8 +57,8 @@ public class ToastSpriteContent : UIContent
         Color tint = Style.ContentTint;
 
         ray.DrawTexturePro(
-            sprite.Texture,
-            new Rectangle(0, 0, sprite.Width, sprite.Height),
+            Sprite.Texture,
+            new Rectangle(0, 0, Sprite.Width, Sprite.Height),
             new Rectangle(drawX, drawY, targetWidth, targetHeight),
             new Vector2(0, 0),
             0f,

@@ -221,6 +221,7 @@ public class ToastStyle : ContainerStyle
     public ToastStyle(ToastType type)
     {
         ApplyDefaults(type);
+        RaiseOnHover = true;
     }
 
 }

@@ -17,21 +17,8 @@ namespace WinterRose.ForgeWarden.Tests
         private float fadeAmount = 0f;
         private const float fadeSpeed = 5.1f;
 
-        ToastStackSide side = ToastStackSide.Bottom;
-        ToastStackSide Side
-        {
-            get
-            {
-                if(side == ToastStackSide.Bottom)
-                    side = ToastStackSide.Top;
-                else if(side == ToastStackSide.Top)
-                    side = ToastStackSide.Bottom;
-                return side;
-            }
-        }
         public void Update()
         {
-            
             Vector2 input = Vector2.Zero;
 
             if (Input.IsUp(KeyboardKey.F))
@@ -39,58 +26,58 @@ namespace WinterRose.ForgeWarden.Tests
                 // Neutral
                 Toasts.ShowToast(
                     new Toast(ToastType.Neutral, ToastRegion.Right, ToastStackSide.Top)
-                        .AddContent("This is a neutral toast prompt")
-                        .AddButton("OK", (toast, button) => true));
+                        .AddText("This is a neutral toast prompt")
+                        .AddButton("OK"));
 
                 // Success
                 Toasts.ShowToast(
                     new Toast(ToastType.Success, ToastRegion.Right, ToastStackSide.Top)
-                        .AddContent("Operation completed successfully!")
-                        .AddButton("Great!", (toast, button) => true));
+                        .AddText("Operation completed successfully!")
+                        .AddButton("Great!"));
 
                 // Info
                 Toasts.ShowToast(
                     new Toast(ToastType.Info, ToastRegion.Right, ToastStackSide.Top)
-                        .AddContent("This is an informational message.")
-                        .AddButton("Got it", (toast, button) => true));
+                        .AddText("This is an informational message.")
+                        .AddButton("Got it"));
 
                 // Warning
                 Toasts.ShowToast(
                     new Toast(ToastType.Warning, ToastRegion.Right,ToastStackSide.Bottom)
-                        .AddContent("Be careful with this action!")
-                        .AddButton("Understood", (toast, button) => true));
+                        .AddText("Be careful with this action!")
+                        .AddButton("Understood"));
 
                 // Error
                 Toasts.ShowToast(
                     new Toast(ToastType.Error, ToastRegion.Center, ToastStackSide.Bottom)
-                        .AddContent("Something went wrong!")
-                        .AddButton("Retry", (toast, button) => true));
+                        .AddText("Something went wrong!")
+                        .AddButton("Retry"));
 
                 // Fatal
                 Toasts.ShowToast(
                     new Toast(ToastType.Fatal, ToastRegion.Center, ToastStackSide.Bottom)
-                        .AddContent("Fatal error encountered!")
-                        .AddButton("Close", (toast, button) => true));
+                        .AddText("Fatal error encountered!")
+                        .AddButton("Close"));
 
                 // Highlight
                 Toasts.ShowToast(
                     new Toast(ToastType.Highlight, ToastRegion.Left, ToastStackSide.Top)
-                        .AddContent("Check this important highlight!")
-                        .AddButton("Check", (toast, button) => true));
+                        .AddText("Check this important highlight!")
+                        .AddButton("Check"));
 
                 // Question
                 Toasts.ShowToast(
                     new Toast(ToastType.Question, ToastRegion.Left, ToastStackSide.Top)
-                        .AddContent("Do you want to proceed?")
-                        .AddButton("Yes", (toast, button) => true)
-                        .AddButton("No", (toast, button) => true));
+                        .AddText("Do you want to proceed?")
+                        .AddButton("Yes")
+                        .AddButton("No"));
 
                 // Critical Action
                 Toasts.ShowToast(
                     new Toast(ToastType.CriticalAction, ToastRegion.Center, ToastStackSide.Bottom)
-                        .AddContent("This action is irreversible. Continue?")
-                        .AddButton("Yes", (toast, button) => true)
-                        .AddButton("Cancel", (toast, button) => true));
+                        .AddText("This action is irreversible. Continue?")
+                        .AddButton("Yes")
+                        .AddButton("Cancel"));
 
             }
 
