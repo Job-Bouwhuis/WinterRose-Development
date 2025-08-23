@@ -11,7 +11,7 @@ public static class InputManager
 {
     private static readonly SortedList<int, InputContext> contexts = new(Comparer<int>.Create((a, b) => b.CompareTo(a)));
 
-    static bool prev = false;
+    internal static bool EnablePassThrough { get; private set; } = false;
 
     public static InputContext RegisterContext(InputContext context)
     {
@@ -78,15 +78,15 @@ public static class InputManager
 
         if(Application.Current.Window.ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
         {
-            if (!keyboardFocusGiven && !mouseFocusGiven && prev)
+            if (!keyboardFocusGiven && !mouseFocusGiven && EnablePassThrough)
             {
                 EnablePassthrough(Windows.MyHandle.Handle);
-                prev = false;
+                EnablePassThrough = false;
             }
-            else if ((keyboardFocusGiven || mouseFocusGiven) && !prev)
+            else if ((keyboardFocusGiven || mouseFocusGiven) && !EnablePassThrough)
             {
                 DisablePassthrough(Windows.MyHandle.Handle);
-                prev = true;
+                EnablePassThrough = true;
             }
         }
     }

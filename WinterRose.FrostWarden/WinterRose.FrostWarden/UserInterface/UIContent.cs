@@ -40,7 +40,7 @@ public abstract class UIContent
     protected internal virtual void OnHoverEnd() { }
     protected internal virtual void OnContentClicked(MouseButton button) { }
     protected internal virtual void OnOwnerClosing() { }
-    protected internal virtual void Close()
+    protected internal void Close()
     {
         owner.Close();
     }

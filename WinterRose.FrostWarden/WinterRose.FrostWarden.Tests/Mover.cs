@@ -6,7 +6,11 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Components;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
+using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
+using WinterRose.ForgeWarden.UserInterface;
 
 namespace WinterRose.ForgeWarden.Tests
 {
@@ -17,9 +21,47 @@ namespace WinterRose.ForgeWarden.Tests
         private float fadeAmount = 0f;
         private const float fadeSpeed = 5.1f;
 
+        OLEDragDrop dragManager = new OLEDragDrop();
+        Toast t;
+        protected override void Awake()
+        {
+            dragManager.OnDragDetected += () =>
+            {
+                t?.Close();
+
+                t = new Toast(ToastType.Info, ToastRegion.Right, ToastStackSide.Top)
+        .AddText("Right?")
+        .AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(
+                new Dialog("Horizontal Big",
+                    "refer to \\L[https://github.com/Job-Bouwhuis/WinterRose.WinterForge|WinterForge github page] for info",
+                    DialogPlacement.RightBig, priority: DialogPriority.High)
+                .AddContent(new UIButton("OK", (c, b) =>
+                {
+                    c.Close();
+                }))
+                .AddProgressBar(-1)))
+        .AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Top))
+        .AddButton("btn3", (c, b) => Application.Close())
+        .AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
+        //.AddSprite(Assets.Load<Sprite>("bigimg"))
+        .AddContent(new HeavyFileDropContent());
+
+                Toasts.ShowToast(t);
+            };
+
+            dragManager.OnDragStopped += () =>
+            {
+                t.Close();
+            };
+
+        }
+
+
         public void Update()
         {
             Vector2 input = Vector2.Zero;
+
+            
 
             if (Input.IsUp(KeyboardKey.F))
             {

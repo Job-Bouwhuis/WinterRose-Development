@@ -11,6 +11,7 @@ using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
+using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.Worlds;
 
@@ -30,6 +31,7 @@ internal class Program : Application
     //const int SCREEN_WIDTH = 960;
     //const int SCREEN_HEIGHT = 540;
 
+    [STAThread]
     static void Main(string[] args)
     {
         var monitorsize = Windows.GetScreenSize();
@@ -66,7 +68,7 @@ internal class Program : Application
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
 
-        ShowToast(ToastRegion.Left, ToastStackSide.Top);
+        //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
         //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
@@ -99,7 +101,7 @@ internal class Program : Application
                     .AddButton("btn3", (c, b) => Application.Close())
                     .AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
                     //.AddSprite(Assets.Load<Sprite>("bigimg"))
-                    .AddContent(new FileDropContent(Windows.MyHandle.Handle)));
+                    .AddContent(new HeavyFileDropContent()));
         }
 
 

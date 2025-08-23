@@ -32,8 +32,10 @@ public class FileDropContent : UIContent
     private static WndProcDelegate newWndProc;
     private static IntPtr oldWndProc;
 
-    public FileDropContent(IntPtr hwnd)
+    public FileDropContent()
     {
+        nint hwnd = Windows.MyHandle.Handle;
+
         // enable drag & drop for this hwnd
         DragAcceptFiles(hwnd, true);
 
@@ -95,6 +97,11 @@ public class FileDropContent : UIContent
 
     protected override void Draw(Rectangle bounds)
     {
+    }
+
+    protected internal override void OnOwnerClosing()
+    {
+        // the container this content is in is closing
     }
 
     protected internal override float GetHeight(float maxWidth)

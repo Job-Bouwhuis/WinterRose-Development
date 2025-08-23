@@ -270,7 +270,7 @@ public abstract class Application
 
     }
 
-    protected static void Close()
+    public static void Close()
     {
         GameClosing = true;
     }
