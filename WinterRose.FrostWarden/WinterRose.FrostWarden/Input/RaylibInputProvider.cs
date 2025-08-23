@@ -1,15 +1,100 @@
 ﻿using Raylib_cs;
+using System.Runtime.InteropServices;
 
 namespace WinterRose.ForgeWarden.Input;
 
+/// <summary>
+/// The default input provider based on RayLib. 
+/// </summary>
 public class RaylibInputProvider : IInputProvider
 {
+    private static class OSMouseInput
+    {
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool GetCursorPos(out POINT lpPoint);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct X11Point
+        {
+            public int X;
+            public int Y;
+            public int screen;
+        }
+
+        [DllImport("libX11.so.6")]
+        static extern IntPtr XOpenDisplay(IntPtr display);
+
+        [DllImport("libX11.so.6")]
+        static extern int XQueryPointer(IntPtr display, IntPtr window, out IntPtr rootReturn,
+                                        out IntPtr childReturn, out int rootX, out int rootY,
+                                        out int winX, out int winY, out uint maskReturn);
+
+        [DllImport("libX11.so.6")]
+        static extern int XCloseDisplay(IntPtr display);
+
+        private static float lastFrame = -1;
+        private static Vector2 cachedMouse = new Vector2(-1, -1);
+
+        public static Vector2 GetMouseWithinWindow()
+        {
+            float currentFrame = ray.GetFrameTime();
+            if (lastFrame == currentFrame)
+                return cachedMouse;
+
+            Vector2 mouse = new Vector2(-1, -1);
+
+            if (OperatingSystem.IsWindows())
+            {
+                if (GetCursorPos(out POINT p))
+                {
+                    int winX = Application.Current.Window.Position.X;
+                    int winY = Application.Current.Window.Position.Y;
+                    int winW = Application.Current.Window.Width;
+                    int winH = Application.Current.Window.Height;
+
+                    if (p.X >= winX && p.X <= winX + winW && p.Y >= winY && p.Y <= winY + winH)
+                        mouse = new Vector2(p.X - winX, p.Y - winY);
+                }
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                IntPtr display = XOpenDisplay(IntPtr.Zero);
+                if (display != IntPtr.Zero)
+                {
+                    XQueryPointer(display, IntPtr.Zero, out _, out _, out int rootX, out int rootY,
+                                    out int winX, out int winY, out _);
+                    XCloseDisplay(display);
+
+                    int winPosX = Application.Current.Window.Position.X;
+                    int winPosY = Application.Current.Window.Position.Y;
+                    int winW = Application.Current.Window.Width;
+                    int winH = Application.Current.Window.Height;
+
+                    if (rootX >= winPosX && rootX <= winPosX + winW && rootY >= winPosY && rootY <= winPosY + winH)
+                        mouse = new Vector2(rootX - winPosX, rootY - winPosY);
+                }
+            }
+
+            lastFrame = currentFrame;
+            cachedMouse = mouse;
+            return cachedMouse;
+        }
+    }
+
     private readonly int gamepadIndex;
 
-    private readonly Dictionary<InputBinding, double> heldStartTimes = [];
-    private readonly Dictionary<InputBinding, (int, double)> pressCounts = [];
-
+    /// <inheritdoc cref="IInputProvider.MousePosition"/>
     public Vector2 MousePosition => currentMousePosition;
+    /// <inheritdoc cref="IInputProvider.MouseDelta"/>
     public Vector2 MouseDelta => currentMousePosition - lastMousePosition;
 
     public RaylibInputProvider(int gamepadIndex = 0)
@@ -23,10 +108,19 @@ public class RaylibInputProvider : IInputProvider
     public void Update()
     {
         lastMousePosition = currentMousePosition;
-        currentMousePosition = Raylib.GetMousePosition();
+        currentMousePosition = OSMouseInput.GetMouseWithinWindow();
+
+        int winWidth = Application.Current.Window.Width;
+        int winHeight = Application.Current.Window.Height;
+
+        bool mouseOutside = currentMousePosition.X < 0 || currentMousePosition.Y < 0 ||
+                            currentMousePosition.X > winWidth || currentMousePosition.Y > winHeight;
+
+        if (mouseOutside /*|| !Raylib.IsWindowFocused()*/)
+            currentMousePosition = new(-1, -1);
     }
 
-    // --- PRESSED (this frame) ---
+    /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)(InputBinding)"/>
     public bool IsPressed(InputBinding binding)
     {
         switch (binding.DeviceType)
@@ -57,7 +151,7 @@ public class RaylibInputProvider : IInputProvider
         }
     }
 
-    // --- DOWN (held state) ---
+    /// <inheritdoc cref="IInputProvider.IsDown(InputBinding)"/>
     public bool IsDown(InputBinding binding)
     {
         switch (binding.DeviceType)
@@ -82,7 +176,7 @@ public class RaylibInputProvider : IInputProvider
         }
     }
 
-    // --- UP (released this frame) ---
+    /// <inheritdoc cref="IInputProvider.IsUp(InputBinding)(InputBinding)"/>
     public bool IsUp(InputBinding binding)
         => binding.DeviceType switch
         {
@@ -92,7 +186,7 @@ public class RaylibInputProvider : IInputProvider
             _ => false,
         };
 
-    // --- VALUE (float axis or binary) ---
+    /// <inheritdoc cref="IInputProvider.GetValue(InputBinding)(InputBinding)"/>
     public float GetValue(InputBinding binding)
     {
         switch (binding.DeviceType)
@@ -121,75 +215,6 @@ public class RaylibInputProvider : IInputProvider
             default:
                 return 0f;
         }
-    }
-
-    public bool WasRepeated(InputBinding binding)
-    {
-        return WasRepeated(binding, 2);
-    }
-
-    public bool WasRepeated(InputBinding binding, TimeSpan interval)
-    {
-        return WasRepeated(binding, 2, interval);
-    }
-
-    public bool WasRepeated(InputBinding binding, int times)
-    {
-        return WasRepeated(binding, times, TimeSpan.FromSeconds(1)); // default window
-    }
-
-    public bool WasRepeated(InputBinding binding, int times, TimeSpan interval)
-    {
-        switch (binding.DeviceType)
-        {
-            case InputDeviceType.Keyboard:
-                // Raylib already has a repeat for keys, but only single-step.
-                // We'll simulate multi-repeat with timing.
-                double now = Raylib.GetTime();
-
-                if (IsPressed(binding))
-                {
-                    if (!pressCounts.TryGetValue(binding, out var state))
-                        state = (0, 0);
-
-                    int count = state.Item1 + 1;
-                    double lastTime = state.Item2;
-
-                    pressCounts[binding] = (count, now);
-
-                    if (count >= times && now - lastTime <= interval.TotalSeconds)
-                    {
-                        // Reset counter after success
-                        pressCounts[binding] = (0, now);
-                        return true;
-                    }
-                }
-                break;
-        }
-
-        return false;
-    }
-
-
-    // --- HELD FOR ---
-    public bool HeldFor(InputBinding binding, TimeSpan duration)
-    {
-        double now = Raylib.GetTime();
-
-        if (IsDown(binding))
-        {
-            if (!heldStartTimes.ContainsKey(binding))
-                heldStartTimes[binding] = now;
-
-            double heldTime = now - heldStartTimes[binding];
-            return heldTime >= duration.TotalSeconds;
-        }
-        else
-        {
-            heldStartTimes.Remove(binding);
-        }
-
-        return false;
     }
 }
 

@@ -1,22 +1,44 @@
 ﻿namespace WinterRose.ForgeWarden.Input;
 
+/// <summary>
+/// A common interface for different ways to provide input to a <see cref="InputContext"/>
+/// </summary>
 public interface IInputProvider
 {
+    /// <summary>
+    /// Did this input start this frame
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <returns>True if yes, otherwise false</returns>
     bool IsPressed(InputBinding binding);
+    /// <summary>
+    /// Is this input currently held down
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <returns>True if yes, otherwise false</returns>
     bool IsDown(InputBinding binding);
+    /// <summary>
+    /// Was this input released this frame
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <returns>True if yes, otherwise false</returns>
     bool IsUp(InputBinding binding);
 
-    bool WasRepeated(InputBinding binding);
-    bool WasRepeated(InputBinding binding, TimeSpan within);
-    bool WasRepeated(InputBinding binding, int times);
-    bool WasRepeated(InputBinding binding, int times, TimeSpan within);
-
-    bool HeldFor(InputBinding binding, TimeSpan duration);
-
+    /// <summary>
+    /// Gets a numerical value for input. eg controller joysticks. Works with non analog inputs too giving a flat 0 or 1
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <returns></returns>
     float GetValue(InputBinding binding);
 
     void Update();
 
+    /// <summary>
+    /// The current position of the mouse. Will be -1 -1 when the mouse is not hovering the window
+    /// </summary>
     Vector2 MousePosition { get; }
+    /// <summary>
+    /// The mouse move delta since the last frame
+    /// </summary>
     Vector2 MouseDelta { get; }
 }

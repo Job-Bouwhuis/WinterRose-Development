@@ -16,7 +16,7 @@ public class Toast : UIContainer
 
     protected internal ToastRegionManager ToastManager { get; internal set; }
 
-    private float hoverElapsed = 0f;
+    private float raiseElapsed = 0f;
     private bool isHoverTarget = false;
     private Func<Toast, int> continueWithSelector;
     private Toast[] continueWithOptions;
@@ -24,8 +24,7 @@ public class Toast : UIContainer
     public ToastStackSide StackSide { get; internal set; }
     public ToastRegion Region { get; internal set; }
 
-    public float Height => Contents.Sum(c => c.GetHeight(Toasts.TOAST_WIDTH))
-                           + UIConstants.CONTENT_PADDING * (Contents.Count + 1);
+    public override float Height => Contents.Sum(c => c.GetHeight(Toasts.TOAST_WIDTH)) + base.Height;
 
     public Toast(ToastType type, ToastRegion region = ToastRegion.Right, ToastStackSide stackSide = ToastStackSide.Bottom) : this()
     {
@@ -50,63 +49,7 @@ public class Toast : UIContainer
 
     protected override void Update()
     {
-        if (!PauseAutoDismissTimer 
-            && TimeUntilAutoDismiss > 0
-            && !IsHovered() /*!Contents.Any(c => c.IsContentHovered(new Rectangle(CurrentPosition.X, CurrentPosition.Y, CurrentPosition.Width, Height)))*/)
-        {
-            TimeShown += Time.deltaTime;
-
-            if (TimeShown >= TimeUntilAutoDismiss && !IsClosing)
-                Close();
-        }
-
         base.Update();
-    }
-
-    protected internal override void Draw()
-    {
-        base.Draw();
-        float tNormalized = Math.Clamp(hoverElapsed / Style.RaiseDuration, 0.0001f, 1f);
-        float easedProgress = Style.RaiseCurve.Evaluate(isHoverTarget ? 1f - tNormalized :  tNormalized);
-
-        float hoverOffsetX = -4f * easedProgress;
-        float hoverOffsetY = -4f * easedProgress;
-
-        // Background
-        var backgroundBounds = new Rectangle(
-            CurrentPosition.X + hoverOffsetX,
-            CurrentPosition.Y + hoverOffsetY,
-            CurrentPosition.Width,
-            CurrentPosition.Height
-        );
-       
-        if (TimeUntilAutoDismiss > 0)
-            DrawCloseTimerBar(backgroundBounds);
-    }
-
-    private void DrawCloseTimerBar(Rectangle bounds)
-    {
-        float progressRatio = Math.Clamp(TimeShown / TimeUntilAutoDismiss, 0f, 1f);
-        float barHeight = 3f; // adjustable height
-        float yPos = bounds.Y + (bounds.Height - 2) - barHeight;
-
-        // Background
-        ray.DrawRectangle(
-            (int)bounds.X + 2,
-            (int)yPos,
-            (int)bounds.Width - 4,
-            (int)barHeight,
-            Style.TimerBarBackground
-        );
-
-        // Fill
-        ray.DrawRectangle(
-            (int)bounds.X + 2,
-            (int)yPos,
-            (int)((bounds.Width - 4) * progressRatio),
-            (int)barHeight,
-            Style.TimerBarFill
-        );
     }
 
     public override void Close()
@@ -124,6 +67,17 @@ public class Toast : UIContainer
         }
 
         base.Close();
+    }
+
+    protected override void AlterBoundsCorrectlyForDragBar(ref Rectangle backgroundBounds, float dragHeight)
+    {
+        if (StackSide == ToastStackSide.Top)
+            backgroundBounds.Height += dragHeight;
+        else
+        {
+            backgroundBounds.Y -= dragHeight / 2;
+            backgroundBounds.Height += dragHeight / 2;
+        }
     }
 
     public virtual new Toast AddContent(UIContent content)

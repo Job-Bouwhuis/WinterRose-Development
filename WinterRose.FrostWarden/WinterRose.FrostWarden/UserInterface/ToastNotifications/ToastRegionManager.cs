@@ -34,6 +34,7 @@ public abstract class ToastRegionManager
     public ToastRegion Region { get; }
 
     protected abstract float GetToastXPosition(Toast toast);
+
     protected internal virtual void RecalculatePositions(params Toast[] except)
     {
         float screenHeight = Application.Current.Window.Height;
@@ -44,7 +45,9 @@ public abstract class ToastRegionManager
         {
             Toast toast = activeToasts[i];
 
-            if (toast.StackSide != ToastStackSide.Top || except.Contains(toast) || toast.IsClosing)
+            if (toast.StackSide != ToastStackSide.Top
+                || except.Contains(toast)
+                || toast.IsClosing)
                 continue;
 
             float accumulatedY = UIConstants.TOAST_SPACING;
@@ -53,7 +56,7 @@ public abstract class ToastRegionManager
                 for (int j = i + 1; j < activeToasts.Count; j++)
                 {
                     Toast previous = activeToasts[j];
-                    if (previous.StackSide == ToastStackSide.Top && !previous.IsClosing)
+                    if (previous.StackSide == ToastStackSide.Top)
                         accumulatedY += previous.Height + UIConstants.TOAST_SPACING;
                 }
             }
@@ -61,12 +64,13 @@ public abstract class ToastRegionManager
             if (accumulatedY is not UIConstants.TOAST_SPACING)
                 topCursor += toast.Height + UIConstants.TOAST_SPACING;
 
-            toast.TargetPosition = new Vector2(
-                GetToastXPosition(toast),
-                accumulatedY
-            );
-
-            toast.AnimationElapsed = 0f;
+            if (toast.TargetPosition.Y != accumulatedY)
+            {
+                toast.TargetPosition = new Vector2(
+                    GetToastXPosition(toast),
+                    accumulatedY);
+                toast.AnimationElapsed = 0;
+            }
         }
 
         // --- BOTTOM stack ---
@@ -85,12 +89,11 @@ public abstract class ToastRegionManager
             if (bottomCursor < topCursor)
                 bottomCursor = topCursor;
 
-            if (bottomCursor != toast.CurrentPosition.Y)
+            if (bottomCursor != toast.TargetPosition.Y)
             {
                 toast.TargetPosition = new Vector2(
                     GetToastXPosition(toast),
-                    bottomCursor
-                );
+                    bottomCursor);
                 toast.AnimationElapsed = 0f;
             }
         }
@@ -156,27 +159,23 @@ public abstract class ToastRegionManager
         for (int i = 0; i < activeToasts.Count; i++)
         {
             Toast? toast = activeToasts[i];
-            toast.AnimationElapsed += Time.deltaTime;
-            float tNormalized = Math.Clamp(
-                toast.AnimationElapsed / (toast.IsClosing ? 
-                                            toast.Style.AnimateOutDuration 
-                                            : toast.Style.AnimateInDuration), 0f, 1f);
 
-            toast.CurrentPosition.Position = Vector2.Lerp(toast.CurrentPosition.Position, toast.TargetPosition, Curves.EaseOutBackFar.Evaluate(tNormalized));
-            ComputeToastScale(toast, tNormalized);
+            float time = toast.IsClosing ? toast.Style.AnimateOutDuration
+                                         : toast.Style.AnimateInDuration;
+            float tNormalized = Math.Clamp(
+            toast.AnimationElapsed / time, 0f, 1f);
 
             // Check if closing
             if (toast.IsClosing)
             {
+                toast.HandleMovement();
                 if (tNormalized >= 1f)
                 {
                     activeToasts.Remove(toast);
                     toast.ToastManager = null;
                     Toast? continuationToast = toast.GetContinueWithToast();
-                    if(continuationToast != null)
+                    if (continuationToast != null)
                         EnqueueToast(continuationToast);
-                    else
-                        RecalculatePositions();
                 }
                 continue;
             }
@@ -184,34 +183,6 @@ public abstract class ToastRegionManager
             toast.UpdateContainer();
         }
     }
-
-    private static void ComputeToastScale(Toast toast, float tNormalized)
-    {
-        // store old center
-        var center = new Vector2(
-            toast.CurrentPosition.X + toast.CurrentPosition.Width / 2f,
-            toast.CurrentPosition.Y + toast.CurrentPosition.Height / 2f
-        );
-
-        // lerp absolute width/height toward target
-        toast.CurrentScale = Vector2.Lerp(
-            toast.CurrentScale,
-            toast.TargetScale,
-            Curves.EaseOutBackFar.Evaluate(tNormalized)
-        );
-
-        // recompute rect with locked center using absolute sizes
-        float newWidth = toast.CurrentScale.X;
-        float newHeight = toast.CurrentScale.Y;
-
-        toast.CurrentPosition = new Rectangle(
-            center.X - newWidth / 2f,
-            center.Y - newHeight / 2f,
-            newWidth,
-            newHeight
-        );
-    }
-
 
     internal void Draw()
     {
@@ -233,5 +204,12 @@ public abstract class ToastRegionManager
     {
         pendingToasts.Enqueue(toast);
         toast.ToastManager = this;
+    }
+
+    internal void AddImmediately(Toast newToast)
+    {
+        activeToasts.Add(newToast);
+        newToast.ToastManager = this;
+        RecalculatePositions();
     }
 }

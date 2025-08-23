@@ -16,7 +16,7 @@ namespace WinterRose.ForgeWarden.Worlds
 
         static Universe()
         {
-            Input = new InputContext(new RaylibInputProvider(), 0);
+            Input = new InputContext(new RaylibInputProvider(), 0, false);
         }
 
         public static World CurrentWorld

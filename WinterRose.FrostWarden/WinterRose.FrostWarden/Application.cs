@@ -3,6 +3,7 @@ using Raylib_cs;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Entities;
@@ -27,10 +28,8 @@ public abstract class Application
 
     public bool ShowFPS { get; set; }
     public Window Window { get; private set; }
+    public static bool GameClosing { get; private set; }
 
-    // for on PC
-    const int SCREEN_WIDTH = 1920;
-    const int SCREEN_HEIGHT = 1080;
     private readonly bool useBrowser;
     private readonly bool gracefulErrorHandling;
     private Exception? capturedException = null;
@@ -41,14 +40,6 @@ public abstract class Application
         HasKeyboardFocus = true,
         HasMouseFocus = true
     };
-
-    // for on laptop
-    //const int SCREEN_WIDTH = 1280;
-    //const int SCREEN_HEIGHT = 720;
-
-    // for on steam deck
-    //const int SCREEN_WIDTH = 960;
-    //const int SCREEN_HEIGHT = 540;
 
     public Application(bool UseBrowser = true, bool GracefulErrorHandling =
 #if RELEASE
@@ -66,7 +57,7 @@ public abstract class Application
 
     public abstract World CreateWorld();
 
-    public void Run()
+    public void Run(string title, int width, int height, ConfigFlags flags = ConfigFlags.ResizableWindow)
     {
         if (!BulletPhysicsLoader.TryLoadBulletSharp())
             return;
@@ -80,11 +71,8 @@ public abstract class Application
 
         SetTargetFPS(144);
 
-        Window = new Window("FrostWarden - Sprite Stress Test", ConfigFlags.ResizableWindow);
-
-        // wait with creating the window until the embedded browser is set up
-
-        Window.Create(SCREEN_WIDTH, SCREEN_HEIGHT);
+        Window = new Window(title, flags);
+        Window.Create(width, height);
 
         SetExitKey(KeyboardKey.Null);
 
@@ -112,7 +100,7 @@ public abstract class Application
         Camera.main = camera;
         RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
 
-        while (!Window.ShouldClose())
+        while (!Window.ShouldClose() && !GameClosing)
         {
             InputManager.Update();
             Time.Update();
@@ -128,7 +116,6 @@ public abstract class Application
                 try
                 {
                     MainApplicationLoop(world, camera, worldTex);
-
                 }
                 catch (Exception ex)
                 {
@@ -154,33 +141,42 @@ public abstract class Application
 
     private void MainApplicationLoop(World world, Camera? camera, RenderTexture2D worldTex)
     {
-        world.Update();
+        if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
+            world.Update();
+
         Dialogs.Update(Time.deltaTime);
         Toasts.Update(Time.deltaTime);
         ToastToDialogMorpher.Update();
+
+
         BeginDrawing();
+        ray.BeginBlendMode(BlendMode.Alpha);
 
-        Raylib.ClearBackground(Color.Black);
-        Raylib.BeginTextureMode(worldTex);
-        Raylib.ClearBackground(Color.DarkGray);
+        Raylib.ClearBackground(Color.Blank);
+       
+        if(!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
+        {
+            Raylib.BeginTextureMode(worldTex);
+            Raylib.ClearBackground(Color.Blank);
 
-        if (camera != null)
-            Raylib.BeginMode2D(camera.Camera2D);
+            if (camera != null)
+                Raylib.BeginMode2D(camera.Camera2D);
 
-        world.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
+            world.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
 
-        if (camera != null)
-            Raylib.EndMode2D();
+            if (camera != null)
+                Raylib.EndMode2D();
 
-        Raylib.EndTextureMode();
+            Raylib.EndTextureMode();
 
-        Raylib.DrawTexturePro(
-            worldTex.Texture,
-            new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),  // src rectangle flipped Y
-            new Rectangle(0, 0, Window.Width, Window.Height),                      // dest rectangle fullscreen
-            Vector2.Zero,
-            0,
-            Color.White);
+            Raylib.DrawTexturePro(
+                worldTex.Texture,
+                new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),  // src rectangle flipped Y
+                new Rectangle(0, 0, Window.Width, Window.Height),                      // dest rectangle fullscreen
+                Vector2.Zero,
+                0,
+                Color.White);
+        }
 
         Toasts.Draw();
         ToastToDialogMorpher.Draw();
@@ -188,6 +184,7 @@ public abstract class Application
         
         if (ShowFPS)
             ray.DrawFPS(10, 10);
+        ray.EndBlendMode();
         ray.EndDrawing();
     }
 
@@ -225,7 +222,7 @@ public abstract class Application
                 Dialogs.Update(Time.deltaTime);
 
                 ray.BeginDrawing();
-                ray.ClearBackground(Color.Black);
+                ray.ClearBackground(Color.Blank);
 
                 if (Dialogs.GetActiveDialogs().FirstOrDefault() is ExceptionDialog exDialog)
                 {
@@ -271,5 +268,10 @@ public abstract class Application
             // that picks the best available option for the platform.
         }
 
+    }
+
+    protected static void Close()
+    {
+        GameClosing = true;
     }
 }

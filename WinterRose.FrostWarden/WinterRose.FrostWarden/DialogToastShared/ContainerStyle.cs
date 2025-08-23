@@ -1,4 +1,5 @@
 ﻿using Raylib_cs;
+using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 
 namespace WinterRose.ForgeWarden
@@ -109,9 +110,19 @@ namespace WinterRose.ForgeWarden
         public float ContentMoveDuration { get; set; }
         public float ContentFadeDuration { get; set; }
 
+        public bool AllowDragging { get; set; } = false;
+        public float DragDetectionHeight { get; set; } = 24;
+        public float DragDetectionAreaHeightChangeDuration { get; set; } = 0.2f;
+        internal float currentDragDetectionAnimTime = 1;
+        public RichText DragHintText { get; set; } = "Click to drag";
+        public Color DragHintColor { get; set; } = Color.White;
+
         public Curve RaiseCurve { get; set; } = Curves.EaseOutBack;
         public float RaiseDuration { get; set; } = 0.25f;
-        public bool RaiseOnHover { get; internal set; }
+        public bool RaiseOnHover { get; set; }
+        public float HoverRaiseAmount { get; set; } = 4;
+        public float DragHoverRaiseExtra { get; internal set; } = 4;
+        internal float currentRaiseAmount;
 
         public float AnimateInDuration { get; set; } = 0.4f;
         public float AnimateOutDuration { get; set; } = 0.4f;
@@ -123,7 +134,8 @@ namespace WinterRose.ForgeWarden
 
         public float BaseButtonFontSize { get; set; } = 14;
 
-        public Color TimerBarBackground { get; internal set; }
-        public Color TimerBarFill { get; internal set; }
+        public Color TimerBarBackground { get; set; }
+        public Color TimerBarFill { get; set; }
+        public Font Font { get; set; }
     }
 }

@@ -130,7 +130,7 @@ public static class RichTextRenderer
                 }
 
                 currentLine.AddRange(currentWord);
-                currentLine.Add(element); // the space itself
+                currentLine.Add(element);
                 currentLineWidth += wordWidth + spaceWidth;
                 currentWord.Clear();
             }

@@ -193,8 +193,8 @@ namespace WinterRose
         /// </summary>
         /// <param name="f"></param>
         /// <returns></returns>
-        public static int Round(this float f, int digits = 0 , MidpointRounding roundingMode = MidpointRounding.ToZero) => 
-            (int)float.Round(f, digits, roundingMode);
+        public static float Round(this float f, int digits = 0 , MidpointRounding roundingMode = MidpointRounding.ToZero) => 
+            float.Round(f, digits, roundingMode);
         /// <summary>
         /// Rounds the given double <paramref name="d"/>
         /// </summary>

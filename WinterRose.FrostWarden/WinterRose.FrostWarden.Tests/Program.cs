@@ -1,5 +1,6 @@
 ﻿using BulletSharp;
 using Raylib_cs;
+using System.Runtime.InteropServices;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Entities;
@@ -17,9 +18,31 @@ namespace WinterRose.ForgeWarden.Tests;
 
 internal class Program : Application
 {
+    // for on PC
+    const int SCREEN_WIDTH = 1920;
+    const int SCREEN_HEIGHT = 1080;
+
+    // for on laptop
+    //const int SCREEN_WIDTH = 1280;
+    //const int SCREEN_HEIGHT = 720;
+
+    // for on steam deck
+    //const int SCREEN_WIDTH = 960;
+    //const int SCREEN_HEIGHT = 540;
+
     static void Main(string[] args)
     {
-        new Program().Run();
+        var monitorsize = Windows.GetScreenSize();
+        //new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT 
+        new Program().Run("ForgeWarden Tests", monitorsize.X, monitorsize.Y
+            ,
+            ConfigFlags.AlwaysRunWindow
+            | ConfigFlags.MousePassthroughWindow
+            | ConfigFlags.UndecoratedWindow
+            | ConfigFlags.TransparentWindow
+            | ConfigFlags.BorderlessWindowMode
+            | ConfigFlags.TopmostWindow
+            );
     }
 
     public override void Draw()
@@ -43,14 +66,24 @@ internal class Program : Application
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
 
-        Dialogs.Show(new BrowserDialog("https://github.com/Job-Bouwhuis/WinterRose.WinterForge"));
+        ShowToast(ToastRegion.Left, ToastStackSide.Top);
+        //ShowToast(ToastRegion.Left, ToastStackSide.Top);
+        //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
+        //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
 
-        //ShowToast();
+        //Dialogs.Show(new Dialog("Horizontal Big",
+        //    "refer to \\L[https://github.com/Job-Bouwhuis/WinterRose.WinterForge|WinterForge github page] for info",
+        //    DialogPlacement.RightBig, priority: DialogPriority.High)
+        //.AddContent(new UIButton("OK", (c, b) =>
+        //{
+        //    ShowToast(ToastRegion.Left, ToastStackSide.Top);
+        //    c.Close();
+        //})));
 
-        void ShowToast()
+        void ShowToast(ToastRegion r, ToastStackSide s)
         {
             Toasts.ShowToast(
-                new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
+                new Toast(ToastType.Info, r, s)
                     .AddText("Right?")
                     .AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(
                             new Dialog("Horizontal Big",
@@ -58,14 +91,15 @@ internal class Program : Application
                                 DialogPlacement.RightBig, priority: DialogPriority.High)
                             .AddContent(new UIButton("OK", (c, b) =>
                             {
-                                ShowToast();
+                                ShowToast(r, s);
                                 c.Close();
                             }))
                             .AddProgressBar(-1)))
                     .AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Top))
-                    .AddButton("btn3")
+                    .AddButton("btn3", (c, b) => Application.Close())
                     .AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
-                    .AddSprite(Assets.Load<Sprite>("bigimg")));
+                    //.AddSprite(Assets.Load<Sprite>("bigimg"))
+                    .AddContent(new FileDropContent(Windows.MyHandle.Handle)));
         }
 
 

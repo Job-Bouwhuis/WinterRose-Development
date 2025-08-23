@@ -47,48 +47,6 @@ public class NamedControl
         return value;
     }
 
-    // --- WasRepeated ---
-    public bool WasRepeated(IInputProvider provider)
-    {
-        foreach (var binding in Bindings)
-            if (provider.WasRepeated(binding))
-                return true;
-        return false;
-    }
-
-    public bool WasRepeated(IInputProvider provider, TimeSpan within)
-    {
-        foreach (var binding in Bindings)
-            if (provider.WasRepeated(binding, within))
-                return true;
-        return false;
-    }
-
-    public bool WasRepeated(IInputProvider provider, int times)
-    {
-        foreach (var binding in Bindings)
-            if (provider.WasRepeated(binding, times))
-                return true;
-        return false;
-    }
-
-    public bool WasRepeated(IInputProvider provider, int times, TimeSpan within)
-    {
-        foreach (var binding in Bindings)
-            if (provider.WasRepeated(binding, times, within))
-                return true;
-        return false;
-    }
-
-    // --- HeldFor ---
-    public bool HeldFor(IInputProvider provider, TimeSpan duration)
-    {
-        foreach (var binding in Bindings)
-            if (provider.HeldFor(binding, duration))
-                return true;
-        return false;
-    }
-
     public void AddBinding(InputBinding binding)
     {
         Bindings.Add(binding);

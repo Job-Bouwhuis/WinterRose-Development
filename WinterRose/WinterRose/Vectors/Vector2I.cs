@@ -25,11 +25,11 @@ namespace WinterRose.Vectors
         /// <summary>
         /// The X component of the vector
         /// </summary>
-        public int x;
+        public int X;
         /// <summary>
         /// The Y component of the vector
         /// </summary>
-        public int y;
+        public int Y;
 
         public static Vector2I One => one;
         public static int Radix => 10;
@@ -44,27 +44,27 @@ namespace WinterRose.Vectors
         {
             get
             {
-                return (int)Math.Sqrt(x * x + y * y);
+                return (int)Math.Sqrt(X * X + Y * Y);
             }
         }
 
         public Vector2I() : this(0) { }
-        public Vector2I(int xy) => x = y = xy;
+        public Vector2I(int xy) => X = Y = xy;
         public Vector2I(int x, int y) : this(x)
         {
-            this.y = y;
+            this.Y = y;
         }
         public Vector2I(Vector2 vec)
         {
-            x = (int)vec.x;
-            y = (int)vec.y;
+            X = (int)vec.x;
+            Y = (int)vec.y;
         }
 
-        public (int x, int y) Break() => (x, y);
+        public (int x, int y) Break() => (X, Y);
         public void Deconstruct(out int x, out int y) => (x, y) = Break();
         public override string ToString()
         {
-            return $"X: {x}, Y: {y}";
+            return $"X: {X}, Y: {Y}";
         }
 
         public int CompareTo(object? obj)
@@ -78,22 +78,22 @@ namespace WinterRose.Vectors
 
         public int CompareTo(Vector2I other)
         {
-            if (x == other.x && y == other.y)
+            if (X == other.X && Y == other.Y)
                 return 0;
-            if (x > other.x && y > other.y)
+            if (X > other.X && Y > other.Y)
                 return 1;
             return -1;
         }
 
         public static Vector2I Abs(Vector2I value)
         {
-            Vector2I result = new Vector2I(Math.Abs(value.x), Math.Abs(value.y));
+            Vector2I result = new Vector2I(Math.Abs(value.X), Math.Abs(value.Y));
             return result;
         }
 
         public static bool IsCanonical(Vector2I value)
         {
-            if (value.x > 0 && value.y > 0)
+            if (value.X > 0 && value.Y > 0)
                 return true;
             return false;
         }
@@ -105,14 +105,14 @@ namespace WinterRose.Vectors
 
         public static bool IsEvenInteger(Vector2I value)
         {
-            if (value.x % 2 == 0 && value.y % 2 == 0)
+            if (value.X % 2 == 0 && value.Y % 2 == 0)
                 return true;
             return false;
         }
 
         public static bool IsFinite(Vector2I value)
         {
-            if (value.x != int.MaxValue && value.y != int.MaxValue)
+            if (value.X != int.MaxValue && value.Y != int.MaxValue)
                 return true;
             return false;
         }
@@ -139,7 +139,7 @@ namespace WinterRose.Vectors
 
         public static bool IsNegative(Vector2I value)
         {
-            if (value.x < 0 && value.y < 0)
+            if (value.X < 0 && value.Y < 0)
                 return true;
             return false;
         }
@@ -161,7 +161,7 @@ namespace WinterRose.Vectors
 
         public static bool IsPositive(Vector2I value)
         {
-            if (value.x > 0 && value.y > 0)
+            if (value.X > 0 && value.Y > 0)
                 return true;
             return false;
         }
@@ -178,7 +178,7 @@ namespace WinterRose.Vectors
 
         public static bool IsSubnormal(Vector2I value)
         {
-            if (value.x < 0 && value.y < 0)
+            if (value.X < 0 && value.Y < 0)
                 return true;
             return false;
         }
@@ -450,77 +450,77 @@ namespace WinterRose.Vectors
             throw new NotImplementedException();
         }
 
-        public static Vector2I operator +(Vector2I a, Vector2I b) => new(a.x + b.x, a.y + b.y);
-        public static Vector2I operator -(Vector2I a, Vector2I b) => new(a.x - b.x, a.y - b.y);
-        public static Vector2I operator *(Vector2I a, Vector2I b) => new(a.x * b.x, a.y * b.y);
-        public static Vector2I operator /(Vector2I a, Vector2I b) => new(a.x / b.x, a.y / b.y);
-        public static Vector2I operator %(Vector2I a, Vector2I b) => new(a.x % b.x, a.y % b.y);
-        public static Vector2I operator +(Vector2I a, int b) => new(a.x + b, a.y + b);
-        public static Vector2I operator -(Vector2I a, int b) => new(a.x - b, a.y - b);
-        public static Vector2I operator *(Vector2I a, int b) => new(a.x * b, a.y * b);
-        public static Vector2I operator /(Vector2I a, int b) => new(a.x / b, a.y / b);
-        public static Vector2I operator %(Vector2I a, int b) => new(a.x % b, a.y % b);
+        public static Vector2I operator +(Vector2I a, Vector2I b) => new(a.X + b.X, a.Y + b.Y);
+        public static Vector2I operator -(Vector2I a, Vector2I b) => new(a.X - b.X, a.Y - b.Y);
+        public static Vector2I operator *(Vector2I a, Vector2I b) => new(a.X * b.X, a.Y * b.Y);
+        public static Vector2I operator /(Vector2I a, Vector2I b) => new(a.X / b.X, a.Y / b.Y);
+        public static Vector2I operator %(Vector2I a, Vector2I b) => new(a.X % b.X, a.Y % b.Y);
+        public static Vector2I operator +(Vector2I a, int b) => new(a.X + b, a.Y + b);
+        public static Vector2I operator -(Vector2I a, int b) => new(a.X - b, a.Y - b);
+        public static Vector2I operator *(Vector2I a, int b) => new(a.X * b, a.Y * b);
+        public static Vector2I operator /(Vector2I a, int b) => new(a.X / b, a.Y / b);
+        public static Vector2I operator %(Vector2I a, int b) => new(a.X % b, a.Y % b);
 
         public static explicit operator Vector2I(Vector2 vec) => new(vec);
-        public static implicit operator Vector2(Vector2I vec) => new(vec.x, vec.y);
-        public static implicit operator Point(Vector2I vec) => new(vec.x, vec.y);
+        public static implicit operator Vector2(Vector2I vec) => new(vec.X, vec.Y);
+        public static implicit operator Point(Vector2I vec) => new(vec.X, vec.Y);
         public static explicit operator Vector2I(Point p) => new(p.X, p.Y);
-        public static implicit operator System.Numerics.Vector2(Vector2I vec) => new(vec.x, vec.y);
+        public static implicit operator System.Numerics.Vector2(Vector2I vec) => new(vec.X, vec.Y);
         public static explicit operator Vector2I(System.Numerics.Vector2 vec) => new((int)vec.X, (int)vec.Y);
         public static implicit operator Vector2I((int x, int y) vec) => new(vec.x, vec.y);
 
         public static bool operator >(Vector2I left, Vector2I right)
         {
-            if(left.x > right.x)
+            if(left.X > right.X)
             {
-                return left.y > right.y;
+                return left.Y > right.Y;
             }
             return false;
         }
 
         public static bool operator >=(Vector2I left, Vector2I right)
         {
-            return left.x >= right.x && left.y >= right.y;
+            return left.X >= right.X && left.Y >= right.Y;
         }
 
         public static bool operator <(Vector2I left, Vector2I right)
         {
-            return left.x < right.x && left.y < right.y;
+            return left.X < right.X && left.Y < right.Y;
         }
 
         public static bool operator <=(Vector2I left, Vector2I right)
         {
-            return left.x <= right.x && left.y <= right.y;
+            return left.X <= right.X && left.Y <= right.Y;
         }
 
         public static Vector2I operator --(Vector2I value)
         {
-            value.x--;
-            value.y--;
+            value.X--;
+            value.Y--;
             return value;
         }
 
         public static bool operator ==(Vector2I left, Vector2I right)
         {
-            return left.x == right.x && left.y == right.y;
+            return left.X == right.X && left.Y == right.Y;
         }
 
         public static bool operator !=(Vector2I left, Vector2I right)
         {
-            return left.x != right.x || left.y != right.y;
+            return left.X != right.X || left.Y != right.Y;
         }
 
         public static Vector2I operator ++(Vector2I value)
         {
-            value.x++;
-            value.y++;
+            value.X++;
+            value.Y++;
             return value;
         }
 
         public static Vector2I operator -(Vector2I value)
         {
-            value.x = -value.x;
-            value.y = -value.y;
+            value.X = -value.X;
+            value.Y = -value.Y;
             return value;
         }
 

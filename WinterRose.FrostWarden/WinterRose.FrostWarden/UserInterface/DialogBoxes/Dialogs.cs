@@ -275,7 +275,7 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
 
                 if (!dialog.IsClosing && Input.HighestPriorityMouseAbove is null)
                 {
-                    var mousepos = ray.GetMousePosition();
+                    var mousepos = Input.Provider.MousePosition;
                     if (ray.CheckCollisionPointRec(mousepos, scaled))
                         hoverCount++;
                 }
@@ -291,7 +291,9 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
             }
 
             if (hoverCount > 0)
+            {
                 Input.IsRequestingMouseFocus = true;
+            }
             else
             {
                 Input.IsRequestingMouseFocus = false;

@@ -20,6 +20,10 @@ public class InputContext
     public bool IsRequestingMouseFocus { get; set; }
     public bool IsActive { get; set; } = true;
 
+    public InputContext? HighestPriorityKeyboardAbove { get; internal set; }
+    public InputContext? HighestPriorityMouseAbove { get; internal set; }
+
+    /// <inheritdoc cref="IInputProvider.MousePosition"/>
     public Vector2 MousePosition
     {
         get
@@ -29,7 +33,7 @@ public class InputContext
             return new Vector2(-1, -1);
         }
     }
-
+    /// <inheritdoc cref="IInputProvider.MouseDelta"/>
     public Vector2 MouseDelta
     {
         get
@@ -40,13 +44,12 @@ public class InputContext
         }
     }
 
-    public Dictionary<string, NamedControl> Controls { get; } = new();
+    private Dictionary<string, NamedControl> Controls { get; } = new();
     public IInputProvider Provider { get; }
-    public InputContext? HighestPriorityKeyboardAbove { get; internal set; }
-    public InputContext? HighestPriorityMouseAbove { get; internal set; }
+    private readonly Dictionary<InputBinding, double> heldStartTimes = [];
+    private readonly Dictionary<InputBinding, (int, double)> pressCounts = [];
 
     public InputContext(IInputProvider provider, int priority) : this(provider, priority, true) { }
-
     public InputContext(IInputProvider provider, int priority, bool autoRegister)
     {
         Priority = priority;
@@ -56,7 +59,8 @@ public class InputContext
             InputManager.RegisterContext(this);
     }
 
-    // --- NamedControl based ---
+
+    /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)"/>
     public bool IsPressed(string controlName)
     {
         if (!IsActive)
@@ -67,7 +71,7 @@ public class InputContext
 
         return control.IsPressed(Provider) && HasKeyboardFocus; // Named controls assumed keyboard/gamepad
     }
-
+    /// <inheritdoc cref="IInputProvider.IsDown(InputBinding)"/>
     public bool IsDown(string controlName)
     {
         if (!IsActive)
@@ -78,7 +82,7 @@ public class InputContext
 
         return control.IsDown(Provider) && HasKeyboardFocus;
     }
-
+    /// <inheritdoc cref="IInputProvider.IsUp(InputBinding)"/>
     public bool IsUp(string controlName)
     {
         if (!IsActive)
@@ -89,28 +93,118 @@ public class InputContext
 
         return control.IsUp(Provider) && HasKeyboardFocus;
     }
-
-    // --- Keyboard overloads ---
+    /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)"/>
     public bool IsPressed(KeyboardKey key)
         => IsPressed(new InputBinding(InputDeviceType.Keyboard, (int)key));
-
+    /// <inheritdoc cref="IInputProvider.IsDown(InputBinding)"/>
     public bool IsDown(KeyboardKey key)
         => IsDown(new InputBinding(InputDeviceType.Keyboard, (int)key));
-
+    /// <inheritdoc cref="IInputProvider.IsDown(InputBinding)"/>
     public bool IsUp(KeyboardKey key)
         => IsUp(new InputBinding(InputDeviceType.Keyboard, (int)key));
-
-    // --- Mouse overloads ---
+    /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)"/>
     public bool IsPressed(MouseButton button)
         => IsPressed(new InputBinding(InputDeviceType.Mouse, (int)button));
-
+    /// <inheritdoc cref="IInputProvider.IsDown(InputBinding)"/>
     public bool IsDown(MouseButton button)
         => IsDown(new InputBinding(InputDeviceType.Mouse, (int)button));
-
+    /// <inheritdoc cref="IInputProvider.IsUp(InputBinding)"/>
     public bool IsUp(MouseButton button)
         => IsUp(new InputBinding(InputDeviceType.Mouse, (int)button));
 
-    // --- Direct binding pass-through ---
+    /// <summary>
+    /// Was this input repeated
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <returns></returns>
+    public bool WasRepeated(InputBinding binding)
+    {
+        return WasRepeated(binding, 2);
+    }
+    /// <summary>
+    /// Was this input repeated within the given timespan
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <param name="interval"></param>
+    /// <returns></returns>
+    public bool WasRepeated(InputBinding binding, TimeSpan interval)
+    {
+        return WasRepeated(binding, 2, interval);
+    }
+    /// <summary>
+    /// Was this input repeated the given amount of times
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <param name="times"></param>
+    /// <returns></returns>
+    public bool WasRepeated(InputBinding binding, int times)
+    {
+        return WasRepeated(binding, times, TimeSpan.FromSeconds(1)); // default window
+    }
+    /// <summary>
+    /// Was this input repeated the given amount of times within the given timespan
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <param name="times"></param>
+    /// <param name="interval"></param>
+    /// <returns></returns>
+    public bool WasRepeated(InputBinding binding, int times, TimeSpan interval)
+    {
+        switch (binding.DeviceType)
+        {
+            case InputDeviceType.Keyboard:
+                // Raylib already has a repeat for keys, but only single-step.
+                // We'll simulate multi-repeat with timing.
+                double now = Raylib.GetTime();
+
+                if (IsPressed(binding))
+                {
+                    if (!pressCounts.TryGetValue(binding, out var state))
+                        state = (0, 0);
+
+                    int count = state.Item1 + 1;
+                    double lastTime = state.Item2;
+
+                    pressCounts[binding] = (count, now);
+
+                    if (count >= times && now - lastTime <= interval.TotalSeconds)
+                    {
+                        // Reset counter after success
+                        pressCounts[binding] = (0, now);
+                        return true;
+                    }
+                }
+                break;
+        }
+
+        return false;
+    }
+    /// <summary>
+    /// Was this input held down for the given duration
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <param name="duration"></param>
+    /// <returns></returns>
+    public bool HeldFor(InputBinding binding, TimeSpan duration)
+    {
+        double now = Raylib.GetTime();
+
+        if (IsDown(binding))
+        {
+            if (!heldStartTimes.ContainsKey(binding))
+                heldStartTimes[binding] = now;
+
+            double heldTime = now - heldStartTimes[binding];
+            return heldTime >= duration.TotalSeconds;
+        }
+        else
+        {
+            heldStartTimes.Remove(binding);
+        }
+
+        return false;
+    }
+
     private bool IsPressed(InputBinding binding)
     {
         if (!IsActive)
@@ -121,7 +215,6 @@ public class InputContext
 
         return Provider.IsPressed(binding);
     }
-
     private bool IsDown(InputBinding binding)
     {
         if (!IsActive)
@@ -132,7 +225,6 @@ public class InputContext
 
         return Provider.IsDown(binding);
     }
-
     private bool IsUp(InputBinding binding)
     {
         if (!IsActive)
@@ -143,7 +235,6 @@ public class InputContext
 
         return Provider.IsUp(binding);
     }
-
     private bool HasRightFocus(InputBinding binding) 
         => binding.DeviceType switch
         {
@@ -159,7 +250,6 @@ public class InputContext
     {
         Provider.Update();
     }
-
     internal void RequestMouseFocusIfHovered(Rectangle bounds)
     {
         if (HighestPriorityMouseAbove is not null)
@@ -167,14 +257,13 @@ public class InputContext
             IsRequestingMouseFocus = false;
             return;
         }
-        IsRequestingMouseFocus = ray.CheckCollisionPointRec(ray.GetMousePosition(), bounds);
+        IsRequestingMouseFocus = ray.CheckCollisionPointRec(Provider.MousePosition, bounds);
     }
-
     internal bool IsMouseHovering(Rectangle bounds)
     {
         if (HighestPriorityMouseAbove is not null)
             return false;
-        return ray.CheckCollisionPointRec(ray.GetMousePosition(), bounds);
+        return ray.CheckCollisionPointRec(Provider.MousePosition, bounds);
     }
 }
 

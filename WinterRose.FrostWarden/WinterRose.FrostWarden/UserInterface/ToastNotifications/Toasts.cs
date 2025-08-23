@@ -3,7 +3,9 @@ using Raylib_cs;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeGuardChecks;
@@ -32,6 +34,7 @@ public static class Toasts
 
     internal static readonly float TOAST_WIDTH;
     internal static readonly float TOAST_HEIGHT;
+    private static bool requestReorder;
 
     internal static InputContext Input { get; }
 
@@ -65,10 +68,23 @@ public static class Toasts
         return t;
     }
 
+    internal static void RequestReorder()
+    {
+        requestReorder = true;
+    }
+
+    private static int hoveredRegionIndex = -1; // -1 means no region hovered
+    private static int lastHoveredRegionIndex = -1;
+    private static float regionHeight = 300f; // adjustable height for all regions
+    private static Color regionColor = Color.Gray;
+    private static Color hoverBorderColor = Color.Yellow; // adjustable border color
+    private static float borderThickness = 2f;
+
     public static void Update(float deltaTime)
     {
-        if (ray.IsWindowResized())
+        if (ray.IsWindowResized() || requestReorder)
         {
+            requestReorder = false;
             foreach (var region in regions.Values)
                 region.RecalculatePositions();
         }
@@ -78,11 +94,11 @@ public static class Toasts
         foreach (var region in regions.Values)
         {
             region.Update();
-            if(region.IsSomeoneHovered)
+            if (region.IsSomeoneHovered)
                 anyHovered = true;
         }
 
-        if(anyHovered && Input.HighestPriorityMouseAbove == null)
+        if (anyHovered && Input.HighestPriorityMouseAbove == null)
             Input.IsRequestingMouseFocus = true;
         else
         {
@@ -184,8 +200,6 @@ public static class Toasts
     {
         return ShowToast(new Toast(ToastType.Highlight, region, side).AddText(message));
     }
-
-
 }
 
 

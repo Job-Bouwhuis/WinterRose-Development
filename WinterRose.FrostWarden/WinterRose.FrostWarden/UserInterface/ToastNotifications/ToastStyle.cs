@@ -222,6 +222,7 @@ public class ToastStyle : ContainerStyle
     {
         ApplyDefaults(type);
         RaiseOnHover = true;
+        AllowDragging = false;
     }
 
 }

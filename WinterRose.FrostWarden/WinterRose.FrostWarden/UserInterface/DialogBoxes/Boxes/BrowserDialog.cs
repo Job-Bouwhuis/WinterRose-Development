@@ -473,7 +473,7 @@ public class BrowserDialog : Dialog, IDisposable
     {
         if (page == null || !webTexture.HasValue) return;
 
-        Vector2 mousePos = ray.GetMousePosition();
+        Vector2 mousePos = Input.MousePosition;
         Rectangle texRect = SpriteElement.LastRenderBounds;
 
         if (mousePos.X >= texRect.X && mousePos.X <= texRect.X + texRect.Width &&

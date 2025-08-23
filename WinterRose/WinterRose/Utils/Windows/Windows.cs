@@ -307,7 +307,7 @@ public static partial class Windows
     /// <param name="position"></param>
     public static void SetWindowPosition(IntPtr handle, Vector2I position)
     {
-        SetWindowPos(handle, IntPtr.Zero, position.x, position.y, 0, 0, 5u);
+        SetWindowPos(handle, IntPtr.Zero, position.X, position.Y, 0, 0, 5u);
     }
     /// <summary>
     /// Gets the position of the window of the given handle.

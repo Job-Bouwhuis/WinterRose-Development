@@ -50,7 +50,7 @@ public class Application : Overlay
     protected override Task Initialize()
     {
         var size = Windows.GetScreenSize();
-        Size = new(size.x, size.y);
+        Size = new(size.X, size.Y);
 
         return base.Initialize();
     }

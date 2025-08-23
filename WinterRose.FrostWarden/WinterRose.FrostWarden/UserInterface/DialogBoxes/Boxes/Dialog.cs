@@ -37,6 +37,8 @@ public class Dialog : UIContainer
         Placement = placement;
         Priority = priority;
 
+        NoAutoMove = true;
+
         Style = new DialogStyle();
 
         SetupTitle(title);
@@ -54,6 +56,11 @@ public class Dialog : UIContainer
         Style = new DialogStyle();
 
         SetupTitle(title);
+    }
+
+    protected override void AlterBoundsCorrectlyForDragBar(ref Rectangle backgroundBounds, float dragHeight)
+    {
+        backgroundBounds.Height += dragHeight;
     }
 
     protected virtual void SetupTitle(string title)
