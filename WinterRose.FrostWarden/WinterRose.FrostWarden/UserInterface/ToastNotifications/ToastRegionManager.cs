@@ -117,7 +117,7 @@ public abstract class ToastRegionManager
         toast.CurrentScale = toast.CurrentPosition.Size;
 
         toast.TargetPosition = GetEntryPosition(side, toast, startY);
-        toast.TargetScale = new(Toasts.TOAST_WIDTH, toast.Height);
+        toast.TargetSize = new(Toasts.TOAST_WIDTH, toast.Height);
         toast.AnimationElapsed = 0f;
 
         RecalculatePositions(toast);
@@ -189,7 +189,7 @@ public abstract class ToastRegionManager
         for (int i = 0; i < activeToasts.Count; i++)
         {
             Toast? toast = activeToasts[i];
-            toast.Draw();
+            toast.DrawContainer();
         }
     }
 

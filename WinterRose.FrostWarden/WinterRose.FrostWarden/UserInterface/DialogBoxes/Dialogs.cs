@@ -287,7 +287,7 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
 
                 dialog.CurrentPosition = scaled;
 
-                dialog.Draw();
+                dialog.DrawContainer();
             }
 
             if (hoverCount > 0)

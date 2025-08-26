@@ -16,9 +16,11 @@ using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Windowing;
 using WinterRose.ForgeWarden.Worlds;
 using static Raylib_cs.Raylib;
+using Window = WinterRose.ForgeWarden.Windowing.Window;
 
 namespace WinterRose.ForgeWarden;
 
@@ -147,6 +149,7 @@ public abstract class Application
         Dialogs.Update(Time.deltaTime);
         Toasts.Update(Time.deltaTime);
         ToastToDialogMorpher.Update();
+        WindowManager.Update();
 
 
         BeginDrawing();
@@ -181,6 +184,7 @@ public abstract class Application
         Toasts.Draw();
         ToastToDialogMorpher.Draw();
         Dialogs.Draw();
+        WindowManager.Draw();
         
         if (ShowFPS)
             ray.DrawFPS(10, 10);

@@ -1,0 +1,187 @@
+﻿using Raylib_cs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace WinterRose.ForgeWarden.UserInterface.Windowing;
+public class WindowStyle : ContainerStyle
+{
+
+
+    // --- Backing fields ---
+    private Color titleBarBackground;
+    private Color titleBarTextColor;
+
+    private Color closeButtonBackground;
+    private Color closeButtonHover;
+    private Color closeButtonClick;
+    private Color closeButtonTextColor;
+
+    private Color maximizeButtonBackground;
+    private Color maximizeButtonHover;
+    private Color maximizeButtonClick;
+    private Color maximizeButtonTextColor;
+
+    private Color collapseButtonBackground;
+    private Color collapseButtonHover;
+    private Color collapseButtonClick;
+    private Color collapseButtonTextColor;
+
+    public WindowStyle()
+    {
+        // --- Base container defaults (slightly stronger than dialog) ---
+        Background = new Color(32, 32, 36, 220);         // dark background, a little less transparent
+        Border = new Color(100, 100, 105, 255);          // subtle border, just a touch brighter
+        Shadow = new Color(0, 0, 0, 120);                // slightly deeper shadow for window presence
+        ContentTint = new Color(240, 240, 245);          // soft near-white for text and content
+
+        // --- Progress bar ---
+        ProgressBarBackground = new Color(65, 65, 70);   // dark muted background
+        ProgressBarFill = new Color(0, 150, 240);        // strong blue accent
+        BarText = new Color(245, 245, 245);              // softer white for text
+
+        // --- Buttons ---
+        ButtonTextColor = new Color(245, 245, 245);
+        ButtonBackground = new Color(75, 75, 80);        // muted but distinct from background
+        ButtonBorder = new Color(130, 130, 135);         // subtle but visible
+        ButtonHover = new Color(100, 100, 110);          // slightly lighter hover
+        ButtonClick = new Color(0, 150, 240);            // matches progress bar accent
+
+        // --- Title bar ---
+        titleBarBackground = new Color(36, 36, 42, 230); // slightly darker to frame content
+        titleBarTextColor = new Color(250, 250, 250);    // crisp white for contrast
+
+        // --- Close button ---
+        closeButtonBackground = new Color(180, 60, 60);  // softer red (not too aggressive)
+        closeButtonHover = new Color(200, 80, 80);       // lighter on hover
+        closeButtonClick = new Color(220, 40, 40);       // sharper on click
+        closeButtonTextColor = Color.White;
+
+        // --- Maximize button ---
+        maximizeButtonBackground = new Color(70, 130, 210);   // blue, in line with accent
+        maximizeButtonHover = new Color(90, 150, 230);
+        maximizeButtonClick = new Color(50, 110, 190);
+        maximizeButtonTextColor = Color.White;
+
+        // --- Collapse button ---
+        collapseButtonBackground = new Color(70, 200, 130);   // green for minimize/collapse
+        collapseButtonHover = new Color(90, 220, 150);
+        collapseButtonClick = new Color(50, 180, 110);
+        collapseButtonTextColor = Color.White;
+
+        // --- Behavior defaults ---
+        AllowDragging = true;
+        DragDetectionHeight = 50;
+        DragHintText = "Drag window";
+        DragHintColor = new Color(180, 180, 185);        // softer gray hint
+        RaiseOnHover = true;
+    }
+
+
+    // --- Title Bar ---
+    public Color TitleBarBackground
+    {
+        get => titleBarBackground.WithAlpha(ContentAlpha);
+        set => titleBarBackground = value;
+    }
+    public Color TitleBarBackgroundRaw => titleBarBackground;
+
+    public Color TitleBarTextColor
+    {
+        get => titleBarTextColor.WithAlpha(ContentAlpha);
+        set => titleBarTextColor = value;
+    }
+
+    public Color TitleBarTextColorRaw => titleBarTextColor;
+
+    // --- Close Button ---
+    public Color CloseButtonBackground
+    {
+        get => closeButtonBackground.WithAlpha(ContentAlpha);
+        set => closeButtonBackground = value;
+    }
+    public Color CloseButtonBackgroundRaw => closeButtonBackground;
+
+    public Color CloseButtonHover
+    {
+        get => closeButtonHover.WithAlpha(ContentAlpha);
+        set => closeButtonHover = value;
+    }
+    public Color CloseButtonHoverRaw => closeButtonHover;
+
+    public Color CloseButtonClick
+    {
+        get => closeButtonClick.WithAlpha(ContentAlpha);
+        set => closeButtonClick = value;
+    }
+    public Color CloseButtonClickRaw => closeButtonClick;
+
+    public Color CloseButtonTextColor
+    {
+        get => closeButtonTextColor.WithAlpha(ContentAlpha);
+        set => closeButtonTextColor = value;
+    }
+    public Color CloseButtonTextColorRaw => closeButtonTextColor;
+
+    // --- Maximize Button ---
+    public Color MaximizeButtonBackground
+    {
+        get => maximizeButtonBackground.WithAlpha(ContentAlpha);
+        set => maximizeButtonBackground = value;
+    }
+    public Color MaximizeButtonBackgroundRaw => maximizeButtonBackground;
+
+    public Color MaximizeButtonHover
+    {
+        get => maximizeButtonHover.WithAlpha(ContentAlpha);
+        set => maximizeButtonHover = value;
+    }
+    public Color MaximizeButtonHoverRaw => maximizeButtonHover;
+
+    public Color MaximizeButtonClick
+    {
+        get => maximizeButtonClick.WithAlpha(ContentAlpha);
+        set => maximizeButtonClick = value;
+    }
+    public Color MaximizeButtonClickRaw => maximizeButtonClick;
+
+    public Color MaximizeButtonTextColor
+    {
+        get => maximizeButtonTextColor.WithAlpha(ContentAlpha);
+        set => maximizeButtonTextColor = value;
+    }
+    public Color MaximizeButtonTextColorRaw => maximizeButtonTextColor;
+
+    // --- Collapse Button ---
+    public Color CollapseButtonBackground
+    {
+        get => collapseButtonBackground.WithAlpha(ContentAlpha);
+        set => collapseButtonBackground = value;
+    }
+    public Color CollapseButtonBackgroundRaw => collapseButtonBackground;
+
+    public Color CollapseButtonHover
+    {
+        get => collapseButtonHover.WithAlpha(ContentAlpha);
+        set => collapseButtonHover = value;
+    }
+    public Color CollapseButtonHoverRaw => collapseButtonHover;
+
+    public Color CollapseButtonClick
+    {
+        get => collapseButtonClick.WithAlpha(ContentAlpha);
+        set => collapseButtonClick = value;
+    }
+    public Color CollapseButtonClickRaw => collapseButtonClick;
+
+    public Color CollapseButtonTextColor
+    {
+        get => collapseButtonTextColor.WithAlpha(ContentAlpha);
+        set => collapseButtonTextColor = value;
+    }
+    public Color CollapseButtonTextColorRaw => collapseButtonTextColor;
+}
+
+

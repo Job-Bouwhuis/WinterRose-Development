@@ -11,9 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\WinterForge\src\WinterRose.WinterForge\WinterRose.WinterForge.csproj" />
     <ProjectReference Include="..\..\ForgeMantle\ForgeMantle\WinterRose.ForgeMantle.csproj" />
-    <ProjectReference Include="..\..\WinterRose.ForgeGuard\WinterRose.ForgeGuard.csproj" />
   </ItemGroup>
 
 </Project>

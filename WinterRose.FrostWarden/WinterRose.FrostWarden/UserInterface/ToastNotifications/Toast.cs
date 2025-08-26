@@ -60,10 +60,10 @@ public class Toast : UIContainer
             {
                 Rectangle exitTarget = ToastManager.GetExitPositionAndScale(this);
                 TargetPosition = exitTarget.Position;
-                TargetScale = exitTarget.Size;
+                TargetSize = exitTarget.Size;
             }
             else
-                TargetScale = new();
+                TargetSize = new();
         }
 
         base.Close();

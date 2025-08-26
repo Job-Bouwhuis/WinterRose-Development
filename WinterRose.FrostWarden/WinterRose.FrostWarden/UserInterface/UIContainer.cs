@@ -49,7 +49,7 @@ public abstract class UIContainer
 
     internal Vector2 CurrentScale;
     internal Vector2 TargetPosition;
-    internal Vector2 TargetScale;
+    internal Vector2 TargetSize;
     internal float AnimationElapsed;
 
     protected bool IsDragTarget { get; private set; }
@@ -133,7 +133,7 @@ public abstract class UIContainer
         // lerp absolute width/height toward target
         CurrentScale = Vector2.Lerp(
             CurrentScale,
-            TargetScale,
+            TargetSize,
             Curves.EaseOutBackFar.Evaluate(tNormalized)
         );
 
@@ -149,7 +149,7 @@ public abstract class UIContainer
         );
     }
 
-    protected virtual void HandleContainerDragging()
+    protected virtual void  HandleContainerDragging()
     {
         if (!Style.AllowDragging)
         {
@@ -255,7 +255,7 @@ public abstract class UIContainer
         }
     }
 
-    protected internal virtual void Draw()
+    protected internal virtual void DrawContainer()
     {
         float hoverOffsetX = 0, hoverOffsetY = 0;
         float shadowOffsetX = 0, shadowOffsetY = 0;

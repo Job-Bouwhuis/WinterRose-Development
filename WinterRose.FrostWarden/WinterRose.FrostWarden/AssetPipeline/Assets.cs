@@ -75,7 +75,6 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 
             FileInfo[] headerFiles = new DirectoryInfo(ASSET_ROOT).GetFiles($"*{ASSET_HEADER_EXTENSION}");
 
-
             Console.WriteLine("INFO: Registering asset headers");
 
             foreach (FileInfo file in headerFiles)

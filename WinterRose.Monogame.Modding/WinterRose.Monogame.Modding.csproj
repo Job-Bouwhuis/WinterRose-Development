@@ -16,8 +16,4 @@ its very customizable</Description>
     <PackageReleaseNotes>Removed unrequired dependancies</PackageReleaseNotes>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\WinterForge\src\WinterRose.WinterForge\WinterRose.WinterForge.csproj" />
-  </ItemGroup>
-
 </Project>

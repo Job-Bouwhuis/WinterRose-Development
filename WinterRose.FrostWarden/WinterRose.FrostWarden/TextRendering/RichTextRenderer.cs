@@ -56,8 +56,7 @@ public static class RichTextRenderer
                         Rectangle glyphRect = new Rectangle(x, y, glyphSize.X, glyphSize.Y);
                         if (glyph.GlyphLinkUrl != null && ray.CheckCollisionPointRec(input.MousePosition, glyphRect) && ray.IsMouseButtonPressed(MouseButton.Left))
                         {
-                            Toasts.Error("Browser dialog is temporarily out of order");
-                            //Dialogs.Show(new BrowserDialog(glyph.GlyphLinkUrl, DialogPlacement.CenterBig, DialogPriority.EngineNotifications)); // your method to open the URL
+                            Dialogs.Show(new BrowserDialog(glyph.GlyphLinkUrl, DialogPlacement.CenterBig, DialogPriority.EngineNotifications)); // your method to open the URL
                         }
                         
                         x += glyphSize.X + richText.Spacing;

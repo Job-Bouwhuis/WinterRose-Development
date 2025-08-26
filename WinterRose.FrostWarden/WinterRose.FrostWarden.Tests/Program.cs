@@ -14,18 +14,19 @@ using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.Worlds;
+using WinterRose.ForgeWarden.UserInterface.Windowing;
 
 namespace WinterRose.ForgeWarden.Tests;
 
 internal class Program : Application
 {
     // for on PC
-    const int SCREEN_WIDTH = 1920;
-    const int SCREEN_HEIGHT = 1080;
+    //const int SCREEN_WIDTH = 1920;
+    //const int SCREEN_HEIGHT = 1080;
 
     // for on laptop
-    //const int SCREEN_WIDTH = 1280;
-    //const int SCREEN_HEIGHT = 720;
+    const int SCREEN_WIDTH = 1280;
+    const int SCREEN_HEIGHT = 720;
 
     // for on steam deck
     //const int SCREEN_WIDTH = 960;
@@ -35,15 +36,15 @@ internal class Program : Application
     static void Main(string[] args)
     {
         var monitorsize = Windows.GetScreenSize();
-        //new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT 
-        new Program().Run("ForgeWarden Tests", monitorsize.X, monitorsize.Y
-            ,
-            ConfigFlags.AlwaysRunWindow
-            | ConfigFlags.MousePassthroughWindow
-            | ConfigFlags.UndecoratedWindow
-            | ConfigFlags.TransparentWindow
-            | ConfigFlags.BorderlessWindowMode
-            | ConfigFlags.TopmostWindow
+        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT
+        //new Program().Run("ForgeWarden Tests", monitorsize.X, monitorsize.Y
+            //,
+            //ConfigFlags.AlwaysRunWindow
+            //| ConfigFlags.MousePassthroughWindow
+            //| ConfigFlags.UndecoratedWindow
+            //| ConfigFlags.TransparentWindow
+            //| ConfigFlags.BorderlessWindowMode
+            //| ConfigFlags.TopmostWindow
             );
     }
 
@@ -68,6 +69,9 @@ internal class Program : Application
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
 
+        UIWindow window = new UIWindow(300, 500);
+        window.AddText("a test window", UIFontSizePreset.Title);
+        window.Show();
         //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
@@ -82,11 +86,13 @@ internal class Program : Application
         //    c.Close();
         //})));
 
+        ShowToast(ToastRegion.Right, ToastStackSide.Top);
+
         void ShowToast(ToastRegion r, ToastStackSide s)
         {
             Toasts.ShowToast(
                 new Toast(ToastType.Info, r, s)
-                    .AddText("Right?")
+                    .AddText("Right?\n\n\nYes")
                     .AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(
                             new Dialog("Horizontal Big",
                                 "refer to \\L[https://github.com/Job-Bouwhuis/WinterRose.WinterForge|WinterForge github page] for info",
@@ -100,8 +106,8 @@ internal class Program : Application
                     .AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Top))
                     .AddButton("btn3", (c, b) => Application.Close())
                     .AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
-                    //.AddSprite(Assets.Load<Sprite>("bigimg"))
-                    .AddContent(new HeavyFileDropContent()));
+                    .AddSprite(Assets.Load<Sprite>("bigimg")));
+                    //.AddContent(new HeavyFileDropContent()));
         }
 
 
