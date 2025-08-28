@@ -15,17 +15,33 @@ public abstract class UIContainer
     // --- Input ---
     public abstract InputContext Input { get; }
 
-    // --- Visibility & Lifecycle ---
-    public bool IsClosing { get; internal set; }
+    public virtual bool IsClosing { get; protected internal set; }
     public bool IsVisible => !IsClosing;
 
     public bool IsBeingDragged { get; private set; } = false;
+    private float dragHeight => Style.AllowDragging ? Style.TitleBarHeight : 0;
     /// <summary>
     /// Used for a preview. when unpaused, the container moves back to the mouse
     /// </summary>
     public bool PauseDragMovement { get; set; }
     private bool prevPauseDragMovement;
     internal Rectangle CurrentPosition;
+
+    protected float ContentScrollY = 0f;
+    protected float LastTotalContentHeight = 0f;
+    protected bool IsScrollDragging = false;
+    protected float ScrollDragOffset = 0f;
+    protected bool IsScrollbarVisible = false;
+    protected const float SCROLLBAR_COLLAPSED_WIDTH = 8f;
+    protected const float SCROLLBAR_EXPANDED_WIDTH = 18f;
+    protected const float SCROLLBAR_ANIM_DURATION = 0.12f; // seconds
+    protected float ScrollbarAnimProgress = 0f; // 0 = collapsed, 1 = expanded
+    protected bool ScrollbarHoverTarget = false;
+    protected float ScrollbarCurrentWidth = SCROLLBAR_COLLAPSED_WIDTH;
+    protected const float SCROLL_MIN_THUMB = 16f;
+    protected const float SCROLL_WHEEL_SPEED = 40f;
+    private float scrollbarHoverTimer = 0f;
+    private const float SCROLLBAR_HOVER_DELAY = 0.05f; // seconds
 
     public Rectangle AllContentArea => new(
                 CurrentPosition.X + UIConstants.CONTENT_PADDING,
@@ -53,9 +69,8 @@ public abstract class UIContainer
     internal float AnimationElapsed;
 
     protected bool IsDragTarget { get; private set; }
-    private float dragHeight;
 
-    private bool isHoverTarget = false;
+    protected bool isHoverTarget = false;
 
     public bool PauseAutoDismissTimer { get; set; }
     public float TimeUntilAutoDismiss { get; set; } = 0;
@@ -65,15 +80,20 @@ public abstract class UIContainer
 
     internal List<UIContent> Contents { get; } = new();
 
-    protected internal bool IsMorphDrawing { get; internal set; }
-    protected Rectangle LastContentRenderBounds { get; private set; }
-    public Rectangle LastBorderBounds { get; private set; }
+    protected internal bool IsMorphDrawing { get; set; }
+    protected Rectangle LastContentRenderBounds { get; set; }
+    public Rectangle LastBorderBounds { get; protected set; }
 
     /// <summary>
     /// When true, The container will not attempt to move itself whenever TargetPosition changes. 
     /// <br></br> This can be useful when you want to manage the position of the container manually.
     /// </summary>
     public bool NoAutoMove { get; set; }
+    /// <summary>
+    /// Draws some extra rectangles and other information
+    /// </summary>
+    public bool EnableDebugDraw { get; set; }
+    protected bool OverrideIsHoveredState { get; set; }
 
     bool initialized = false;
 
@@ -161,7 +181,9 @@ public abstract class UIContainer
         if (!IsBeingDragged)
         {
             if (!IsDragTarget)
-                return; // if not drag target, skip dragging
+            {
+                return;
+            }
 
             if (Input.IsPressed(MouseButton.Left))
             {
@@ -169,11 +191,6 @@ public abstract class UIContainer
                 OnContainerDragStart();
                 PauseAutoDismissTimer = true;
                 IsBeingDragged = true;
-                Style.HoverRaiseAmount += Style.DragHoverRaiseExtra;
-
-                float previousTotal = Style.HoverRaiseAmount;
-                Style.HoverRaiseAmount += Style.DragHoverRaiseExtra; 
-                Style.currentRaiseAmount *= previousTotal / Style.HoverRaiseAmount;
             }
             else
                 return; // if not clicked, skip dragging
@@ -183,22 +200,10 @@ public abstract class UIContainer
         {
             IsBeingDragged = false;
             PauseAutoDismissTimer = false;
-            Style.HoverRaiseAmount -= Style.DragHoverRaiseExtra;
-
-            float previousTotal = Style.HoverRaiseAmount;
-            Style.HoverRaiseAmount -= Style.DragHoverRaiseExtra;
-            Style.currentRaiseAmount *= previousTotal / Style.HoverRaiseAmount;
-
             OnContainerDragEnd();
             return;
         }
-        Style.currentDragDetectionAnimTime = 1;
 
-        if (Style.RaiseOnHover)
-        {
-            Style.currentRaiseAmount = 1;
-            isHoverTarget = true;
-        }
         IsDragTarget = true;
 
         //Console.WriteLine(PauseAutoDismissTimer);
@@ -219,16 +224,107 @@ public abstract class UIContainer
 
     private void HandleContentUpdates()
     {
-        float time = IsDragTarget ? Style.currentDragDetectionAnimTime : 1f - Style.currentDragDetectionAnimTime;
-        float contentOffsetY = CurrentPosition.Y + UIConstants.CONTENT_PADDING + time * Style.DragDetectionHeight;
+        float visibleStartY = CurrentPosition.Y + UIConstants.CONTENT_PADDING;
+        if (Style.AllowDragging)
+            visibleStartY += Style.TitleBarHeight;
+
+        float dragHeightLocal = Style.AllowDragging ? Style.TitleBarHeight : 0f;
+        float visibleHeight = CurrentPosition.Height - UIConstants.CONTENT_PADDING * 2 - dragHeightLocal;
+        float availableContentWidthCandidate = CurrentPosition.Width - UIConstants.CONTENT_PADDING * 2;
+
+        float totalContentHeight = 0f;
+        foreach (var content in Contents)
+        {
+            totalContentHeight += content.GetHeight(availableContentWidthCandidate);
+            totalContentHeight += UIConstants.CONTENT_PADDING;
+        }
+
+        if (totalContentHeight > visibleHeight && Style.ShowVerticalScrollBar)
+        {
+            IsScrollbarVisible = true;
+            float reserved = ScrollbarCurrentWidth + UIConstants.CONTENT_PADDING;
+            float availableContentWidth = Math.Max(0f, availableContentWidthCandidate - reserved);
+
+            totalContentHeight = 0f;
+            foreach (var content in Contents)
+            {
+                totalContentHeight += content.GetHeight(availableContentWidth);
+                totalContentHeight += UIConstants.CONTENT_PADDING;
+            }
+
+            LastTotalContentHeight = totalContentHeight;
+        }
+        else
+        {
+            IsScrollbarVisible = false;
+            LastTotalContentHeight = totalContentHeight;
+        }
+
+        var mouse = Input.MousePosition;
+
+        float trackCenterX = CurrentPosition.X + CurrentPosition.Width - UIConstants.CONTENT_PADDING - (ScrollbarCurrentWidth / 2f);
+        float trackTopY = visibleStartY;
+        float trackBottomY = visibleStartY + visibleHeight;
+
+        bool nearX = Math.Abs(mouse.X - trackCenterX) <= (ScrollbarCurrentWidth / 2f);
+        bool withinY = mouse.Y >= trackTopY && mouse.Y <= trackBottomY;
+        bool isHoveringScrollbar = IsScrollDragging || (IsScrollbarVisible && nearX && withinY);
+        if (isHoveringScrollbar)
+        {
+            scrollbarHoverTimer += Time.deltaTime;
+            if (scrollbarHoverTimer >= SCROLLBAR_HOVER_DELAY)
+            {
+                scrollbarHoverTimer = SCROLLBAR_HOVER_DELAY;
+                ScrollbarHoverTarget = true;
+            }
+        }
+        else
+        {
+            scrollbarHoverTimer -= Time.deltaTime;
+            if (scrollbarHoverTimer <= 0f)
+            {
+                scrollbarHoverTimer = 0f;
+                ScrollbarHoverTarget = false;
+            }
+        }
+
+        float target = ScrollbarHoverTarget ? 1f : 0f;
+        if (ScrollbarAnimProgress != target)
+        {
+            float delta = Time.deltaTime / Math.Max(0.0001f, SCROLLBAR_ANIM_DURATION);
+            if (target > ScrollbarAnimProgress)
+                ScrollbarAnimProgress = Math.Min(1f, ScrollbarAnimProgress + delta);
+            else
+                ScrollbarAnimProgress = Math.Max(0f, ScrollbarAnimProgress - delta);
+        }
+
+        float eased = Curves.Linear.Evaluate(ScrollbarAnimProgress);
+        ScrollbarCurrentWidth = Lerp(SCROLLBAR_COLLAPSED_WIDTH, SCROLLBAR_EXPANDED_WIDTH, eased);
+
+        if (IsHovered())
+        { 
+            float wheel = Raylib_cs.Raylib.GetMouseWheelMove();
+            if (Math.Abs(wheel) > 0.001f)
+            {
+                ContentScrollY -= wheel * SCROLL_WHEEL_SPEED;
+                ClampContentScroll();
+            }
+        }
+
+        float contentOffsetY = visibleStartY - ContentScrollY;
+
+        float contentX = CurrentPosition.X + UIConstants.CONTENT_PADDING;
+        float contentWidth = availableContentWidthCandidate;
+        if (IsScrollbarVisible)
+            contentWidth = Math.Max(0f, availableContentWidthCandidate - (ScrollbarCurrentWidth + UIConstants.CONTENT_PADDING));
 
         foreach (var content in Contents)
         {
-            float contentHeight = content.GetHeight(CurrentPosition.Width);
+            float contentHeight = content.GetHeight(contentWidth);
             Rectangle contentBounds = new Rectangle(
-                CurrentPosition.X + UIConstants.CONTENT_PADDING,
+                contentX,
                 contentOffsetY,
-                CurrentPosition.Width - UIConstants.CONTENT_PADDING * 2,
+                contentWidth,
                 contentHeight
             );
 
@@ -253,18 +349,21 @@ public abstract class UIContainer
             content.Update();
             contentOffsetY += contentHeight + UIConstants.CONTENT_PADDING;
         }
+
+        // ensure scroll is valid after layout changes
+        ClampContentScroll();
     }
 
-    protected internal virtual void DrawContainer()
+    protected static float Lerp(float a, float b, float t)
+    {
+        return a + (b - a) * t;
+    }
+
+    protected internal virtual void Draw()
     {
         float hoverOffsetX = 0, hoverOffsetY = 0;
         float shadowOffsetX = 0, shadowOffsetY = 0;
         HandleRaiseAnimation(ref hoverOffsetX, ref hoverOffsetY, ref shadowOffsetX, ref shadowOffsetY);
-
-        //float easedProgress = Style.RaiseCurve?.Evaluate(IsDragTarget ? Style.currentDragDetectionAnimTime : 1f - Style.currentDragDetectionAnimTime)
-        //                ?? (IsDragTarget ? Style.currentDragDetectionAnimTime : 1f - Style.currentDragDetectionAnimTime);
-
-        //hoverOffsetY += easedProgress * (Style.DragDetectionHeight + UIConstants.CONTENT_PADDING);
 
         var backgroundBounds = new Rectangle(
             CurrentPosition.X + hoverOffsetX,
@@ -273,29 +372,36 @@ public abstract class UIContainer
             CurrentPosition.Height);
 
         Rectangle dragBounds = new Rectangle(
-                backgroundBounds.X + UIConstants.CONTENT_PADDING,
-                backgroundBounds.Y,
-                backgroundBounds.Width - UIConstants.CONTENT_PADDING * 2,
-                Style.DragDetectionHeight + UIConstants.CONTENT_PADDING);
-        backgroundBounds = HandleDragAcceptAnimationPart1(backgroundBounds, dragBounds);
+                backgroundBounds.X + Style.BorderSize,
+                backgroundBounds.Y + Style.BorderSize,
+                backgroundBounds.Width - Style.BorderSize * 2,
+                Style.TitleBarHeight - Style.BorderSize);
 
-        ray.DrawRectangleRec(new Rectangle(
-            backgroundBounds.X - Style.ShadowSizeLeft + shadowOffsetX - hoverOffsetX,
-            backgroundBounds.Y - Style.ShadowSizeTop + shadowOffsetY - hoverOffsetY,
+        var shadowRect = new Rectangle(
+            backgroundBounds.X - Style.ShadowSizeLeft + shadowOffsetX,
+            backgroundBounds.Y - Style.ShadowSizeTop + shadowOffsetY,
             backgroundBounds.Width + Style.ShadowSizeLeft + Style.ShadowSizeRight,
-            backgroundBounds.Height + Style.ShadowSizeTop + Style.ShadowSizeBottom + dragHeight),
-            Style.Shadow
-);
+            backgroundBounds.Height + Style.ShadowSizeTop + Style.ShadowSizeBottom
+        );
+        ray.DrawRectangleRec(shadowRect, Style.Shadow);
 
         ray.DrawRectangleRec(backgroundBounds, Style.Background);
         ray.DrawRectangleLinesEx(backgroundBounds, 2, Style.Border);
-        HandleDragAcceptAnimationPart2(dragBounds);
+        HandleTitleBar(backgroundBounds, dragBounds);
+
+        // IMPORTANT: bottom-most content area must be background - UIConstants.CONTENT_PADDING regardless of titlebar
+        float contentY = backgroundBounds.Y + UIConstants.CONTENT_PADDING + (Style.AllowDragging ? Style.TitleBarHeight : 0f);
+        float contentHeight = backgroundBounds.Y + backgroundBounds.Height - UIConstants.CONTENT_PADDING - contentY;
+        float contentWidth = backgroundBounds.Width - UIConstants.CONTENT_PADDING * 2;
+
+        if (IsScrollbarVisible)
+            contentWidth = Math.Max(0f, contentWidth - (ScrollbarCurrentWidth + UIConstants.CONTENT_PADDING));
 
         Rectangle bounds = new Rectangle(
             backgroundBounds.X + UIConstants.CONTENT_PADDING,
-            backgroundBounds.Y + UIConstants.CONTENT_PADDING + dragHeight,
-            backgroundBounds.Width - UIConstants.CONTENT_PADDING * 2,
-            backgroundBounds.Height - UIConstants.CONTENT_PADDING * 2
+            contentY,
+            contentWidth,
+            contentHeight
         );
 
         LastContentRenderBounds = bounds;
@@ -306,7 +412,8 @@ public abstract class UIContainer
             DrawCloseTimerBar(backgroundBounds);
     }
 
-    private void DrawCloseTimerBar(Rectangle r)
+
+    protected void DrawCloseTimerBar(Rectangle r)
     {
         float progressRatio = Math.Clamp(TimeShown / TimeUntilAutoDismiss, 0f, 1f);
         float barHeight = 3f; // adjustable height
@@ -331,42 +438,14 @@ public abstract class UIContainer
         );
     }
 
-    private void HandleDragAcceptAnimationPart2(Rectangle dragBounds)
+    protected virtual bool DrawCustomTitleBar(Rectangle titlebarBounds) { return true; }
+
+    protected void HandleTitleBar(Rectangle backgroundBounds, Rectangle dragBounds)
     {
-        if (Style.AllowDragging && Style.currentDragDetectionAnimTime > 0)
+        if (Style.AllowDragging)
         {
-            float availableHeight = dragBounds.Height + UIConstants.CONTENT_PADDING;
-            float availableWidth = dragBounds.Width;
+            bool shouldDrag = DrawCustomTitleBar(dragBounds);
 
-            Rectangle textSize = Style.DragHintText.CalculateBounds(availableWidth);
-
-            int fontSize = (int)Math.Floor(Math.Min(
-                availableHeight + UIConstants.CONTENT_PADDING * 0.6f,
-                availableWidth / textSize.Width * 1.8f
-            ));
-
-            if (fontSize > 4)
-            {
-                Vector2 textPos = new Vector2(
-                    dragBounds.X + (dragBounds.Width - textSize.Width) / 2f,
-                    dragBounds.Y + (dragBounds.Height - textSize.Height) / 2f + UIConstants.CONTENT_PADDING
-                );
-                float alpha = IsDragTarget ? Style.currentDragDetectionAnimTime : 1f - Style.currentDragDetectionAnimTime;
-
-                RichTextRenderer.DrawRichText(
-                    Style.DragHintText,
-                    textPos,
-                    dragBounds.Width,
-                    Color.White.WithAlpha(alpha),
-                    null);
-            }
-        }
-    }
-
-    private Rectangle HandleDragAcceptAnimationPart1(Rectangle backgroundBounds, Rectangle dragBounds)
-    {
-        if (Style.AllowDragging || Style.currentDragDetectionAnimTime > 0f)
-        {
             bool hoveringDragTarget = false;
             if (Style.AllowDragging)
                 hoveringDragTarget = ray.CheckCollisionPointRec(Input.MousePosition, dragBounds);
@@ -374,32 +453,13 @@ public abstract class UIContainer
             if (hoveringDragTarget != IsDragTarget)
             {
                 IsDragTarget = hoveringDragTarget;
-                Style.currentDragDetectionAnimTime = 1f - Style.currentDragDetectionAnimTime;
             }
-
-            Style.currentDragDetectionAnimTime += Time.deltaTime / Style.DragDetectionAreaHeightChangeDuration;
-            Style.currentDragDetectionAnimTime = Math.Clamp(Style.currentDragDetectionAnimTime, 0f, 1f);
-
-            // Eased progress for the current hover state
-            float easedProgress = Style.RaiseCurve?.Evaluate(IsDragTarget ? Style.currentDragDetectionAnimTime : 1f - Style.currentDragDetectionAnimTime)
-                                ?? (IsDragTarget ? Style.currentDragDetectionAnimTime : 1f - Style.currentDragDetectionAnimTime);
-
-            dragHeight = (Style.DragDetectionHeight + UIConstants.CONTENT_PADDING) * easedProgress;
-
-            AlterBoundsCorrectlyForDragBar(ref backgroundBounds, dragHeight);
-
-            if (Style.currentDragDetectionAnimTime.Round(4) is > 0.9950f or < 0.0050f)
-                Toasts.RequestReorder();
         }
-
-        return backgroundBounds;
     }
 
-    protected abstract void AlterBoundsCorrectlyForDragBar(ref Rectangle backgroundBounds, float dragHeight);
-
-    private void HandleRaiseAnimation(ref float hoverOffsetX, ref float hoverOffsetY, ref float shadowOffsetX, ref float shadowOffsetY)
+    protected void HandleRaiseAnimation(ref float hoverOffsetX, ref float hoverOffsetY, ref float shadowOffsetX, ref float shadowOffsetY)
     {
-        if (Style.RaiseOnHover || Style.currentRaiseAmount != 0)
+        if (Style.RaiseOnHover)
         {
             bool isHovered = IsHovered();
 
@@ -424,30 +484,130 @@ public abstract class UIContainer
 
     protected internal virtual void DrawContent(Rectangle contentArea)
     {
-        float offsetY = contentArea.Y;
+        // Begin scissor so nothing draws outside the content area
+        Raylib_cs.Raylib.BeginScissorMode(
+            (int)contentArea.X,
+            (int)contentArea.Y,
+            (int)contentArea.Width,
+            (int)contentArea.Height
+        );
+
+        float offsetY = contentArea.Y - ContentScrollY;
         foreach (var content in Contents)
         {
             float contentHeight = content.GetSize(contentArea).Y;
             Rectangle bounds = new Rectangle(contentArea.X, offsetY, contentArea.Width, contentHeight);
+
+            if (EnableDebugDraw)
+                ray.DrawRectangleLinesEx(bounds, 1, Color.Beige);
+
             content.InternalDraw(bounds);
             offsetY += contentHeight + UIConstants.CONTENT_PADDING;
         }
+
+        Raylib_cs.Raylib.EndScissorMode();
+
+        // Draw scrollbars on top of the container but not over the titlebar
+        DrawVerticalScrollbar(contentArea, LastBorderBounds);
     }
 
-    public virtual bool IsHovered() => Input.IsMouseHovering(CurrentPosition);
+    private void ClampContentScroll()
+    {
+        float dragHeightLocal = Style.AllowDragging ? Style.TitleBarHeight : 0f;
+        float visibleHeight = CurrentPosition.Height - UIConstants.CONTENT_PADDING * 2 - dragHeightLocal;
+        float maxScroll = Math.Max(0f, LastTotalContentHeight - visibleHeight);
+        if (ContentScrollY < 0f) ContentScrollY = 0f;
+        if (ContentScrollY > maxScroll) ContentScrollY = maxScroll;
+    }
+
+    protected virtual void DrawVerticalScrollbar(Rectangle contentArea, Rectangle backgroundBounds)
+    {
+        if (LastTotalContentHeight <= contentArea.Height + 1 || !Style.ShowVerticalScrollBar)
+            return;
+
+        // track area aligned with contentArea (so it doesn't overlap titlebar)
+        float trackX = backgroundBounds.X + backgroundBounds.Width - ScrollbarCurrentWidth - UIConstants.CONTENT_PADDING;
+        float trackY = contentArea.Y;
+        float trackHeight = contentArea.Height;
+
+        var trackRect = new Rectangle(trackX, trackY, ScrollbarCurrentWidth, trackHeight);
+
+        // thumb size and position
+        float visibleHeight = contentArea.Height;
+        float proportionVisible = visibleHeight / LastTotalContentHeight;
+        float thumbHeight = Math.Max(SCROLL_MIN_THUMB, trackHeight * proportionVisible);
+
+        float maxScroll = Math.Max(0f, LastTotalContentHeight - visibleHeight);
+        float scrollRatio = maxScroll > 0f ? (ContentScrollY / maxScroll) : 0f;
+        float thumbY = trackY + scrollRatio * (trackHeight - thumbHeight);
+
+        var thumbRect = new Rectangle(trackX, thumbY, ScrollbarCurrentWidth, thumbHeight);
+
+        // colors (use style colors where available)
+        var trackColor = new Color(Style.Border.R, Style.Border.G, Style.Border.B, (byte)80);
+        var thumbColor = new Color(Style.TimerBarFill.R, Style.TimerBarFill.G, Style.TimerBarFill.B, (byte)220);
+
+        // draw track and thumb (slightly inset so the expanded thumb looks nicer)
+        var inset = 1f;
+        ray.DrawRectangleRec(new Rectangle(trackRect.X + inset, trackRect.Y + inset, trackRect.Width - inset * 2f, trackRect.Height - inset * 2f), trackColor);
+        ray.DrawRectangleRec(new Rectangle(thumbRect.X + inset, thumbRect.Y + inset, thumbRect.Width - inset * 2f, thumbRect.Height - inset * 2f), thumbColor);
+        ray.DrawRectangleLinesEx(new Rectangle(trackRect.X, trackRect.Y, trackRect.Width, trackRect.Height), 1, Style.Border);
+
+        // --- Interactivity: clicking & dragging the thumb ---
+        var mouse = Input.MousePosition;
+
+        // begin drag
+        if (Input.IsPressed(MouseButton.Left))
+        {
+            if (ray.CheckCollisionPointRec(mouse, thumbRect))
+            {
+                IsScrollDragging = true;
+                ScrollDragOffset = mouse.Y - thumbRect.Y;
+            }
+            else if (ray.CheckCollisionPointRec(mouse, trackRect))
+            {
+                // jump-to-click on track (center thumb on click)
+                float clickedNormalized = (mouse.Y - trackY) / (trackHeight - thumbHeight);
+                clickedNormalized = Math.Clamp(clickedNormalized, 0f, 1f);
+                ContentScrollY = clickedNormalized * maxScroll;
+                ClampContentScroll();
+            }
+        }
+
+        // dragging
+        if (IsScrollDragging)
+        {
+            bool leftDown = Input.Provider.IsDown(new InputBinding(InputDeviceType.Mouse, (int)MouseButton.Left));
+            if (!leftDown)
+            {
+                IsScrollDragging = false;
+            }
+            else
+            {
+                float dragY = mouse.Y - ScrollDragOffset;
+                float normalized = (dragY - trackY) / (trackHeight - thumbHeight);
+                normalized = Math.Clamp(normalized, 0f, 1f);
+                ContentScrollY = normalized * maxScroll;
+                ClampContentScroll();
+            }
+        }
+    }
+
+    public virtual bool IsHovered() => Input.IsMouseHovering(CurrentPosition) /*|| OverrideIsHoveredState*/;
 
     public virtual void Close()
     {
         if (!IsClosing)
         {
             foreach (var c in Contents)
-            {
                 c.OnOwnerClosing();
-            }
 
             IsClosing = true;
-            isHoverTarget = true;
-            AnimationElapsed = 0f;
+            if(this is Toast)
+            {
+                isHoverTarget = true;
+                AnimationElapsed = 0f;
+            }
         }
     }
 
@@ -521,9 +681,9 @@ public abstract class UIContainer
     public UIContainer AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
     => AddText(RichText.Parse(text, Color.White), preset);
     public UIContainer AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
-        => AddContent(new UIMessageContent(text, preset));
+        => AddContent(new UITextContent(text, preset));
     public UIContainer AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
-        => AddContent(new UIMessageContent(text, preset));
+        => AddContent(new UITextContent(text, preset));
 
     public UIContainer AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
         => AddText(RichText.Parse(text, Color.White), preset);

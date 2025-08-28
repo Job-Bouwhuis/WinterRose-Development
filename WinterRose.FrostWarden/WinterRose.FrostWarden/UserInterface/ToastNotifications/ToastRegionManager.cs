@@ -46,7 +46,7 @@ public abstract class ToastRegionManager
             Toast toast = activeToasts[i];
 
             if (toast.StackSide != ToastStackSide.Top
-                || except.Contains(toast)
+                /*|| except.Contains(toast)*/
                 || toast.IsClosing)
                 continue;
 
@@ -83,7 +83,7 @@ public abstract class ToastRegionManager
                 continue;
 
             bottomCursor -= toast.Height + UIConstants.TOAST_SPACING;
-            if (except.Contains(toast) || toast.IsClosing)
+            if (/*except.Contains(toast) || */toast.IsClosing)
                 continue;
 
             if (bottomCursor < topCursor)
@@ -189,7 +189,7 @@ public abstract class ToastRegionManager
         for (int i = 0; i < activeToasts.Count; i++)
         {
             Toast? toast = activeToasts[i];
-            toast.DrawContainer();
+            toast.Draw();
         }
     }
 

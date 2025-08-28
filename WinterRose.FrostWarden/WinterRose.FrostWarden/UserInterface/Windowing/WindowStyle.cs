@@ -4,36 +4,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeWarden.Tweens;
 
 namespace WinterRose.ForgeWarden.UserInterface.Windowing;
+
 public class WindowStyle : ContainerStyle
 {
-
-
-    // --- Backing fields ---
     private Color titleBarBackground;
     private Color titleBarTextColor;
 
     private Color closeButtonBackground;
     private Color closeButtonHover;
     private Color closeButtonClick;
-    private Color closeButtonTextColor;
 
     private Color maximizeButtonBackground;
     private Color maximizeButtonHover;
     private Color maximizeButtonClick;
-    private Color maximizeButtonTextColor;
 
     private Color collapseButtonBackground;
     private Color collapseButtonHover;
     private Color collapseButtonClick;
-    private Color collapseButtonTextColor;
 
     public WindowStyle()
     {
+        RaiseCurve = Curves.Linear;
+        RaiseDuration = 0.1f;
         // --- Base container defaults (slightly stronger than dialog) ---
         Background = new Color(32, 32, 36, 220);         // dark background, a little less transparent
-        Border = new Color(100, 100, 105, 255);          // subtle border, just a touch brighter
+        Border = new Color(255, 255, 255, 255);          // subtle border, just a touch brighter
         Shadow = new Color(0, 0, 0, 120);                // slightly deeper shadow for window presence
         ContentTint = new Color(240, 240, 245);          // soft near-white for text and content
 
@@ -57,26 +55,27 @@ public class WindowStyle : ContainerStyle
         closeButtonBackground = new Color(180, 60, 60);  // softer red (not too aggressive)
         closeButtonHover = new Color(200, 80, 80);       // lighter on hover
         closeButtonClick = new Color(220, 40, 40);       // sharper on click
-        closeButtonTextColor = Color.White;
 
         // --- Maximize button ---
         maximizeButtonBackground = new Color(70, 130, 210);   // blue, in line with accent
         maximizeButtonHover = new Color(90, 150, 230);
         maximizeButtonClick = new Color(50, 110, 190);
-        maximizeButtonTextColor = Color.White;
 
         // --- Collapse button ---
         collapseButtonBackground = new Color(70, 200, 130);   // green for minimize/collapse
         collapseButtonHover = new Color(90, 220, 150);
         collapseButtonClick = new Color(50, 180, 110);
-        collapseButtonTextColor = Color.White;
 
         // --- Behavior defaults ---
         AllowDragging = true;
-        DragDetectionHeight = 50;
+        TitleBarHeight = 30;
         DragHintText = "Drag window";
         DragHintColor = new Color(180, 180, 185);        // softer gray hint
-        RaiseOnHover = true;
+        RaiseOnHover = false;
+
+        ShadowSizeTop = 0;
+        ShadowSizeLeft = 0;
+        ShadowSizeBottom = ShadowSizeRight;
     }
 
 
@@ -118,13 +117,6 @@ public class WindowStyle : ContainerStyle
     }
     public Color CloseButtonClickRaw => closeButtonClick;
 
-    public Color CloseButtonTextColor
-    {
-        get => closeButtonTextColor.WithAlpha(ContentAlpha);
-        set => closeButtonTextColor = value;
-    }
-    public Color CloseButtonTextColorRaw => closeButtonTextColor;
-
     // --- Maximize Button ---
     public Color MaximizeButtonBackground
     {
@@ -147,13 +139,6 @@ public class WindowStyle : ContainerStyle
     }
     public Color MaximizeButtonClickRaw => maximizeButtonClick;
 
-    public Color MaximizeButtonTextColor
-    {
-        get => maximizeButtonTextColor.WithAlpha(ContentAlpha);
-        set => maximizeButtonTextColor = value;
-    }
-    public Color MaximizeButtonTextColorRaw => maximizeButtonTextColor;
-
     // --- Collapse Button ---
     public Color CollapseButtonBackground
     {
@@ -175,13 +160,6 @@ public class WindowStyle : ContainerStyle
         set => collapseButtonClick = value;
     }
     public Color CollapseButtonClickRaw => collapseButtonClick;
-
-    public Color CollapseButtonTextColor
-    {
-        get => collapseButtonTextColor.WithAlpha(ContentAlpha);
-        set => collapseButtonTextColor = value;
-    }
-    public Color CollapseButtonTextColorRaw => collapseButtonTextColor;
 }
 
 

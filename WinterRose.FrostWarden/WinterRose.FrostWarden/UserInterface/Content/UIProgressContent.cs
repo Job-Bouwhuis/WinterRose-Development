@@ -165,7 +165,7 @@ public class UIProgressContent : UIContent
         float textX = barBg.X + (barBg.Width - textWidth) / 2;
         float textY = barBg.Y + (barBg.Height - fontSize) / 2;
 
-        ray.DrawText(progressText, (int)textX, (int)textY, fontSize, new Color(255, 255, 255, (int)(255 * Style.ContentAlpha)));
+        ray.DrawText(progressText, (int)textX, (int)textY, fontSize, Style.White);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

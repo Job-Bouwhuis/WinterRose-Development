@@ -104,7 +104,8 @@ public class ButtonRowContent : UIContent
             return Vector2.Zero;
 
         float width = availableSize.Width;
-        List<Rectangle> buttonSizes = new();
+        List<Rectangle> measuredSizes = new List<Rectangle>();
+        // Use the same toast width constant as Draw for consistent scaling
         float baseFontScale = width / UIConstants.TOAST_WIDTH;
 
         // Measure buttons
@@ -118,31 +119,40 @@ public class ButtonRowContent : UIContent
             Rectangle textSize = button.Text.CalculateBounds(width);
             int btnWidth = (int)textSize.Width + (int)(PaddingX * 2);
             int btnHeight = (int)textSize.Height + (int)(PaddingY * 2);
-            buttonSizes.Add(new Rectangle(0, 0, btnWidth, btnHeight));
+            measuredSizes.Add(new Rectangle(0, 0, btnWidth, btnHeight));
         }
 
-        // Layout rows
-        List<int> rowHeights = new();
-        float xPos = 0;
-        int currentRowHeight = 0;
+        // Layout rows using spacing only between items (no trailing spacing)
+        List<float> rowHeights = new List<float>();
+        float currentRowWidth = 0;
+        float currentRowHeight = 0;
+        int itemsInRow = 0;
 
-        foreach (var size in buttonSizes)
+        foreach (var size in measuredSizes)
         {
-            if (xPos + size.Width > width)
+            float needed = (itemsInRow == 0) ? size.Width : (Spacing + size.Width);
+
+            if (itemsInRow > 0 && currentRowWidth + needed > width)
             {
+                // wrap
                 rowHeights.Add(currentRowHeight);
-                xPos = 0;
+                currentRowWidth = 0;
                 currentRowHeight = 0;
+                itemsInRow = 0;
+                needed = size.Width; // first item in new row
             }
 
-            currentRowHeight = (int)Math.Max(currentRowHeight, size.Height);
-            xPos += size.Width + Spacing;
+            currentRowWidth += (itemsInRow == 0) ? size.Width : (Spacing + size.Width);
+            currentRowHeight = Math.Max(currentRowHeight, size.Height);
+            itemsInRow++;
         }
 
-        if (currentRowHeight > 0)
+        if (itemsInRow > 0)
             rowHeights.Add(currentRowHeight);
 
-        // Total height = sum of rows + spacing
+        if (rowHeights.Count == 0)
+            return new Vector2(width, 0);
+
         float totalHeight = rowHeights.Sum() + Spacing * (rowHeights.Count - 1);
         return new Vector2(width, totalHeight);
     }
@@ -162,10 +172,10 @@ public class ButtonRowContent : UIContent
     {
         if (Buttons.Count == 0) return;
 
-        List<Rectangle> buttonSizes = new();
-        float baseFontScale = bounds.Width / Toasts.TOAST_WIDTH;
+        List<Rectangle> measuredSizes = new();
+        float baseFontScale = bounds.Width / UIConstants.TOAST_WIDTH;
 
-        // Measure buttons
+        // Measure buttons (same logic as GetSize)
         foreach (var button in Buttons)
         {
             int buttonBaseSize = 12;
@@ -176,34 +186,36 @@ public class ButtonRowContent : UIContent
             Rectangle textSize = button.Text.CalculateBounds(bounds.Width);
             int btnWidth = (int)textSize.Width + (int)(PaddingX * 2);
             int btnHeight = (int)textSize.Height + (int)(PaddingY * 2);
-            buttonSizes.Add(new Rectangle(0, 0, btnWidth, btnHeight));
+            measuredSizes.Add(new Rectangle(0, 0, btnWidth, btnHeight));
         }
 
-        // Layout rows
-        buttonRows = new();
-        List<int> rowHeights = new();
-        float xPos = bounds.X;
-        float yPos = bounds.Y;
-        int currentRowHeight = 0;
-        List<Rectangle> currentRow = new();
+        // Build rows: ensure spacing is only between items (no trailing spacing)
+        buttonRows = new List<List<Rectangle>>();
+        List<float> rowHeights = new List<float>();
+        List<Rectangle> currentRow = new List<Rectangle>();
+        float currentRowWidth = 0;
+        float currentRowHeight = 0;
 
-        for (int i = 0; i < Buttons.Count; i++)
+        for (int i = 0; i < measuredSizes.Count; i++)
         {
-            var size = buttonSizes[i];
-            if (xPos + size.Width > bounds.X + bounds.Width)
+            var size = measuredSizes[i];
+            float needed = (currentRow.Count == 0) ? size.Width : (currentRowWidth + Spacing + size.Width);
+
+            if (currentRow.Count > 0 && needed > bounds.Width)
             {
+                // finalize current row
                 buttonRows.Add(currentRow);
                 rowHeights.Add(currentRowHeight);
 
                 currentRow = new List<Rectangle>();
-                xPos = bounds.X;
-                yPos += currentRowHeight + Spacing;
+                currentRowWidth = 0;
                 currentRowHeight = 0;
             }
 
+            // add to current row
             currentRow.Add(size);
-            currentRowHeight = (int)Math.Max(currentRowHeight, size.Height);
-            xPos += size.Width + Spacing;
+            currentRowWidth = (currentRow.Count == 1) ? size.Width : currentRowWidth + Spacing + size.Width;
+            currentRowHeight = Math.Max(currentRowHeight, size.Height);
         }
 
         if (currentRow.Count > 0)
@@ -212,24 +224,30 @@ public class ButtonRowContent : UIContent
             rowHeights.Add(currentRowHeight);
         }
 
-        // Draw rows
+        // Draw rows centered horizontally
         float rowY = bounds.Y;
         int buttonIndex = 0;
-
         for (int r = 0; r < buttonRows.Count; r++)
         {
-            float rowWidth = buttonRows[r].Sum(b => b.Width) + Spacing * (buttonRows[r].Count - 1);
-            float rowX = bounds.X + (bounds.Width - rowWidth) / 2f; // center row
+            var row = buttonRows[r];
+            float rowWidth = row.Sum(b => b.Width) + Spacing * (row.Count - 1);
+            float rowX = bounds.X + (bounds.Width - rowWidth) / 2f;
 
-            for (int b = 0; b < buttonRows[r].Count; b++)
+            for (int b = 0; b < row.Count; b++)
             {
-                Rectangle btnRect = buttonRows[r][b] = new((int)rowX, (int)rowY, buttonRows[r][b].Width, buttonRows[r][b].Height);
+                var size = row[b];
+                Rectangle btnRect = new Rectangle((int)rowX, (int)rowY, size.Width, size.Height);
+                // replace size entry with positioned rect so hover logic can use it
+                buttonRows[r][b] = btnRect;
 
                 Buttons[buttonIndex++].InternalDraw(btnRect);
-                rowX += buttonRows[r][b].Width + Spacing;
+                //ray.DrawRectangleLinesEx(btnRect, 1, Color.Magenta);
+
+                rowX += size.Width + Spacing;
             }
 
-            rowY += rowHeights[r] + Spacing;
+            // add spacing between rows but not after the last row
+            rowY += rowHeights[r] + (r < buttonRows.Count - 1 ? Spacing : 0);
         }
     }
 }

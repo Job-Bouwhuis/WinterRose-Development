@@ -16,8 +16,6 @@ public class Toast : UIContainer
 
     protected internal ToastRegionManager ToastManager { get; internal set; }
 
-    private float raiseElapsed = 0f;
-    private bool isHoverTarget = false;
     private Func<Toast, int> continueWithSelector;
     private Toast[] continueWithOptions;
 
@@ -65,19 +63,9 @@ public class Toast : UIContainer
             else
                 TargetSize = new();
         }
+        Toasts.RequestReorder();
 
         base.Close();
-    }
-
-    protected override void AlterBoundsCorrectlyForDragBar(ref Rectangle backgroundBounds, float dragHeight)
-    {
-        if (StackSide == ToastStackSide.Top)
-            backgroundBounds.Height += dragHeight;
-        else
-        {
-            backgroundBounds.Y -= dragHeight / 2;
-            backgroundBounds.Height += dragHeight / 2;
-        }
     }
 
     public virtual new Toast AddContent(UIContent content)
@@ -137,9 +125,9 @@ public class Toast : UIContainer
     public new Toast AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
     => AddText(RichText.Parse(text, Color.White), preset);
     public new Toast AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
-        => AddContent(new UIMessageContent(text, preset));
+        => AddContent(new UITextContent(text, preset));
     public new Toast AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
-        => AddContent(new UIMessageContent(text, preset));
+        => AddContent(new UITextContent(text, preset));
 
     public new Toast AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
         => AddText(RichText.Parse(text, Color.White), preset);

@@ -186,8 +186,8 @@ public class ToastStyle : ContainerStyle
                 ShadowSizeRight = 5f;
                 ShadowSizeBottom = 5f;
 
-                AlphaCurve = Curves.ElasticOut;
-                MoveAndScaleCurve = Curves.ElasticOut;
+                AlphaCurve = Curves.Linear;
+                MoveAndScaleCurve = Curves.Linear;
                 break;
 
             case ToastType.Fatal:
@@ -211,8 +211,8 @@ public class ToastStyle : ContainerStyle
                 ShadowSizeRight = 6f;
                 ShadowSizeBottom = 6f;
 
-                AlphaCurve = Curves.EaseOutCubic;
-                MoveAndScaleCurve = Curves.EaseOutCubic;
+                AlphaCurve = Curves.Linear;
+                MoveAndScaleCurve = Curves.Linear;
                 break;
         }
     }
@@ -223,6 +223,7 @@ public class ToastStyle : ContainerStyle
         ApplyDefaults(type);
         RaiseOnHover = true;
         AllowDragging = false;
+        ShowVerticalScrollBar = false;
     }
 
 }

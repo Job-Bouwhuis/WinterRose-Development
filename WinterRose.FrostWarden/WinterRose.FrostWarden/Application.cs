@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Entities;
@@ -31,6 +32,24 @@ public abstract class Application
     public bool ShowFPS { get; set; }
     public Window Window { get; private set; }
     public static bool GameClosing { get; private set; }
+
+    private Color clearColor = Color.LightGray;
+
+    /// <summary>
+    /// Get or set the clear color of the graphics window. If started as transparent window, this will always be <see cref="Color.Blank"/>
+    /// </summary>
+    public Color ClearColor
+    {
+        get
+        {
+            if (Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow)) return Color.Blank;
+            return clearColor;
+        }
+        set
+        {
+            clearColor = value;
+        }
+    }
 
     private readonly bool useBrowser;
     private readonly bool gracefulErrorHandling;
@@ -93,7 +112,7 @@ public abstract class Application
         }
 
         BeginDrawing();
-        ClearBackground(Color.Black);
+        ClearBackground(ClearColor);
         EndDrawing();
 
         World world;
@@ -155,12 +174,12 @@ public abstract class Application
         BeginDrawing();
         ray.BeginBlendMode(BlendMode.Alpha);
 
-        Raylib.ClearBackground(Color.Blank);
+        Raylib.ClearBackground(ClearColor);
        
         if(!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
         {
             Raylib.BeginTextureMode(worldTex);
-            Raylib.ClearBackground(Color.Blank);
+            Raylib.ClearBackground(ClearColor);
 
             if (camera != null)
                 Raylib.BeginMode2D(camera.Camera2D);
@@ -226,7 +245,7 @@ public abstract class Application
                 Dialogs.Update(Time.deltaTime);
 
                 ray.BeginDrawing();
-                ray.ClearBackground(Color.Blank);
+                ray.ClearBackground(ClearColor);
 
                 if (Dialogs.GetActiveDialogs().FirstOrDefault() is ExceptionDialog exDialog)
                 {
@@ -277,5 +296,26 @@ public abstract class Application
     public static void Close()
     {
         GameClosing = true;
+    }
+
+    /// <summary>
+    /// Runs the game engine as UI only over the entire screen. Disables the entire game ECS <br></br>
+    /// so no <see cref="World"/>, 
+    /// or <see cref="Entity"/>. <br></br>
+    /// only handles <see cref="Toast"/>
+    /// <see cref="Dialog"/>, 
+    /// and <see cref="UIWindow"/>
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    protected void RunAsOverlay()
+    {
+        var monitorsize = Windows.GetScreenSize();
+        Run("ForgeWarden Tests", monitorsize.X, monitorsize.Y,
+            ConfigFlags.AlwaysRunWindow
+            | ConfigFlags.MousePassthroughWindow
+            | ConfigFlags.UndecoratedWindow
+            | ConfigFlags.TransparentWindow
+            | ConfigFlags.BorderlessWindowMode
+            | ConfigFlags.TopmostWindow);
     }
 }

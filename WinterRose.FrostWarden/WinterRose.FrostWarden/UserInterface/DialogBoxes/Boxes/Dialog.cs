@@ -58,18 +58,13 @@ public class Dialog : UIContainer
         SetupTitle(title);
     }
 
-    protected override void AlterBoundsCorrectlyForDragBar(ref Rectangle backgroundBounds, float dragHeight)
-    {
-        backgroundBounds.Height += dragHeight;
-    }
-
     protected virtual void SetupTitle(string title)
     {
         Rectangle bounds = Dialogs.GetDialogBounds(Placement);
         float scaleRef = Math.Min(bounds.Width, bounds.Height);
         float titleScale = scaleRef * 0.09f;
 
-        UIMessageContent titleContent = new UIMessageContent(title, UIFontSizePreset.Title);
+        UITextContent titleContent = new UITextContent(title, UIFontSizePreset.Title);
         titleContent.Text.FontSize = (int)Math.Clamp(titleScale, 14, 36);
 
         titleContent.owner = this;
@@ -83,7 +78,7 @@ public class Dialog : UIContainer
         float scaleRef = Math.Min(bounds.Width, bounds.Height);
         float messageScale = scaleRef * 0.04f;
 
-        UIMessageContent messageContent = new UIMessageContent(message, UIFontSizePreset.Message);
+        UITextContent messageContent = new UITextContent(message, UIFontSizePreset.Message);
         messageContent.Text.FontSize = (int)Math.Clamp(messageScale, 10, 24);
 
         messageContent.owner = this;
@@ -233,9 +228,9 @@ public class Dialog : UIContainer
     public new Dialog AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
     => AddText(RichText.Parse(text, Color.White), preset);
     public new Dialog AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
-        => AddContent(new UIMessageContent(text, preset));
+        => AddContent(new UITextContent(text, preset));
     public new Dialog AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
-        => AddContent(new UIMessageContent(text, preset));
+        => AddContent(new UITextContent(text, preset));
 
     public new Dialog AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
         => AddText(RichText.Parse(text, Color.White), preset);

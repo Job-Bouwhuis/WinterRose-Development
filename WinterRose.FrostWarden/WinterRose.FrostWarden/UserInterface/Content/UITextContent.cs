@@ -17,7 +17,7 @@ public enum UIFontSizePreset
     Subtext
 }
 
-public class UIMessageContent : UIContent
+public class UITextContent : UIContent
 {
     public RichText Text { get; private set; }
     public UIFontSizePreset Preset { get; private set; }
@@ -31,13 +31,13 @@ public class UIMessageContent : UIContent
         { UIFontSizePreset.Subtext, 7 }
     };
 
-    public UIMessageContent(RichText message, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public UITextContent(RichText message, UIFontSizePreset preset = UIFontSizePreset.Message)
     {
         Text = message;
         Preset = preset;
     }
 
-    public UIMessageContent(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public UITextContent(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
         : this(RichText.Parse(text), preset) { }
 
 

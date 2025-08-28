@@ -3,7 +3,7 @@
 public static class UIConstants
 {
     public const float CONTENT_PADDING = 6f;
-
+    
     // --- Toasts ---
     public const float TOAST_WIDTH = 350f;          // default toast width
     public const float TOAST_HEIGHT = 170f;         // default toast height

@@ -110,10 +110,10 @@ namespace WinterRose.ForgeWarden
         public float ContentMoveDuration { get; set; }
         public float ContentFadeDuration { get; set; }
 
+        public bool ShowVerticalScrollBar { get; set; } = true;
+
         public bool AllowDragging { get; set; } = false;
-        public float DragDetectionHeight { get; set; } = 24;
-        public float DragDetectionAreaHeightChangeDuration { get; set; } = 0.2f;
-        internal float currentDragDetectionAnimTime = 1;
+        public float TitleBarHeight { get; set; } = 12;
         public RichText DragHintText { get; set; } = "Click to drag";
         public Color DragHintColor { get; set; } = Color.White;
 
@@ -121,7 +121,6 @@ namespace WinterRose.ForgeWarden
         public float RaiseDuration { get; set; } = 0.25f;
         public bool RaiseOnHover { get; set; }
         public float HoverRaiseAmount { get; set; } = 4;
-        public float DragHoverRaiseExtra { get; internal set; } = 4;
         internal float currentRaiseAmount;
 
         public float AnimateInDuration { get; set; } = 0.4f;
@@ -137,5 +136,6 @@ namespace WinterRose.ForgeWarden
         public Color TimerBarBackground { get; set; }
         public Color TimerBarFill { get; set; }
         public Font Font { get; set; }
+        public float BorderSize { get; set; } = 2;
     }
 }

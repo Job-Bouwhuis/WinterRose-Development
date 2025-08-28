@@ -35,17 +35,9 @@ internal class Program : Application
     [STAThread]
     static void Main(string[] args)
     {
-        var monitorsize = Windows.GetScreenSize();
-        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT
-        //new Program().Run("ForgeWarden Tests", monitorsize.X, monitorsize.Y
-            //,
-            //ConfigFlags.AlwaysRunWindow
-            //| ConfigFlags.MousePassthroughWindow
-            //| ConfigFlags.UndecoratedWindow
-            //| ConfigFlags.TransparentWindow
-            //| ConfigFlags.BorderlessWindowMode
-            //| ConfigFlags.TopmostWindow
-            );
+        //new Program().RunAsOverlay();
+
+        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
     public override void Draw()
@@ -54,9 +46,8 @@ internal class Program : Application
 
     public override World CreateWorld()
     {
+        ClearColor = Color.Red;
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
-
-        //return World.FromFile("testworld");
 
         World world = new World("testworld");
 
@@ -69,9 +60,35 @@ internal class Program : Application
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
 
-        UIWindow window = new UIWindow(300, 500);
-        window.AddText("a test window", UIFontSizePreset.Title);
-        window.Show();
+        UIWindow window = new UIWindow("Window 1", 300, 500);
+        window.AddText("window 1", UIFontSizePreset.Title);
+        window.AddButton("My Awesome Button 1", (c, b) =>
+        {
+            Toasts.Success("hmmm no");
+        });
+        window.AddButton("My Awesome Button 2", (c, b) =>
+        {
+            Toasts.Success("frictionless wipe");
+        });
+        window.AddButton("My Awesome Button 3", (c, b) =>
+        {
+            Toasts.Success("bubu love bubu waaaa");
+        });
+        window.AddButton("My Awesome Button 4", (c, b) =>
+        {
+            Toasts.Success("yes");
+        });
+        window.AddSprite(Assets.Load<Sprite>("bigimg"));
+        window.AddSprite(Assets.Load<Sprite>("bigimg"));
+        window.AddSprite(Assets.Load<Sprite>("bigimg"));
+        window.AddSprite(Assets.Load<Sprite>("bigimg"));
+        window.AddSprite(Assets.Load<Sprite>("bigimg"));
+        //window.Show();
+
+        UIWindow window2 = new UIWindow("Window 2", 300, 500);
+        window2.AddText("window 2", UIFontSizePreset.Title);
+        window2.AddButton("My Awesome Button");
+        //window2.Show();
         //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
@@ -86,15 +103,11 @@ internal class Program : Application
         //    c.Close();
         //})));
 
-        ShowToast(ToastRegion.Right, ToastStackSide.Top);
+        ShowToast(ToastRegion.Left, ToastStackSide.Top);
 
         void ShowToast(ToastRegion r, ToastStackSide s)
         {
-            Toasts.ShowToast(
-                new Toast(ToastType.Info, r, s)
-                    .AddText("Right?\n\n\nYes")
-                    .AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(
-                            new Dialog("Horizontal Big",
+            var d = new Dialog("Horizontal Big",
                                 "refer to \\L[https://github.com/Job-Bouwhuis/WinterRose.WinterForge|WinterForge github page] for info",
                                 DialogPlacement.RightBig, priority: DialogPriority.High)
                             .AddContent(new UIButton("OK", (c, b) =>
@@ -102,9 +115,18 @@ internal class Program : Application
                                 ShowToast(r, s);
                                 c.Close();
                             }))
-                            .AddProgressBar(-1)))
-                    .AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Top))
+                            .AddProgressBar(-1)
+                            .AddSprite(Assets.Load<Sprite>("bigimg"));
+
+            var w = new UIWindow("Test Window", 400, 500, 100, 100);
+
+            Toasts.ShowToast(
+                new Toast(ToastType.Info, r, s)
+                    .AddText("Right?\n\n\nYes")
+                    .AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(d))
+                    .AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Bottom))
                     .AddButton("btn3", (c, b) => Application.Close())
+                    .AddButton("btn4", (c, b) => w.Show())
                     .AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
                     .AddSprite(Assets.Load<Sprite>("bigimg")));
                     //.AddContent(new HeavyFileDropContent()));

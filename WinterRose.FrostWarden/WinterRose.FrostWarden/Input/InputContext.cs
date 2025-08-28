@@ -9,7 +9,7 @@ namespace WinterRose.ForgeWarden.Input;
 
 public class InputContext
 {
-    public int Priority { get; }
+    public int Priority { get; set; }
 
     public bool HasAnyFocus => HasKeyboardFocus || HasMouseFocus;
 
