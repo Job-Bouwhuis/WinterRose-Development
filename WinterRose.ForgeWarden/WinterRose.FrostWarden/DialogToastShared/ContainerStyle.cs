@@ -19,7 +19,11 @@ namespace WinterRose.ForgeWarden
         private Color buttonClick;
         private Color barBackground;
         private Color barFill;
-        private Color barText;
+        private Color barText; 
+        private Color timerBarBackground;
+        private Color timerBarFill;
+        private Color scrollbarTrack;
+        private Color scrollbarThumb;
 
         public Color Background
         {
@@ -82,6 +86,35 @@ namespace WinterRose.ForgeWarden
             set => barText = value;
         }
 
+        public Color TimerBarBackground
+        {
+            get => timerBarBackground.WithAlpha(ContentAlpha);
+            set => timerBarBackground = value;
+        }
+
+        public Color TimerBarFill
+        {
+            get => timerBarFill.WithAlpha(ContentAlpha);
+            set => timerBarFill = value;
+        }
+
+        public Color ScrollbarTrack
+        {
+            get => scrollbarTrack.WithAlpha(ContentAlpha);
+            set => scrollbarTrack = value;
+        }
+
+        public Color ScrollbarThumb
+        {
+            get => scrollbarThumb.WithAlpha(ContentAlpha);
+            set => scrollbarThumb = value;
+        }
+
+
+        public Color ScrollbarThumbRaw => scrollbarThumb;
+        public Color ScrollbarTrackRaw => scrollbarTrack;
+        public Color TimerBarBackgroundRaw => timerBarBackground;
+        public Color TimerBarFillRaw => timerBarFill;
         public Color BackgroundRaw => background;
         public Color BorderRaw => border;
         public Color ShadowRaw => shadow;
@@ -114,8 +147,6 @@ namespace WinterRose.ForgeWarden
 
         public bool AllowDragging { get; set; } = false;
         public float TitleBarHeight { get; set; } = 12;
-        public RichText DragHintText { get; set; } = "Click to drag";
-        public Color DragHintColor { get; set; } = Color.White;
 
         public Curve RaiseCurve { get; set; } = Curves.EaseOutBack;
         public float RaiseDuration { get; set; } = 0.25f;
@@ -133,9 +164,9 @@ namespace WinterRose.ForgeWarden
 
         public float BaseButtonFontSize { get; set; } = 14;
 
-        public Color TimerBarBackground { get; set; }
-        public Color TimerBarFill { get; set; }
         public Font Font { get; set; }
         public float BorderSize { get; set; } = 2;
+        public bool AutoScale { get; internal set; }
+        public int TimeUntilAutoDismiss { get; set; }
     }
 }

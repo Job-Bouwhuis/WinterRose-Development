@@ -94,10 +94,10 @@ internal static class ToastToDialogMorpher
             Rectangle dialogBounds = Dialogs.GetDialogBounds(ctx.Dialog.Placement);
 
             // Morph position & size with overshoot
-            ctx.Toast.CurrentPosition.X = Lerp(ctx.StartPosition.X, dialogBounds.X, t);
-            ctx.Toast.CurrentPosition.Y = Lerp(ctx.StartPosition.Y, dialogBounds.Y, t);
-            ctx.Toast.CurrentPosition.Width = Lerp(ctx.StartPosition.Width, dialogBounds.Width, t);
-            ctx.Toast.CurrentPosition.Height = Lerp(ctx.StartPosition.Height, dialogBounds.Height, t);
+            Vector2 newPos = new(Lerp(ctx.StartPosition.X, dialogBounds.X, t), Lerp(ctx.StartPosition.Y, dialogBounds.Y, t));
+            ctx.Toast.SetPosition(newPos);
+            Vector2 newSize = new(Lerp(ctx.StartPosition.Width, dialogBounds.Width, t), Lerp(ctx.StartPosition.Height, dialogBounds.Height, t));
+            ctx.Toast.SetSize(newSize);
 
             ctx.Toast.Style.ShadowSizeLeft = Lerp(ctx.shadowLeftStart, ctx.Dialog.Style.ShadowSizeLeft, t);
             ctx.Toast.Style.ShadowSizeTop = Lerp(ctx.shadowTopStart, ctx.Dialog.Style.ShadowSizeTop, t);

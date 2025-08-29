@@ -31,6 +31,8 @@ public class ToastStyle : ContainerStyle
                 ButtonBorder = new Color(255, 120, 120, 255);
                 ButtonHover = new Color(200, 50, 50, 255);
                 ButtonClick = new Color(255, 80, 80, 255);
+                ScrollbarTrack = new Color(60, 20, 20, 140);
+                ScrollbarThumb = new Color(200, 80, 80, 220);
                 break;
 
             case ToastType.Question:
@@ -50,6 +52,8 @@ public class ToastStyle : ContainerStyle
                 ButtonBorder = new Color(120, 180, 255, 255);
                 ButtonHover = new Color(90, 130, 200, 255);
                 ButtonClick = new Color(70, 140, 255, 255);
+                ScrollbarTrack = new Color(40, 60, 100, 120);
+                ScrollbarThumb = new Color(120, 180, 255, 220);
                 break;
 
             case ToastType.Highlight:
@@ -69,6 +73,8 @@ public class ToastStyle : ContainerStyle
                 ButtonBorder = new Color(150, 200, 255, 255);
                 ButtonHover = new Color(100, 140, 200, 255);
                 ButtonClick = new Color(120, 180, 255, 255);
+                ScrollbarTrack = new Color(60, 80, 140, 120);
+                ScrollbarThumb = new Color(150, 200, 255, 220);
                 break;
 
             case ToastType.Neutral:
@@ -88,6 +94,8 @@ public class ToastStyle : ContainerStyle
                 ButtonBorder = new Color(180, 180, 180, 255);
                 ButtonHover = new Color(100, 100, 100, 255);
                 ButtonClick = new Color(80, 130, 180, 255);
+                ScrollbarTrack = new Color(50, 50, 50, 120);
+                ScrollbarThumb = new Color(180, 180, 180, 220);
                 break;
 
             case ToastType.Success:
@@ -107,6 +115,8 @@ public class ToastStyle : ContainerStyle
                 ButtonBorder = new Color(120, 240, 160, 255);
                 ButtonHover = new Color(70, 150, 90, 255);
                 ButtonClick = new Color(60, 220, 130, 255);
+                ScrollbarTrack = new Color(30, 100, 50, 120);
+                ScrollbarThumb = new Color(100, 220, 150, 220);
 
                 ShadowSizeRight = 4f;
                 ShadowSizeBottom = 4f;
@@ -133,6 +143,9 @@ public class ToastStyle : ContainerStyle
                 ButtonHover = new Color(100, 130, 180, 255);
                 ButtonClick = new Color(0, 150, 255, 255);
 
+                ScrollbarTrack = new Color(50, 100, 200, 120);
+                ScrollbarThumb = new Color(100, 180, 255, 220);
+
                 ShadowSizeRight = 4f;
                 ShadowSizeBottom = 4f;
 
@@ -157,6 +170,9 @@ public class ToastStyle : ContainerStyle
                 ButtonBorder = new Color(255, 210, 120, 255);
                 ButtonHover = new Color(190, 120, 20, 255);
                 ButtonClick = new Color(255, 170, 0, 255);
+
+                ScrollbarTrack = new Color(200, 120, 0, 120);
+                ScrollbarThumb = new Color(255, 200, 100, 220);
 
                 ShadowSizeRight = 4f;
                 ShadowSizeBottom = 4f;
@@ -183,6 +199,9 @@ public class ToastStyle : ContainerStyle
                 ButtonHover = new Color(170, 60, 60, 255);
                 ButtonClick = new Color(255, 80, 80, 255);
 
+                ScrollbarTrack = new Color(160, 40, 40, 120);
+                ScrollbarThumb = new Color(255, 120, 120, 220);
+
                 ShadowSizeRight = 5f;
                 ShadowSizeBottom = 5f;
 
@@ -208,6 +227,9 @@ public class ToastStyle : ContainerStyle
                 ButtonHover = new Color(120, 0, 0, 255);
                 ButtonClick = new Color(255, 0, 0, 255);
 
+                ScrollbarTrack = new Color(80, 0, 0, 120);
+                ScrollbarThumb = new Color(255, 50, 50, 220);
+
                 ShadowSizeRight = 6f;
                 ShadowSizeBottom = 6f;
 
@@ -224,6 +246,7 @@ public class ToastStyle : ContainerStyle
         RaiseOnHover = true;
         AllowDragging = false;
         ShowVerticalScrollBar = false;
+        TimeUntilAutoDismiss = 5;
     }
 
 }

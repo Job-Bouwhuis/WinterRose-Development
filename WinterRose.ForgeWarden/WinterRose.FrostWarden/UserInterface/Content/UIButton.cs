@@ -3,6 +3,7 @@ using Raylib_cs;
 using WinterRose;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
+using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.WIP.TestClasses;
 
 namespace WinterRose.ForgeWarden.UserInterface;
@@ -21,7 +22,12 @@ public class UIButton : UIContent
     protected internal const int PaddingY = 6;
     protected internal const int Spacing = 10;
 
-    private static readonly ButtonClickHandler alwaysTrueFunc = (container, button) => container.Close();
+    private static readonly ButtonClickHandler alwaysTrueFunc = (container, button) =>
+    {
+        if (container is Toast)
+            container.Close();
+    };
+
     private Color backgroundColor;
 
     public ButtonClickHandler OnClick { get; set; }

@@ -12,7 +12,11 @@ namespace WinterRose.ForgeWarden.UserInterface;
 
 public class ButtonRowContent : UIContent
 {
-    private static readonly ButtonClickHandler alwaysTrueFunc = (container, button) => container.Close();
+    private static readonly ButtonClickHandler alwaysTrueFunc = (container, button) => 
+    {
+        if (container is Toast)
+            container.Close();
+    };
     List<List<Rectangle>> buttonRows = [];
 
     public List<UIButton> Buttons { get; } = new();

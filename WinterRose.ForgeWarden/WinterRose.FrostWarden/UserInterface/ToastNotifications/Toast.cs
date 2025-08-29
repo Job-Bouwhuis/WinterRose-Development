@@ -16,6 +16,17 @@ public class Toast : UIContainer
 
     protected internal ToastRegionManager ToastManager { get; internal set; }
 
+    public new ToastStyle Style
+    {
+        get => (ToastStyle)base.Style;
+        set
+        {
+            if (value is not ToastStyle style)
+                throw new InvalidOperationException("Toasts require a ToastStyle style");
+            base.Style = style;
+        }
+    }
+
     private Func<Toast, int> continueWithSelector;
     private Toast[] continueWithOptions;
 
@@ -42,7 +53,7 @@ public class Toast : UIContainer
 
     private Toast()
     {
-        TimeUntilAutoDismiss = 5;
+        
     }
 
     protected override void Update()

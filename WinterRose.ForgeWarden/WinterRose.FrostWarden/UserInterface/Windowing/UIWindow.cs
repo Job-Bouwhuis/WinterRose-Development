@@ -14,7 +14,15 @@ public class UIWindow : UIContainer
         CollapseAfterUnmaximize
     }
 
+    private enum ShowMode
+    {
+        Standard,
+        Collapsed,
+        Maximized
+    }
+
     private PendingAction pendingAction = PendingAction.None;
+    private ShowMode showMode = ShowMode.Standard;
 
     private InputContext input = new(new RaylibInputProvider(), -10000, true);
     private RichText title;
@@ -40,7 +48,7 @@ public class UIWindow : UIContainer
     private bool closeAfterCollapse = false;
     private bool closeAnimationActive = false;
     private float closeProgress = 0f;
-    private const float CLOSE_DURATION = 0.18f;
+    private const float CLOSE_DURATION = 0.44f;
 
     private bool hasBeenShown = false;
     private bool openAnimationActive = false;
@@ -60,6 +68,15 @@ public class UIWindow : UIContainer
         get => isCollapsed;
         set
         {
+            // If maximized (or animating toward maximizing), unmaximize first then collapse
+            bool currentlyMaximized = isMaximized || maximizeAnimationActive || (maximizeProgress > 0f && maximizeTarget > 0f);
+            if (currentlyMaximized)
+            {
+                pendingAction = PendingAction.CollapseAfterUnmaximize;
+                Maximized = false; // start unmaximize animation
+                return;
+            }
+
             if (isCollapsed == value) return;
             isCollapsed = value;
             collapseTarget = isCollapsed ? 1f : 0f;
@@ -82,6 +99,14 @@ public class UIWindow : UIContainer
         get => isMaximized;
         set
         {
+            bool currentlyCollapsed = isCollapsed || (collapseProgress > 0f && collapseTarget > 0f);
+            if (currentlyCollapsed)
+            {
+                pendingAction = PendingAction.MaximizeAfterExpand;
+                Collapsed = false;
+                return;
+            }
+
             // If an animation is already running, queue the request and return.
             if (maximizeAnimationActive)
             {
@@ -136,46 +161,14 @@ public class UIWindow : UIContainer
         get => CurrentPosition.Position;
         set
         {
-            CurrentPosition.Position = TargetPosition = value;
-            Console.WriteLine($"[UIWindow] CurrentPosition.Position changed: {CurrentPosition.Position}");
-            if (CurrentPosition.Position.Y < 0f) System.Diagnostics.Debugger.Break();
+            SetPosition(TargetPosition = value);
         }
-    }
-
-    public void ResetState()
-    {
-        collapseProgress = 0f;
-        collapseTarget = 0f;
-
-        maximizeProgress = 0f;
-        maximizeTarget = 0f;
-
-        IsClosed = false;
-        IsFullyClosed = false; Console.WriteLine($"[UIWindow] CurrentPosition.Position changed (maximizing anim): {CurrentPosition.Position}");
-        if (CurrentPosition.Position.Y < 0f) System.Diagnostics.Debugger.Break(); 
-        IsClosing = false;
-
-        CurrentPosition = fullPosCache;
-        TargetPosition = fullPosCache.Position;
-        TargetSize = fullPosCache.Size;
-        Console.WriteLine($"[UIWindow] CurrentPosition.Position changed (ResetState): {CurrentPosition.Position}");
-        if (CurrentPosition.Position.Y < 0f) System.Diagnostics.Debugger.Break();
-
-        closeAfterCollapse = false;
-        closeAnimationActive = false;
-        closeProgress = 0f;
-
-        hasBeenShown = false;
-        openAnimationActive = false;
-        openProgress = 0f;
-
-        NoAutoMove = false;
     }
 
     public Vector2 Size
     {
         get => CurrentPosition.Size;
-        set => CurrentPosition.Size = TargetSize = value;
+        set => SetSize(TargetSize = value);
     }
 
     public new WindowStyle Style
@@ -205,56 +198,61 @@ public class UIWindow : UIContainer
 
         originalContentAlpha = Style.ContentAlpha;
         fullPosCache = new(x, y, width, height);
+        ResetState();
     }
 
     public void ToggleCollapsed()
     {
-        // If maximized (or animating toward maximizing), unmaximize first then collapse
-        bool currentlyMaximized = isMaximized || maximizeAnimationActive || (maximizeProgress > 0f && maximizeTarget > 0f);
-        if (currentlyMaximized)
-        {
-            pendingAction = PendingAction.CollapseAfterUnmaximize;
-            Maximized = false; // start unmaximize animation
-            return;
-        }
-
-        // otherwise toggle collapsed normally
         Collapsed = !isCollapsed;
     }
 
     public void ToggleMaximized()
     {
-        // If collapsed (or animating toward collapsed), uncollapse first then maximize
-        bool currentlyCollapsed = isCollapsed || (collapseProgress > 0f && collapseTarget > 0f);
-        if (currentlyCollapsed)
-        {
-            pendingAction = PendingAction.MaximizeAfterExpand;
-            Collapsed = false; // start uncollapse animation
-            return;
-        }
-
-        // otherwise just toggle maximize normally
         Maximized = !isMaximized;
     }
 
     public void Show()
     {
         WindowManager.Show(this);
-        ResetState();
 
         if (!hasBeenShown)
         {
+            ResetState();
             hasBeenShown = true;
             StartOpenSequence();
         }
     }
 
+    public void ShowCollapsed()
+    {
+        WindowManager.Show(this);
+
+        if (!hasBeenShown)
+        {
+            ResetState();
+            hasBeenShown = true;
+            StartOpenSequence();
+            showMode = ShowMode.Collapsed;
+        }
+    }
+
+    public void ShowMaximized()
+    {
+        WindowManager.Show(this);
+
+        if (!hasBeenShown)
+        {
+            ResetState();
+            hasBeenShown = true;
+            StartOpenSequence();
+            showMode = ShowMode.Maximized;
+        }
+    }
+
     private void StartOpenSequence()
     {
-        // guard
         if (openAnimationActive || IsFullyClosed) return;
 
-        // ensure flags are in the right state
         IsClosed = false;
         IsFullyClosed = false;
         closeAfterCollapse = false;
@@ -262,25 +260,43 @@ public class UIWindow : UIContainer
 
         CollapseImmediately();
 
-        //// force collapsed visual state (fully collapsed)
-        //isCollapsed = true;
-        //collapseTarget = 1f;
-        //collapseProgress = 1f;
-
-        // compute collapsed height immediately (same math you use elsewhere)
-        //float collapsedHeight = Style.TitleBarHeight;
-        //CurrentPosition.Size = new Vector2(CurrentPosition.Size.X, Lerp(fullHeightCache, collapsedHeight, 1f));
-        //TargetSize = CurrentPosition.Size;
-
-        // start fully transparent (we'll fade into the collapsed appearance)
         Style.ContentAlpha = 0f;
 
-        // kick off open animation (fade-in), which on completion will uncollapse
         openAnimationActive = true;
         openProgress = 0f;
 
-        // prevent other movement while doing the entrance
         NoAutoMove = true;
+    }
+
+    public void ResetState()
+    {
+        collapseProgress = 0f;
+        collapseTarget = 0f;
+
+        maximizeProgress = 0f;
+        maximizeTarget = 0f;
+
+        showMode = ShowMode.Standard;
+
+        IsClosed = false;
+        IsFullyClosed = false;
+        IsClosing = false;
+
+        CurrentPosition = fullPosCache;
+        TargetPosition = fullPosCache.Position;
+        TargetSize = fullPosCache.Size;
+
+        closeAfterCollapse = false;
+        closeAnimationActive = false;
+        closeProgress = 0f;
+
+        AnimationElapsed = 0;
+
+        hasBeenShown = false;
+        openAnimationActive = false;
+        openProgress = 0f;
+
+        NoAutoMove = false;
     }
 
     public override bool IsHovered()
@@ -329,7 +345,18 @@ public class UIWindow : UIContainer
 
         // --- title text: adjust font size to fit available area and draw ---
         float leftPadding = titlebarBounds.X + BUTTON_PADDING;
-        float maxTextWidth = collapseRect.X - leftPadding - 8; // small extra spacing
+
+        float maxTextWidth;
+        if (Style.ShowCollapseButton)
+            maxTextWidth = collapseRect.X - leftPadding - 8;
+        else if (Style.ShowMaximizeButton)
+            maxTextWidth = maximizeRect.X - leftPadding - 8;
+        else if (Style.ShowCloseButton)
+            maxTextWidth = closeRect.X - leftPadding - 8;
+        else
+            maxTextWidth = titlebarBounds.Width - 8;
+
+
         if (maxTextWidth < 8) maxTextWidth = 8;
 
         float maxFontSize = titlebarBounds.Height * 0.6f;
@@ -365,18 +392,35 @@ public class UIWindow : UIContainer
     }
 
     private void ComputeButtonRects(Rectangle titlebarBounds, float buttonSizeRatio, int buttonPadding, int buttonSpacing,
-                                           out int buttonSize, out Rectangle closeRect, out Rectangle maximizeRect, out Rectangle collapseRect, out float right)
+                                    out int buttonSize, out Rectangle closeRect, out Rectangle maximizeRect, out Rectangle collapseRect, out float right)
     {
         float buttonSizeF = titlebarBounds.Height * buttonSizeRatio;
-        buttonSize = (int)MathF.Max(12, buttonSizeF); // keep a sensible minimum
+        buttonSize = (int)MathF.Max(12, buttonSizeF);
 
+        // start at right edge
         right = titlebarBounds.X + titlebarBounds.Width - buttonPadding;
-        closeRect = new Rectangle(right - buttonSize, titlebarBounds.Y + (titlebarBounds.Height - buttonSize) / 2f, buttonSize, buttonSize);
-        right -= (buttonSize + buttonSpacing);
-        maximizeRect = new Rectangle(right - buttonSize, titlebarBounds.Y + (titlebarBounds.Height - buttonSize) / 2f, buttonSize, buttonSize);
-        right -= (buttonSize + buttonSpacing);
-        collapseRect = new Rectangle(right - buttonSize, titlebarBounds.Y + (titlebarBounds.Height - buttonSize) / 2f, buttonSize, buttonSize);
+
+        closeRect = maximizeRect = collapseRect = new();
+
+        if (Style.ShowCloseButton)
+        {
+            closeRect = new Rectangle(right - buttonSize, titlebarBounds.Y + (titlebarBounds.Height - buttonSize) / 2f, buttonSize, buttonSize);
+            right -= (buttonSize + buttonSpacing);
+        }
+
+        if (Style.ShowMaximizeButton)
+        {
+            maximizeRect = new Rectangle(right - buttonSize, titlebarBounds.Y + (titlebarBounds.Height - buttonSize) / 2f, buttonSize, buttonSize);
+            right -= (buttonSize + buttonSpacing);
+        }
+
+        if (Style.ShowCollapseButton)
+        {
+            collapseRect = new Rectangle(right - buttonSize, titlebarBounds.Y + (titlebarBounds.Height - buttonSize) / 2f, buttonSize, buttonSize);
+            right -= (buttonSize + buttonSpacing);
+        }
     }
+
 
     private void GetMouseStates(Rectangle closeRect, Rectangle maximizeRect, Rectangle collapseRect,
                                 out Vector2 mousePos, out bool overClose, out bool overMaximize, out bool overCollapse,
@@ -421,11 +465,59 @@ public class UIWindow : UIContainer
 
     private void DrawMaximizeButton(Rectangle maximizeRect, int buttonSize, float iconInsetRatio, Color bg)
     {
+        float cornerPadding = 4f;
+
         Raylib.DrawRectangleRec(maximizeRect, bg);
 
         float inset = buttonSize * iconInsetRatio;
-        var r = new Rectangle(maximizeRect.X + inset, maximizeRect.Y + inset, maximizeRect.Width - inset * 2f, maximizeRect.Height - inset * 2f);
-        Raylib.DrawRectangleLinesEx(r, MathF.Max(1f, buttonSize * 0.06f), Style.TitleBarTextColor);
+        float thickness = MathF.Max(2f, buttonSize * 0.08f);
+
+        // Inner square when maximizeProgress = 0
+        var inner = new Rectangle(
+            maximizeRect.X + inset,
+            maximizeRect.Y + inset,
+            maximizeRect.Width - inset * 2f,
+            maximizeRect.Height - inset * 2f
+        );
+
+        // How far corners can travel (clamped so they never go outside padded edge)
+        float moveX = MathF.Max(0f, (maximizeRect.Width - inner.Width) / 2f - cornerPadding);
+        float moveY = MathF.Max(0f, (maximizeRect.Height - inner.Height) / 2f - cornerPadding);
+
+        // Corner positions shift outward based on maximizeProgress
+        float tlX = inner.X - moveX * maximizeProgress;
+        float tlY = inner.Y - moveY * maximizeProgress;
+
+        float trX = inner.X + inner.Width + moveX * maximizeProgress;
+        float trY = inner.Y - moveY * maximizeProgress;
+
+        float blX = inner.X - moveX * maximizeProgress;
+        float blY = inner.Y + inner.Height + moveY * maximizeProgress;
+
+        float brX = inner.X + inner.Width + moveX * maximizeProgress;
+        float brY = inner.Y + inner.Height + moveY * maximizeProgress;
+
+        // Interpolate lengths from full side (closed square) to small corner pieces
+        float horizontalLen = inner.Width * 0.5f; // was being lerped before
+        float verticalLen = inner.Height * 0.5f; // was being lerped before
+
+        Color color = Style.TitleBarTextColor;
+
+        // Top-left
+        Raylib.DrawRectangleRec(new Rectangle(tlX, tlY, horizontalLen, thickness), color);
+        Raylib.DrawRectangleRec(new Rectangle(tlX, tlY, thickness, verticalLen), color);
+
+        // Top-right
+        Raylib.DrawRectangleRec(new Rectangle(trX - horizontalLen, trY, horizontalLen, thickness), color);
+        Raylib.DrawRectangleRec(new Rectangle(trX - thickness, trY, thickness, verticalLen), color);
+
+        // Bottom-left
+        Raylib.DrawRectangleRec(new Rectangle(blX, blY - thickness, horizontalLen, thickness), color);
+        Raylib.DrawRectangleRec(new Rectangle(blX, blY - verticalLen, thickness, verticalLen), color);
+
+        // Bottom-right
+        Raylib.DrawRectangleRec(new Rectangle(brX - horizontalLen, brY - thickness, horizontalLen, thickness), color);
+        Raylib.DrawRectangleRec(new Rectangle(brX - thickness, brY - verticalLen, thickness, verticalLen), color);
     }
 
     private void DrawCollapseButton(Rectangle collapseRect, int buttonSize, float iconInsetRatio, Color bg)
@@ -433,10 +525,23 @@ public class UIWindow : UIContainer
         Raylib.DrawRectangleRec(collapseRect, bg);
 
         float inset = buttonSize * iconInsetRatio;
-        var y = collapseRect.Y + collapseRect.Height / 2f;
-        var x1 = collapseRect.X + inset;
-        var x2 = collapseRect.X + collapseRect.Width - inset;
-        Raylib.DrawLineEx(new Vector2(x1, y), new Vector2(x2, y), MathF.Max(1f, buttonSize * 0.08f), Style.TitleBarTextColor);
+        float thickness = MathF.Max(1f, buttonSize * 0.1f);
+
+        // centerline
+        float centerY = collapseRect.Y + collapseRect.Height / 2f;
+        float x1 = collapseRect.X + inset;
+        float x2 = collapseRect.X + collapseRect.Width - inset;
+
+        float halfHeight = buttonSize * 0.25f; 
+        float offset = (0.5f - collapseProgress) * 2f * halfHeight;
+
+        // draw V or ^ shape depending on collapseprogress
+        Vector2 left = new Vector2(x1, centerY - offset);
+        Vector2 mid = new Vector2((x1 + x2) / 2f, centerY + offset);
+        Vector2 right = new Vector2(x2, centerY - offset);
+
+        Raylib.DrawLineEx(left, mid, thickness, Style.TitleBarTextColor);
+        Raylib.DrawLineEx(mid, right, thickness, Style.TitleBarTextColor);
     }
 
     private float ComputeAndApplyBestFontSize(Rectangle titlebarBounds, float maxTextWidth, float maxFontSize, float minFontSize)
@@ -504,7 +609,7 @@ public class UIWindow : UIContainer
         // compute collapsed height and apply immediately
         float collapsedHeight = (Style.AllowDragging ? Style.TitleBarHeight : 0f);
         TargetSize = CurrentPosition.Size;
-        CurrentPosition.Size = new Vector2(CurrentPosition.Size.X, Lerp(fullPosCache.Height, collapsedHeight, 1f));
+        SetSize(new Vector2(CurrentPosition.Size.X, Lerp(fullPosCache.Height, collapsedHeight, 1f)));
 
     }
 
@@ -527,80 +632,42 @@ public class UIWindow : UIContainer
 
     protected override void Update()
     {
-        Console.WriteLine(CurrentPosition);
+        if (Maximized)
+            Console.WriteLine(CurrentPosition);
+
         if (openAnimationActive)
         {
             openProgress += Time.deltaTime / Math.Max(0.0001f, OPEN_DURATION);
             openProgress = Math.Clamp(openProgress, 0f, 1f);
 
-            // two-phase feel: fade while collapsed, then trigger the uncollapse
-            // here we use the whole OPEN_DURATION to fade — when done, start the normal uncollapse animation
             float t = Curves.SlowFastSlow?.Evaluate(openProgress) ?? openProgress;
 
-            // target collapsed alpha (matches your collapsed visual: original * 0.5)
             float collapsedAlpha = originalContentAlpha * 0.5f;
             Style.ContentAlpha = Lerp(0f, collapsedAlpha, t);
 
-            // when fade completes, start uncollapse and finish the open animation
             if (openProgress >= 1f - 0.0001f)
             {
                 openAnimationActive = false;
 
-                // ensure collapsed alpha is exactly the intended value
                 Style.ContentAlpha = collapsedAlpha;
 
-                // now uncollapse using your normal code path (this will animate collapseProgress from 1 -> 0)
-                Collapsed = false;
+                if (showMode is ShowMode.Standard)
+                    Collapsed = false;
+                else if (showMode is ShowMode.Maximized)
+                    Maximized = true;
 
-                // allow movement systems again (they may be needed while uncollapsing)
                 NoAutoMove = false;
             }
             else
-                // we keep returning early while the entrance fade runs so no other input/movement interferes
                 return;
         }
 
         float easedForHit = Curves.Linear?.Evaluate(collapseProgress) ?? collapseProgress;
         float collapsedHeight = /*UIConstants.CONTENT_PADDING * 2f +*/ (Style.AllowDragging ? Style.TitleBarHeight : 0f);
-        float animatedHeightForHit = Lerp(fullPosCache.Height, collapsedHeight, easedForHit);
+        float animatedHeightForHit = Lerp(Maximized ? CurrentPosition.Height : fullPosCache.Height, collapsedHeight, easedForHit);
 
         var hitRect = new Rectangle(CurrentPosition.X, CurrentPosition.Y, CurrentPosition.Width,
                                     collapseProgress == 0f ? animatedHeightForHit : CurrentPosition.Height);
-
-        if (closeAnimationActive)
-        {
-            closeProgress += Time.deltaTime / Math.Max(0.0001f, CLOSE_DURATION);
-            closeProgress = Math.Clamp(closeProgress, 0f, 1f);
-
-            // easing — pick a curve that feels good (Linear used as safe default)
-            float t = Curves.SlowFastSlow?.Evaluate(closeProgress) ?? closeProgress;
-
-            // shrink height to zero while keeping width (you can Lerp both if you want)
-            var newSize = new Vector2(closeStartSize.X, Lerp(closeStartSize.Y, 0f, t));
-            CurrentPosition.Size = newSize;
-            TargetSize = newSize;
-
-            // fade out content alpha completely
-            Style.ContentAlpha = Lerp(closeStartContentAlpha, 0f, t);
-
-            // optional: move origin so shrink looks anchored to top-left (keeps top steady)
-            // keep CurrentPosition.X/Y unchanged so it visually collapses downward;
-            // if you want it to collapse centered, adjust position here.
-
-            if (closeProgress >= 1f - 0.0001f)
-            {
-                closeAnimationActive = false;
-                IsFullyClosed = true;
-
-                // leave IsClosed = true (request was already submitted)
-                // keep NoAutoMove true (we're closed)
-                // if you want the base class notified, set IsClosing so any other logic knows
-                IsClosing = true;
-            }
-            Input.IsRequestingKeyboardFocus = Input.IsRequestingMouseFocus = false;
-            return;
-        }
-
 
         Input.RequestMouseFocusIfHovered(hitRect);
 
@@ -614,13 +681,11 @@ public class UIWindow : UIContainer
             collapseProgress = Math.Clamp(collapseProgress, 0f, 1f);
 
             Style.ContentAlpha = Lerp(originalContentAlpha, originalContentAlpha * 0.5f, collapseProgress);
-            //CurrentPosition.Height = Lerp(fullHeightCache, CurrentPosition.Height, collapseProgress);
         }
 
         bool collapseFinished = Math.Abs(collapseProgress - collapseTarget) < 0.0001f;
         if (collapseFinished)
         {
-            // just finished expanding (becoming normal size)
             if (collapseProgress <= 0f)
             {
                 if (pendingAction == PendingAction.MaximizeAfterExpand)
@@ -629,11 +694,8 @@ public class UIWindow : UIContainer
                     Maximized = true;
                 }
             }
-            // just finished collapsing (becoming minimized)
             else if (collapseProgress >= 1f)
             {
-                // if we queued a maximize-after-expand earlier this won't trigger here;
-                // but if we wanted to close after collapse, start the close animation now
                 if (closeAfterCollapse)
                 {
                     closeAfterCollapse = false;
@@ -654,29 +716,23 @@ public class UIWindow : UIContainer
             if (dir is -1)
                 eased = 1 - eased;
             // interpolate from captured start -> captured end
-            CurrentPosition.Position = LerpVec2(maximizeAnimStartPos, maximizeAnimEndPos, eased);
-            CurrentPosition.Size = LerpVec2(maximizeAnimStartSize, maximizeAnimEndSize, eased);
-
-            Console.WriteLine($"[UIWindow] CurrentPosition.Position changed (maximizing anim): {CurrentPosition.Position}");
-            if (CurrentPosition.Position.Y < 0f) System.Diagnostics.Debugger.Break();
+            SetPosition(LerpVec2(maximizeAnimStartPos, maximizeAnimEndPos, eased));
+            SetSize(LerpVec2(maximizeAnimStartSize, maximizeAnimEndSize, eased));
 
             // keep visual and targets in sync during animation so other reads see expected values
             TargetPosition = CurrentPosition.Position;
             TargetSize = CurrentPosition.Size;
-            
+
             // finalize when animation reaches the requested target
             if (Math.Abs(maximizeProgress - maximizeTarget) < 0.0001f)
             {
                 maximizeAnimationActive = false;
 
                 // finalize precisely to the captured end geometry
-                CurrentPosition.Position = maximizeAnimEndPos;
-                CurrentPosition.Size = maximizeAnimEndSize;
+                SetPosition(maximizeAnimEndPos);
+                SetSize(maximizeAnimEndSize);
                 TargetPosition = maximizeAnimEndPos;
                 TargetSize = maximizeAnimEndSize;
-
-                Console.WriteLine($"[UIWindow] CurrentPosition.Position changed (maximizing final): {CurrentPosition.Position}");
-                if (CurrentPosition.Position.Y < 0f) System.Diagnostics.Debugger.Break();
 
                 // now update the actual maximized state
                 isMaximized = maximizeFinalizeTargetIsMaximized;
@@ -684,7 +740,7 @@ public class UIWindow : UIContainer
                 // re-evaluate NoAutoMove: keep it true when fully maximized, otherwise restore movement
                 NoAutoMove = isMaximized;
 
-                // if a toggle was queued while animating, apply it now (this will start a new animation)
+                // if a toggle was  queued while animating, apply it now (this will start a new animation)
                 if (maximizeRequested)
                 {
                     bool queued = maximizeRequestedValue;
@@ -711,6 +767,41 @@ public class UIWindow : UIContainer
 
     protected internal override void Draw()
     {
+        // we place this in Draw instead of update, because when the dialog is closing Update is no longer called
+        if (closeAnimationActive)
+        {
+            closeProgress += Time.deltaTime / Math.Max(0.0001f, CLOSE_DURATION);
+            closeProgress = Math.Clamp(closeProgress, 0f, 1f);
+
+            // easing — pick a curve that feels good (Linear used as safe default)
+            float t = Curves.SlowFastSlow?.Evaluate(closeProgress) ?? closeProgress;
+
+            // shrink height to zero while keeping width (you can Lerp both if you want)
+            var newSize = new Vector2(closeStartSize.X, Lerp(closeStartSize.Y, 0f, t));
+            SetSize(newSize);
+            TargetSize = newSize;
+
+            // fade out content alpha completely
+            Style.ContentAlpha = Lerp(closeStartContentAlpha, 0f, t);
+
+            // optional: move origin so shrink looks anchored to top-left (keeps top steady)
+            // keep CurrentPosition.X/Y unchanged so it visually collapses downward;
+            // if you want it to collapse centered, adjust position here.
+
+            if (closeProgress >= 1f - 0.0001f)
+            {
+                closeAnimationActive = false;
+                IsFullyClosed = true;
+
+                // leave IsClosed = true (request was already submitted)
+                // keep NoAutoMove true (we're closed)
+                // if you want the base class notified, set IsClosing so any other logic knows
+                IsClosing = true;
+            }
+            Input.IsRequestingKeyboardFocus = Input.IsRequestingMouseFocus = false;
+            return;
+        }
+
         float hoverOffsetX = 0f, hoverOffsetY = 0f;
         float shadowOffsetX = 0f, shadowOffsetY = 0f;
 
@@ -739,6 +830,7 @@ public class UIWindow : UIContainer
                         isHoverTarget = false;
                     }
                 }
+
                 collapseAnimationFinished = true;
                 HandleRaiseAnimation(ref hoverOffsetX, ref hoverOffsetY, ref shadowOffsetX, ref shadowOffsetY);
             }
@@ -750,7 +842,7 @@ public class UIWindow : UIContainer
             float eased = Curves.SlowFastSlow?.Evaluate(collapseProgress) ?? collapseProgress;
             float collapsedHeight = /*UIConstants.CONTENT_PADDING * 2f +*/ (Style.AllowDragging ? Style.TitleBarHeight : 0f);
             float animatedHeight = Lerp(fullPosCache.Height, collapsedHeight, eased);
-
+            SetSize(new(Size.X, animatedHeight));
             // Only apply the raise visual to the titlebar when collapsed AND hovered.
             // (Non-collapsed windows don't use raise here.)0
 
@@ -815,7 +907,7 @@ public class UIWindow : UIContainer
             DrawContent(contentArea);
 
             // draw close timer if present (same as base)
-            if (TimeUntilAutoDismiss > 0)
+            if (Style.TimeUntilAutoDismiss > 0)
                 DrawCloseTimerBar(backgroundBounds);
         }
     }
@@ -825,7 +917,8 @@ public class UIWindow : UIContainer
         // if already requested, ignore
         if (IsClosed) return;
 
-        fullPosCache.Position = CurrentPosition.Position;
+        if (!isMaximized)
+            fullPosCache.Position = CurrentPosition.Position;
 
         // mark request immediately
         IsClosed = true;

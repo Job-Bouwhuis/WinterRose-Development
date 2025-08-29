@@ -21,12 +21,12 @@ namespace WinterRose.ForgeWarden.Tests;
 internal class Program : Application
 {
     // for on PC
-    //const int SCREEN_WIDTH = 1920;
-    //const int SCREEN_HEIGHT = 1080;
+    const int SCREEN_WIDTH = 1920;
+    const int SCREEN_HEIGHT = 1080;
 
     // for on laptop
-    const int SCREEN_WIDTH = 1280;
-    const int SCREEN_HEIGHT = 720;
+    //const int SCREEN_WIDTH = 1280;
+    //const int SCREEN_HEIGHT = 720;
 
     // for on steam deck
     //const int SCREEN_WIDTH = 960;
@@ -46,7 +46,7 @@ internal class Program : Application
 
     public override World CreateWorld()
     {
-        ClearColor = Color.Red;
+        ClearColor = Color.Beige;
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
 
         World world = new World("testworld");
@@ -83,12 +83,55 @@ internal class Program : Application
         window.AddSprite(Assets.Load<Sprite>("bigimg"));
         window.AddSprite(Assets.Load<Sprite>("bigimg"));
         window.AddSprite(Assets.Load<Sprite>("bigimg"));
-        //window.Show();
+        window.Show();
 
         UIWindow window2 = new UIWindow("Window 2", 300, 500);
+        window2.AddSprite(Assets.Load<Sprite>("bigimg"));
+        window2.AddSprite(Assets.Load<Sprite>("bigimg"));
+        window2.AddSprite(Assets.Load<Sprite>("bigimg"));
         window2.AddText("window 2", UIFontSizePreset.Title);
         window2.AddButton("My Awesome Button");
-        //window2.Show();
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.AddButton("My Awesome Button");
+        window2.Show();
         //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
@@ -119,17 +162,26 @@ internal class Program : Application
                             .AddSprite(Assets.Load<Sprite>("bigimg"));
 
             var w = new UIWindow("Test Window", 400, 500, 100, 100);
+            //w.Style.ShowMaximizeButton = false;
+            //w.Style.ShowCollapseButton = false;
+            //w.Style.ShowCloseButton = false;
 
-            Toasts.ShowToast(
-                new Toast(ToastType.Info, r, s)
-                    .AddText("Right?\n\n\nYes")
-                    .AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(d))
-                    .AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Bottom))
-                    .AddButton("btn3", (c, b) => Application.Close())
-                    .AddButton("btn4", (c, b) => w.Show())
-                    .AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
-                    .AddSprite(Assets.Load<Sprite>("bigimg")));
-                    //.AddContent(new HeavyFileDropContent()));
+            Toast t = new Toast(ToastType.Info, r, s)
+                    //.AddText("Right?\n\n\nYes")
+                    //.AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(d))
+                    //.AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Bottom))
+                    .AddButton("show window normal", (c, b) => w.Show())
+                    .AddButton("show window collapsed", (c, b) => w.ShowCollapsed())
+                    .AddButton("show window maximized", (c, b) => w.ShowMaximized())
+                    .AddButton("close window", (c, b) => w.Close())
+                    //.AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
+                    //.AddSprite(Assets.Load<Sprite>("bigimg"))
+                    //.AddContent(new HeavyFileDropContent())
+                    ;
+
+
+            t.Style.TimeUntilAutoDismiss = 0;
+            Toasts.ShowToast(t);
         }
 
 

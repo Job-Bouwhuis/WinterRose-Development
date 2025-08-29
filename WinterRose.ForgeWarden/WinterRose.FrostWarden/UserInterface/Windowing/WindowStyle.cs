@@ -40,6 +40,16 @@ public class WindowStyle : ContainerStyle
         ProgressBarFill = new Color(0, 150, 240);        // strong blue accent
         BarText = new Color(245, 245, 245);              // softer white for text
 
+        // --- Timer bar ---
+        TimerBarBackground = new Color(55, 55, 60);      // darker gray, distinct from progress bar bg
+        TimerBarFill = new Color(200, 200, 80);          // warm amber/yellow for timing feedback
+                                                         // (stands apart from the blue fill, makes time bars immediately readable)
+
+        // --- Scrollbar ---
+        ScrollbarTrack = new Color(50, 50, 55);          // muted track, blends with background
+        ScrollbarThumb = new Color(120, 120, 125);       // thumb more visible but neutral gray
+                                                         // (keeps attention on content but still clear to grab)
+
         // --- Buttons ---
         ButtonTextColor = new Color(245, 245, 245);
         ButtonBackground = new Color(75, 75, 80);        // muted but distinct from background
@@ -69,13 +79,13 @@ public class WindowStyle : ContainerStyle
         // --- Behavior defaults ---
         AllowDragging = true;
         TitleBarHeight = 30;
-        DragHintText = "Drag window";
-        DragHintColor = new Color(180, 180, 185);        // softer gray hint
         RaiseOnHover = false;
 
         ShadowSizeTop = 0;
         ShadowSizeLeft = 0;
         ShadowSizeBottom = ShadowSizeRight;
+
+        AutoScale = false;
     }
 
 
@@ -160,6 +170,10 @@ public class WindowStyle : ContainerStyle
         set => collapseButtonClick = value;
     }
     public Color CollapseButtonClickRaw => collapseButtonClick;
+
+    public bool ShowCloseButton { get; set; } = true;
+    public bool ShowMaximizeButton { get;set; } = true;
+    public bool ShowCollapseButton { get; set; } = true;
 }
 
 

@@ -74,7 +74,7 @@ public class UIProgressContent : UIContent
 
     protected override void Draw(Rectangle bounds)
     {
-        owner.TimeUntilAutoDismiss = 0;
+        owner.Style.TimeUntilAutoDismiss = 0;
 
         Rectangle barBg = new(bounds.X, bounds.Y, bounds.Width, 20);
         maxWidth = barBg.Width * 0.3f;

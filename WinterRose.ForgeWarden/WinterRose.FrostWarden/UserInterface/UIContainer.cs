@@ -1,5 +1,6 @@
 ﻿using PuppeteerSharp;
 using Raylib_cs;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
@@ -25,13 +26,25 @@ public abstract class UIContainer
     /// </summary>
     public bool PauseDragMovement { get; set; }
     private bool prevPauseDragMovement;
-    internal Rectangle CurrentPosition;
+    private Rectangle curPos = new Rectangle();
+    internal Rectangle CurrentPosition
+    {
+        get
+        {
+            return curPos;
+        }
+        set
+        {
+            curPos = value;
+        }
+    }
 
     protected float ContentScrollY = 0f;
-    protected float LastTotalContentHeight = 0f;
     protected bool IsScrollDragging = false;
     protected float ScrollDragOffset = 0f;
     protected bool IsScrollbarVisible = false;
+    protected float LastTotalContentHeight = 0f;
+
     protected const float SCROLLBAR_COLLAPSED_WIDTH = 8f;
     protected const float SCROLLBAR_EXPANDED_WIDTH = 18f;
     protected const float SCROLLBAR_ANIM_DURATION = 0.12f; // seconds
@@ -63,7 +76,7 @@ public abstract class UIContainer
     }
 
 
-    internal Vector2 CurrentScale;
+    internal Vector2 CurrentSize;
     internal Vector2 TargetPosition;
     internal Vector2 TargetSize;
     internal float AnimationElapsed;
@@ -73,7 +86,6 @@ public abstract class UIContainer
     protected bool isHoverTarget = false;
 
     public bool PauseAutoDismissTimer { get; set; }
-    public float TimeUntilAutoDismiss { get; set; } = 0;
     internal float TimeShown;
 
     public ContainerStyle Style { get; set; }
@@ -137,29 +149,40 @@ public abstract class UIContainer
                                             Style.AnimateOutDuration
                                             : Style.AnimateInDuration), 0f, 1f);
 
-            CurrentPosition.Position = Vector2.Lerp(CurrentPosition.Position, TargetPosition, Style.MoveAndScaleCurve.Evaluate(tNormalized));
-            ComputeToastScale(tNormalized);
+            Vector2 newPos = Vector2.Lerp(CurrentPosition.Position, TargetPosition, Style.MoveAndScaleCurve.Evaluate(tNormalized));
+            SetPosition(newPos);
+            ComputeSize(tNormalized);
         }
     }
 
-    private void ComputeToastScale(float tNormalized)
+    public void SetPosition(Vector2 position) => curPos.Position = position;
+
+    public void SetSize(Vector2 size)
     {
-        // store old center
+        size.X = Math.Clamp(size.X, 0, float.MaxValue);
+        size.Y = Math.Clamp(size.Y, 0, float.MaxValue);
+        curPos.Size = size;
+    }
+
+    private void ComputeSize(float tNormalized)
+    {
+        if (!Style.AutoScale || CurrentSize == TargetSize)
+            return;
+
         var center = new Vector2(
             CurrentPosition.X + CurrentPosition.Width / 2f,
             CurrentPosition.Y + CurrentPosition.Height / 2f
         );
-
-        // lerp absolute width/height toward target
-        CurrentScale = Vector2.Lerp(
-            CurrentScale,
+        
+        CurrentSize = Vector2.Lerp(
+            CurrentSize,
             TargetSize,
             Curves.EaseOutBackFar.Evaluate(tNormalized)
         );
 
         // recompute rect with locked center using absolute sizes
-        float newWidth = CurrentScale.X;
-        float newHeight = CurrentScale.Y;
+        float newWidth = CurrentSize.X;
+        float newHeight = CurrentSize.Y;
 
         CurrentPosition = new Rectangle(
             center.X - newWidth / 2f,
@@ -408,14 +431,14 @@ public abstract class UIContainer
         LastBorderBounds = backgroundBounds;
         DrawContent(bounds);
 
-        if (TimeUntilAutoDismiss > 0)
+        if (Style.TimeUntilAutoDismiss > 0)
             DrawCloseTimerBar(backgroundBounds);
     }
 
 
     protected void DrawCloseTimerBar(Rectangle r)
     {
-        float progressRatio = Math.Clamp(TimeShown / TimeUntilAutoDismiss, 0f, 1f);
+        float progressRatio = Math.Clamp(TimeShown / Style.TimeUntilAutoDismiss, 0f, 1f);
         float barHeight = 3f; // adjustable height
         float yPos = r.Y + (r.Height - 2) - barHeight;
 
@@ -544,8 +567,8 @@ public abstract class UIContainer
         var thumbRect = new Rectangle(trackX, thumbY, ScrollbarCurrentWidth, thumbHeight);
 
         // colors (use style colors where available)
-        var trackColor = new Color(Style.Border.R, Style.Border.G, Style.Border.B, (byte)80);
-        var thumbColor = new Color(Style.TimerBarFill.R, Style.TimerBarFill.G, Style.TimerBarFill.B, (byte)220);
+        var trackColor = Style.ScrollbarTrack;
+        var thumbColor = Style.ScrollbarThumb;
 
         // draw track and thumb (slightly inset so the expanded thumb looks nicer)
         var inset = 1f;
@@ -613,10 +636,10 @@ public abstract class UIContainer
 
     protected virtual void HandleAutoClose()
     {
-        if (!PauseAutoDismissTimer && TimeUntilAutoDismiss > 0 && !IsHovered())
+        if (!PauseAutoDismissTimer && Style.TimeUntilAutoDismiss > 0 && !IsHovered())
         {
             TimeShown += Time.deltaTime;
-            if (TimeShown >= TimeUntilAutoDismiss)
+            if (TimeShown >= Style.TimeUntilAutoDismiss)
                 Close();
         }
     }

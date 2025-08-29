@@ -114,7 +114,7 @@ public abstract class ToastRegionManager
 
         toast.CurrentPosition = GetInitialDialogPosition(side, toast, startY);
 
-        toast.CurrentScale = toast.CurrentPosition.Size;
+        toast.CurrentSize = toast.CurrentPosition.Size;
 
         toast.TargetPosition = GetEntryPosition(side, toast, startY);
         toast.TargetSize = new(Toasts.TOAST_WIDTH, toast.Height);
