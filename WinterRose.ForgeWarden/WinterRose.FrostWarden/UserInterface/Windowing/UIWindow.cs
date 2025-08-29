@@ -632,9 +632,6 @@ public class UIWindow : UIContainer
 
     protected override void Update()
     {
-        if (Maximized)
-            Console.WriteLine(CurrentPosition);
-
         if (openAnimationActive)
         {
             openProgress += Time.deltaTime / Math.Max(0.0001f, OPEN_DURATION);
