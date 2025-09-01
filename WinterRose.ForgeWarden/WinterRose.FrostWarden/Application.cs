@@ -165,11 +165,10 @@ public abstract class Application
         if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
             world.Update();
 
-        Dialogs.Update(Time.deltaTime);
-        Toasts.Update(Time.deltaTime);
-        ToastToDialogMorpher.Update();
         WindowManager.Update();
-
+        Dialogs.Update(Time.deltaTime);
+        ToastToDialogMorpher.Update();
+        Toasts.Update(Time.deltaTime);
 
         BeginDrawing();
         ray.BeginBlendMode(BlendMode.Alpha);
@@ -193,18 +192,18 @@ public abstract class Application
 
             Raylib.DrawTexturePro(
                 worldTex.Texture,
-                new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),  // src rectangle flipped Y
-                new Rectangle(0, 0, Window.Width, Window.Height),                      // dest rectangle fullscreen
+                new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),
+                new Rectangle(0, 0, Window.Width, Window.Height), 
                 Vector2.Zero,
                 0,
                 Color.White);
         }
 
-        Toasts.Draw();
-        ToastToDialogMorpher.Draw();
-        Dialogs.Draw();
         WindowManager.Draw();
-        
+        Dialogs.Draw();
+        ToastToDialogMorpher.Draw();
+        Toasts.Draw();
+
         if (ShowFPS)
             ray.DrawFPS(10, 10);
         ray.EndBlendMode();

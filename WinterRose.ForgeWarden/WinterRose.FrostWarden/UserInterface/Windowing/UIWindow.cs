@@ -198,7 +198,6 @@ public class UIWindow : UIContainer
 
         originalContentAlpha = Style.ContentAlpha;
         fullPosCache = new(x, y, width, height);
-        ResetState();
     }
 
     public void ToggleCollapsed()
@@ -289,6 +288,7 @@ public class UIWindow : UIContainer
         closeAfterCollapse = false;
         closeAnimationActive = false;
         closeProgress = 0f;
+        pendingAction = PendingAction.None;
 
         AnimationElapsed = 0;
 

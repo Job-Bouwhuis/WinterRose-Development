@@ -29,7 +29,7 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
 
         static Dialogs()
         {
-            Input = new InputContext(new RaylibInputProvider(), 2);
+            Input = new InputContext(new RaylibInputProvider(), 110001);
         }
 
         public static DialogShowState Show(Dialog dialog)
