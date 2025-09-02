@@ -138,7 +138,7 @@ public class Game1 : Application
 
         Stopwatch serializationSW = new();
         int i1 = 0;
-        int max1 = 5;
+        int max1 = 20;
 
         long bestSerializationTime = long.MaxValue;
         long worstSerializationTime = long.MinValue;
@@ -160,7 +160,7 @@ public class Game1 : Application
 
         Stopwatch deserializationSW = new();
         int i2 = 0;
-        int max2 = 5;
+        int max2 = 20;
 
         long bestDeserializationTime = long.MaxValue;
         long worstDeserializationTime = long.MinValue;

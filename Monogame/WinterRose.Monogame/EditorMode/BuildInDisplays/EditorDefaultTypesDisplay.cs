@@ -79,7 +79,7 @@ namespace WinterRose.Monogame.EditorMode.BuildInDisplays
             }
 
             if (field.Attributes.FirstOrDefault(x => x is SliderAttribute) is SliderAttribute range)
-                gui.SliderInt($"{field.Name} (Int)", ref value, range.Min.Round(), range.Max.Round());
+                gui.SliderInt($"{field.Name} (Int)", ref value, range.Min.FloorToInt(), range.Max.FloorToInt());
             else
                 gui.InputInt($"{field.Name} (Int)", ref value);
 

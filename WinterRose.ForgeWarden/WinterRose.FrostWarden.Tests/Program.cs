@@ -42,6 +42,7 @@ internal class Program : Application
 
     public override void Draw()
     {
+        ShowFPS = true;
     }
 
     public override World CreateWorld()

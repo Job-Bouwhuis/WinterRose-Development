@@ -90,7 +90,8 @@ public abstract class Application
             browserTask = Task.CompletedTask;
         Assets.BuildAssetIndexes();
 
-        SetTargetFPS(144);
+        SetTargetFPS(0);
+        
 
         Window = new Window(title, flags);
         Window.Create(width, height);
