@@ -21,12 +21,12 @@ namespace WinterRose.ForgeWarden.Tests;
 internal class Program : Application
 {
     // for on PC
-    const int SCREEN_WIDTH = 1920;
-    const int SCREEN_HEIGHT = 1080;
+    //const int SCREEN_WIDTH = 1920;
+    //const int SCREEN_HEIGHT = 1080;
 
     // for on laptop
-    //const int SCREEN_WIDTH = 1280;
-    //const int SCREEN_HEIGHT = 720;
+    const int SCREEN_WIDTH = 1280;
+    const int SCREEN_HEIGHT = 720;
 
     // for on steam deck
     //const int SCREEN_WIDTH = 960;
@@ -35,9 +35,9 @@ internal class Program : Application
     [STAThread]
     static void Main(string[] args)
     {
-        //new Program().RunAsOverlay();
+        new Program().RunAsOverlay();
 
-        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
+        //new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
     public override void Draw()
@@ -147,7 +147,7 @@ internal class Program : Application
         //    c.Close();
         //})));
 
-        ShowToast(ToastRegion.Left, ToastStackSide.Top);
+        ShowToast(ToastRegion.Right, ToastStackSide.Top);
 
         void ShowToast(ToastRegion r, ToastStackSide s)
         {

@@ -40,7 +40,7 @@ public static class Toasts
 
     static Toasts()
     {
-        Input = new InputContext(new RaylibInputProvider(), 1);
+        Input = new InputContext(new RaylibInputProvider(), 110002);
         // Baseline reference resolution
         const float REFERENCE_WIDTH = 1920f;
         const float REFERENCE_HEIGHT = 1080f;
@@ -80,10 +80,15 @@ public static class Toasts
     private static Color hoverBorderColor = Color.Yellow; // adjustable border color
     private static float borderThickness = 2f;
 
+    private static float reorderTime = 2;
+    private static float reorderTimer = 0; 
+
     public static void Update(float deltaTime)
     {
-        if (ray.IsWindowResized() || requestReorder)
+        reorderTimer += Time.deltaTime;
+        if (ray.IsWindowResized() || requestReorder || reorderTimer >= reorderTime)
         {
+            reorderTimer = 0;
             requestReorder = false;
             foreach (var region in regions.Values)
                 region.RecalculatePositions();
