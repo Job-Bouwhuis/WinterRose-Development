@@ -110,8 +110,12 @@ namespace WinterRose.ForgeGuardChecks
                 catch (TargetInvocationException tie)
                 {
                     Exception e = tie.InnerException;
-                    string possiblyWithColor = ForgeGuard.Format($"{e.GetType().Name}: {e.Message}", severity);
-                    string withoutColor = ForgeGuard.Format($"{e.GetType().Name}: {e.Message}", severity, false);
+                    string message = e.Message;
+                    if(!message.Contains(guard.Name))
+                        message = $"[{guard.Name}] - " + message;
+
+                    string possiblyWithColor = ForgeGuard.Format($"{e.GetType().Name}: {message}", severity);
+                    string withoutColor = ForgeGuard.Format($"{e.GetType().Name}: {message}", severity, false);
                     
                     output.Write(possiblyWithColor);
 
@@ -123,7 +127,7 @@ namespace WinterRose.ForgeGuardChecks
                         return result;
                     }
 
-                    result.AddGuardresult(guard.Name, new(severity, e.Message, e, false));
+                    result.AddGuardresult(guard.Name, new(severity, message, e, false));
                 }
                 AfterEach?.Invoke(guardClass, null);
             }

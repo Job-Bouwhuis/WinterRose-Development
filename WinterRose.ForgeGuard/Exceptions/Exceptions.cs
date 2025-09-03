@@ -43,6 +43,14 @@ namespace WinterRose.ForgeGuardChecks.Exceptions
         : Exception($"{messageStart} expected to be greater than {comparedTo}, but it was not");
 
     /// <summary>
+    /// Thrown by <see cref="Forge.Expect{T}(T, string, string, int)"/> chains when a value is expected to be greater than or equal toa specified value, but it was not.
+    /// </summary>
+    /// <param name="messageStart"></param>
+    /// <param name="comparedTo"></param>
+    public class ValueGreaterOrEqualThanException(string messageStart, object? comparedTo)
+        : Exception($"{messageStart} expected to be greater or equal than {comparedTo}, but it was not");
+
+    /// <summary>
     /// Thrown by <see cref="Forge.Expect{T}(T, string, string, int)"/> chains when a value is expected to be less than a specified value, but it was not.
     /// </summary>
     /// <param name="messageStart"></param>
@@ -51,20 +59,28 @@ namespace WinterRose.ForgeGuardChecks.Exceptions
         : Exception($"{messageStart} expected to be less than {comparedTo}, but it was not");
 
     /// <summary>
-    /// Thrown by <see cref="Forge.Expect{T}(T, string, string, int)"/> chains when a value is expected to equal a specified value, but it did not.
+    /// Thrown by <see cref="Forge.Expect{T}(T, string, string, int)"/> chains when a value is expected to be less than or equal to a specified value, but it was not.
+    /// </summary>
+    /// <param name="messageStart"></param>
+    /// <param name="comparedTo"></param>
+    public class ValueLessOrEqualThanException(string messageStart, object? comparedTo)
+        : Exception($"{messageStart} expected to be less or equal than {comparedTo}, but it was not");
+
+    /// <summary>
+    /// Thrown by <see cref="Forge.Expect{T}(T, string, string, int)"/> chains when a value is expected to equal a specified value, but it was not.
     /// </summary>
     /// <param name="messageStart"></param>
     /// <param name="comparedTo"></param>
     public class ValueEqualException(string messageStart, object? comparedTo)
-        : Exception($"{messageStart} expected to equal {comparedTo}, but it did not");
+        : Exception($"{messageStart} expected to be equals to {comparedTo}, but it was not");
 
     /// <summary>
-    /// Thrown by <see cref="Forge.Expect{T}(T, string, string, int)"/> chains when a value is expected to not equal a specified value, but it did.
+    /// Thrown by <see cref="Forge.Expect{T}(T, string, string, int)"/> chains when a value is expected to not equal a specified value, but it was.
     /// </summary>
     /// <param name="messageStart"></param>
     /// <param name="comparedTo"></param>
     public class ValueNotEqualException(string messageStart, object? comparedTo)
-        : Exception($"{messageStart} expected to not equal {comparedTo}, but it did");
+        : Exception($"{messageStart} expected to not be equal to {comparedTo}, but it was");
 
     /// <summary>
     /// Thrown by <see cref="Forge.Expect{T}(T, string, string, int)"/> chains when a value is expected to be empty (e.g., an empty string or collection), but it was not.

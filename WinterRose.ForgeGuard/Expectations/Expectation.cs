@@ -89,6 +89,18 @@ namespace WinterRose.ForgeGuardChecks.Expectations
                 throw new ValueGreaterThanException(messageStart, value);
         }
 
+        public void GreaterThanOrEqualTo(int value)
+        {
+            if (item is not IComparable self || self.CompareTo(value) < 0)
+                throw new ValueGreaterOrEqualThanException(messageStart, value);
+        }
+
+        public void LessThanOrEqualTo(int value)
+        {
+            if (item is not IComparable self || self.CompareTo(value) > 0)
+                throw new ValueLessOrEqualThanException(messageStart, value);
+        }
+
         /// <summary>
         /// Expects the value to be less than <paramref name="value"/>.<br></br>
         /// </summary>
