@@ -16,7 +16,8 @@ namespace WinterRose.ForgeThread
         }
 
         public void TrySetResult()
-        { // If the continuation already set exception, TrySetResult will fail silently
+        {
+            // If the continuation already set exception, TrySetResult will fail silently
             try { completion.TrySetResult(null); } catch { }
         }
 
