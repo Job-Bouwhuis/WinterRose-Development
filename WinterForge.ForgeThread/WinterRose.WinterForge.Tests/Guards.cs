@@ -390,7 +390,6 @@ public class TimedCoroutineGuards
     [Guard]
     public void OneTimerCoroutine()
     {
-        return;
         bool completed = false;
         var watch = Stopwatch.StartNew();
         CoroutineHandle handle = loom.InvokeOn("TimedWorker", TimedCoroutine(() => completed = true));
@@ -401,7 +400,6 @@ public class TimedCoroutineGuards
     [Guard]
     public void PlentyTimerCoroutines()
     {
-        return;
         int completed = 0;
         var watch = Stopwatch.StartNew();
 
@@ -460,17 +458,9 @@ public class TimedCoroutineGuards
 
     static IEnumerator<object?> TimedCoroutine(Action onComplete)
     {
-        int delay = 1000;
+        int delay = 50;
 
-        Console.WriteLine("Zero");
         yield return TimeSpan.FromMilliseconds(delay);
-        Console.WriteLine("first");
-        yield return TimeSpan.FromMilliseconds(delay);
-        Console.WriteLine("second");
-        yield return TimeSpan.FromMilliseconds(delay);
-        Console.WriteLine("third");
-        yield return TimeSpan.FromMilliseconds(delay);
-        Console.WriteLine("fourth");
         onComplete();
     }
 }
@@ -512,7 +502,7 @@ public class ThreadLoomAsyncGuards
         var t = loom.InvokeOn("WorkerA", async () =>
         {
             continuationThreadName = Thread.CurrentThread.Name;
-            await Task.Delay(20).ConfigureAwait(false);
+            await Task.Delay(20);
             continuationThreadName = Thread.CurrentThread.Name;
         }, bypassTick: true);
 
@@ -521,6 +511,139 @@ public class ThreadLoomAsyncGuards
 
         Forge.Expect(continuationThreadName).Not.Null();
         Forge.Expect(continuationThreadName!.StartsWith("WinterRose.ThreadLoom-WorkerA")).True();
+    }
+
+    [Guard]
+    public void AsyncContinuationRobustlyResumesOnWorkerThread()
+    {
+        string? afterFirstAwait = null;
+        string? afterYield = null;
+        string? innerAwaitThread = null;
+        string? afterRunAwait = null;
+        string? finalThread = null;
+
+        // primary test: multiple awaits, yield, nested await, Task.Run
+        var t = loom.InvokeOn("WorkerA", async () =>
+        {
+            // initial thread
+            var initial = Thread.CurrentThread.Name;
+
+            // first await (should resume on loom)
+            await Task.Delay(10);
+            afterFirstAwait = Thread.CurrentThread.Name;
+
+            // Task.Yield() (should capture and resume on loom)
+            await Task.Yield();
+            afterYield = Thread.CurrentThread.Name;
+
+            // nested await inside local async function
+            async Task Nested()
+            {
+                await Task.Delay(5);
+                innerAwaitThread = Thread.CurrentThread.Name;
+            }
+            await Nested();
+
+            // await something that runs on the ThreadPool — continuation should still come back to loom
+            var poolResult = await Task.Run(() => Thread.CurrentThread.Name);
+            // poolResult is a thread-pool thread name; we assert the continuation below
+            afterRunAwait = Thread.CurrentThread.Name;
+
+            // final await
+            await Task.Delay(5);
+            finalThread = Thread.CurrentThread.Name;
+        }, bypassTick: true);
+
+        // wait for completion
+        WaitForTask(t);
+
+        // basic null checks
+        Forge.Expect(afterFirstAwait).Not.Null();
+        Forge.Expect(afterYield).Not.Null();
+        Forge.Expect(innerAwaitThread).Not.Null();
+        Forge.Expect(afterRunAwait).Not.Null();
+        Forge.Expect(finalThread).Not.Null();
+
+        // all continuation points should be back on the loom thread
+        var expectedPrefix = "WinterRose.ThreadLoom-WorkerA";
+        Forge.Expect(afterFirstAwait!.StartsWith(expectedPrefix)).True();
+        Forge.Expect(afterYield!.StartsWith(expectedPrefix)).True();
+        Forge.Expect(innerAwaitThread!.StartsWith(expectedPrefix)).True();
+        Forge.Expect(afterRunAwait!.StartsWith(expectedPrefix)).True();
+        Forge.Expect(finalThread!.StartsWith(expectedPrefix)).True();
+
+        // ----- now test ConfigureAwait(false) explicitly breaks capture -----
+        string? cfgThread = null;
+        var t2 = loom.InvokeOn("WorkerA", async () =>
+        {
+            // this deliberately uses ConfigureAwait(false) => continuation should NOT be on the loom
+            await Task.Delay(10).ConfigureAwait(false);
+            cfgThread = Thread.CurrentThread.Name;
+        }, bypassTick: true);
+
+        WaitForTask(t2);
+        Forge.Expect(cfgThread).Not.Null();
+        // ensure it's not the loom thread (i.e. capture was not preserved)
+        Forge.Expect(cfgThread!.StartsWith(expectedPrefix)).False();
+    }
+
+    [Guard]
+    public void AsyncManyQueuedTasksResumeOnWorkerThread()
+    {
+        const int Count = 100_000;
+        var tasks = new Task[Count];
+        var startThreads = new string?[Count];
+        var resumeThreads = new string?[Count];
+        var startOrder = new int[Count];
+        var finishOrder = new int[Count];
+
+        int started = 0;
+        int finished = 0;
+
+        for (int i = 0; i < Count; i++)
+        {
+            int idx = i;
+            tasks[idx] = loom.InvokeOn("WorkerA", async () =>
+            {
+                // record start
+                startThreads[idx] = Thread.CurrentThread.Name;
+                startOrder[idx] = Interlocked.Increment(ref started);
+
+                // yield / async work
+                await Task.Delay(10);
+
+                // record resume
+                resumeThreads[idx] = Thread.CurrentThread.Name;
+                finishOrder[idx] = Interlocked.Increment(ref finished);
+            }, bypassTick: true);
+        }
+
+        // Wait for all queued tasks to finish
+        WaitForTask(Task.WhenAll(tasks));
+
+        var expectedPrefix = "WinterRose.ThreadLoom-WorkerA";
+
+        // all tasks started and finished
+        Forge.Expect(started == Count).True();
+        Forge.Expect(finished == Count).True();
+
+        // all thread names were captured and resumed on the loom
+        for (int i = 0; i < Count; i++)
+        {
+            Forge.Expect(startThreads[i]).Not.Null();
+            Forge.Expect(resumeThreads[i]).Not.Null();
+
+            Forge.Expect(startThreads[i]!.StartsWith(expectedPrefix)).True();
+            Forge.Expect(resumeThreads[i]!.StartsWith(expectedPrefix)).True();
+        }
+
+        // ensure startOrder values are unique (each task observed a distinct start increment)
+        var uniqueStarts = new HashSet<int>(startOrder);
+        Forge.Expect(uniqueStarts.Count == Count).True();
+
+        // ensure finishOrder values are unique (each task observed a distinct finish increment)
+        var uniqueFinishes = new HashSet<int>(finishOrder);
+        Forge.Expect(uniqueFinishes.Count == Count).True();
     }
 
     [Guard]

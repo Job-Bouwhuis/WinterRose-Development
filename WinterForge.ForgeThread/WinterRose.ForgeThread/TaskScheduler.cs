@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,12 +9,12 @@ namespace WinterRose.Threading;
 
 /// <summary>
 /// Tick-based task scheduler for a single thread.
-/// Runs enqueued delegates cooperatively, one tick at a time.
+/// Runs enqueued tasks cooperatively, one tick at a time.
 /// </summary>
-internal class LoomScheduler
+internal class LoomScheduler : TaskScheduler
 {
-    private readonly Queue<Func<Task>> _queue = new();
-    private readonly object _lock = new();
+    private readonly ConcurrentQueue<Task> taskQueue = new();
+    private readonly object lockObj = new();
 
     public SynchronizationContext SyncContext { get; }
 
@@ -22,48 +23,62 @@ internal class LoomScheduler
         SyncContext = new LoomSyncContext(this);
     }
 
-    public void Enqueue(Func<Task> func)
-    {
-        lock (_lock)
-        {
-            _queue.Enqueue(func);
-        }
-    }
-
     /// <summary>
     /// Execute all queued items for this tick.
     /// Should be called by the owning thread (main loop or worker).
     /// </summary>
     public void RunTick()
     {
-        List<Func<Task>> toRun;
-        lock (_lock)
+        List<Task> toRun;
+        lock (lockObj)
         {
-            toRun = new List<Func<Task>>(_queue);
-            _queue.Clear();
+            toRun = new(taskQueue);
+            taskQueue.Clear();
         }
 
-        foreach (var func in toRun)
+        foreach (var task in toRun)
         {
             try
             {
-                var task = func();
-                if (task == null)
+                if (task is null)
                     continue;
-
-                // ensure exceptions bubble properly
-                task.ContinueWith(t =>
-                {
-                    if (t.IsFaulted)
-                    {
-                        Console.Error.WriteLine($"[LoomScheduler] Unhandled exception: {t.Exception}");
-                    }
-                }, TaskScheduler.Default);
+                TryExecuteTask(task);
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"[LoomScheduler] Exception during RunTick: {ex}");
             }
         }
+    }
+
+    // ---- TaskScheduler core integration ----
+    protected override IEnumerable<Task>? GetScheduledTasks()
+    {
+        lock (lockObj)
+            return taskQueue.ToArray();
+    }
+
+    protected override void QueueTask(Task task)
+    {
+        lock (lockObj)
+        {
+            taskQueue.Enqueue(task);
+        }
+    }
+
+    protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
+    {
+        // No multithreaded inlining allowed: only the "owning thread" calls RunTick
+        return false;
+    }
+
+    internal void Queue(Task task)
+    {
+        if (task is null)
+            Console.WriteLine("Queued a null task");
+        else
+            Console.WriteLine("Queued a task");
+        
+        taskQueue.Enqueue(task);
     }
 }

@@ -6,25 +6,25 @@
 /// </summary>
 internal class LoomSyncContext : SynchronizationContext
 {
-    private readonly LoomScheduler _scheduler;
+    private readonly LoomScheduler scheduler;
 
     public LoomSyncContext(LoomScheduler scheduler)
     {
-        _scheduler = scheduler;
+        this.scheduler = scheduler;
     }
 
     public override void Post(SendOrPostCallback d, object? state)
     {
-        _scheduler.Enqueue(() =>
-        {
-            d(state);
-            return Task.CompletedTask;
-        });
+        scheduler.Queue(Task.Factory.StartNew(
+            () => d(state),
+            CancellationToken.None,
+            TaskCreationOptions.None,
+            scheduler
+        ));
     }
 
     public override void Send(SendOrPostCallback d, object? state)
     {
-        // Since this scheduler is single-threaded, we can safely run inline.
         d(state);
     }
 }

@@ -82,17 +82,80 @@ namespace WinterRose.ForgeThread
             thread.Start();
         }
 
-        /// <summary>
-        /// Invoke a function on the named thread and get a Task{T} with the result.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="threadName">Target thread.</param>
-        /// <param name="func">Function to execute.</param>
-        /// <param name="priority">Job priority.</param>
-        /// <returns>Task with result.</returns>
+        private static TaskCompletionSource<T> CreateTcs<T>() =>
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private void ObserveTaskCompletion<TResult>(Task<TResult> sourceTask, string threadName, TaskCompletionSource<TResult> tcs)
+        {
+            if (sourceTask == null)
+            {
+                tcs.SetResult(default!);
+                return;
+            }
+
+            if (schedulers.TryGetValue(threadName, out var scheduler))
+            {
+                // Continue on the ThreadPool then post the completion back to the loom's sync context.
+                sourceTask.ContinueWith(t =>
+                {
+                    scheduler.SyncContext.Post(_ =>
+                    {
+                        if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
+                        else if (t.IsCanceled) tcs.SetCanceled();
+                        else tcs.SetResult(t.Result);
+                    }, null);
+                }, TaskScheduler.Default);
+            }
+            else
+            {
+                // No loom: just observe completion on ThreadPool
+                sourceTask.ContinueWith(t =>
+                {
+                    if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
+                    else if (t.IsCanceled) tcs.SetCanceled();
+                    else tcs.SetResult(t.Result);
+                }, TaskScheduler.Default);
+            }
+        }
+
+        // ----- UPDATED: ObserveTaskCompletion (non-generic) -----
+        private void ObserveTaskCompletion(Task sourceTask, string threadName, TaskCompletionSource<object?> tcs)
+        {
+            if (sourceTask == null)
+            {
+                tcs.SetResult(null);
+                return;
+            }
+
+            if (schedulers.TryGetValue(threadName, out var scheduler))
+            {
+                sourceTask.ContinueWith(t =>
+                {
+                    scheduler.SyncContext.Post(_ =>
+                    {
+                        if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
+                        else if (t.IsCanceled) tcs.SetCanceled();
+                        else tcs.SetResult(null);
+                    }, null);
+                }, TaskScheduler.Default);
+            }
+            else
+            {
+                sourceTask.ContinueWith(t =>
+                {
+                    if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
+                    else if (t.IsCanceled) tcs.SetCanceled();
+                    else tcs.SetResult(null);
+                }, TaskScheduler.Default);
+            }
+        }
+
+        // --- Refactored InvokeOn overloads to use the helpers ---
+
         public Task<T> InvokeOn<T>(string threadName, Func<T> func, JobPriority priority = JobPriority.Normal)
         {
-            var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = CreateTcs<T>();
+
             void wrapper()
             {
                 try
@@ -110,50 +173,37 @@ namespace WinterRose.ForgeThread
             return tcs.Task;
         }
 
-        // --- RUNON OVERLOADS (new) ---
-        // runs synchronous actions in order (returns a Task that completes when action finished)
-        public Task InvokeOn(string threadName, Action action, JobPriority priority = JobPriority.Normal, bool bypassTick = false)
+        public Task InvokeOn(string threadName, Action func, JobPriority priority = JobPriority.Normal)
         {
-            return EnqueueItem(threadName, action, priority, CancellationToken.None, bypassTick);
+            var tcs = CreateTcs<object>();
+
+            void wrapper()
+            {
+                try
+                {
+                    func();
+                    tcs.SetResult(null!);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            }
+
+            EnqueueItem(threadName, wrapper, priority, CancellationToken.None);
+            return tcs.Task;
         }
 
-        // runs async functions (the function runs on the loom thread; its continuations capture the loom scheduler)
         public Task<T> InvokeOn<T>(string threadName, Func<Task<T>> func, JobPriority priority = JobPriority.Normal, bool bypassTick = false)
         {
-            var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = CreateTcs<T>();
 
             void wrapper()
             {
                 try
                 {
                     var task = func();
-                    if (task == null)
-                    {
-                        tcs.SetResult(default!);
-                        return;
-                    }
-
-                    if (schedulers.TryGetValue(threadName, out var scheduler))
-                    {
-                        task.ContinueWith((t, o) =>
-                        {
-                            scheduler.SyncContext.Post(_ =>
-                            {
-                                if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
-                                else if (t.IsCanceled) tcs.SetCanceled();
-                                else tcs.SetResult(t.Result);
-                            }, null);
-                        }, scheduler);
-                    }
-                    else
-                    {
-                        task.ContinueWith((t, o) =>
-                        {
-                            if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
-                            else if (t.IsCanceled) tcs.SetCanceled();
-                            else tcs.SetResult(t.Result);
-                        }, scheduler);
-                    }
+                    ObserveTaskCompletion(task, threadName, tcs);
                 }
                 catch (Exception ex)
                 {
@@ -167,40 +217,28 @@ namespace WinterRose.ForgeThread
 
         public Task InvokeOn(string threadName, Func<Task> func, JobPriority priority = JobPriority.Normal, bool bypassTick = false)
         {
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             void wrapper()
             {
                 try
                 {
-                    var task = func();
-                    if (task == null)
+                    if (!schedulers.TryGetValue(threadName, out var scheduler))
                     {
-                        tcs.SetResult();
+                        tcs.SetException(new InvalidOperationException($"Scheduler for thread '{threadName}' not found"));
                         return;
                     }
 
-                    if (schedulers.TryGetValue(threadName, out var scheduler))
-                    {
-                        task.ContinueWith((t, o) =>
-                        {
-                            scheduler.SyncContext.Post(_ =>
-                            {
-                                if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
-                                else if (t.IsCanceled) tcs.SetCanceled();
-                                else tcs.SetResult();
-                            }, null);
-                        }, scheduler);
-                    }
-                    else
-                    {
-                        task.ContinueWith((t, o) =>
-                        {
-                            if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
-                            else if (t.IsCanceled) tcs.SetCanceled();
-                            else tcs.SetResult();
-                        }, scheduler);
-                    }
+                    // Start the async function under the loom's TaskScheduler so the task itself is queued to the loom.
+                    // Unwrap to get the inner Task and observe it.
+                    var task = Task.Factory.StartNew(
+                        async () => await func(),
+                        CancellationToken.None,
+                        TaskCreationOptions.None,
+                        scheduler
+                    ).Unwrap();
+
+                    ObserveTaskCompletion(task, threadName, tcs);
                 }
                 catch (Exception ex)
                 {
@@ -212,76 +250,39 @@ namespace WinterRose.ForgeThread
             return tcs.Task;
         }
 
-        // accepts an already-started Task (e.g. Task.Run(...)). The completion is observed and posted to the loom scheduler.
+        // make the overload without bypassTick delegate to the one with bypassTick to avoid duplication
+        public Task InvokeOn(string threadName, Func<Task> func, JobPriority priority = JobPriority.Normal)
+        {
+            return InvokeOn(threadName, func, priority, bypassTick: false);
+        }
+
         public Task<T> InvokeOn<T>(string threadName, Task<T> externalTask, bool bypassTick = false)
         {
             if (externalTask == null) throw new ArgumentNullException(nameof(externalTask));
-            var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = CreateTcs<T>();
 
             void wrapper()
             {
-                if (schedulers.TryGetValue(threadName, out var scheduler))
-                {
-                    externalTask.ContinueWith((t, o) =>
-                    {
-                        scheduler.SyncContext.Post(_ =>
-                        {
-                            if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
-                            else if (t.IsCanceled) tcs.SetCanceled();
-                            else tcs.SetResult(t.Result);
-                        }, null);
-                    }, scheduler);
-                }
-                else
-                {
-                    externalTask.ContinueWith((t, o) =>
-                    {
-                        if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
-                        else if (t.IsCanceled) tcs.SetCanceled();
-                        else tcs.SetResult(t.Result);
-                    }, scheduler);
-                }
+                ObserveTaskCompletion(externalTask, threadName, tcs);
             }
 
             EnqueueItem(threadName, wrapper, JobPriority.Normal, CancellationToken.None, bypassTick);
             return tcs.Task;
         }
 
-        // accepts an already-started Task (e.g. Task.Run(...)). The completion is observed and posted to the loom scheduler.
         public Task InvokeOn(string threadName, Task externalTask, bool bypassTick = false)
         {
             if (externalTask == null) throw new ArgumentNullException(nameof(externalTask));
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             void wrapper()
             {
-                if (schedulers.TryGetValue(threadName, out var scheduler))
-                {
-                    externalTask.ContinueWith((t, o) =>
-                    {
-                        scheduler.SyncContext.Post(_ =>
-                        {
-                            if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
-                            else if (t.IsCanceled) tcs.SetCanceled();
-                            else tcs.SetResult();
-                        }, null);
-                    }, scheduler);
-                }
-                else
-                {
-                    externalTask.ContinueWith((t, o) =>
-                    {
-                        if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
-                        else if (t.IsCanceled) tcs.SetCanceled();
-                        else tcs.SetResult();
-                    }, scheduler);
-                }
+                ObserveTaskCompletion(externalTask, threadName, tcs);
             }
 
             EnqueueItem(threadName, wrapper, JobPriority.Normal, CancellationToken.None, bypassTick);
             return tcs.Task;
         }
-
         /// <summary>
         /// Start a coroutine (simple cooperative iterator) on a named loom. The coroutine yields null to indicate "resume next tick",
         /// or yields a TimeSpan to indicate a timed wait.
@@ -294,33 +295,6 @@ namespace WinterRose.ForgeThread
             if (routine == null) throw new ArgumentNullException(nameof(routine));
             var handle = StartCoroutine(threadName, routine);
             return handle;
-        }
-
-        /// <summary>
-        /// Invoke an asynchronous function on the named thread; the function itself will run on that thread and its returned Task will be awaited there.
-        /// </summary>
-        /// <param name="threadName">Target thread.</param>
-        /// <param name="func">Async function to run.</param>
-        /// <param name="priority">Job priority.</param>
-        /// <returns>Task representing the completion.</returns>
-        public Task InvokeOn(string threadName, Func<Task> func, JobPriority priority = JobPriority.Normal)
-        {
-            var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            async void wrapper()
-            {
-                try
-                {
-                    await func().ConfigureAwait(false);
-                    tcs.SetResult(null);
-                }
-                catch (Exception ex)
-                {
-                    tcs.SetException(ex);
-                }
-            }
-
-            EnqueueItem(threadName, wrapper, priority, CancellationToken.None);
-            return tcs.Task;
         }
 
         /// <summary>
