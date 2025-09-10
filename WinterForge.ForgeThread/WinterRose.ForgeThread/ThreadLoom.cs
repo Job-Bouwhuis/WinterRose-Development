@@ -12,14 +12,107 @@ namespace WinterRose.ForgeThread
     /// </summary>
     public class ThreadLoom : IDisposable
     {
+        private readonly ConcurrentDictionary<string, SharedWorkQueue> sharedQueues = new();
+        private readonly ConcurrentDictionary<string, string> threadToSharedGroup = new();
+
         private readonly ConcurrentDictionary<string, LoomThread> threads = new();
         private readonly ConcurrentDictionary<string, LoomScheduler> schedulers = new();
         private readonly ConcurrentDictionary<string, int> tickRates = new();
         private readonly ConcurrentDictionary<string, ManualResetEventSlim> wakeEvents = new();
 
+        private class SharedWorkQueue
+        {
+            public readonly ConcurrentQueue<ScheduledItem> Queue = new();
+            public readonly ManualResetEventSlim Wake = new(false);
+            public readonly ConcurrentDictionary<string, byte> Members = new();
+        }
+
         private bool disposed;
 
         public const string DEFAULT_MAIN_NAME = "Main";
+
+        /// <summary>
+        /// Create a named shared work queue. Worker threads have to be seperately registered to this group
+        /// </summary>
+        public void CreateQueueGroup(string groupName)
+        {
+            if (string.IsNullOrWhiteSpace(groupName)) throw new ArgumentException("groupName required", nameof(groupName));
+            if (!sharedQueues.TryAdd(groupName, new SharedWorkQueue()))
+            {
+                throw new InvalidOperationException($"Shared queue '{groupName}' already exists.");
+            }
+        }
+
+        /// <summary>
+        /// Make an already-registered thread join a shared queue. After this, enqueues targeted at the thread
+        /// will go into the shared queue and any member thread may execute them.
+        /// </summary>
+        public void JoinSharedQueue(string threadName, string groupName)
+        {
+            if (string.IsNullOrWhiteSpace(threadName)) throw new ArgumentException("threadName required", nameof(threadName));
+            if (!threads.ContainsKey(threadName)) throw new InvalidOperationException($"Thread '{threadName}' is not registered.");
+
+            // create the group if it does not exist
+            sharedQueues.GetOrAdd(groupName, _ => new SharedWorkQueue());
+
+            if (!threadToSharedGroup.TryAdd(threadName, groupName))
+            {
+                throw new InvalidOperationException($"Thread '{threadName}' is already a member of a shared queue.");
+            }
+
+            sharedQueues[groupName].Members.TryAdd(threadName, 0);
+        }
+
+        /// <summary>
+        /// Remove a thread from its shared queue (if any).
+        /// </summary>
+        public void LeaveSharedQueue(string threadName)
+        {
+            if (string.IsNullOrWhiteSpace(threadName)) throw new ArgumentException("threadName required", nameof(threadName));
+            if (threadToSharedGroup.TryRemove(threadName, out var groupName))
+            {
+                if (sharedQueues.TryGetValue(groupName, out var q))
+                {
+                    q.Members.TryRemove(threadName, out _);
+                    // optional: automatically destroy empty group
+                    if (q.Members.IsEmpty)
+                    {
+                        // try to remove and dispose wake event
+                        if (sharedQueues.TryRemove(groupName, out var removed))
+                        {
+                            try { removed.Wake.Set(); removed.Wake.Dispose(); } catch { }
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Destroy a shared queue, returning any queued items to thread-local queues (best-effort).
+        /// </summary>
+        public void DestroySharedQueue(string groupName)
+        {
+            if (string.IsNullOrWhiteSpace(groupName)) throw new ArgumentException("groupName required", nameof(groupName));
+            if (!sharedQueues.TryRemove(groupName, out var q)) return;
+
+            // best-effort: try to push remaining items to members' local queues
+            var members = q.Members.Keys.ToArray();
+            ScheduledItem item;
+            int idx = 0;
+            while (q.Queue.TryDequeue(out item))
+            {
+                if (members.Length == 0) break;
+                // round-robin dispatch back into member looms
+                var target = members[idx % members.Length];
+                if (threads.TryGetValue(target, out var loom))
+                {
+                    try { loom.EnqueueNextTick(item); } catch { }
+                }
+                idx++;
+            }
+
+            try { q.Wake.Set(); q.Wake.Dispose(); } catch { }
+        }
 
         /// <summary>
         /// Registers the current thread as a pumped "main" loom. You must call <see cref="ProcessPendingActions(string,int)"/>
@@ -368,6 +461,20 @@ namespace WinterRose.ForgeThread
                 mainScheduler.RunTick();
             }
 
+            // if this main thread is part of a shared queue, process shared items first
+            if (threadToSharedGroup.TryGetValue(name, out var groupName) && sharedQueues.TryGetValue(groupName, out var shared))
+            {
+                int taken = 0;
+                while (taken < maxItems && shared.Queue.TryDequeue(out var sharedItem))
+                {
+                    ExecuteScheduledItem(sharedItem, mainScheduler);
+                    mainScheduler?.RunTick();
+                    taken++;
+                }
+
+                if (taken >= maxItems) return taken;
+            }
+
             int executed = 0;
             while (executed < maxItems && loom.TryDequeue(out var item))
             {
@@ -452,6 +559,8 @@ namespace WinterRose.ForgeThread
         {
             if (!threads.TryRemove(name, out var loom)) return;
 
+            LeaveSharedQueue(name);
+
             // remove scheduler and tick rate entries
             schedulers.TryRemove(name, out _);
             tickRates.TryRemove(name, out _);
@@ -501,10 +610,10 @@ namespace WinterRose.ForgeThread
         {
             var schedulerExists = schedulers.TryGetValue(loom.Name, out var scheduler);
             var hasRate = tickRates.TryGetValue(loom.Name, out var ticksPerSecond);
-            var hasWake = wakeEvents.TryGetValue(loom.Name, out var wakeEvent);
             double targetMs = hasRate && ticksPerSecond > 0 ? 1000.0 / ticksPerSecond : 0.0;
             var sw = new System.Diagnostics.Stopwatch();
 
+            // determine if this worker is part of a shared group (snapshot each loop iteration)
             try
             {
                 while (!loom.IsCancellationRequested)
@@ -513,6 +622,21 @@ namespace WinterRose.ForgeThread
 
                     loom.BeginNextTick();
 
+                    SharedWorkQueue? sharedQueue = null;
+                    // determine shared group membership for this iteration
+                    var inGroup = threadToSharedGroup.TryGetValue(loom.Name, out var groupName)
+                                  && sharedQueues.TryGetValue(groupName, out sharedQueue);
+
+                    // If in a shared group, try to consume from the shared queue first
+                    if (inGroup)
+                    {
+                        while (sharedQueue!.Queue.TryDequeue(out var sharedItem))
+                        {
+                            ExecuteScheduledItem(sharedItem, schedulerExists ? scheduler : null);
+                        }
+                    }
+
+                    // then consume thread-local items as before
                     while (loom.TryTake(out var item))
                     {
                         ExecuteScheduledItem(item, schedulerExists ? scheduler : null);
@@ -526,11 +650,24 @@ namespace WinterRose.ForgeThread
                         var remaining = targetMs - elapsed;
                         if (remaining > 0)
                         {
-                            if (hasWake && wakeEvent != null)
+                            // wait either on the group's wake event (if in group) or on the thread-specific wake event
+                            if (inGroup)
                             {
-                                // wait until either timeout elapses or someone sets the wakeEvent
-                                wakeEvent.Wait((int)remaining);
-                                wakeEvent.Reset();
+                                try
+                                {
+                                    sharedQueue.Wake.Wait((int)remaining);
+                                    sharedQueue.Wake.Reset();
+                                }
+                                catch { }
+                            }
+                            else if (wakeEvents.TryGetValue(loom.Name, out var wakeEvent) && wakeEvent != null)
+                            {
+                                try
+                                {
+                                    wakeEvent.Wait((int)remaining);
+                                    wakeEvent.Reset();
+                                }
+                                catch { }
                             }
                             else
                             {
@@ -550,6 +687,16 @@ namespace WinterRose.ForgeThread
             }
             finally
             {
+                // flush remaining shared items (if any)
+                if (threadToSharedGroup.TryGetValue(loom.Name, out var finalGroup) &&
+                    sharedQueues.TryGetValue(finalGroup, out var finalShared))
+                {
+                    while (finalShared.Queue.TryDequeue(out var remainingShared))
+                    {
+                        try { ExecuteScheduledItem(remainingShared, schedulerExists ? scheduler : null); } catch { }
+                    }
+                }
+
                 while (loom.TryDequeue(out var remaining))
                 {
                     try { ExecuteScheduledItem(remaining, schedulerExists ? scheduler : null); } catch { }
@@ -581,6 +728,7 @@ namespace WinterRose.ForgeThread
                 SynchronizationContext.SetSynchronizationContext(previousContext);
             }
         }
+        // --- updated EnqueueItem (replace previous implementation) ---
         private Task EnqueueItem(string threadName, Action action, JobPriority priority, CancellationToken cancellation, bool bypassTick = false)
         {
             if (disposed) throw new ObjectDisposedException(nameof(ThreadLoom));
@@ -588,11 +736,24 @@ namespace WinterRose.ForgeThread
             if (loom.IsShutdown) throw new InvalidOperationException($"Thread '{threadName}' is shutting down.");
 
             var item = new ScheduledItem(action, priority);
-            loom.EnqueueNextTick(item);
 
-            if (bypassTick && wakeEvents.TryGetValue(threadName, out var evt))
+            // if the target thread is a member of a shared queue, enqueue into the shared queue instead
+            if (threadToSharedGroup.TryGetValue(threadName, out var groupName) &&
+                sharedQueues.TryGetValue(groupName, out var shared))
             {
-                try { evt.Set(); } catch { }
+                shared.Queue.Enqueue(item);
+                // wake one or all members waiting on this group's wake event
+                try { shared.Wake.Set(); } catch { }
+            }
+            else
+            {
+                // existing behavior: enqueue on the thread-local loom queue
+                loom.EnqueueNextTick(item);
+
+                if (bypassTick && wakeEvents.TryGetValue(threadName, out var evt))
+                {
+                    try { evt.Set(); } catch { }
+                }
             }
 
             return item.Task;

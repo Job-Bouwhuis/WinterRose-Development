@@ -74,11 +74,6 @@ internal class LoomScheduler : TaskScheduler
 
     internal void Queue(Task task)
     {
-        if (task is null)
-            Console.WriteLine("Queued a null task");
-        else
-            Console.WriteLine("Queued a task");
-        
         taskQueue.Enqueue(task);
     }
 }

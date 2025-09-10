@@ -216,14 +216,12 @@ public class ThreadLoomSchedulerGuards
 [GuardClass("ThreadLoom.Pool")]
 public class ThreadPoolLoomGuards
 {
-    static ThreadLoom loom;
-    static ThreadPoolLoom pool;
+    static PooledThreadLoom pool;
 
     [GuardSetup]
     public static void Setup()
     {
-        loom = new ThreadLoom();
-        pool = new ThreadPoolLoom(loom, "pool", 3);
+        pool = new PooledThreadLoom("pool", 3);
     }
 
     [Guard]
@@ -251,7 +249,6 @@ public class ThreadPoolLoomGuards
     public static void teardown()
     {
         pool.Dispose();
-        loom.Dispose();
     }
 }
 
@@ -436,7 +433,7 @@ public class TimedCoroutineGuards
     public void PlentyOfCoroutinesOnAPool()
     {
         int completed = 0;
-        ThreadPoolLoom pool = new(loom, "pool", 2);
+        PooledThreadLoom pool = new("pool", 2);
         List<Task> tasks =
         [
             pool.Schedule(() => Interlocked.Increment(ref completed)),
