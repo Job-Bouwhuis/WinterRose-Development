@@ -14,123 +14,49 @@ public class ForgeSignalBasicGuards
     public void FiresAndReceives()
     {
         int got = 0;
-        using var _ = Signal.On<int>(i => got = i);
-        var count = Signal.Fire(123);
-        Forge.Expect(count).EqualTo(1);
+        var _ = Invocation.Create<int>(i => got = i);
+        _.Invoke(123);
         Forge.Expect(got).EqualTo(123);
     }
 
     [Guard]
-    public void OnceOnlyIsRemovedAfterFirstFire()
+    public void FiresAndThrowsWrongArgCount()
     {
-        int calls = 0;
-        var opts = new SubscribeOptions { Once = true };
-        using var _ = Signal.On<int>(_ => calls++, opts);
-        
-        Signal.Fire(1);
-        Signal.Fire(2);
-
-        Forge.Expect(calls).EqualTo(1);
-    }
-
-    [Guard]
-    public void WeakSubscriberIsCollected()
-    {
-        int calls = 0;
-
-        void AddWeak()
+        void test()
         {
-            var target = new Listener(() => calls++);
-            var opts = new SubscribeOptions { Weak = true };
-            Signal.On<int>(target.Handler, opts);
-            // target falls out of scope -> eligible for GC
+            int got = 0;
+            var _ = Invocation.Create<int>(i => got = i);
+            _.Invoke(123, 1);
         }
 
-        AddWeak();
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-
-        Signal.Fire(1); // weak should be gone
-        Forge.Expect(calls).EqualTo(0);
-    }
-
-    class Listener
-    {
-        readonly Action onCall;
-        public Listener(Action onCall) { this.onCall = onCall; }
-        public void Handler(int _) => onCall();
+        Forge.Expect(test).WhenCalled().ToThrow<InvalidOperationException>();
     }
 
     [Guard]
-    public void ClearAllRemovesStaticListeners()
+    public void FiresAndThrowsWrongArgType()
     {
-        int calls = 0;
-        var sub = Signal.On<int>(_ => calls++);
-        Signal.ClearAllGlobal();
-        Signal.Fire(7);
-        Forge.Expect(calls).EqualTo(0);
-        sub.Dispose(); // no-op safe
-    }
-}
-
-[GuardClass("ForgeSignal.Async")]
-public class ForgeSignalAsyncGuards
-{
-    [Guard]
-    public void AsyncHandlerRunsAndAggregates()
-    {
-        int calls = 0;
-        using var _ = Signal.OnAsync<int>(async i =>
+        void test()
         {
-            await Task.Delay(5);
-            Interlocked.Add(ref calls, i);
-        });
+            int got = 0;
+            var _ = Invocation.Create<int>(i => got = i);
+            _.Invoke(123f);
+        }
 
-        var t = Signal.FireAsync(3);
-        t.Wait();
-        Forge.Expect(calls).EqualTo(3);
+        Forge.Expect(test).WhenCalled().ToThrow<InvalidOperationException>();
+    }
+
+    [Guard]
+    public void MulticastFiresAndReceives()
+    {
+        int got = 0;
+        var e = Invocation.CreateMulticast();
+        using var sub = e.Subscribe(Invocation.Create(() => { got++; }));
+        using var sub1 = e.Subscribe(Invocation.Create(() => { got++; }));
+        using var sub2 = e.Subscribe(Invocation.Create(() => { got++; }));
+        using var sub3 = e.Subscribe(Invocation.Create(() => { got++; }));
+        using var sub4 = e.Subscribe(Invocation.Create(() => { got++; }));
+        using var sub5 = e.Subscribe(Invocation.Create(() => { got++; }));
+        ((Invocation)e).Invoke();
+        Forge.Expect(got).EqualTo(6);
     }
 }
-
-//[GuardClass("ForgeSignal.LoomDispatch")]
-//public class ForgeSignalLoomGuards
-//{
-//    static ThreadLoom loom;
-
-//    [GuardSetup]
-//    public static void Setup()
-//    {
-//        loom = new ThreadLoom();
-//        loom.RegisterWorkerThread("WorkerA");
-//    }
-
-//    [GuardTeardown]
-//    public static void Teardown()
-//    {
-//        loom.Dispose();
-//        Signal.ClearAll();
-//    }
-
-//    [Guard]
-//    public void DispatchTargetsLoomThread()
-//    {
-//        string? threadName = null;
-
-//        var opts = new SubscribeOptions
-//        {
-//            Target = loom.OnLoom("WorkerA")
-//        };
-
-//        using var _ = Signal.On<string>(s => threadName = Thread.CurrentThread.Name, opts);
-
-//        Signal.Fire("go");
-
-//        // give WorkerA a moment to pump
-//        var sw = System.Diagnostics.Stopwatch.StartNew();
-//        while (threadName == null && sw.ElapsedMilliseconds < 2000) Thread.Sleep(5);
-
-//        Forge.Expect(threadName).Not.Null();
-//        Forge.Expect(threadName!.StartsWith("WinterRose.ThreadLoom-WorkerA")).True();
-//    }
-//}
