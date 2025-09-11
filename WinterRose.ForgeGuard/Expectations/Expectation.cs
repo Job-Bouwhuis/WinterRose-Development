@@ -54,6 +54,7 @@ namespace WinterRose.ForgeGuardChecks.Expectations
         /// <exception cref="ValueFalseException"></exception>
         public virtual void True()
         {
+            OfType<bool>();
             if (item is bool b && !b)
                 throw new ValueFalseException(messageStart);
         }
@@ -63,6 +64,7 @@ namespace WinterRose.ForgeGuardChecks.Expectations
         /// <exception cref="ValueTrueException"></exception>
         public virtual void False()
         {
+            OfType<bool>();
             if (item is bool b && b)
                 throw new ValueTrueException(messageStart);
         }

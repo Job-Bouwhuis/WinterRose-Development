@@ -2,40 +2,45 @@
 
 public class Invocation
 {
-    // 0 arg
     public static Invocation<TOut> Create<TOut>(Func<TOut> func) => new Invocation<TOut>(func);
     public static VoidInvocation Create(Action action) => new VoidInvocation(action);
 
-    // 1 arg
     public static Invocation<TIn, TOut> Create<TIn, TOut>(Func<TIn, TOut> func) => new Invocation<TIn, TOut>(func);
     public static VoidInvocation<TIn> Create<TIn>(Action<TIn> action) => new VoidInvocation<TIn>(action);
 
-    // 2 args
     public static Invocation<TIn1, TIn2, TOut> Create<TIn1, TIn2, TOut>(Func<TIn1, TIn2, TOut> func)
         => new Invocation<TIn1, TIn2, TOut>(func);
     public static VoidInvocation<TIn1, TIn2> Create<TIn1, TIn2>(Action<TIn1, TIn2> action)
         => new VoidInvocation<TIn1, TIn2>(action);
 
-    // 3 args
     public static Invocation<TIn1, TIn2, TIn3, TOut> Create<TIn1, TIn2, TIn3, TOut>(Func<TIn1, TIn2, TIn3, TOut> func)
         => new Invocation<TIn1, TIn2, TIn3, TOut>(func);
     public static VoidInvocation<TIn1, TIn2, TIn3> Create<TIn1, TIn2, TIn3>(Action<TIn1, TIn2, TIn3> action)
         => new VoidInvocation<TIn1, TIn2, TIn3>(action);
 
-    // 4 args
     public static Invocation<TIn1, TIn2, TIn3, TIn4, TOut> Create<TIn1, TIn2, TIn3, TIn4, TOut>(Func<TIn1, TIn2, TIn3, TIn4, TOut> func)
         => new Invocation<TIn1, TIn2, TIn3, TIn4, TOut>(func);
     public static VoidInvocation<TIn1, TIn2, TIn3, TIn4> Create<TIn1, TIn2, TIn3, TIn4>(Action<TIn1, TIn2, TIn3, TIn4> action)
         => new VoidInvocation<TIn1, TIn2, TIn3, TIn4>(action);
 
-    // 5 args
     public static Invocation<TIn1, TIn2, TIn3, TIn4, TIn5, TOut> Create<TIn1, TIn2, TIn3, TIn4, TIn5, TOut>(Func<TIn1, TIn2, TIn3, TIn4, TIn5, TOut> func)
         => new Invocation<TIn1, TIn2, TIn3, TIn4, TIn5, TOut>(func);
     public static VoidInvocation<TIn1, TIn2, TIn3, TIn4, TIn5> Create<TIn1, TIn2, TIn3, TIn4, TIn5>(Action<TIn1, TIn2, TIn3, TIn4, TIn5> action)
         => new VoidInvocation<TIn1, TIn2, TIn3, TIn4, TIn5>(action);
 
-    //public static Invocation Create(Delegate del) => new(del);
-    public static MulticastInvocation CreateMulticast() => new();
+    public static VoidMulticastInvocation CreateVoidMulticast() => new();
+    public static VoidMulticastInvocation<T1> CreateVoidMulticast<T1>() => new();
+    public static VoidMulticastInvocation<T1, T2> CreateVoidMulticast<T1, T2>() => new();
+    public static VoidMulticastInvocation<T1, T2, T3> CreateVoidMulticast<T1, T2, T3>() => new();
+    public static VoidMulticastInvocation<T1, T2, T3, T4> CreateVoidMulticast<T1, T2, T3, T4>() => new();
+    public static VoidMulticastInvocation<T1, T2, T3, T4, T5> CreateVoidMulticast<T1, T2, T3, T4, T5>() => new();
+
+    public static MulticastInvocation<TOut> CreateMulticast<TOut>() => new();
+    public static MulticastInvocation<T1, TOut> CreateMulticast<T1, TOut>() => new();
+    public static MulticastInvocation<T1, T2, TOut> CreateMulticast<T1, T2, TOut>() => new();
+    public static MulticastInvocation<T1, T2, T3, TOut> CreateMulticast<T1, T2, T3, TOut>() => new();
+    public static MulticastInvocation<T1, T2, T3, T4, TOut> CreateMulticast<T1, T2, T3, T4, TOut>() => new();
+    public static MulticastInvocation<T1, T2, T3, T4, T5, TOut> CreateMulticast<T1, T2, T3, T4, T5, TOut>() => new();
 
     protected Delegate method;
     protected Invocation? before;

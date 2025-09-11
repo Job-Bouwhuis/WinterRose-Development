@@ -1,24 +1,24 @@
 ﻿namespace WinterRose.ForgeSignal;
 
-public sealed class MulticastInvocation<TOut> : Invocation
+public sealed class VoidMulticastInvocation : Invocation
 {
     public class Subscription : IDisposable
     {
         internal Guid id;
-        internal Invocation<TOut> invocation;
+        internal VoidInvocation invocation;
         internal bool isUnsubscribing = false;
 
         public void Unsubscribe() => Dispose();
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public MulticastInvocation() => method = InvokeInternal;
+    public VoidMulticastInvocation() => method = InvokeInternal;
 
     private List<Subscription> invocations = [];
 
-    public MulticastInvocationResult<TOut> Invoke() => InvokeInternal();
+    public void Invoke() => InvokeInternal();
 
-    public Subscription Subscribe(Invocation<TOut> invocation)
+    public Subscription Subscribe(VoidInvocation invocation)
     {
         Subscription sub = new()
         {
@@ -29,7 +29,7 @@ public sealed class MulticastInvocation<TOut> : Invocation
         return sub;
     }
 
-    private MulticastInvocationResult<TOut> InvokeInternal()
+    private void InvokeInternal()
     {
         Subscription[] snapshot;
         lock (invocations)
@@ -38,9 +38,7 @@ public sealed class MulticastInvocation<TOut> : Invocation
             snapshot = invocations.ToArray();
         }
 
-        var exceptions = new List<Exception>();
-
-        MulticastInvocationResult<TOut> result = new();
+        List<Exception> exceptions = [];
 
         foreach (var sub in snapshot)
         {
@@ -49,43 +47,36 @@ public sealed class MulticastInvocation<TOut> : Invocation
 
             try
             {
-                TOut? res = sub.invocation.Invoke();
-                result.AddResult(res);
+                sub.invocation.Invoke();
             }
-            catch (Exception ex)
+            catch (Exception ex) // is only thrown when the invocation doesnt specify a error invocation
             {
                 exceptions.Add(ex);
             }
         }
 
         if (exceptions.Count > 0)
-            if (error is not null)
-                error.Invoke(new AggregateException(exceptions));
-            else
-                throw new AggregateException(exceptions);
-
-        return result;
+            error?.Invoke(new AggregateException(exceptions));
     }
 }
-
-public sealed class MulticastInvocation<T1, TOut> : Invocation
+public sealed class VoidMulticastInvocation<T1> : Invocation
 {
     public class Subscription : IDisposable
     {
         internal Guid id;
-        internal Invocation<T1, TOut> invocation;
+        internal VoidInvocation<T1> invocation;
         internal bool isUnsubscribing = false;
         public void Unsubscribe() => Dispose();
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public MulticastInvocation() => method = (object?[]? args) => InvokeInternal((T1)args![0]!);
+    public VoidMulticastInvocation() => method = (object?[]? args) => InvokeInternal((T1)args![0]!);
 
     private readonly List<Subscription> invocations = new();
 
-    public MulticastInvocationResult<TOut> Invoke(T1 arg1) => InvokeInternal(arg1);
+    public void Invoke(T1 arg1) => InvokeInternal(arg1);
 
-    public Subscription Subscribe(Invocation<T1, TOut> invocation)
+    public Subscription Subscribe(VoidInvocation<T1> invocation)
     {
         var sub = new Subscription
         {
@@ -99,7 +90,7 @@ public sealed class MulticastInvocation<T1, TOut> : Invocation
         return sub;
     }
 
-    private MulticastInvocationResult<TOut> InvokeInternal(T1 arg1)
+    private void InvokeInternal(T1 arg1)
     {
         Subscription[] snapshot;
         lock (invocations)
@@ -110,8 +101,6 @@ public sealed class MulticastInvocation<T1, TOut> : Invocation
 
         var exceptions = new List<Exception>();
 
-        MulticastInvocationResult<TOut> result = new();
-
         foreach (var sub in snapshot)
         {
             if (sub.isUnsubscribing)
@@ -119,8 +108,7 @@ public sealed class MulticastInvocation<T1, TOut> : Invocation
 
             try
             {
-                TOut? res = sub.invocation.Invoke(arg1);
-                result.AddResult(res);
+                sub.invocation.Invoke(arg1);
             }
             catch (Exception ex)
             {
@@ -129,32 +117,27 @@ public sealed class MulticastInvocation<T1, TOut> : Invocation
         }
 
         if (exceptions.Count > 0)
-            if (error is not null)
-                error.Invoke(new AggregateException(exceptions));
-            else
-                throw new AggregateException(exceptions);
-
-        return result;
+            error?.Invoke(new AggregateException(exceptions));
     }
 }
-public sealed class MulticastInvocation<T1, T2, TOut> : Invocation
+public sealed class VoidMulticastInvocation<T1, T2> : Invocation
 {
     public class Subscription : IDisposable
     {
         internal Guid id;
-        internal Invocation<T1, T2, TOut> invocation;
+        internal VoidInvocation<T1, T2> invocation;
         internal bool isUnsubscribing = false;
         public void Unsubscribe() => Dispose();
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public MulticastInvocation() => method = (object?[]? args) => InvokeInternal((T1)args![0]!, (T2)args![1]!);
+    public VoidMulticastInvocation() => method = (object?[]? args) => InvokeInternal((T1)args![0]!, (T2)args![1]!);
 
     private readonly List<Subscription> invocations = new();
 
-    public MulticastInvocationResult<TOut> Invoke(T1 arg1, T2 arg2) => InvokeInternal(arg1, arg2);
+    public void Invoke(T1 arg1, T2 arg2) => InvokeInternal(arg1, arg2);
 
-    public Subscription Subscribe(Invocation<T1, T2, TOut> invocation)
+    public Subscription Subscribe(VoidInvocation<T1, T2> invocation)
     {
         var sub = new Subscription
         {
@@ -168,7 +151,7 @@ public sealed class MulticastInvocation<T1, T2, TOut> : Invocation
         return sub;
     }
 
-    private MulticastInvocationResult<TOut> InvokeInternal(T1 arg1, T2 arg2)
+    private void InvokeInternal(T1 arg1, T2 arg2)
     {
         Subscription[] snapshot;
         lock (invocations)
@@ -179,8 +162,6 @@ public sealed class MulticastInvocation<T1, T2, TOut> : Invocation
 
         var exceptions = new List<Exception>();
 
-        MulticastInvocationResult<TOut> result = new();
-
         foreach (var sub in snapshot)
         {
             if (sub.isUnsubscribing)
@@ -188,8 +169,7 @@ public sealed class MulticastInvocation<T1, T2, TOut> : Invocation
 
             try
             {
-                TOut? res = sub.invocation.Invoke(arg1, arg2);
-                result.AddResult(res);
+                sub.invocation.Invoke(arg1, arg2);
             }
             catch (Exception ex)
             {
@@ -198,33 +178,28 @@ public sealed class MulticastInvocation<T1, T2, TOut> : Invocation
         }
 
         if (exceptions.Count > 0)
-            if (error is not null)
-                error.Invoke(new AggregateException(exceptions));
-            else
-                throw new AggregateException(exceptions);
-
-        return result;
+            error?.Invoke(new AggregateException(exceptions));
     }
 }
-public sealed class MulticastInvocation<T1, T2, T3, TOut> : Invocation
+public sealed class VoidMulticastInvocation<T1, T2, T3> : Invocation
 {
     public class Subscription : IDisposable
     {
         internal Guid id;
-        internal Invocation<T1, T2, T3, TOut> invocation;
+        internal VoidInvocation<T1, T2, T3> invocation;
         internal bool isUnsubscribing = false;
 
         public void Unsubscribe() => Dispose();
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public MulticastInvocation() => method = InvokeInternal;
+    public VoidMulticastInvocation() => method = InvokeInternal;
 
     private List<Subscription> invocations = [];
 
-    public MulticastInvocationResult<TOut> Invoke(T1 arg1, T2 arg2, T3 arg3) => InvokeInternal(arg1, arg2, arg3);
+    public void Invoke(T1 arg1, T2 arg2, T3 arg3) => InvokeInternal(arg1, arg2, arg3);
 
-    public Subscription Subscribe(Invocation<T1, T2, T3, TOut> invocation)
+    public Subscription Subscribe(VoidInvocation<T1, T2, T3> invocation)
     {
         Subscription sub = new()
         {
@@ -235,7 +210,7 @@ public sealed class MulticastInvocation<T1, T2, T3, TOut> : Invocation
         return sub;
     }
 
-    private MulticastInvocationResult<TOut> InvokeInternal(T1 arg1, T2 arg2, T3 arg3)
+    private void InvokeInternal(T1 arg1, T2 arg2, T3 arg3)
     {
         Subscription[] snapshot;
         lock (invocations)
@@ -244,9 +219,7 @@ public sealed class MulticastInvocation<T1, T2, T3, TOut> : Invocation
             snapshot = invocations.ToArray();
         }
 
-        var exceptions = new List<Exception>();
-
-        MulticastInvocationResult<TOut> result = new();
+        List<Exception> exceptions = [];
 
         foreach (var sub in snapshot)
         {
@@ -255,8 +228,7 @@ public sealed class MulticastInvocation<T1, T2, T3, TOut> : Invocation
 
             try
             {
-                TOut? res = sub.invocation.Invoke(arg1, arg2, arg3);
-                result.AddResult(res);
+                sub.invocation.Invoke(arg1, arg2, arg3);
             }
             catch (Exception ex)
             {
@@ -265,33 +237,28 @@ public sealed class MulticastInvocation<T1, T2, T3, TOut> : Invocation
         }
 
         if (exceptions.Count > 0)
-            if (error is not null)
-                error.Invoke(new AggregateException(exceptions));
-            else
-                throw new AggregateException(exceptions);
-
-        return result;
+            error?.Invoke(new AggregateException(exceptions));
     }
 }
-public sealed class MulticastInvocation<T1, T2, T3, T4, TOut> : Invocation
+public sealed class VoidMulticastInvocation<T1, T2, T3, T4> : Invocation
 {
     public class Subscription : IDisposable
     {
         internal Guid id;
-        internal Invocation<T1, T2, T3, T4, TOut> invocation;
+        internal VoidInvocation<T1, T2, T3, T4> invocation;
         internal bool isUnsubscribing = false;
 
         public void Unsubscribe() => Dispose();
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public MulticastInvocation() => method = InvokeInternal;
+    public VoidMulticastInvocation() => method = InvokeInternal;
 
     private List<Subscription> invocations = [];
 
-    public MulticastInvocationResult<TOut> Invoke(T1 arg1, T2 arg2, T3 arg3, T4 arg4) => InvokeInternal(arg1, arg2, arg3, arg4);
+    public void Invoke(T1 arg1, T2 arg2, T3 arg3, T4 arg4) => InvokeInternal(arg1, arg2, arg3, arg4);
 
-    public Subscription Subscribe(Invocation<T1, T2, T3, T4, TOut> invocation)
+    public Subscription Subscribe(VoidInvocation<T1, T2, T3, T4> invocation)
     {
         Subscription sub = new()
         {
@@ -302,7 +269,7 @@ public sealed class MulticastInvocation<T1, T2, T3, T4, TOut> : Invocation
         return sub;
     }
 
-    private MulticastInvocationResult<TOut> InvokeInternal(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+    private void InvokeInternal(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
     {
         Subscription[] snapshot;
         lock (invocations)
@@ -311,9 +278,7 @@ public sealed class MulticastInvocation<T1, T2, T3, T4, TOut> : Invocation
             snapshot = invocations.ToArray();
         }
 
-        var exceptions = new List<Exception>();
-
-        MulticastInvocationResult<TOut> result = new();
+        List<Exception> exceptions = [];
 
         foreach (var sub in snapshot)
         {
@@ -322,8 +287,7 @@ public sealed class MulticastInvocation<T1, T2, T3, T4, TOut> : Invocation
 
             try
             {
-                TOut? res = sub.invocation.Invoke(arg1, arg2, arg3, arg4);
-                result.AddResult(res);
+                sub.invocation.Invoke(arg1, arg2, arg3, arg4);
             }
             catch (Exception ex)
             {
@@ -332,33 +296,28 @@ public sealed class MulticastInvocation<T1, T2, T3, T4, TOut> : Invocation
         }
 
         if (exceptions.Count > 0)
-            if (error is not null)
-                error.Invoke(new AggregateException(exceptions));
-            else
-                throw new AggregateException(exceptions);
-
-        return result;
+            error?.Invoke(new AggregateException(exceptions));
     }
 }
-public sealed class MulticastInvocation<T1, T2, T3, T4, T5, TOut> : Invocation
+public sealed class VoidMulticastInvocation<T1, T2, T3, T4, T5> : Invocation
 {
     public class Subscription : IDisposable
     {
         internal Guid id;
-        internal Invocation<T1, T2, T3, T4, T5, TOut> invocation;
+        internal VoidInvocation<T1, T2, T3, T4, T5> invocation;
         internal bool isUnsubscribing = false;
 
         public void Unsubscribe() => Dispose();
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public MulticastInvocation() => method = InvokeInternal;
+    public VoidMulticastInvocation() => method = InvokeInternal;
 
     private List<Subscription> invocations = [];
 
-    public MulticastInvocationResult<TOut> Invoke(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) => InvokeInternal(arg1, arg2, arg3, arg4, arg5);
+    public void Invoke(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) => InvokeInternal(arg1, arg2, arg3, arg4, arg5);
 
-    public Subscription Subscribe(Invocation<T1, T2, T3, T4, T5, TOut> invocation)
+    public Subscription Subscribe(VoidInvocation<T1, T2, T3, T4, T5> invocation)
     {
         Subscription sub = new()
         {
@@ -369,7 +328,7 @@ public sealed class MulticastInvocation<T1, T2, T3, T4, T5, TOut> : Invocation
         return sub;
     }
 
-    private MulticastInvocationResult<TOut> InvokeInternal(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+    private void InvokeInternal(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
     {
         Subscription[] snapshot;
         lock (invocations)
@@ -378,9 +337,7 @@ public sealed class MulticastInvocation<T1, T2, T3, T4, T5, TOut> : Invocation
             snapshot = invocations.ToArray();
         }
 
-        var exceptions = new List<Exception>();
-
-        MulticastInvocationResult<TOut> result = new();
+        List<Exception> exceptions = [];
 
         foreach (var sub in snapshot)
         {
@@ -389,8 +346,7 @@ public sealed class MulticastInvocation<T1, T2, T3, T4, T5, TOut> : Invocation
 
             try
             {
-                TOut? res = sub.invocation.Invoke(arg1, arg2, arg3, arg4, arg5);
-                result.AddResult(res);
+                sub.invocation.Invoke(arg1, arg2, arg3, arg4, arg5);
             }
             catch (Exception ex)
             {
@@ -399,11 +355,6 @@ public sealed class MulticastInvocation<T1, T2, T3, T4, T5, TOut> : Invocation
         }
 
         if (exceptions.Count > 0)
-            if (error is not null)
-                error.Invoke(new AggregateException(exceptions));
-            else
-                throw new AggregateException(exceptions);
-
-        return result;
+            error?.Invoke(new AggregateException(exceptions));
     }
 }
