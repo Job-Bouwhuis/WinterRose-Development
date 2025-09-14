@@ -28,12 +28,12 @@ public class Invocation
     public static VoidInvocation<TIn1, TIn2, TIn3, TIn4, TIn5> Create<TIn1, TIn2, TIn3, TIn4, TIn5>(Action<TIn1, TIn2, TIn3, TIn4, TIn5> action)
         => new VoidInvocation<TIn1, TIn2, TIn3, TIn4, TIn5>(action);
 
-    public static VoidMulticastInvocation CreateVoidMulticast() => new();
-    public static VoidMulticastInvocation<T1> CreateVoidMulticast<T1>() => new();
-    public static VoidMulticastInvocation<T1, T2> CreateVoidMulticast<T1, T2>() => new();
-    public static VoidMulticastInvocation<T1, T2, T3> CreateVoidMulticast<T1, T2, T3>() => new();
-    public static VoidMulticastInvocation<T1, T2, T3, T4> CreateVoidMulticast<T1, T2, T3, T4>() => new();
-    public static VoidMulticastInvocation<T1, T2, T3, T4, T5> CreateVoidMulticast<T1, T2, T3, T4, T5>() => new();
+    public static MulticastVoidInvocation CreateVoidMulticast() => new();
+    public static MulticastVoidInvocation<T1> CreateVoidMulticast<T1>() => new();
+    public static MulticastVoidInvocation<T1, T2> CreateVoidMulticast<T1, T2>() => new();
+    public static MulticastVoidInvocation<T1, T2, T3> CreateVoidMulticast<T1, T2, T3>() => new();
+    public static MulticastVoidInvocation<T1, T2, T3, T4> CreateVoidMulticast<T1, T2, T3, T4>() => new();
+    public static MulticastVoidInvocation<T1, T2, T3, T4, T5> CreateVoidMulticast<T1, T2, T3, T4, T5>() => new();
 
     public static MulticastInvocation<TOut> CreateMulticast<TOut>() => new();
     public static MulticastInvocation<T1, TOut> CreateMulticast<T1, TOut>() => new();

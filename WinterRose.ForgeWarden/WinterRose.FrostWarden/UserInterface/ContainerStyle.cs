@@ -2,7 +2,7 @@
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 
-namespace WinterRose.ForgeWarden
+namespace WinterRose.ForgeWarden.UserInterface
 {
     public abstract class ContainerStyle
     {

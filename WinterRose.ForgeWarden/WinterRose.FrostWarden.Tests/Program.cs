@@ -3,9 +3,13 @@ using Raylib_cs;
 using System.Runtime.InteropServices;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
+using WinterRose.ForgeWarden.DamageSystem;
+using WinterRose.ForgeWarden.DamageSystem.WeaponSystem;
 using WinterRose.ForgeWarden.Entities;
+using WinterRose.ForgeWarden.HealthSystem;
 using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Shaders;
+using WinterRose.ForgeWarden.StatusSystem;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface;
@@ -13,8 +17,8 @@ using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
-using WinterRose.ForgeWarden.Worlds;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
+using WinterRose.ForgeWarden.Worlds;
 
 namespace WinterRose.ForgeWarden.Tests;
 
@@ -35,9 +39,9 @@ internal class Program : Application
     [STAThread]
     static void Main(string[] args)
     {
-        new Program().RunAsOverlay();
+        //new Program().RunAsOverlay();
 
-        //new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
+        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
     public override void Draw()
@@ -60,6 +64,49 @@ internal class Program : Application
         entity.transform.scale = new();
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
+
+        var vitals = entity.AddComponent<Vitality>();
+        vitals.Health.MaxHealth = 100;
+
+        // Add a StatusEffector so we can test status effects
+        var statusEffector = entity.AddComponent<StatusEffector>();
+
+        // 3. Create projectile
+        var projectile = world.CreateEntity<Projectile>("demoProjectile");
+        var projStats = new Projectile.ProjectileStats
+        {
+            DamageType = new PhysicalDamage(),
+            Damage = 15,
+            CritChance = 50, // 50% crit
+            CritMultiplier = 2.0f,
+            StatusChance = 1.0f // 100% chance to apply BurnEffect
+        };
+
+        // Assign stats to projectile
+        projectile.Stats = projStats;
+
+
+        // 5. Create trigger
+        var trigger = new StandardTrigger()
+        {
+            FireRate = 0.5f // 2 shots per second
+        };
+
+        // 6. Create weapon entity
+        var gun = world.CreateEntity("demoGun");
+
+        var magazine = gun.AddComponent<Magazine>(projectile, new FullReloadBehavior());
+        magazine.MaxAmmo = 25;
+        magazine.CurrentLoadedAmmo = 25;
+        magazine.AmmoReserves = 100;
+
+        var weapon = gun.AddComponent<Weapon>();
+
+
+        weapon.Trigger = trigger;
+
+        // Optional: add multiple triggers
+        weapon.AvailableTriggers.Add(trigger);
 
         UIWindow window = new UIWindow("Window 1", 300, 500);
         window.AddText("window 1", UIFontSizePreset.Title);
@@ -204,6 +251,8 @@ internal class Program : Application
 
 
         //world.SaveTemplate();
+
+
 
         return world;
     }

@@ -1,5 +1,6 @@
 ﻿using Raylib_cs;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -44,7 +45,17 @@ public class InputContext
         }
     }
 
-    private Dictionary<string, NamedControl> Controls { get; } = new();
+    private static ConcurrentDictionary<string, NamedControl> Controls { get; } = new();
+    internal static void RegisterNamedControl(NamedControl namedControl)
+    {
+        if (Controls.TryGetValue(namedControl.Name, out _))
+            throw new Exception($"Named Control with name {namedControl.Name} already exists!");
+
+        Controls.AddOrUpdate(
+            namedControl.Name, 
+            k => namedControl, 
+            (k, o) => o);
+    }
     public IInputProvider Provider { get; }
     private readonly Dictionary<InputBinding, double> heldStartTimes = [];
     private readonly Dictionary<InputBinding, (int, double)> pressCounts = [];

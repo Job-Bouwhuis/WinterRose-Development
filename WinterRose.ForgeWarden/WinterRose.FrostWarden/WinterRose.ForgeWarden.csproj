@@ -40,6 +40,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\ForgeMantle\ForgeMantle\WinterRose.ForgeMantle.csproj" />
+		<ProjectReference Include="..\..\WinterRose.ForgeSignal\WinterRose.ForgeSignal\WinterRose.ForgeSignal.csproj" />
 		<ProjectReference Include="..\..\WinterRose\WinterRose\WinterRose.csproj" />
 	</ItemGroup>
 

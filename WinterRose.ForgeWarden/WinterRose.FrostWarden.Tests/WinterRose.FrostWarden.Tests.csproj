@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\WinterRose.ForgeWarden.Weapons\WinterRose.ForgeWarden.DamageSystem.csproj" />
     <ProjectReference Include="..\WinterRose.FrostWarden\WinterRose.ForgeWarden.csproj" />
   </ItemGroup>
 

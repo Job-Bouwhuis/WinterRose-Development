@@ -11,6 +11,7 @@ namespace WinterRose.ForgeWarden
     /// This components requires component <typeparamref name="T"/> to be present too in order to function properly
     /// </summary>
     /// <typeparam name="T"></typeparam>
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
     public class RequireComponentAttribute<T> : Attribute where T : IComponent
     {
         /// <summary>

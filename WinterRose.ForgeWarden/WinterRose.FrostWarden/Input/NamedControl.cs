@@ -4,11 +4,21 @@ namespace WinterRose.ForgeWarden.Input;
 
 public class NamedControl
 {
-    public string Name { get; set; } // e.g. "Forward", "Confirm", "Cancel"
-    public List<InputBinding> Bindings { get; set; } = new();
+    /// <summary>
+    /// e.g. "Forward", "Confirm", "Cancel"
+    /// </summary>
+    [field: WFInclude]
+    public string Name { get; }
+    internal List<InputBinding> Bindings { get; } = [];
 
-    // --- Pressed / Down / Up ---
-    public bool IsPressed(IInputProvider provider)
+    public NamedControl(string name)
+    {
+        Name = name;
+    }
+
+    private NamedControl() { } // for serialization
+
+    internal bool IsPressed(IInputProvider provider)
     {
         foreach (var binding in Bindings)
             if (provider.IsPressed(binding))
@@ -16,7 +26,7 @@ public class NamedControl
         return false;
     }
 
-    public bool IsDown(IInputProvider provider)
+    internal bool IsDown(IInputProvider provider)
     {
         foreach (var binding in Bindings)
             if (provider.IsDown(binding))
@@ -24,7 +34,7 @@ public class NamedControl
         return false;
     }
 
-    public bool IsUp(IInputProvider provider)
+    internal bool IsUp(IInputProvider provider)
     {
         foreach (var binding in Bindings)
             if (provider.IsUp(binding))
@@ -33,7 +43,7 @@ public class NamedControl
     }
 
     // --- Value ---
-    public float GetValue(IInputProvider provider)
+    internal float GetValue(IInputProvider provider)
     {
         float value = 0;
         foreach (var binding in Bindings)
@@ -47,18 +57,26 @@ public class NamedControl
         return value;
     }
 
-    public void AddBinding(InputBinding binding)
+    public NamedControl AddBinding(InputBinding binding)
     {
         Bindings.Add(binding);
+        return this;
     }
 
-    public void AddBinding(KeyboardKey key)
+    public NamedControl AddBinding(KeyboardKey key)
     {
         Bindings.Add(new InputBinding(InputDeviceType.Keyboard, (int)key));
+        return this;
     }
 
-    public void AddBinding(MouseButton button)
+    public NamedControl AddBinding(MouseButton button)
     {
         Bindings.Add(new InputBinding(InputDeviceType.Mouse, (int)button));
+        return this;
+    }
+
+    public void Register()
+    {
+        InputContext.RegisterNamedControl(this);
     }
 }

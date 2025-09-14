@@ -1,6 +1,6 @@
 ﻿namespace WinterRose.ForgeSignal;
 
-public sealed class VoidMulticastInvocation : Invocation
+public sealed class MulticastVoidInvocation : Invocation
 {
     public class Subscription : IDisposable
     {
@@ -12,7 +12,7 @@ public sealed class VoidMulticastInvocation : Invocation
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public VoidMulticastInvocation() => method = InvokeInternal;
+    public MulticastVoidInvocation() => method = InvokeInternal;
 
     private List<Subscription> invocations = [];
 
@@ -59,7 +59,7 @@ public sealed class VoidMulticastInvocation : Invocation
             error?.Invoke(new AggregateException(exceptions));
     }
 }
-public sealed class VoidMulticastInvocation<T1> : Invocation
+public sealed class MulticastVoidInvocation<T1> : Invocation
 {
     public class Subscription : IDisposable
     {
@@ -70,7 +70,7 @@ public sealed class VoidMulticastInvocation<T1> : Invocation
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public VoidMulticastInvocation() => method = (object?[]? args) => InvokeInternal((T1)args![0]!);
+    public MulticastVoidInvocation() => method = (object?[]? args) => InvokeInternal((T1)args![0]!);
 
     private readonly List<Subscription> invocations = new();
 
@@ -120,7 +120,7 @@ public sealed class VoidMulticastInvocation<T1> : Invocation
             error?.Invoke(new AggregateException(exceptions));
     }
 }
-public sealed class VoidMulticastInvocation<T1, T2> : Invocation
+public sealed class MulticastVoidInvocation<T1, T2> : Invocation
 {
     public class Subscription : IDisposable
     {
@@ -131,7 +131,7 @@ public sealed class VoidMulticastInvocation<T1, T2> : Invocation
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public VoidMulticastInvocation() => method = (object?[]? args) => InvokeInternal((T1)args![0]!, (T2)args![1]!);
+    public MulticastVoidInvocation() => method = (object?[]? args) => InvokeInternal((T1)args![0]!, (T2)args![1]!);
 
     private readonly List<Subscription> invocations = new();
 
@@ -181,7 +181,7 @@ public sealed class VoidMulticastInvocation<T1, T2> : Invocation
             error?.Invoke(new AggregateException(exceptions));
     }
 }
-public sealed class VoidMulticastInvocation<T1, T2, T3> : Invocation
+public sealed class MulticastVoidInvocation<T1, T2, T3> : Invocation
 {
     public class Subscription : IDisposable
     {
@@ -193,7 +193,7 @@ public sealed class VoidMulticastInvocation<T1, T2, T3> : Invocation
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public VoidMulticastInvocation() => method = InvokeInternal;
+    public MulticastVoidInvocation() => method = InvokeInternal;
 
     private List<Subscription> invocations = [];
 
@@ -240,7 +240,7 @@ public sealed class VoidMulticastInvocation<T1, T2, T3> : Invocation
             error?.Invoke(new AggregateException(exceptions));
     }
 }
-public sealed class VoidMulticastInvocation<T1, T2, T3, T4> : Invocation
+public sealed class MulticastVoidInvocation<T1, T2, T3, T4> : Invocation
 {
     public class Subscription : IDisposable
     {
@@ -252,7 +252,7 @@ public sealed class VoidMulticastInvocation<T1, T2, T3, T4> : Invocation
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public VoidMulticastInvocation() => method = InvokeInternal;
+    public MulticastVoidInvocation() => method = InvokeInternal;
 
     private List<Subscription> invocations = [];
 
@@ -299,7 +299,7 @@ public sealed class VoidMulticastInvocation<T1, T2, T3, T4> : Invocation
             error?.Invoke(new AggregateException(exceptions));
     }
 }
-public sealed class VoidMulticastInvocation<T1, T2, T3, T4, T5> : Invocation
+public sealed class MulticastVoidInvocation<T1, T2, T3, T4, T5> : Invocation
 {
     public class Subscription : IDisposable
     {
@@ -311,7 +311,7 @@ public sealed class VoidMulticastInvocation<T1, T2, T3, T4, T5> : Invocation
         public void Dispose() => isUnsubscribing = true;
     }
 
-    public VoidMulticastInvocation() => method = InvokeInternal;
+    public MulticastVoidInvocation() => method = InvokeInternal;
 
     private List<Subscription> invocations = [];
 

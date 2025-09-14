@@ -111,6 +111,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.ForgeSignal", "W
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.ForgeSignal.Tests", "WinterRose.ForgeSignal\WinterRose.ForgeSignal.Tests\WinterRose.ForgeSignal.Tests.csproj", "{45AC9E89-25AC-4DEE-A7D9-ABE7C5C6A586}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.ForgeWarden.DamageSystem", "WinterRose.ForgeWarden.Weapons\WinterRose.ForgeWarden.DamageSystem.csproj", "{E728AE6C-BBBF-41BC-9B97-08278F7B1B9D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug FileServer|Any CPU = debug FileServer|Any CPU
@@ -311,6 +313,12 @@ Global
 		{45AC9E89-25AC-4DEE-A7D9-ABE7C5C6A586}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45AC9E89-25AC-4DEE-A7D9-ABE7C5C6A586}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45AC9E89-25AC-4DEE-A7D9-ABE7C5C6A586}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E728AE6C-BBBF-41BC-9B97-08278F7B1B9D}.debug FileServer|Any CPU.ActiveCfg = Debug|Any CPU
+		{E728AE6C-BBBF-41BC-9B97-08278F7B1B9D}.debug FileServer|Any CPU.Build.0 = Debug|Any CPU
+		{E728AE6C-BBBF-41BC-9B97-08278F7B1B9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E728AE6C-BBBF-41BC-9B97-08278F7B1B9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E728AE6C-BBBF-41BC-9B97-08278F7B1B9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E728AE6C-BBBF-41BC-9B97-08278F7B1B9D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -351,6 +359,7 @@ Global
 		{A6D23BDC-2BD6-4AC8-8F1D-9F2AB49323D7} = {115964F2-D8B5-4B88-843C-E5E512E1890D}
 		{EFE208B0-DB75-4866-8F9D-64B93EFDA7C0} = {5385153A-84F6-4C7D-87B3-7C24812D7B64}
 		{45AC9E89-25AC-4DEE-A7D9-ABE7C5C6A586} = {5385153A-84F6-4C7D-87B3-7C24812D7B64}
+		{E728AE6C-BBBF-41BC-9B97-08278F7B1B9D} = {01B91BF3-F7F4-4776-8F1A-C6C4FB2E4B5F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4476F88-F402-4E67-B4D9-6187D5BAD463}

@@ -133,4 +133,25 @@ public class ForgeSignalBasicGuards
         Forge.Expect(after).True();
         Forge.Expect(Finally).True();
     }
+
+    [Guard]
+    public void InvocationHooksAreCalledInOrder()
+    {
+        int cur = 1;
+        int main = 0;
+        int before = 0;
+        int after = 0;
+        int Finally = 0;
+
+        Invocation.Create(() => main = cur++)
+            .Before(Invocation.Create(() => before = cur++))
+            .After(Invocation.Create(() => after = cur++))
+            .Finally(Invocation.Create(() => Finally = cur++))
+            .Invoke();
+
+        Forge.Expect(main).EqualTo(2);
+        Forge.Expect(before).EqualTo(1);
+        Forge.Expect(after).EqualTo(3);
+        Forge.Expect(Finally).EqualTo(4);
+    }
 }
