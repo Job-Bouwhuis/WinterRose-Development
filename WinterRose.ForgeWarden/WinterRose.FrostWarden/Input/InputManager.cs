@@ -28,6 +28,22 @@ public static class InputManager
         return context;
     }
 
+    internal static void UnregisterContext(InputContext context)
+    {
+        if (!contextPriorities.TryGetValue(context, out var bucketPriority))
+            return;
+
+        if (contexts.TryGetValue(bucketPriority, out var list))
+        {
+            list.Remove(context);
+            if (list.Count == 0)
+                contexts.Remove(bucketPriority);
+        }
+
+        contextPriorities.Remove(context);
+    }
+
+
     public static void Update()
     {
         // --- Detect and apply priority edits (cheap: only touches changed contexts) ---

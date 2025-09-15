@@ -34,6 +34,8 @@ public class UIWindow : UIContainer
     private float maximizeProgress = 0f;      // 0 = normal size, 1 = normal maximized
     private float maximizeTarget = 0f;
     private const float MAXIMIZE_DURATION = 0.22f;
+    private bool maximizeUseMouseTarget = false;
+    private Vector2 maximizeMouseTarget = new Vector2();
 
     private float originalContentAlpha = 1f;
     private Rectangle fullPosCache;
@@ -107,7 +109,6 @@ public class UIWindow : UIContainer
                 return;
             }
 
-            // If an animation is already running, queue the request and return.
             if (maximizeAnimationActive)
             {
                 maximizeRequested = true;
@@ -115,20 +116,16 @@ public class UIWindow : UIContainer
                 return;
             }
 
-            // If already in the requested state, nothing to do.
             if (isMaximized == value) return;
 
-            // Record what the animation should finalize to (do NOT flip isMaximized yet)
             maximizeFinalizeTargetIsMaximized = value;
 
-            // Prepare animation targets
             maximizeTarget = value ? 1f : 0f;
             maximizeAnimStartPos = CurrentPosition.Position;
             maximizeAnimStartSize = CurrentPosition.Size;
 
-            if (value) // starting maximize
+            if (value)
             {
-                // snapshot current geometry for restore later
                 positionBeforeMaximize = maximizeAnimStartPos;
                 sizeBeforeMaximize = maximizeAnimStartSize;
 
@@ -137,16 +134,43 @@ public class UIWindow : UIContainer
 
                 NoAutoMove = true;
             }
-            else // starting un-maximize
+            else
             {
-                maximizeAnimEndPos = positionBeforeMaximize;
-                maximizeAnimEndSize = sizeBeforeMaximize;
-
-                if (maximizeAnimEndSize.X == 0f && maximizeAnimEndSize.Y == 0f)
+                // If a mouse target was captured (user clicked while maximized) compute an
+                // end position so the restored window's titlebar ends up under the mouse.
+                if (maximizeUseMouseTarget && sizeBeforeMaximize.X > 0 && sizeBeforeMaximize.Y > 0)
                 {
-                    // fallback if we somehow have no stored pre-maximize geometry
-                    maximizeAnimEndPos = maximizeAnimStartPos;
-                    maximizeAnimEndSize = maximizeAnimStartSize;
+                    var mouse = maximizeMouseTarget;
+                    float targetWidth = sizeBeforeMaximize.X;
+                    float targetHeight = sizeBeforeMaximize.Y;
+
+                    // place window so mouse is centered on the titlebar horizontally,
+                    // and vertically place mouse in middle of titlebar (so the mouse is "over" it)
+                    float targetX = mouse.X - targetWidth * 0.5f;
+                    float targetY = mouse.Y - (Style.TitleBarHeight * 0.5f);
+
+                    // clamp to screen bounds
+                    var win = Application.Current.Window;
+                    targetX = MathF.Max(0f, MathF.Min(targetX, win.Width - targetWidth));
+                    targetY = MathF.Max(0f, MathF.Min(targetY, win.Height - targetHeight));
+
+                    maximizeAnimEndPos = new Vector2(targetX, targetY);
+                    maximizeAnimEndSize = new Vector2(targetWidth, targetHeight);
+
+                    // consume the mouse-target flag
+                    maximizeUseMouseTarget = false;
+                }
+                else
+                {
+                    maximizeAnimEndPos = positionBeforeMaximize;
+                    maximizeAnimEndSize = sizeBeforeMaximize;
+
+                    if (maximizeAnimEndSize.X == 0f && maximizeAnimEndSize.Y == 0f)
+                    {
+                        // fallback if we somehow have no stored pre-maximize geometry
+                        maximizeAnimEndPos = maximizeAnimStartPos;
+                        maximizeAnimEndSize = maximizeAnimStartSize;
+                    }
                 }
 
                 NoAutoMove = true;
@@ -306,7 +330,7 @@ public class UIWindow : UIContainer
 
         // use the same easing/height as Update() so hover semantics match the visual collapsed height
         float eased = Curves.EaseOutBackFar?.Evaluate(collapseProgress) ?? collapseProgress;
-        float collapsedHeight = UIConstants.CONTENT_PADDING * 2f + (Style.AllowDragging ? Style.TitleBarHeight : 0f);
+        float collapsedHeight = UIConstants.CONTENT_PADDING * 2f + (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
         float animatedHeight = Lerp(fullPosCache.Height, collapsedHeight, eased);
 
         var bgRect = new Rectangle(CurrentPosition.X, CurrentPosition.Y, CurrentPosition.Width, animatedHeight);
@@ -370,16 +394,16 @@ public class UIWindow : UIContainer
 
         // --- interaction: if any button was released while mouse was over it AND this window has mouse focus,
         // return false so the base dragging logic won't run. (Caller can handle the actual action elsewhere.) ---
-        if (windowHasMouseFocus && mouseReleased)
+        if (windowHasMouseFocus)
         {
             if (overClose || overMaximize || overCollapse)
             {
                 // perform collapse immediately when collapse button clicked
-                if (overCollapse)
+                if (overCollapse && mouseReleased)
                     ToggleCollapsed();
-                if (overMaximize)
+                if (overMaximize && mouseReleased)
                     ToggleMaximized();
-                if (overClose)
+                if (overClose && mouseReleased)
                     Close();
 
                 // a button was activated — prevent propagation to dragging
@@ -389,6 +413,13 @@ public class UIWindow : UIContainer
 
         // no custom interaction — allow normal dragging behavior
         return true;
+    }
+
+    protected override void AfterResize()
+    {
+        positionBeforeMaximize = CurrentPosition.Position;
+        sizeBeforeMaximize = CurrentPosition.Size;
+        fullPosCache = CurrentPosition;
     }
 
     private void ComputeButtonRects(Rectangle titlebarBounds, float buttonSizeRatio, int buttonPadding, int buttonSpacing,
@@ -448,6 +479,53 @@ public class UIWindow : UIContainer
     {
         if (!isCollapsed && collapseProgress is <= 0f)
             base.DrawVerticalScrollbar(contentArea, backgroundBounds);
+    }
+
+    private Vector2 maximizeDragStart = Vector2.Zero;
+    private bool maximizeDragArmed = false;
+    private const float UNMAX_DRAG_THRESHOLD = 8f;
+    private bool drawMaximizeDragBar = false;
+
+
+    protected override void HandleContainerDragging()
+    {
+        if (Maximized)
+        {
+            if (!IsDragTarget)
+                return;
+
+            // On initial press, record the start position
+            if (Input.IsPressed(MouseButton.Left))
+            {
+                maximizeDragStart = Input.MousePosition;
+                maximizeDragArmed = true;
+            }
+
+            // If we're armed and mouse moved enough, trigger unmaximize
+            if (maximizeDragArmed && Input.IsDown(MouseButton.Left))
+            {
+                float dx = Math.Abs(Input.MousePosition.X - maximizeDragStart.X);
+                float dy = Math.Abs(Input.MousePosition.Y - maximizeDragStart.Y);
+
+                if (dx > UNMAX_DRAG_THRESHOLD || dy > UNMAX_DRAG_THRESHOLD)
+                {
+                    maximizeMouseTarget = Input.MousePosition;
+                    maximizeUseMouseTarget = true;
+                    Maximized = false;
+                    maximizeDragArmed = false; // consume
+                }
+            }
+
+            // Reset if mouse released before drag threshold
+            if (Input.IsUp(MouseButton.Left))
+                maximizeDragArmed = false;
+        }
+        else
+        {
+            drawMaximizeDragBar = true;
+        }
+
+        base.HandleContainerDragging();
     }
 
     private void DrawCloseButton(Rectangle closeRect, int buttonSize, float iconInsetRatio, Color bg)
@@ -532,7 +610,7 @@ public class UIWindow : UIContainer
         float x1 = collapseRect.X + inset;
         float x2 = collapseRect.X + collapseRect.Width - inset;
 
-        float halfHeight = buttonSize * 0.25f; 
+        float halfHeight = buttonSize * 0.25f;
         float offset = (0.5f - collapseProgress) * 2f * halfHeight;
 
         // draw V or ^ shape depending on collapseprogress
@@ -607,7 +685,7 @@ public class UIWindow : UIContainer
         if (fullPosCache.Height <= 0f) fullPosCache.Height = Size.Y;
 
         // compute collapsed height and apply immediately
-        float collapsedHeight = (Style.AllowDragging ? Style.TitleBarHeight : 0f);
+        float collapsedHeight = (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
         TargetSize = CurrentPosition.Size;
         SetSize(new Vector2(CurrentPosition.Size.X, Lerp(fullPosCache.Height, collapsedHeight, 1f)));
 
@@ -660,7 +738,7 @@ public class UIWindow : UIContainer
         }
 
         float easedForHit = Curves.Linear?.Evaluate(collapseProgress) ?? collapseProgress;
-        float collapsedHeight = /*UIConstants.CONTENT_PADDING * 2f +*/ (Style.AllowDragging ? Style.TitleBarHeight : 0f);
+        float collapsedHeight = /*UIConstants.CONTENT_PADDING * 2f +*/ (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
         float animatedHeightForHit = Lerp(Maximized ? CurrentPosition.Height : fullPosCache.Height, collapsedHeight, easedForHit);
 
         var hitRect = new Rectangle(CurrentPosition.X, CurrentPosition.Y, CurrentPosition.Width,
@@ -789,11 +867,8 @@ public class UIWindow : UIContainer
             {
                 closeAnimationActive = false;
                 IsFullyClosed = true;
-
-                // leave IsClosed = true (request was already submitted)
-                // keep NoAutoMove true (we're closed)
-                // if you want the base class notified, set IsClosing so any other logic knows
-                IsClosing = true;
+                IsClosing = false; // set to false so base can handle propper closing of the rest too
+                base.Close();
             }
             Input.IsRequestingKeyboardFocus = Input.IsRequestingMouseFocus = false;
             return;
@@ -802,8 +877,11 @@ public class UIWindow : UIContainer
         float hoverOffsetX = 0f, hoverOffsetY = 0f;
         float shadowOffsetX = 0f, shadowOffsetY = 0f;
 
+
+
         if (!isCollapsed && collapseProgress <= 0f)
         {
+            DrawMaximizeDragBar();
             Style.RaiseOnHover = false;
             collapseAnimationFinished = false;
             base.Draw();
@@ -837,7 +915,7 @@ public class UIWindow : UIContainer
 
             // compute animated height (background visually shrinks)
             float eased = Curves.SlowFastSlow?.Evaluate(collapseProgress) ?? collapseProgress;
-            float collapsedHeight = /*UIConstants.CONTENT_PADDING * 2f +*/ (Style.AllowDragging ? Style.TitleBarHeight : 0f);
+            float collapsedHeight = /*UIConstants.CONTENT_PADDING * 2f +*/ (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
             float animatedHeight = Lerp(fullPosCache.Height, collapsedHeight, eased);
             SetSize(new(Size.X, animatedHeight));
             // Only apply the raise visual to the titlebar when collapsed AND hovered.
@@ -878,7 +956,7 @@ public class UIWindow : UIContainer
             HandleTitleBar(backgroundBounds, dragBounds);
 
             // compute content area based on animated height (bottom is always background - padding)
-            float contentY = backgroundBounds.Y + UIConstants.CONTENT_PADDING + (Style.AllowDragging ? Style.TitleBarHeight : 0f);
+            float contentY = backgroundBounds.Y + UIConstants.CONTENT_PADDING + (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
             float contentHeight = backgroundBounds.Y + backgroundBounds.Height - UIConstants.CONTENT_PADDING - contentY;
             float contentWidth = backgroundBounds.Width - UIConstants.CONTENT_PADDING * 2;
 
@@ -909,8 +987,112 @@ public class UIWindow : UIContainer
         }
     }
 
+    private float maximizeBarSize = 25;
+    private float maximizeBarTopMargin = 5;
+    private float maximizeBarSideMargin = 50;
+    private float maximizeBarAnimation = 0; // 0 - 1
+    private Color maximizeBarColor = Color.Gray.WithAlpha(120);
+
+    private float maximizeBarBorderThickness = 2f;
+    private Color maximizeBarBorderColor = Color.White;
+    private bool maximizeBarHovered = false;
+    private const float MAXIMIZE_BAR_ANIM_SPEED = 8f;
+
+    // --- added/updated members ---
+    private float maximizeBarVisibility = 0f;   // 0..1
+    private float maximizeBarExpansion = 0f;   // 0..1
+    private const float MAXIMIZE_BAR_VIS_SPEED = 8f;
+    private const float MAXIMIZE_BAR_EXP_SPEED = 12f;
+
+
+    private void DrawMaximizeDragBar()
+    {
+        var winSize = Application.Current.Window.Size;
+
+        var baseRect = new Rectangle(
+            maximizeBarSideMargin,
+            maximizeBarTopMargin,
+            MathF.Max(0f, winSize.X - maximizeBarSideMargin * 2f),
+            maximizeBarSize
+        );
+
+        var expandedRect = new Rectangle(0, 0, winSize.X, winSize.Y);
+
+        var mouse = Input.MousePosition;
+
+        bool hoverBase = Raylib.CheckCollisionPointRec(mouse, baseRect);
+
+        if (hoverBase && Input.IsUp(MouseButton.Left))
+        {
+            Maximized = true;
+        }
+
+        float visTarget = IsBeingDragged ? 1f : 0f;
+        float expTarget = (IsBeingDragged && hoverBase) ? 1f : 0f;
+
+        {
+            float delta = Time.deltaTime * MAXIMIZE_BAR_VIS_SPEED;
+            if (maximizeBarVisibility < visTarget)
+                maximizeBarVisibility = MathF.Min(visTarget, maximizeBarVisibility + delta);
+            else if (maximizeBarVisibility > visTarget)
+                maximizeBarVisibility = MathF.Max(visTarget, maximizeBarVisibility - delta);
+        }
+
+        {
+            float delta = Time.deltaTime * MAXIMIZE_BAR_EXP_SPEED;
+            if (maximizeBarExpansion < expTarget)
+                maximizeBarExpansion = MathF.Min(expTarget, maximizeBarExpansion + delta);
+            else if (maximizeBarExpansion > expTarget)
+                maximizeBarExpansion = MathF.Max(expTarget, maximizeBarExpansion - delta);
+        }
+
+        if (maximizeBarVisibility <= 0.001f)
+            return;
+
+        float combinedT = maximizeBarVisibility * maximizeBarExpansion;
+        Rectangle currentRect = LerpRect(baseRect, expandedRect, combinedT);
+
+        byte baseAlpha = 128;
+
+        ray.DrawRectangleRec(currentRect, maximizeBarColor);
+
+        byte borderBaseAlpha = 64;
+        byte borderFullAlpha = 255;
+        float borderAlphaF = borderBaseAlpha + (borderFullAlpha - borderBaseAlpha) * (maximizeBarVisibility * maximizeBarExpansion);
+        byte borderAlpha = (byte)Math.Clamp((int)borderAlphaF, 0, 255);
+        var borderColor = new Color(maximizeBarBorderColor.R, maximizeBarBorderColor.G, maximizeBarBorderColor.B, borderAlpha);
+        ray.DrawRectangleLinesEx(currentRect, maximizeBarBorderThickness, borderColor);
+
+        if (maximizeBarExpansion < 0.95f)
+        {
+            float handleW = MathF.Min(120f, currentRect.Width * 0.5f);
+            float handleH = MathF.Max(4f, currentRect.Height * 0.12f);
+            var handleRect = new Rectangle(
+                currentRect.X + (currentRect.Width - handleW) / 2f,
+                currentRect.Y + (currentRect.Height - handleH) / 2f,
+                handleW,
+                handleH
+            );
+
+            ray.DrawRectangleRec(handleRect, maximizeBarColor);
+            ray.DrawRectangleLinesEx(handleRect, 1f, maximizeBarBorderColor);
+        }
+
+        static Rectangle LerpRect(Rectangle a, Rectangle b, float t)
+        {
+            t = Math.Clamp(t, 0f, 1f);
+            float x = Lerp(a.X, b.X, t);
+            float y = Lerp(a.Y, b.Y, t);
+            float w = Lerp(a.Width, b.Width, t);
+            float h = Lerp(a.Height, b.Height, t);
+            return new Rectangle(x, y, w, h);
+        }
+    }
+
     public override void Close()
     {
+        
+
         // if already requested, ignore
         if (IsClosed) return;
 
@@ -942,8 +1124,6 @@ public class UIWindow : UIContainer
         base.Close();
     }
 
-
-    // existing helper area - add this helper
     protected static Vector2 LerpVec2(Vector2 a, Vector2 b, float t)
     {
         return new Vector2(Lerp(a.X, b.X, t), Lerp(a.Y, b.Y, t));

@@ -1,18 +1,21 @@
 ﻿using BulletSharp;
 using Raylib_cs;
 using System.Runtime.InteropServices;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DamageSystem;
 using WinterRose.ForgeWarden.DamageSystem.WeaponSystem;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.HealthSystem;
+using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Shaders;
 using WinterRose.ForgeWarden.StatusSystem;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface;
+using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 using WinterRose.ForgeWarden.UserInterface.DragDrop;
@@ -39,25 +42,33 @@ internal class Program : Application
     [STAThread]
     static void Main(string[] args)
     {
-        //new Program().RunAsOverlay();
+        NamedControl fire = new NamedControl("fire");
+        fire.AddBinding(MouseButton.Left);
+        fire.AddBinding(KeyboardKey.Space);
+        fire.Register();
+
+        NamedControl reload = new("reload");
+        reload.AddBinding(KeyboardKey.R);
 
         new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
     public override void Draw()
     {
-        ShowFPS = true;
+        
     }
 
     public override World CreateWorld()
     {
+        ShowFPS = true;
+        ray.SetTargetFPS(144);
         ClearColor = Color.Beige;
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
 
         World world = new World("testworld");
 
         var cam = world.CreateEntity<Camera>("cam");
-        cam.AddComponent<Mover>();
+        //cam.AddComponent<Mover>();
 
         var entity = world.CreateEntity("entity");
         entity.transform.parent = cam.transform;
@@ -95,13 +106,12 @@ internal class Program : Application
         // 6. Create weapon entity
         var gun = world.CreateEntity("demoGun");
 
-        var magazine = gun.AddComponent<Magazine>(projectile, new FullReloadBehavior());
+        var magazine = gun.AddComponent<Magazine>(projectile, new PerShellReloadBehavior());
         magazine.MaxAmmo = 25;
         magazine.CurrentLoadedAmmo = 25;
         magazine.AmmoReserves = 100;
 
         var weapon = gun.AddComponent<Weapon>();
-
 
         weapon.Trigger = trigger;
 
@@ -131,7 +141,7 @@ internal class Program : Application
         window.AddSprite(Assets.Load<Sprite>("bigimg"));
         window.AddSprite(Assets.Load<Sprite>("bigimg"));
         window.AddSprite(Assets.Load<Sprite>("bigimg"));
-        window.Show();
+        //window.Show();
 
         UIWindow window2 = new UIWindow("Window 2", 300, 500);
         window2.AddSprite(Assets.Load<Sprite>("bigimg"));
@@ -179,7 +189,7 @@ internal class Program : Application
         window2.AddButton("My Awesome Button");
         window2.AddButton("My Awesome Button");
         window2.AddButton("My Awesome Button");
-        window2.Show();
+        //window2.Show();
         //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Left, ToastStackSide.Top);
         //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
@@ -194,7 +204,7 @@ internal class Program : Application
         //    c.Close();
         //})));
 
-        ShowToast(ToastRegion.Right, ToastStackSide.Top);
+        ShowToast(ToastRegion.Center, ToastStackSide.Top);
 
         void ShowToast(ToastRegion r, ToastStackSide s)
         {
@@ -213,6 +223,32 @@ internal class Program : Application
             //w.Style.ShowMaximizeButton = false;
             //w.Style.ShowCollapseButton = false;
             //w.Style.ShowCloseButton = false;
+            var ti = new TextInput();
+            ti.Placeholder = "Username";
+            ti.OnSubmit.Subscribe(Invocation.Create((TextInput i, string t) =>
+            {
+                Console.WriteLine(t);
+                i.SetText("");
+            }));
+            w.AddContent(ti);
+
+            var ti2 = new TextInput();
+            ti2.IsPassword = true;
+            ti2.Placeholder = "Password";
+            ti2.OnSubmit.Subscribe(Invocation.Create((TextInput i, string t) =>
+            {
+                Console.WriteLine(t);
+                i.SetText("");
+            }));
+            w.AddContent(ti2);
+
+            w.AddButton("Login", (cont, but) => Console.WriteLine("Logged In!"));
+
+            Dropdown<int> dropdown = new();
+            //dropdown.SetItems(["Dajuksa", "is", "my", "favorite", "girl", "ever"]);
+            dropdown.SetItems(WinterUtils.ConsecutiveNumbers(25));
+            w.AddContent(dropdown);
+            dropdown.OnSelected.Subscribe(Invocation.Create((Dropdown<int> d, int s) => Console.WriteLine(s)));
 
             Toast t = new Toast(ToastType.Info, r, s)
                     //.AddText("Right?\n\n\nYes")

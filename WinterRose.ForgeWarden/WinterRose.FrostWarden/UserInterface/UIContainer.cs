@@ -20,7 +20,7 @@ public abstract class UIContainer
     public bool IsVisible => !IsClosing;
 
     public bool IsBeingDragged { get; private set; } = false;
-    private float dragHeight => Style.AllowDragging ? Style.TitleBarHeight : 0;
+    private float dragHeight => Style.AllowUserResizing ? Style.TitleBarHeight : 0;
     /// <summary>
     /// Used for a preview. when unpaused, the container moves back to the mouse
     /// </summary>
@@ -75,11 +75,33 @@ public abstract class UIContainer
         }
     }
 
+    private const float RESIZE_MARGIN = 8f;
+    private const int RESIZE_DEBUG_ALPHA = 120;
+    private const float MIN_WIDTH = 80f;
+    private const float MIN_HEIGHT = 40f;
+
+    private bool IsResizing = false;
+    private ResizeEdge CurrentResizeEdge = ResizeEdge.None;
+    private Vector2 ResizeStartMouse;
+    private Rectangle ResizeStartRect;
 
     internal Vector2 CurrentSize;
     internal Vector2 TargetPosition;
     internal Vector2 TargetSize;
     internal float AnimationElapsed;
+
+    private enum ResizeEdge
+    {
+        None,
+        Left,
+        Right,
+        Top,
+        Bottom,
+        TopLeft,
+        TopRight,
+        BottomLeft,
+        BottomRight
+    }
 
     protected bool IsDragTarget { get; private set; }
 
@@ -134,10 +156,138 @@ public abstract class UIContainer
     {
         HandleMovement();
 
+        HandleResizing();
         HandleContentUpdates();
         HandleContainerDragging();
         HandleAutoClose();
     }
+
+    protected virtual void HandleResizing()
+    {
+        // if style doesn't allow dragging/resizing, skip (adjust as needed)
+        if (!Style.AllowUserResizing)
+            return;
+
+        var mouse = Input.Provider.MousePosition;
+
+        float left = CurrentPosition.X;
+        float right = CurrentPosition.X + CurrentPosition.Width;
+        float top = CurrentPosition.Y;
+        float bottom = CurrentPosition.Y + CurrentPosition.Height;
+
+        bool nearLeft = Math.Abs(mouse.X - left) <= RESIZE_MARGIN && mouse.Y >= top - RESIZE_MARGIN && mouse.Y <= bottom + RESIZE_MARGIN;
+        bool nearRight = Math.Abs(mouse.X - right) <= RESIZE_MARGIN && mouse.Y >= top - RESIZE_MARGIN && mouse.Y <= bottom + RESIZE_MARGIN;
+        bool nearTop = Math.Abs(mouse.Y - top) <= RESIZE_MARGIN && mouse.X >= left - RESIZE_MARGIN && mouse.X <= right + RESIZE_MARGIN;
+        bool nearBottom = Math.Abs(mouse.Y - bottom) <= RESIZE_MARGIN && mouse.X >= left - RESIZE_MARGIN && mouse.X <= right + RESIZE_MARGIN;
+
+        ResizeEdge hoverEdge = ResizeEdge.None;
+        if (nearLeft && nearTop) hoverEdge = ResizeEdge.TopLeft;
+        else if (nearRight && nearTop) hoverEdge = ResizeEdge.TopRight;
+        else if (nearLeft && nearBottom) hoverEdge = ResizeEdge.BottomLeft;
+        else if (nearRight && nearBottom) hoverEdge = ResizeEdge.BottomRight;
+        else if (nearLeft) hoverEdge = ResizeEdge.Left;
+        else if (nearRight) hoverEdge = ResizeEdge.Right;
+        else if (nearTop) hoverEdge = ResizeEdge.Top;
+        else if (nearBottom) hoverEdge = ResizeEdge.Bottom;
+
+        var lmb = new InputBinding(InputDeviceType.Mouse, (int)MouseButton.Left);
+
+        // start resizing when clicking on an edge
+        if (!IsResizing)
+        {
+            if (hoverEdge != ResizeEdge.None && Input.Provider.IsPressed(lmb))
+            {
+                Input.IsRequestingMouseFocus = true;
+                IsResizing = true;
+                CurrentResizeEdge = hoverEdge;
+                ResizeStartMouse = mouse;
+                ResizeStartRect = CurrentPosition;
+                return; // started resizing this frame
+            }
+        }
+
+        // active resizing
+        if (IsResizing)
+        {
+            bool leftDown = Input.Provider.IsDown(lmb);
+            if (!leftDown)
+            {
+                // finish resizing
+                IsResizing = false;
+                CurrentResizeEdge = ResizeEdge.None;
+                return;
+            }
+
+            Input.IsRequestingMouseFocus = true;
+
+            float deltaX = mouse.X - ResizeStartMouse.X;
+            float deltaY = mouse.Y - ResizeStartMouse.Y;
+
+            float newX = ResizeStartRect.X;
+            float newY = ResizeStartRect.Y;
+            float newW = ResizeStartRect.Width;
+            float newH = ResizeStartRect.Height;
+
+            switch (CurrentResizeEdge)
+            {
+                case ResizeEdge.Left:
+                    newX = ResizeStartRect.X + deltaX;
+                    newW = ResizeStartRect.Width - deltaX;
+                    break;
+                case ResizeEdge.Right:
+                    newW = ResizeStartRect.Width + deltaX;
+                    break;
+                case ResizeEdge.Top:
+                    newY = ResizeStartRect.Y + deltaY;
+                    newH = ResizeStartRect.Height - deltaY;
+                    break;
+                case ResizeEdge.Bottom:
+                    newH = ResizeStartRect.Height + deltaY;
+                    break;
+                case ResizeEdge.TopLeft:
+                    newX = ResizeStartRect.X + deltaX;
+                    newW = ResizeStartRect.Width - deltaX;
+                    newY = ResizeStartRect.Y + deltaY;
+                    newH = ResizeStartRect.Height - deltaY;
+                    break;
+                case ResizeEdge.TopRight:
+                    newW = ResizeStartRect.Width + deltaX;
+                    newY = ResizeStartRect.Y + deltaY;
+                    newH = ResizeStartRect.Height - deltaY;
+                    break;
+                case ResizeEdge.BottomLeft:
+                    newX = ResizeStartRect.X + deltaX;
+                    newW = ResizeStartRect.Width - deltaX;
+                    newH = ResizeStartRect.Height + deltaY;
+                    break;
+                case ResizeEdge.BottomRight:
+                    newW = ResizeStartRect.Width + deltaX;
+                    newH = ResizeStartRect.Height + deltaY;
+                    break;
+            }
+
+            // enforce minimums
+            if (newW < MIN_WIDTH)
+            {
+                // if dragging left, keep right edge fixed
+                if (CurrentResizeEdge == ResizeEdge.Left || CurrentResizeEdge == ResizeEdge.TopLeft || CurrentResizeEdge == ResizeEdge.BottomLeft)
+                    newX = ResizeStartRect.X + (ResizeStartRect.Width - MIN_WIDTH);
+                newW = MIN_WIDTH;
+            }
+
+            if (newH < MIN_HEIGHT)
+            {
+                if (CurrentResizeEdge == ResizeEdge.Top || CurrentResizeEdge == ResizeEdge.TopLeft || CurrentResizeEdge == ResizeEdge.TopRight)
+                    newY = ResizeStartRect.Y + (ResizeStartRect.Height - MIN_HEIGHT);
+                newH = MIN_HEIGHT;
+            }
+
+            // apply new rect
+            CurrentPosition = new Rectangle(newX, newY, newW, newH);
+        }
+    }
+
+    protected virtual void AfterResize() { }
 
     protected internal virtual void HandleMovement()
     {
@@ -194,7 +344,7 @@ public abstract class UIContainer
 
     protected virtual void  HandleContainerDragging()
     {
-        if (!Style.AllowDragging)
+        if (!Style.AllowUserResizing)
         {
             IsBeingDragged = false;
             IsDragTarget = false;
@@ -248,10 +398,10 @@ public abstract class UIContainer
     private void HandleContentUpdates()
     {
         float visibleStartY = CurrentPosition.Y + UIConstants.CONTENT_PADDING;
-        if (Style.AllowDragging)
+        if (Style.AllowUserResizing)
             visibleStartY += Style.TitleBarHeight;
 
-        float dragHeightLocal = Style.AllowDragging ? Style.TitleBarHeight : 0f;
+        float dragHeightLocal = Style.AllowUserResizing ? Style.TitleBarHeight : 0f;
         float visibleHeight = CurrentPosition.Height - UIConstants.CONTENT_PADDING * 2 - dragHeightLocal;
         float availableContentWidthCandidate = CurrentPosition.Width - UIConstants.CONTENT_PADDING * 2;
 
@@ -360,10 +510,15 @@ public abstract class UIContainer
                 {
                     if (Input.IsPressed(button))
                         content.OnContentClicked(button);
+                       
                 }
             }
             else
             {
+                foreach (var button in Enum.GetValues<MouseButton>())
+                    if (Input.IsPressed(button))
+                        content.OnClickedOutsideOfContent(button);
+
                 if (content.IsHovered)
                     content.OnHoverEnd();
                 content.IsHovered = false;
@@ -401,8 +556,8 @@ public abstract class UIContainer
                 Style.TitleBarHeight - Style.BorderSize);
 
         var shadowRect = new Rectangle(
-            backgroundBounds.X - Style.ShadowSizeLeft + shadowOffsetX,
-            backgroundBounds.Y - Style.ShadowSizeTop + shadowOffsetY,
+            backgroundBounds.X - Style.ShadowSizeLeft + shadowOffsetX * 2,
+            backgroundBounds.Y - Style.ShadowSizeTop + shadowOffsetY * 2,
             backgroundBounds.Width + Style.ShadowSizeLeft + Style.ShadowSizeRight,
             backgroundBounds.Height + Style.ShadowSizeTop + Style.ShadowSizeBottom
         );
@@ -413,7 +568,7 @@ public abstract class UIContainer
         HandleTitleBar(backgroundBounds, dragBounds);
 
         // IMPORTANT: bottom-most content area must be background - UIConstants.CONTENT_PADDING regardless of titlebar
-        float contentY = backgroundBounds.Y + UIConstants.CONTENT_PADDING + (Style.AllowDragging ? Style.TitleBarHeight : 0f);
+        float contentY = backgroundBounds.Y + UIConstants.CONTENT_PADDING + (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
         float contentHeight = backgroundBounds.Y + backgroundBounds.Height - UIConstants.CONTENT_PADDING - contentY;
         float contentWidth = backgroundBounds.Width - UIConstants.CONTENT_PADDING * 2;
 
@@ -430,11 +585,37 @@ public abstract class UIContainer
         LastContentRenderBounds = bounds;
         LastBorderBounds = backgroundBounds;
         DrawContent(bounds);
+        if (EnableDebugDraw && Style.AllowUserResizing)
+            DrawResizeDebugRects(LastBorderBounds);
 
         if (Style.TimeUntilAutoDismiss > 0)
             DrawCloseTimerBar(backgroundBounds);
     }
 
+    protected void DrawResizeDebugRects(Rectangle r)
+    {
+        float m = RESIZE_MARGIN;
+        var semi = new Color(255, 0, 0, RESIZE_DEBUG_ALPHA);
+
+        // left edge (extends slightly outward)
+        ray.DrawRectangleRec(new Rectangle(r.X - m, r.Y - m, m, r.Height + m * 2f), semi);
+
+        // right edge
+        ray.DrawRectangleRec(new Rectangle(r.X + r.Width, r.Y - m, m, r.Height + m * 2f), semi);
+
+        // top edge
+        ray.DrawRectangleRec(new Rectangle(r.X - m, r.Y - m, r.Width + m * 2f, m), semi);
+
+        // bottom edge
+        ray.DrawRectangleRec(new Rectangle(r.X - m, r.Y + r.Height, r.Width + m * 2f, m), semi);
+
+        // corner indicators (slightly larger)
+        float corner = m * 1.5f;
+        ray.DrawRectangleRec(new Rectangle(r.X - corner, r.Y - corner, corner, corner), semi); // top-left
+        ray.DrawRectangleRec(new Rectangle(r.X + r.Width, r.Y - corner, corner, corner), semi); // top-right
+        ray.DrawRectangleRec(new Rectangle(r.X - corner, r.Y + r.Height, corner, corner), semi); // bottom-left
+        ray.DrawRectangleRec(new Rectangle(r.X + r.Width, r.Y + r.Height, corner, corner), semi); // bottom-right
+    }
 
     protected void DrawCloseTimerBar(Rectangle r)
     {
@@ -465,12 +646,12 @@ public abstract class UIContainer
 
     protected void HandleTitleBar(Rectangle backgroundBounds, Rectangle dragBounds)
     {
-        if (Style.AllowDragging)
+        if (Style.AllowUserResizing)
         {
             bool shouldDrag = DrawCustomTitleBar(dragBounds);
 
             bool hoveringDragTarget = false;
-            if (Style.AllowDragging)
+            if (Style.AllowUserResizing && shouldDrag)
                 hoveringDragTarget = ray.CheckCollisionPointRec(Input.MousePosition, dragBounds);
 
             if (hoveringDragTarget != IsDragTarget)
@@ -536,7 +717,7 @@ public abstract class UIContainer
 
     private void ClampContentScroll()
     {
-        float dragHeightLocal = Style.AllowDragging ? Style.TitleBarHeight : 0f;
+        float dragHeightLocal = Style.AllowUserResizing ? Style.TitleBarHeight : 0f;
         float visibleHeight = CurrentPosition.Height - UIConstants.CONTENT_PADDING * 2 - dragHeightLocal;
         float maxScroll = Math.Max(0f, LastTotalContentHeight - visibleHeight);
         if (ContentScrollY < 0f) ContentScrollY = 0f;

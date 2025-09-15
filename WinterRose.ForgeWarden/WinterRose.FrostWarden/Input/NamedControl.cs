@@ -1,4 +1,5 @@
 ﻿using Raylib_cs;
+using System.Diagnostics.CodeAnalysis;
 
 namespace WinterRose.ForgeWarden.Input;
 
@@ -18,27 +19,39 @@ public class NamedControl
 
     private NamedControl() { } // for serialization
 
-    internal bool IsPressed(IInputProvider provider)
+    internal bool IsPressed(IInputProvider provider, [NotNullWhen(true)] out InputBinding? binding)
     {
-        foreach (var binding in Bindings)
-            if (provider.IsPressed(binding))
+        foreach (var b in Bindings)
+            if (provider.IsPressed(b))
+            {
+                binding = b;
                 return true;
+            }
+        binding = null;
         return false;
     }
 
-    internal bool IsDown(IInputProvider provider)
+    internal bool IsDown(IInputProvider provider, [NotNullWhen(true)] out InputBinding? binding)
     {
-        foreach (var binding in Bindings)
-            if (provider.IsDown(binding))
+        foreach (var b in Bindings)
+            if (provider.IsDown(b))
+            {
+                binding = b;
                 return true;
+            }
+        binding = null;
         return false;
     }
 
-    internal bool IsUp(IInputProvider provider)
+    internal bool IsUp(IInputProvider provider, [NotNullWhen(true)] out InputBinding? binding)
     {
-        foreach (var binding in Bindings)
-            if (provider.IsUp(binding))
+        foreach (var b in Bindings)
+            if (provider.IsUp(b))
+            {
+                binding = b;
                 return true;
+            }
+        binding = null;
         return false;
     }
 

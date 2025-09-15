@@ -80,7 +80,7 @@ public class InputContext
         if (!Controls.TryGetValue(controlName, out var control))
             return false;
 
-        return control.IsPressed(Provider) && HasKeyboardFocus; // Named controls assumed keyboard/gamepad
+        return control.IsPressed(Provider, out var binding) && HasRightFocus(binding); // Named controls assumed keyboard/gamepad
     }
     /// <inheritdoc cref="IInputProvider.IsDown(InputBinding)"/>
     public bool IsDown(string controlName)
@@ -91,7 +91,7 @@ public class InputContext
         if (!Controls.TryGetValue(controlName, out var control))
             return false;
 
-        return control.IsDown(Provider) && HasKeyboardFocus;
+        return control.IsDown(Provider, out var binding) && HasRightFocus(binding);
     }
     /// <inheritdoc cref="IInputProvider.IsUp(InputBinding)"/>
     public bool IsUp(string controlName)
@@ -102,7 +102,7 @@ public class InputContext
         if (!Controls.TryGetValue(controlName, out var control))
             return false;
 
-        return control.IsUp(Provider) && HasKeyboardFocus;
+        return control.IsUp(Provider, out var binding) && HasRightFocus(binding);
     }
     /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)"/>
     public bool IsPressed(KeyboardKey key)

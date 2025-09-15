@@ -1,4 +1,5 @@
-﻿using WinterRose.ForgeGuardChecks;
+﻿using System.Diagnostics;
+using WinterRose.ForgeGuardChecks;
 using WinterRose.ForgeWarden.Input;
 
 namespace WinterRose.ForgeWarden.DamageSystem.WeaponSystem;
@@ -13,22 +14,21 @@ public class Weapon : Component, IUpdatable
     public Trigger Trigger { get; set; }
 
     public List<Trigger> AvailableTriggers { get; set; } = [];
-
-    public InputBinding FireInput { get; set; }
-    public InputBinding ReloadInput { get; set; }
-    public InputBinding ChangeTriggerModeInput { get; set; }
-
+    float time = 0;
     public void Update()
     {
         Trigger?.Update();
+        //Console.WriteLine($"kb: {Input.HasKeyboardFocus}, mouse {Input.HasMouseFocus}");
 
         if (Magazine.ReloadBehavior.IsReloading)
             return;
 
-        Magazine.StartReload();
+        if(Input.IsPressed("reload"))
+            Magazine.StartReload();
 
         if(Input.IsDown("fire"))
         {
+            Console.WriteLine("fire" + time++);
             if(Trigger.CanFire())
             {
                 if(Trigger.TryFire())

@@ -8,6 +8,7 @@ using WinterRose.ForgeGuardChecks;
 using System.Diagnostics;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.ForgeWarden.Input;
+using PuppeteerSharp.BrowserData;
 
 namespace WinterRose.ForgeWarden.Worlds;
 

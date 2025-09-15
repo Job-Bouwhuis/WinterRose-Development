@@ -21,7 +21,6 @@ using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Windowing;
 using WinterRose.ForgeWarden.Worlds;
 using static Raylib_cs.Raylib;
-using Window = WinterRose.ForgeWarden.Windowing.Window;
 
 namespace WinterRose.ForgeWarden;
 
@@ -170,6 +169,7 @@ public abstract class Application
         Dialogs.Update(Time.deltaTime);
         ToastToDialogMorpher.Update();
         Toasts.Update(Time.deltaTime);
+        Update();
 
         BeginDrawing();
         ray.BeginBlendMode(BlendMode.Alpha);
@@ -204,6 +204,7 @@ public abstract class Application
         Dialogs.Draw();
         ToastToDialogMorpher.Draw();
         Toasts.Draw();
+        Draw();
 
         if (ShowFPS)
             ray.DrawFPS(10, 10);
@@ -213,6 +214,7 @@ public abstract class Application
 
     public virtual void Update() { }
     public virtual void Draw() { }
+
     private Task SetupEmbeddedBrowser()
     {
         return Task.Run(async () =>
@@ -311,11 +313,10 @@ public abstract class Application
     {
         var monitorsize = Windows.GetScreenSize();
         Run("ForgeWarden Tests", monitorsize.X, monitorsize.Y,
-            ConfigFlags.AlwaysRunWindow
-            | ConfigFlags.MousePassthroughWindow
+            ConfigFlags.TransparentWindow
             | ConfigFlags.UndecoratedWindow
-            | ConfigFlags.TransparentWindow
             | ConfigFlags.BorderlessWindowMode
-            | ConfigFlags.TopmostWindow);
+            | ConfigFlags.TopmostWindow
+            | ConfigFlags.AlwaysRunWindow);
     }
 }

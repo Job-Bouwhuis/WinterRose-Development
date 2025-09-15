@@ -48,6 +48,18 @@ namespace WinterRose.ForgeWarden.Windowing
                 MakeNonActivating(Windows.MyHandle.Handle);
                 UnfocusCurrentWindow(Windows.MyHandle.Handle);
                 HideFromTaskbarAndAltTab(Windows.MyHandle.Handle);
+
+                MakeNonActivating(Windows.MyHandle.Handle);
+                UnfocusCurrentWindow(Windows.MyHandle.Handle);
+                HideFromTaskbarAndAltTab(Windows.MyHandle.Handle);
+
+                // Enable layered style for per-pixel alpha
+                int style = GetWindowLong(Windows.MyHandle.Handle, GWL_EXSTYLE);
+                style |= WS_EX_LAYERED;
+                SetWindowLong(Windows.MyHandle.Handle, GWL_EXSTYLE, style);
+
+                // Use per-pixel alpha (255 = fully opaque where pixels are drawn)
+                SetLayeredWindowAttributes(Windows.MyHandle.Handle, 0, 255, LWA_ALPHA);
             }
         }
 
@@ -64,6 +76,13 @@ namespace WinterRose.ForgeWarden.Windowing
 
         [DllImport("user32.dll")]
         private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+        const int WS_EX_LAYERED = 0x00080000;
+        const int LWA_COLORKEY = 0x00000001;
+        const int LWA_ALPHA = 0x00000002;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 
         private const uint GW_HWNDNEXT = 2;
 

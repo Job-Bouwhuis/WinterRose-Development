@@ -154,26 +154,35 @@ public class RaylibInputProvider : IInputProvider
     /// <inheritdoc cref="IInputProvider.IsDown(InputBinding)"/>
     public bool IsDown(InputBinding binding)
     {
+        bool result;
+
         switch (binding.DeviceType)
         {
             case InputDeviceType.Keyboard:
-                return Raylib.IsKeyDown((KeyboardKey)binding.Code);
+                result = Raylib.IsKeyDown((KeyboardKey)binding.Code);
+                break;
 
             case InputDeviceType.Mouse:
-                return Raylib.IsMouseButtonDown((MouseButton)binding.Code);
+                result = Raylib.IsMouseButtonDown((MouseButton)binding.Code);
+                break;
 
             case InputDeviceType.GamepadButton:
-                return Raylib.IsGamepadButtonDown(gamepadIndex, (GamepadButton)binding.Code);
+                result = Raylib.IsGamepadButtonDown(gamepadIndex, (GamepadButton)binding.Code);
+                break;
 
             case InputDeviceType.GamepadAxis:
                 float axis = Raylib.GetGamepadAxisMovement(gamepadIndex, (GamepadAxis)binding.Code);
-                return binding.Relation == InputAxisRelation.Positive
+                result = binding.Relation == InputAxisRelation.Positive
                     ? axis > binding.Threshold
                     : axis < -binding.Threshold;
+                break;
 
             default:
-                return false;
+                result = false;
+                break;
         }
+
+        return result;
     }
 
     /// <inheritdoc cref="IInputProvider.IsUp(InputBinding)(InputBinding)"/>

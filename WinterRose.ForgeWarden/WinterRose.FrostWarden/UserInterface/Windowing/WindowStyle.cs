@@ -77,7 +77,7 @@ public class WindowStyle : ContainerStyle
         collapseButtonClick = new Color(50, 180, 110);
 
         // --- Behavior defaults ---
-        AllowDragging = true;
+        AllowUserResizing = true;
         TitleBarHeight = 30;
         RaiseOnHover = false;
 
@@ -86,6 +86,7 @@ public class WindowStyle : ContainerStyle
         ShadowSizeBottom = ShadowSizeRight;
 
         AutoScale = false;
+        AllowUserResizing = true;
     }
 
 

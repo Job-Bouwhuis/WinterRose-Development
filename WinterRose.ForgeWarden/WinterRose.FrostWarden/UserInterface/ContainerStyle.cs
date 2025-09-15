@@ -19,11 +19,49 @@ namespace WinterRose.ForgeWarden.UserInterface
         private Color buttonClick;
         private Color barBackground;
         private Color barFill;
-        private Color barText; 
+        private Color barText;
         private Color timerBarBackground;
         private Color timerBarFill;
         private Color scrollbarTrack;
         private Color scrollbarThumb;
+
+        // --- visuals ---
+        private Color textBoxBackgroundColor = new Color(24, 24, 24, 230);
+        private Color textBoxBorderColor = new Color(80, 80, 80, 255);
+        private Color textBoxFocusedBorderColor = new Color(140, 140, 140, 255);
+        private Color textBoxTextColor = Color.White;
+        private Color textBoxCaretColor = Color.Yellow;
+
+        public Color TextBoxBackground
+        {
+            get => textBoxBackgroundColor.WithAlpha(ContentAlpha);
+            set => textBoxBackgroundColor = value;
+        }
+
+        public Color TextBoxBorder
+        {
+            get => textBoxBorderColor.WithAlpha(ContentAlpha);
+            set => textBoxBorderColor = value;
+        }
+
+        public Color TextBoxFocusedBorder
+        {
+            get => textBoxFocusedBorderColor.WithAlpha(ContentAlpha);
+            set => textBoxFocusedBorderColor = value;
+        }
+
+        public Color TextBoxText
+        {
+            get => textBoxTextColor.WithAlpha(ContentAlpha);
+            set => textBoxTextColor = value;
+        }
+
+        public Color Caret
+        {
+            get => textBoxCaretColor.WithAlpha(ContentAlpha);
+            set => textBoxCaretColor = value;
+        }
+
 
         public Color Background
         {
@@ -130,6 +168,12 @@ namespace WinterRose.ForgeWarden.UserInterface
         public Color BarFillRaw => barFill;
         public Color BarTextRaw => barText;
 
+        public Color TextBoxBackgroundRaw => textBoxBackgroundColor;
+        public Color TextBoxBorderRaw => textBoxBorderColor;
+        public Color TextBoxFocusedBorderRaw => textBoxFocusedBorderColor;
+        public Color TextBoxTextRaw => textBoxTextColor;
+        public Color CaretRaw => textBoxCaretColor;
+
         // Common shadow sizing
         public float ShadowSizeLeft { get; set; }
         public float ShadowSizeTop { get; set; }
@@ -145,7 +189,7 @@ namespace WinterRose.ForgeWarden.UserInterface
 
         public bool ShowVerticalScrollBar { get; set; } = true;
 
-        public bool AllowDragging { get; set; } = false;
+        public bool AllowUserResizing { get; set; } = false;
         public float TitleBarHeight { get; set; } = 12;
 
         public Curve RaiseCurve { get; set; } = Curves.EaseOutBack;
@@ -168,5 +212,12 @@ namespace WinterRose.ForgeWarden.UserInterface
         public float BorderSize { get; set; } = 2;
         public bool AutoScale { get; internal set; }
         public int TimeUntilAutoDismiss { get; set; }
+
+        public float CaretBlinkingRate { get; set; } = 0.25f; // seconds
+        public float CaretWidth { get; set; } = 2;
+        public float TextBoxPadding { get; set; } = 6f;
+        public float TextBoxFontSize { get; set; } = 16f;
+        public float TextBoxTextSpacing { get; set; } = 2f;
+        public float TextBoxMinHeight { get; set; } = 20f;
     }
 }

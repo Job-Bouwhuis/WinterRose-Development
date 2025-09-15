@@ -20,7 +20,7 @@ public class Magazine : Component, IUpdatable
 
     public IReadOnlyList<Projectile> TakeProjectiles()
     {
-        throw new NotImplementedException();
+        return new List<Projectile>();
     }
 
     public Magazine(Projectile projectile, ReloadBehavior reloadBehavior)
