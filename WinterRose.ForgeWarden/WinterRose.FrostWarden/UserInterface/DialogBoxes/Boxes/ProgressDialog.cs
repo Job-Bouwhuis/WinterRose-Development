@@ -2,7 +2,6 @@
 using System.Formats.Tar;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
-using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 
 namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
 

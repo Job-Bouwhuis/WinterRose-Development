@@ -2,10 +2,12 @@
 using Raylib_cs;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.Utility;
 using Color = Raylib_cs.Color;
 using Rectangle = Raylib_cs.Rectangle;
 
@@ -689,12 +691,7 @@ public abstract class UIContainer
     protected internal virtual void DrawContent(Rectangle contentArea)
     {
         // Begin scissor so nothing draws outside the content area
-        Raylib_cs.Raylib.BeginScissorMode(
-            (int)contentArea.X,
-            (int)contentArea.Y,
-            (int)contentArea.Width,
-            (int)contentArea.Height
-        );
+        ScissorStack.Push(contentArea);
 
         float offsetY = contentArea.Y - ContentScrollY;
         foreach (var content in Contents)
@@ -709,7 +706,7 @@ public abstract class UIContainer
             offsetY += contentHeight + UIConstants.CONTENT_PADDING;
         }
 
-        Raylib_cs.Raylib.EndScissorMode();
+        ScissorStack.Pop();
 
         // Draw scrollbars on top of the container but not over the titlebar
         DrawVerticalScrollbar(contentArea, LastBorderBounds);
@@ -833,25 +830,9 @@ public abstract class UIContainer
         return this;
     }
 
-    public UIContainer AddButton(RichText text, ButtonClickHandler? onClick = null)
+    public UIContainer AddButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null)
     {
-        ButtonRowContent? btns = null;
-        foreach (var item in Contents)
-        {
-            if (item is ButtonRowContent b)
-            {
-                btns = b;
-                break;
-            }
-        }
-
-        if (btns is null)
-        {
-            btns = new();
-            AddContent(btns);
-        }
-
-        btns.AddButton(text, onClick);
+        AddContent(new UIButton(text, onClick));
         return this;
     }
 
@@ -861,7 +842,7 @@ public abstract class UIContainer
     /// <param name="text"></param>
     /// <param name="onClick">Should return true when the toast should close, false if not</param>
     /// <returns></returns>
-    public UIContainer AddButton(string text, ButtonClickHandler? onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
+    public UIContainer AddButton(string text, VoidInvocation<UIContainer, UIButton>? onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
 
     /// <summary>
     /// Adds a progress bar to the toast

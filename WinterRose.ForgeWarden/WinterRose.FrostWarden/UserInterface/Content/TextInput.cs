@@ -5,8 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeSignal;
+using WinterRose.ForgeWarden.Utility;
 
-namespace WinterRose.ForgeWarden.UserInterface.Content;
+namespace WinterRose.ForgeWarden.UserInterface;
 
 public class TextInput : UIContent
 {
@@ -26,7 +27,11 @@ public class TextInput : UIContent
     public string Placeholder { get; set; } = "";
     private Color placeholderColor = new Color(160, 160, 160, 200);
 
-    public string Text => text;
+    public string Text
+    {
+        get => text;
+        set => SetText(value);
+    }
 
     public bool HasFocus => hasFocus;
 
@@ -166,7 +171,7 @@ public class TextInput : UIContent
         float spacing = Style.TextBoxTextSpacing;
         Vector2 textPos = new Vector2(bounds.X + Style.TextBoxTextSpacing, bounds.Y + (bounds.Height - fontSize) / 2f - 1f);
 
-        Raylib.BeginScissorMode((int)bounds.X, (int)bounds.Y, (int)bounds.Width, (int)bounds.Height);
+        ScissorStack.Push(bounds);
 
         // if empty and placeholder is set and not focused -> draw placeholder
         if (string.IsNullOrEmpty(text) && !string.IsNullOrEmpty(Placeholder) && !hasFocus)
@@ -189,7 +194,7 @@ public class TextInput : UIContent
             ray.DrawLineEx(new Vector2(caretX, caretY1), new Vector2(caretX, caretY2), Style.CaretWidth, Style.Caret);
         }
 
-        Raylib.EndScissorMode();
+        ScissorStack.Pop();
     }
 
     protected internal override float GetHeight(float maxWidth)

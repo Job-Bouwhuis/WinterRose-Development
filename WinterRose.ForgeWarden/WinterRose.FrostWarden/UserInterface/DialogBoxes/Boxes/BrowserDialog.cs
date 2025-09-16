@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using WinterRose;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
-using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 using Color = Raylib_cs.Color;
 using Image = Raylib_cs.Image;
 using Rectangle = Raylib_cs.Rectangle;

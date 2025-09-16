@@ -1,7 +1,6 @@
 ﻿using Raylib_cs;
 using System.Diagnostics;
 using System.Runtime.ExceptionServices;
-using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 
 namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
 internal class ExceptionDialog : Dialog

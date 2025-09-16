@@ -1,5 +1,6 @@
 ﻿using BulletSharp;
 using Raylib_cs;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.AssetPipeline;
@@ -17,7 +18,6 @@ using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
-using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
@@ -58,9 +58,155 @@ internal class Program : Application
         
     }
 
+    public static Graph LoadSimpleGraphFromCsv(string filePath)
+    {
+        var lines = File.ReadAllLines(filePath);
+        var graph = new Graph();
+        var series = graph.GetSeries("Average Times");
+
+        // skip header
+        for (int i = 1; i < lines.Length; i++)
+        {
+            var parts = lines[i].Split(',');
+            if (parts.Length != 2) continue;
+
+            int size = int.Parse(parts[0]);
+            float avg = float.Parse(parts[1], CultureInfo.InvariantCulture);
+
+            // each line is just one point (size, avg)
+            series.AddPoint(size, avg);
+        }
+
+        // give it a nice color so it doesn’t default to black or something dull
+        series.Color = FromHsl(210f, 0.7f, 0.5f); // bluish tone
+
+        return graph;
+    }
+
+    public static Graph LoadSimpleGraphFromCsv(params string[] filePaths)
+    {
+        var graph = new Graph();
+
+        int fileCount = filePaths.Length;
+        for (int index = 0; index < filePaths.Length; index++)
+        {
+            var filePath = filePaths[index];
+            var lines = File.ReadAllLines(filePath);
+
+            // series name from filename without extension
+            var seriesName = Path.GetFileNameWithoutExtension(filePath)[9..];
+            var series = graph.GetSeries(seriesName);
+
+            for (int i = 1; i < lines.Length; i++)
+            {
+                var parts = lines[i].Split(',');
+                if (parts.Length != 2) continue;
+
+                int size = int.Parse(parts[0]);
+                float avg = float.Parse(parts[1], CultureInfo.InvariantCulture);
+
+                series.AddPoint(size, avg);
+            }
+
+            // assign unique color per series based on index
+            float hue = (index / (float)fileCount) * 360f;
+            series.Color = FromHsl(hue, 0.7f, 0.5f);
+        }
+
+        return graph;
+    }
+
+
+    public static Graph LoadGraphFromCsv(string filePath)
+    {
+        var lines = File.ReadAllLines(filePath);
+        var dataBySize = new Dictionary<int, List<(int threshold, float avg)>>();
+
+        // skip header
+        for (int i = 1; i < lines.Length; i++)
+        {
+            var parts = lines[i].Split(',');
+            if (parts.Length != 3) continue;
+
+            int threshold = int.Parse(parts[0]);
+            int size = int.Parse(parts[1]);
+            float avg = float.Parse(parts[2], CultureInfo.InvariantCulture);
+
+            if (!dataBySize.TryGetValue(size, out var list))
+            {
+                list = new List<(int, float)>();
+                dataBySize[size] = list;
+            }
+
+            list.Add((threshold, avg));
+        }
+
+        // Now create the graph
+        var graph = new Graph();
+
+        Dictionary<string, Color> colorMap = new Dictionary<string, Color>();
+
+        int seriesCount = dataBySize.Count;
+        int index = 0;
+
+        foreach (var kvp in dataBySize)
+        {
+            int size = kvp.Key;
+            var series = kvp.Value
+                 .GroupBy(x => x.threshold)
+                 .Select(g => (threshold: g.Key, average: (float)g.Average(a => a.avg)))
+                 .ToList();
+
+            var seriesName = $"Size {size}";
+            var graphSeries = graph.GetSeries(seriesName);
+
+            foreach (var point in series)
+                graphSeries.AddPoint(point.threshold, point.average);
+
+            float hue = (index / (float)seriesCount) * 360f;
+            float saturation = 0.7f;
+            float lightness = 0.5f;
+
+            Color color = FromHsl(hue, saturation, lightness);
+            colorMap[seriesName] = color;
+            graphSeries.Color = color; 
+
+            index++;
+        }
+
+        return graph;
+    }
+
+    static Color FromHsl(float h, float s, float l)
+    {
+        h /= 360f;
+
+        float r = l, g = l, b = l;
+        if (s != 0)
+        {
+            float temp2 = l < 0.5f ? l * (1 + s) : (l + s) - (l * s);
+            float temp1 = 2 * l - temp2;
+
+            r = HueToRgb(temp1, temp2, h + 1f / 3f);
+            g = HueToRgb(temp1, temp2, h);
+            b = HueToRgb(temp1, temp2, h - 1f / 3f);
+        }
+
+        return new Color((int)(r * 255), (int)(g * 255), (int)(b * 255), 255);
+    }
+
+    static float HueToRgb(float t1, float t2, float thue)
+    {
+        if (thue < 0) thue += 1;
+        if (thue > 1) thue -= 1;
+        if (6 * thue < 1) return t1 + (t2 - t1) * 6 * thue;
+        if (2 * thue < 1) return t2;
+        if (3 * thue < 2) return t1 + (t2 - t1) * ((2f / 3f) - thue) * 6;
+        return t1;
+    }
+
     public override World CreateWorld()
     {
-        ShowFPS = true;
         ray.SetTargetFPS(144);
         ClearColor = Color.Beige;
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
@@ -118,93 +264,7 @@ internal class Program : Application
         // Optional: add multiple triggers
         weapon.AvailableTriggers.Add(trigger);
 
-        UIWindow window = new UIWindow("Window 1", 300, 500);
-        window.AddText("window 1", UIFontSizePreset.Title);
-        window.AddButton("My Awesome Button 1", (c, b) =>
-        {
-            Toasts.Success("hmmm no");
-        });
-        window.AddButton("My Awesome Button 2", (c, b) =>
-        {
-            Toasts.Success("frictionless wipe");
-        });
-        window.AddButton("My Awesome Button 3", (c, b) =>
-        {
-            Toasts.Success("bubu love bubu waaaa");
-        });
-        window.AddButton("My Awesome Button 4", (c, b) =>
-        {
-            Toasts.Success("yes");
-        });
-        window.AddSprite(Assets.Load<Sprite>("bigimg"));
-        window.AddSprite(Assets.Load<Sprite>("bigimg"));
-        window.AddSprite(Assets.Load<Sprite>("bigimg"));
-        window.AddSprite(Assets.Load<Sprite>("bigimg"));
-        window.AddSprite(Assets.Load<Sprite>("bigimg"));
-        //window.Show();
-
-        UIWindow window2 = new UIWindow("Window 2", 300, 500);
-        window2.AddSprite(Assets.Load<Sprite>("bigimg"));
-        window2.AddSprite(Assets.Load<Sprite>("bigimg"));
-        window2.AddSprite(Assets.Load<Sprite>("bigimg"));
-        window2.AddText("window 2", UIFontSizePreset.Title);
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        window2.AddButton("My Awesome Button");
-        //window2.Show();
-        //ShowToast(ToastRegion.Left, ToastStackSide.Top);
-        //ShowToast(ToastRegion.Left, ToastStackSide.Top);
-        //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
-        //ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
-
-        //Dialogs.Show(new Dialog("Horizontal Big",
-        //    "refer to \\L[https://github.com/Job-Bouwhuis/WinterRose.WinterForge|WinterForge github page] for info",
-        //    DialogPlacement.RightBig, priority: DialogPriority.High)
-        //.AddContent(new UIButton("OK", (c, b) =>
-        //{
-        //    ShowToast(ToastRegion.Left, ToastStackSide.Top);
-        //    c.Close();
-        //})));
-
-        ShowToast(ToastRegion.Center, ToastStackSide.Top);
+        ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
 
         void ShowToast(ToastRegion r, ToastStackSide s)
         {
@@ -219,45 +279,125 @@ internal class Program : Application
                             .AddProgressBar(-1)
                             .AddSprite(Assets.Load<Sprite>("bigimg"));
 
-            var w = new UIWindow("Test Window", 400, 500, 100, 100);
-            //w.Style.ShowMaximizeButton = false;
-            //w.Style.ShowCollapseButton = false;
-            //w.Style.ShowCloseButton = false;
-            var ti = new TextInput();
-            ti.Placeholder = "Username";
-            ti.OnSubmit.Subscribe(Invocation.Create((TextInput i, string t) =>
+            var w = new UIWindow("Trees", 400, 500, 100, 100);
+
+            //UIValueSlider<float> slider = new UIValueSlider<float>(1, 20, 1);
+            //slider.Step = 1;
+            //slider.SnapToStep = true;
+            //slider.HoldShiftToDisableSnap = true;
+            //w.AddContent(slider);
+
+            //UINumericUpDown<float> updown = new UINumericUpDown<float>();
+            //updown.Label = "nummmm";
+            //updown.DecimalPlaces = 0;
+            //w.AddContent(updown);
+
+            UIDateTimePicker dp = new UIDateTimePicker();
+            w.AddContent(dp);
+
+            UITextContent text = new UITextContent("", UIFontSizePreset.Message);
+            dp.OnDateTimeChangedBasic.Subscribe(d =>
             {
-                Console.WriteLine(t);
-                i.SetText("");
-            }));
-            w.AddContent(ti);
+                text.Text = d.ToString("");
+            });
 
-            var ti2 = new TextInput();
-            ti2.IsPassword = true;
-            ti2.Placeholder = "Password";
-            ti2.OnSubmit.Subscribe(Invocation.Create((TextInput i, string t) =>
-            {
-                Console.WriteLine(t);
-                i.SetText("");
-            }));
-            w.AddContent(ti2);
+            w.AddContent(text);
 
-            w.AddButton("Login", (cont, but) => Console.WriteLine("Logged In!"));
+            //TreeNode node = new("node1");
+            //node.ClickInvocation.Subscribe(tree => Console.WriteLine(tree.Text));
+            //node.AddChild(new TreeNode("node 2"));
+            //node.AddChild(new TreeNode("node 3", n => n.AddChild(new TreeNode("node 4"))));
+            //node.AddChild(new TreeNode("node 5", n => n.AddChild(new TreeNode("node 6"))));
 
-            Dropdown<int> dropdown = new();
+            //w.AddContent(node);
+
+            //w.AddButton("test");
+
+            //w.AddContent(new UICheckBox("check", Invocation.Create((bool b) => Console.WriteLine(b))));
+
+            //UIRadioButtons radio = new UIRadioButtons();
+
+            //radio.AddOption("opt1");
+            //radio.AddOption("opt2");
+            //radio.AddOption("opt3");
+            //radio.AddOption("opt4");
+
+            //radio.OnSelectionChangedBasic.Subscribe(x => x.ForEach(Console.WriteLine));
+            //radio.MaxSelected = 3;
+            //w.AddContent(radio);
+
+            //var ti = new TextInput();
+            //ti.Placeholder = "Username";
+            //ti.OnSubmit.Subscribe(Invocation.Create((TextInput i, string t) =>
+            //{
+            //    Console.WriteLine(t);
+            //    i.SetText("");
+            //}));
+            //w.AddContent(ti);
+
+            //var ti2 = new TextInput();
+            //ti2.IsPassword = true;
+            //ti2.Placeholder = "Password";
+            //ti2.OnSubmit.Subscribe(Invocation.Create((TextInput i, string t) =>
+            //{
+            //    Console.WriteLine(t);
+            //    i.SetText("");
+            //}));
+            //w.AddContent(ti2);
+
+            //Dropdown<string> dropdown = new();
             //dropdown.SetItems(["Dajuksa", "is", "my", "favorite", "girl", "ever"]);
-            dropdown.SetItems(WinterUtils.ConsecutiveNumbers(25));
-            w.AddContent(dropdown);
-            dropdown.OnSelected.Subscribe(Invocation.Create((Dropdown<int> d, int s) => Console.WriteLine(s)));
+            ////dropdown.SetItems(WinterUtils.ConsecutiveNumbers(25));
+            //dropdown.MultiSelect = true;
+            //w.AddContent(dropdown);
+            //dropdown.OnSelected.Subscribe(Invocation.Create((Dropdown<string> d, List<string> s) => Console.WriteLine(string.Join(", ", s))));
+
+            //Graph gall = LoadSimpleGraphFromCsv(
+            //    "SorterOnePointOne.csv",
+            //    "SorterOnePointTwo.csv",
+            //    "SorterOnePointThree.csv",
+            //    "SorterOnePointSix.csv"
+            //    );
+            //gall.XAxisLabel = "Size";
+            //gall.YAxisLabel = "Time (ms)";
+            // w.AddContent(gall);
+
+            // Graph g2 = LoadSimpleGraphFromCsv("SorterOnePointOne.csv");
+            // g2.XAxisLabel = "Size";
+            // g2.YAxisLabel = "Time (ms)";
+            // //w.AddContent(g2);
+
+            // Graph g3 = LoadSimpleGraphFromCsv("SorterOnePointTwo.csv");
+            // g3.XAxisLabel = "Size";
+            // g3.YAxisLabel = "Time (ms)";
+            // //w.AddContent(g3);
+
+            // Graph g4 = LoadSimpleGraphFromCsv("SorterOnePointThree.csv");
+            // g4.XAxisLabel = "Size";
+            // g4.YAxisLabel = "Time (ms)";
+            // //w.AddContent(g4);
+
+            //Graph g = LoadGraphFromCsv("csv.txt"); // 1.4
+            //g.XTickInterval = 500;
+            //g.XAxisLabel = "Size";
+            //g.YAxisLabel = "Time (ms)";
+            //w.AddContent(g);
+
+            // Graph g7 = LoadSimpleGraphFromCsv("SorterOnePointSix.csv");
+            // g7.XAxisLabel = "Size";
+            // g7.YAxisLabel = "Time (ms)";
+            // //w.AddContent(g7);
+
 
             Toast t = new Toast(ToastType.Info, r, s)
                     //.AddText("Right?\n\n\nYes")
                     //.AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(d))
                     //.AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Bottom))
-                    .AddButton("show window normal", (c, b) => w.Show())
-                    .AddButton("show window collapsed", (c, b) => w.ShowCollapsed())
-                    .AddButton("show window maximized", (c, b) => w.ShowMaximized())
-                    .AddButton("close window", (c, b) => w.Close())
+                    .AddButton("show window normal", Invocation.Create<UIContainer, UIButton>((c, b) => w.Show()))
+                    .AddButton("show window collapsed", Invocation.Create<UIContainer, UIButton>((c, b) => w.ShowCollapsed()))
+                    .AddButton("show window maximized", Invocation.Create<UIContainer, UIButton>((c, b) => w.ShowMaximized()))
+                    .AddButton("close window", Invocation.Create<UIContainer, UIButton>((c, b) => w.Close()))
+                    .AddButton("close toast", Invocation.Create<UIContainer, UIButton>((c, b) => c.Close()))
                     //.AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
                     //.AddSprite(Assets.Load<Sprite>("bigimg"))
                     //.AddContent(new HeavyFileDropContent())

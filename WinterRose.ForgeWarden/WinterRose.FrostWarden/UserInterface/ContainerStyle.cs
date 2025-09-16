@@ -148,6 +148,141 @@ namespace WinterRose.ForgeWarden.UserInterface
             set => scrollbarThumb = value;
         }
 
+        private Color panelBackground = new Color(32, 32, 32, 255);
+        public Color PanelBackground
+        {
+            get => panelBackground.WithAlpha(ContentAlpha);
+            set => panelBackground = value;
+        }
+        public Color PanelBackgroundRaw => panelBackground;
+
+        private Color panelBorder = new Color(80, 80, 80, 255);
+        public Color PanelBorder
+        {
+            get => panelBorder.WithAlpha(ContentAlpha);
+            set => panelBorder = value;
+        }
+        public Color PanelBorderRaw => panelBorder;
+
+        private Color panelBackgroundDarker = new Color(20, 20, 20, 255);
+        public Color PanelBackgroundDarker
+        {
+            get => panelBackgroundDarker.WithAlpha(ContentAlpha);
+            set => panelBackgroundDarker = value;
+        }
+        public Color PanelBackgroundDarkerRaw => panelBackgroundDarker;
+
+        private Color textSmall = new Color(200, 200, 200, 255);
+        public Color TextSmall
+        {
+            get => textSmall.WithAlpha(ContentAlpha);
+            set => textSmall = value;
+        }
+        public Color TextSmallRaw => textSmall;
+
+        private Color tooltipBackground = new Color(40, 40, 40, 240);
+        public Color TooltipBackground
+        {
+            get => tooltipBackground.WithAlpha(ContentAlpha);
+            set => tooltipBackground = value;
+        }
+        public Color TooltipBackgroundRaw => tooltipBackground;
+
+        private Color gridLine = new Color(60, 60, 60, 255);
+        public Color GridLine
+        {
+            get => gridLine.WithAlpha(ContentAlpha);
+            set => gridLine = value;
+        }
+        public Color GridLineRaw => gridLine;
+
+        private Color axisLine = new Color(100, 100, 100, 255);
+        public Color AxisLine
+        {
+            get => axisLine.WithAlpha(ContentAlpha);
+            set => axisLine = value;
+        }
+        public Color AxisLineRaw => axisLine;
+
+        private Color treeNodeBorder = new Color(180, 180, 180, 255);
+        public Color TreeNodeBorder
+        {
+            get => treeNodeBorder.WithAlpha(ContentAlpha);
+            set => treeNodeBorder = value;
+        }
+        public Color TreeNodeBorderRaw => treeNodeBorder;
+
+        private Color treeNodeText = new Color(255, 255, 255, 255);
+        public Color TreeNodeText
+        {
+            get => treeNodeText.WithAlpha(ContentAlpha);
+            set => treeNodeText = value;
+        }
+        public Color TreeNodeTextRaw => treeNodeText;
+
+        private Color treeNodeArrow = new Color(200, 200, 255, 255);
+        public Color TreeNodeArrow
+        {
+            get => treeNodeArrow.WithAlpha(ContentAlpha);
+            set => treeNodeArrow = value;
+        }
+        public Color TreeNodeArrowRaw => treeNodeArrow;
+
+        private Color treeNodeHover = new Color(140, 140, 220, 255);
+        public Color TreeNodeHover
+        {
+            get => treeNodeHover.WithAlpha(ContentAlpha);
+            set => treeNodeHover = value;
+        }
+        public Color TreeNodeHoverRaw => treeNodeHover;
+
+        private Color treeNodeBackground = new Color(20, 20, 20, 255);
+        public Color TreeNodeBackground
+        {
+            get => treeNodeBackground.WithAlpha(ContentAlpha);
+            set => treeNodeBackground = value;
+        }
+        public Color TreeNodeBackgroundRaw => treeNodeBackground;
+
+        private Color radioGroupSeparator = new Color(20, 20, 200, 255);
+        public Color RadioGroupAccent
+        {
+            get => radioGroupSeparator.WithAlpha(ContentAlpha);
+            set => radioGroupSeparator = value;
+        }
+        public Color RadioGroupAccentRaw => radioGroupSeparator;
+
+        private Color radioGroupBackground = new Color(20, 20, 100, 200);
+        public Color RadioGroupBackground
+        {
+            get => radioGroupBackground.WithAlpha(ContentAlpha);
+            set => radioGroupBackground = value;
+        }
+        public Color RadioGroupBackgroundRaw => radioGroupBackground;
+
+        private Color sliderTick = new Color(200, 200, 200, 80);
+        public Color SliderTick
+        {
+            get => sliderTick.WithAlpha(ContentAlpha);
+            set => sliderTick = value;
+        }
+        public Color SliderTickRaw => sliderTick;
+
+        private Color sliderFilled = new Color(20, 20, 100, 255);
+        public Color SliderFilled
+        {
+            get => sliderFilled.WithAlpha(ContentAlpha);
+            set => sliderFilled = value;
+        }
+        public Color SliderFilledRaw => sliderFilled;
+
+        private Color radioGroupBorder = new Color(80, 80, 80, 255);
+        public Color RadioGroupBorder
+        {
+            get => radioGroupBorder.WithAlpha(ContentAlpha);
+            set => radioGroupBorder = value;
+        }
+        public Color RadioGroupBorderRaw => radioGroupBorder;
 
         public Color ScrollbarThumbRaw => scrollbarThumb;
         public Color ScrollbarTrackRaw => scrollbarTrack;
@@ -219,5 +354,8 @@ namespace WinterRose.ForgeWarden.UserInterface
         public float TextBoxFontSize { get; set; } = 16f;
         public float TextBoxTextSpacing { get; set; } = 2f;
         public float TextBoxMinHeight { get; set; } = 20f;
+        public float TreeNodeHeight { get; set; } = 20;
+        public float TreeNodeIndentWidth { get; set; } = 16;
+        public double DoubleClickSeconds { get; set; } = 0.15;
     }
 }

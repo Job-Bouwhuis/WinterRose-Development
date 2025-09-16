@@ -1,8 +1,8 @@
 ﻿using Raylib_cs;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
-using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 using Color = Raylib_cs.Color;
 using Rectangle = Raylib_cs.Rectangle;
 
@@ -176,25 +176,12 @@ public class Dialog : UIContainer
         return (Dialog)base.AddContent(content);
     }
 
-    public new Dialog AddButton(RichText text, ButtonClickHandler? onClick = null)
+    public virtual Dialog AddButton(RichText text, Action<UIContainer, UIButton> onClick)
+        => AddButton(text, Invocation.Create(onClick));
+
+    public new Dialog AddButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null)
     {
-        ButtonRowContent? btns = null;
-        foreach (var item in Contents)
-        {
-            if (item is ButtonRowContent b)
-            {
-                btns = b;
-                break;
-            }
-        }
-
-        if (btns is null)
-        {
-            btns = new();
-            AddContent(btns);
-        }
-
-        btns.AddButton(text, onClick);
+        AddContent(new UIButton(text, onClick));
         return this;
     }
 
@@ -204,7 +191,7 @@ public class Dialog : UIContainer
     /// <param name="text"></param>
     /// <param name="onClick">Should return true when the toast should close, false if not</param>
     /// <returns></returns>
-    public new Dialog AddButton(string text, ButtonClickHandler? onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
+    public new Dialog AddButton(string text, VoidInvocation<UIContainer, UIButton>? onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
 
     /// <summary>
     /// Adds a progress bar to the toast

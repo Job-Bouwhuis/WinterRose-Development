@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
@@ -12,11 +13,12 @@ namespace WinterRose.ForgeWarden.UserInterface;
 
 public class ButtonRowContent : UIContent
 {
-    private static readonly ButtonClickHandler alwaysTrueFunc = (container, button) => 
-    {
-        if (container is Toast)
-            container.Close();
-    };
+    private static readonly VoidInvocation<UIContainer, UIButton> alwaysTrueFunc = Invocation.Create<UIContainer, UIButton>(
+        (container, button) =>
+        {
+            if (container is Toast)
+                container.Close();
+        });
     List<List<Rectangle>> buttonRows = [];
 
     public List<UIButton> Buttons { get; } = new();
@@ -32,7 +34,7 @@ public class ButtonRowContent : UIContent
 
     public ButtonRowContent(params List<UIButton> buttons) => Buttons = buttons;
 
-    public UIButton AddButton(string text, ButtonClickHandler? onClick = null)
+    public UIButton AddButton(string text, VoidInvocation<UIContainer, UIButton>? onClick = null)
     {
         var n = new UIButton(text, onClick ?? alwaysTrueFunc)
         {
@@ -42,7 +44,7 @@ public class ButtonRowContent : UIContent
         return n;
     }
 
-    public UIButton AddButton(RichText text, ButtonClickHandler? onClick = null)
+    public UIButton AddButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null)
     {
         var n = new UIButton(text, onClick ?? alwaysTrueFunc)
         {

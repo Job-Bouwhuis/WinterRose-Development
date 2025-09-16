@@ -1,12 +1,13 @@
 ﻿using Raylib_cs;
 using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
+using WinterRose.ForgeWarden.Utility;
 
-namespace WinterRose.ForgeWarden.UserInterface.Content;
+namespace WinterRose.ForgeWarden.UserInterface;
 
 public class Dropdown<T> : UIContent
 {
-    public MulticastVoidInvocation<Dropdown<T>, T> OnSelected = new();
+    public MulticastVoidInvocation<Dropdown<T>, List<T>> OnSelected { get; set; } = new();
 
     private readonly TextInput filterInput;
     private readonly List<T> items = new();
@@ -28,7 +29,18 @@ public class Dropdown<T> : UIContent
 
     public IReadOnlyList<T> Items => items;
     public int SelectedIndex => selectedIndex;
-    public T SelectedItem => selectedIndex >= 0 && selectedIndex < items.Count ? items[selectedIndex] : default;
+    public T? SelectedItem =>
+        !MultiSelect && selectedIndex >= 0 && selectedIndex < items.Count
+            ? items[selectedIndex]
+            : default;
+
+    public bool MultiSelect { get; set; } = false;
+    private readonly HashSet<int> selectedIndices = new();
+
+    // Adjusted selected items accessor
+    public IReadOnlyList<T> SelectedItems => selectedIndices.Select(i => items[i]).ToList();
+
+
 
     private float scrollOffset = 0f;
     private bool isDraggingScrollbar = false;
@@ -105,34 +117,38 @@ public class Dropdown<T> : UIContent
     {
         base.Update();
 
-        // If typing is enabled and the dropdown is open we let the filterInput consume keyboard via UpdateInline
+        // Allow typing when open
         if (AllowTyping && isOpen)
-        {
             filterInput.UpdateInline();
-        }
 
-        // Keyboard navigation when open and not typing (or even when typing we allow arrows)
         if (isOpen)
         {
+            // keyboard navigation
             if (Input.IsPressed(KeyboardKey.Down))
-            {
                 highlightedIndex = Math.Min(filteredIndices.Count - 1, highlightedIndex + 1);
-            }
+
             if (Input.IsPressed(KeyboardKey.Up))
-            {
                 highlightedIndex = Math.Max(0, highlightedIndex - 1);
-            }
+
             if (Input.IsPressed(KeyboardKey.Enter))
             {
                 if (filteredIndices.Count > 0)
                 {
-                    CommitSelection(filteredIndices[Math.Clamp(highlightedIndex, 0, filteredIndices.Count - 1)]);
+                    int idx = filteredIndices[Math.Clamp(highlightedIndex, 0, filteredIndices.Count - 1)];
+
+                    if (MultiSelect)
+                    {
+                        OnSelected?.Invoke(this, SelectedItems);
+                    }
+                    else
+                    {
+                        CommitSelection(idx);
+                    }
                 }
             }
+
             if (Input.IsPressed(KeyboardKey.Escape))
-            {
                 CloseDropdown();
-            }
         }
         else
         {
@@ -140,11 +156,32 @@ public class Dropdown<T> : UIContent
         }
     }
 
+
     private void CommitSelection(int itemIdx)
     {
-        selectedIndex = itemIdx;
-        OnSelected?.Invoke(this, items[itemIdx]);
+        if (MultiSelect)
+        {
+            // Toggle selection in multi-select mode
+            if (selectedIndices.Contains(itemIdx))
+                selectedIndices.Remove(itemIdx);
+            else
+                selectedIndices.Add(itemIdx);
 
+            // Fire event with all currently selected items
+            OnSelected?.Invoke(this, SelectedItems.ToList());
+        }
+        else
+        {
+            selectedIndex = itemIdx;
+            OnSelected?.Invoke(this, new List<T>() { items[itemIdx] });
+            CloseDropdown();
+        }
+
+        UpdateScrollOffset(itemIdx);
+    }
+
+    private void UpdateScrollOffset(int itemIdx)
+    {
         float itemHeight = MathF.Max(Style.TextBoxMinHeight, Style.TextBoxFontSize + Style.TextBoxTextSpacing * 2f);
         int visibleCount = Math.Min(MaxVisibleItems, filteredIndices.Count);
         float listHeight = itemHeight * visibleCount;
@@ -152,25 +189,18 @@ public class Dropdown<T> : UIContent
 
         if (totalHeight > listHeight)
         {
-            // Make selected item appear in the middle of the visible list
             float targetOffset = filteredIndices.IndexOf(itemIdx) * itemHeight - listHeight / 2 + itemHeight / 2;
-
-            // Clamp to valid scroll range
             scrollOffset = Math.Clamp(targetOffset, 0, totalHeight - listHeight);
         }
         else
         {
             scrollOffset = 0f;
         }
-
-        CloseDropdown();
     }
-
-
 
     private void CommitCustomInput(string text)
     {
-        OnSelected?.Invoke(this, text);
+        OnSelected?.Invoke(this, new List<string>() { text });
     }
 
     private void OpenDropdown()
@@ -213,8 +243,32 @@ public class Dropdown<T> : UIContent
         float spacing = Style.TextBoxTextSpacing;
         Vector2 textPos = new Vector2(box.X + Style.TextBoxTextSpacing, box.Y + (box.Height - fontSize) / 2f - 1f);
 
-        string selText = SelectedItem is not null ? stringSelector(SelectedItem) : (AllowTyping ? filterInput.Placeholder : "");
-        Color drawColor = SelectedItem == null ? new Color(160, 160, 160, (int)(255 * Style.ContentAlpha)) : Style.TextBoxText;
+        string selText;
+        bool nothingSelectedForDisplay;
+        if (MultiSelect)
+        {
+            if (selectedIndices.Count > 0)
+            {
+                var ordered = selectedIndices.OrderBy(i => i).Select(i => stringSelector(items[i]) ?? "");
+                selText = string.Join(", ", ordered);
+                nothingSelectedForDisplay = false;
+            }
+            else
+            {
+                selText = AllowTyping ? filterInput.Placeholder : "";
+                nothingSelectedForDisplay = true;
+            }
+        }
+        else
+        {
+            selText = SelectedItem is not null ? stringSelector(SelectedItem) : (AllowTyping ? filterInput.Placeholder : "");
+            nothingSelectedForDisplay = SelectedItem is null;
+        }
+
+        Color drawColor = nothingSelectedForDisplay
+            ? new Color(160, 160, 160, (int)(255 * Style.ContentAlpha))
+            : Style.TextBoxText;
+
         Raylib.DrawTextEx(font, selText ?? "", textPos, fontSize, spacing, drawColor);
 
         if (isOpen)
@@ -241,7 +295,7 @@ public class Dropdown<T> : UIContent
             ray.DrawRectangleRec(listRect, Style.TextBoxBackground);
             ray.DrawRectangleLinesEx(listRect, 1f, Style.TextBoxBorder);
 
-            Raylib.BeginScissorMode((int)listRect.X, (int)listRect.Y, (int)listRect.Width, (int)listRect.Height);
+            ScissorStack.Push(listRect);
 
             for (int i = 0; i < filteredIndices.Count; i++)
             {
@@ -255,14 +309,41 @@ public class Dropdown<T> : UIContent
                 bool mouseOver = Raylib.CheckCollisionPointRec(Input.Provider.MousePosition, itemRect);
                 bool highlighted = (i == highlightedIndex);
 
+                bool isSelected = MultiSelect
+                    ? selectedIndices.Contains(itemIndex)
+                    : (itemIndex == selectedIndex);
+
                 if (mouseOver)
                     ray.DrawRectangleRec(itemRect, Style.ScrollbarThumb);
                 else if (highlighted)
                     ray.DrawRectangleRec(itemRect, new Color(100, 100, 100, 120));
 
-                Vector2 itPos = new Vector2(itemRect.X + ItemPadding, itemRect.Y + (itemRect.Height - fontSize) / 2f - 1f);
+                // start text position; may be moved right if there's a checkbox
+                float itPosX = itemRect.X + ItemPadding;
+                float itPosY = itemRect.Y + (itemRect.Height - fontSize) / 2f - 1f;
+
+                // draw multi-select checkbox first (so text never overlaps it)
+                if (MultiSelect)
+                {
+                    float boxSize = itemHeight * 0.5f;
+                    float boxX = itemRect.X + ItemPadding;
+                    float boxY = itemRect.Y + (itemHeight - boxSize) / 2f;
+                    var checkRect = new Rectangle(boxX, boxY, boxSize, boxSize);
+
+                    ray.DrawRectangleLinesEx(checkRect, 1f, Style.TextBoxText);
+
+                    if (isSelected)
+                        ray.DrawRectangleRec(checkRect, Style.TextBoxText);
+
+                    // move text start to the right of the checkbox
+                    itPosX = boxX + boxSize + ItemSpacing;
+                }
+
+                // draw the item text at adjusted position
+                Vector2 itPos = new Vector2(itPosX, itPosY);
                 Raylib.DrawTextEx(font, stringSelector(items[itemIndex]) ?? "", itPos, fontSize, spacing, Style.TextBoxText);
 
+                // mouse click handling remains the same (no change)
                 if (mouseOver && dropdownInput.Provider.IsPressed(new InputBinding(InputDeviceType.Mouse, 0)))
                 {
                     if (itemRect.X >= listRect.X &&
@@ -272,13 +353,13 @@ public class Dropdown<T> : UIContent
                     {
                         CommitSelection(itemIndex);
                         Input.IsRequestingMouseFocus = true;
-                        Raylib.EndScissorMode();
+                        ScissorStack.Pop();
                         return;
                     }
                 }
             }
 
-            Raylib.EndScissorMode();
+            ScissorStack.Pop();
 
             if (totalHeight > listHeight)
             {

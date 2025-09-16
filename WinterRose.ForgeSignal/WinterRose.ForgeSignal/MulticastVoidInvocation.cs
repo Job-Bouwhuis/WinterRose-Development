@@ -90,6 +90,8 @@ public sealed class MulticastVoidInvocation<T1> : Invocation
         return sub;
     }
 
+    public Subscription Subscribe(Action<T1> action) => Subscribe(Invocation.Create(action));
+
     private void InvokeInternal(T1 arg1)
     {
         Subscription[] snapshot;

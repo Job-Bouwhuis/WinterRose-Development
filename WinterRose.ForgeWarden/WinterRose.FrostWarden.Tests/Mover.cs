@@ -6,7 +6,6 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Components;
-using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;

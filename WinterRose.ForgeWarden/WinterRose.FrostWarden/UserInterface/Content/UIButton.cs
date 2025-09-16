@@ -1,14 +1,13 @@
 ﻿using BulletSharp;
 using Raylib_cs;
 using WinterRose;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.WIP.TestClasses;
 
 namespace WinterRose.ForgeWarden.UserInterface;
-
-public delegate void ButtonClickHandler(UIContainer container, UIButton button);
 
 public class UIButton : UIContent
 {
@@ -22,31 +21,38 @@ public class UIButton : UIContent
     protected internal const int PaddingY = 6;
     protected internal const int Spacing = 10;
 
-    private static readonly ButtonClickHandler alwaysTrueFunc = (container, button) =>
-    {
-        if (container is Toast)
-            container.Close();
-    };
+    private static readonly VoidInvocation<UIContainer, UIButton> alwaysTrueFunc = Invocation.Create<UIContainer, UIButton>(
+        (container, button) =>
+        {
+            if (container is Toast)
+                container.Close();
+        });
 
     private Color backgroundColor;
 
-    public ButtonClickHandler OnClick { get; set; }
+    public MulticastVoidInvocation<UIContainer, UIButton> OnClick { get; set; } = new();
 
-    public UIButton(string text, ButtonClickHandler? onClick = null) : this(text)
+    public UIButton(string text, VoidInvocation<UIContainer, UIButton>? onClick = null) : this(text)
     {
-        OnClick = onClick ?? alwaysTrueFunc;
+        OnClick.Subscribe(onClick ?? alwaysTrueFunc);
     }
 
-    public UIButton(RichText text, ButtonClickHandler? onClick = null) : this(text)
+    public UIButton(RichText text, Action<UIContainer, UIButton> onClick = null) 
+        : this(text, onClick is null ? null : Invocation.Create(onClick))
     {
-        OnClick = onClick ?? alwaysTrueFunc;
+
+    }
+
+    public UIButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null) : this(text)
+    {
+        OnClick.Subscribe(onClick ?? alwaysTrueFunc);
     }
 
 
     /// <summary>
     /// Invoke the OnClick handler for this button
     /// </summary>
-    protected internal override void OnContentClicked(MouseButton button) => OnClick(owner, this);
+    protected internal override void OnContentClicked(MouseButton button) => OnClick.Invoke(owner, this);
 
     protected internal override void Update()
     {

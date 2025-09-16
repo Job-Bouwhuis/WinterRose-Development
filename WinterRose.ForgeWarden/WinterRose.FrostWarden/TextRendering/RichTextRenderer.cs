@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Numerics;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
-using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
 public static class RichTextRenderer

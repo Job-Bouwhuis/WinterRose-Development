@@ -1,6 +1,7 @@
 ﻿using Raylib_cs;
 using System.Buffers;
 using System.ComponentModel;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
@@ -84,25 +85,9 @@ public class Toast : UIContainer
         return (Toast)base.AddContent(content);
     }
 
-    public new Toast AddButton(RichText text, ButtonClickHandler? onClick = null)
+    public new Toast AddButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null)
     {
-        ButtonRowContent? btns = null;
-        foreach (var item in Contents)
-        {
-            if (item is ButtonRowContent b)
-            {
-                btns = b;
-                break;
-            }
-        }
-
-        if (btns is null)
-        {
-            btns = new();
-            AddContent(btns);
-        }
-
-        btns.AddButton(text, onClick);
+        AddContent(new UIButton(text, onClick));
         return this;
     }
 
@@ -112,7 +97,7 @@ public class Toast : UIContainer
     /// <param name="text"></param>
     /// <param name="onClick">Should return true when the toast should close, false if not</param>
     /// <returns></returns>
-    public new Toast AddButton(string text, ButtonClickHandler? onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
+    public new Toast AddButton(string text, VoidInvocation<UIContainer, UIButton> onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
 
     /// <summary>
     /// Adds a progress bar to the toast

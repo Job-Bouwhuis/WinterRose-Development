@@ -19,7 +19,14 @@ public enum UIFontSizePreset
 
 public class UITextContent : UIContent
 {
-    public RichText Text { get; private set; }
+    public RichText Text
+    {
+        get => text;
+        set
+        {
+            SetText(value);
+        }
+    }
     public UIFontSizePreset Preset { get; private set; }
 
     // Base guideline sizes for each preset (can adjust as needed)
@@ -30,6 +37,12 @@ public class UITextContent : UIContent
         { UIFontSizePreset.Message, 14 },
         { UIFontSizePreset.Subtext, 7 }
     };
+    private RichText text;
+
+    public void SetText(RichText text)
+    {
+        this.text = text;
+    }
 
     public UITextContent(RichText message, UIFontSizePreset preset = UIFontSizePreset.Message)
     {

@@ -5,7 +5,6 @@ using System.Numerics;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
-using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 
 namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
 {

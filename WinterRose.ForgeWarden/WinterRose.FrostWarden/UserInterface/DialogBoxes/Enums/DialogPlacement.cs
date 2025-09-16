@@ -1,4 +1,4 @@
-﻿namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums
+﻿namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
 {
     public enum DialogPlacement
     {

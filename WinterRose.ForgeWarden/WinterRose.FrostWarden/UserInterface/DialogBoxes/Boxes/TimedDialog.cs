@@ -1,7 +1,6 @@
 ﻿using Raylib_cs;
 using System.Threading;
 using WinterRose.ForgeWarden.TextRendering;
-using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Enums;
 
 namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
 
