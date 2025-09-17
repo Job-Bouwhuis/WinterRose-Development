@@ -17,7 +17,7 @@ public enum UIFontSizePreset
     Subtext
 }
 
-public class UITextContent : UIContent
+public class UIText : UIContent
 {
     public RichText Text
     {
@@ -27,7 +27,14 @@ public class UITextContent : UIContent
             SetText(value);
         }
     }
-    public UIFontSizePreset Preset { get; private set; }
+    public UIFontSizePreset Preset
+    {
+        get => preset;
+        set
+        {
+            preset = value;
+        }
+    }
 
     // Base guideline sizes for each preset (can adjust as needed)
     private static readonly Dictionary<UIFontSizePreset, int> PresetBaseSizes = new()
@@ -38,25 +45,37 @@ public class UITextContent : UIContent
         { UIFontSizePreset.Subtext, 7 }
     };
     private RichText text;
+    private UIFontSizePreset preset;
 
     public void SetText(RichText text)
     {
         this.text = text;
     }
 
-    public UITextContent(RichText message, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public UIText(RichText message, UIFontSizePreset preset = UIFontSizePreset.Message)
     {
         Text = message;
         Preset = preset;
     }
 
-    public UITextContent(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public UIText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
         : this(RichText.Parse(text), preset) { }
 
 
-    public override Vector2 GetSize(Rectangle availableArea) => Text.CalculateBounds(availableArea.Width).Size;
+    public override Vector2 GetSize(Rectangle availableArea)
+    {
+        int guideline = PresetBaseSizes[Preset];
+        Text.FontSize = guideline;
+        var size = Text.CalculateBounds(availableArea.Width).Size;
+        return new Vector2(Math.Min(size.X, availableArea.Width), Math.Min(size.Y, availableArea.Height));
+    }
 
-    protected internal override float GetHeight(float width) => Text.CalculateBounds(width).Height;
+    protected internal override float GetHeight(float width)
+    {
+        int guideline = PresetBaseSizes[Preset];
+        Text.FontSize = guideline;
+        return Text.CalculateBounds(width).Height;
+    }
 
     protected override void Draw(Rectangle bounds)
     {
@@ -68,9 +87,14 @@ public class UITextContent : UIContent
         Rectangle textSize = Text.CalculateBounds(bounds.Width);
 
         // Compute scaling factor
-        float widthScale = bounds.Width / textSize.Width;
-        float heightScale = bounds.Height / textSize.Height;
-        float scale = Math.Min(widthScale, heightScale);
+        float scale = 1f; // default: no scaling
+        if (textSize.Width > bounds.Width || textSize.Height > bounds.Height)
+        {
+            float widthScale = bounds.Width / textSize.Width;
+            float heightScale = bounds.Height / textSize.Height;
+            scale = Math.Min(widthScale, heightScale);
+        }
+
 
         // Apply scaling, but clamp to a reasonable range
         Text.FontSize = (int)Math.Clamp(guideline * scale, guideline * 0.5f, guideline * 2f);

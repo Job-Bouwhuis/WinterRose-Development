@@ -9,7 +9,7 @@ public class Dropdown<T> : UIContent
 {
     public MulticastVoidInvocation<Dropdown<T>, List<T>> OnSelected { get; set; } = new();
 
-    private readonly TextInput filterInput;
+    private readonly UITextInput filterInput;
     private readonly List<T> items = new();
     private readonly List<int> filteredIndices = new();
     private readonly Func<T, string> stringSelector;
@@ -53,8 +53,8 @@ public class Dropdown<T> : UIContent
     {
         filterInput = new();
         // default placeholder on filter
-        filterInput.OnInputChanged.Subscribe(Invocation.Create<TextInput, string>((_, __) => Refilter()));
-        filterInput.OnSubmit.Subscribe(Invocation.Create<TextInput, string>((_, text) =>
+        filterInput.OnInputChanged.Subscribe(Invocation.Create<UITextInput, string>((_, __) => Refilter()));
+        filterInput.OnSubmit.Subscribe(Invocation.Create<UITextInput, string>((_, text) =>
         {
             // on enter in filter, pick highlighted if any
             if (isOpen)

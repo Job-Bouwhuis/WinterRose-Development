@@ -64,7 +64,7 @@ public class Dialog : UIContainer
         float scaleRef = Math.Min(bounds.Width, bounds.Height);
         float titleScale = scaleRef * 0.09f;
 
-        UITextContent titleContent = new UITextContent(title, UIFontSizePreset.Title);
+        UIText titleContent = new UIText(title, UIFontSizePreset.Title);
         titleContent.Text.FontSize = (int)Math.Clamp(titleScale, 14, 36);
 
         titleContent.owner = this;
@@ -78,7 +78,7 @@ public class Dialog : UIContainer
         float scaleRef = Math.Min(bounds.Width, bounds.Height);
         float messageScale = scaleRef * 0.04f;
 
-        UITextContent messageContent = new UITextContent(message, UIFontSizePreset.Message);
+        UIText messageContent = new UIText(message, UIFontSizePreset.Message);
         messageContent.Text.FontSize = (int)Math.Clamp(messageScale, 10, 24);
 
         messageContent.owner = this;
@@ -215,9 +215,9 @@ public class Dialog : UIContainer
     public new Dialog AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
     => AddText(RichText.Parse(text, Color.White), preset);
     public new Dialog AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
-        => AddContent(new UITextContent(text, preset));
+        => AddContent(new UIText(text, preset));
     public new Dialog AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
-        => AddContent(new UITextContent(text, preset));
+        => AddContent(new UIText(text, preset));
 
     public new Dialog AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
         => AddText(RichText.Parse(text, Color.White), preset);

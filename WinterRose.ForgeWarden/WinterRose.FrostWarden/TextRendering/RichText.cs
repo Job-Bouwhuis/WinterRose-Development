@@ -3,6 +3,7 @@
 using Raylib_cs;
 using System.Collections.Generic;
 using System.Drawing.Drawing2D;
+using System.Linq.Expressions;
 using System.Text;
 using WinterRose.WinterThornScripting.Interpreting;
 
@@ -170,71 +171,78 @@ public class RichText
 
         while (i < text.Length)
         {
-            if (text[i] == '\\' && i + 1 < text.Length)
+            try
             {
-                if (text[i + 1] == 'c' && text[i + 2] == '[')
+                if (text[i] == '\\' && i + 1 < text.Length)
                 {
-                    int close = text.IndexOf(']', i + 3);
-                    if (close > 0)
+                    if (text[i + 1] == 'c' && text[i + 2] == '[')
                     {
-                        string colorStr = text[(i + 3)..close];
-                        currentColor = ParseColor(colorStr, defaultColor);
-                        i = close + 1;
-                        continue;
-                    }
-                }
-                else if (text[i + 1] == 's' && text[i + 2] == '[')
-                {
-                   
-                    int close = text.IndexOf(']', i + 3);
-                    if (close > 0)
-                    {
-                        string spriteKey = text[(i + 3)..close];
-                        RichSprite s;
-                        elements.Add(s = new RichSprite(spriteKey, RichSpriteRegistry.GetSourceFor(spriteKey), 1f, currentColor));
-                        i = close + 1;
-
-                        if (text.Length >= close + 2)
+                        int close = text.IndexOf(']', i + 3);
+                        if (close > 0)
                         {
-                            if (text[close + 1] is '\\' && text[close + 2] is '!')
+                            string colorStr = text[(i + 3)..close];
+                            currentColor = ParseColor(colorStr, defaultColor);
+                            i = close + 1;
+                            continue;
+                        }
+                    }
+                    else if (text[i + 1] == 's' && text[i + 2] == '[')
+                    {
+
+                        int close = text.IndexOf(']', i + 3);
+                        if (close > 0)
+                        {
+                            string spriteKey = text[(i + 3)..close];
+                            RichSprite s;
+                            elements.Add(s = new RichSprite(spriteKey, RichSpriteRegistry.GetSourceFor(spriteKey), 1f, currentColor));
+                            i = close + 1;
+
+                            if (text.Length >= close + 2)
                             {
-                                s.Clickable = true;
-                                i += 2;
+                                if (text[close + 1] is '\\' && text[close + 2] is '!')
+                                {
+                                    s.Clickable = true;
+                                    i += 2;
+                                }
                             }
-                        }
 
-                        continue;
+                            continue;
+                        }
                     }
-                }
-                else if (text[i + 1] == 'L' && text[i + 2] == '[')
-                {
-                    int close = text.IndexOf(']', i + 3);
-                    if (close > 0)
+                    else if (text[i + 1] == 'L' && text[i + 2] == '[')
                     {
-                        string content = text[(i + 3)..close];
-                        string linkUrl = content;
-                        string displayText = content;
-
-                        int eq = content.IndexOf('|');
-                        if (eq >= 0)
+                        int close = text.IndexOf(']', i + 3);
+                        if (close > 0)
                         {
-                            linkUrl = content[..eq];
-                            displayText = content[(eq + 1)..];
-                        }
+                            string content = text[(i + 3)..close];
+                            string linkUrl = content;
+                            string displayText = content;
 
-                        // Add each character as a RichGlyph but attach link metadata
-                        foreach (char c in displayText)
-                        {
-                            elements.Add(new RichGlyph(c, currentColor)
+                            int eq = content.IndexOf('|');
+                            if (eq >= 0)
                             {
-                                GlyphLinkUrl = linkUrl
-                            });
-                        }
+                                linkUrl = content[..eq];
+                                displayText = content[(eq + 1)..];
+                            }
 
-                        i = close + 1;
-                        continue;
+                            // Add each character as a RichGlyph but attach link metadata
+                            foreach (char c in displayText)
+                            {
+                                elements.Add(new RichGlyph(c, currentColor)
+                                {
+                                    GlyphLinkUrl = linkUrl
+                                });
+                            }
+
+                            i = close + 1;
+                            continue;
+                        }
                     }
                 }
+            }
+            catch
+            {
+                // ignore, and draw characters as normal if anything here fails
             }
 
             elements.Add(new RichGlyph(text[i], currentColor));

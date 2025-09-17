@@ -292,16 +292,26 @@ internal class Program : Application
             //updown.DecimalPlaces = 0;
             //w.AddContent(updown);
 
-            UIDateTimePicker dp = new UIDateTimePicker();
-            w.AddContent(dp);
-
-            UITextContent text = new UITextContent("", UIFontSizePreset.Message);
-            dp.OnDateTimeChangedBasic.Subscribe(d =>
+            w.AddContent(new UIFPS()
             {
-                text.Text = d.ToString("");
+                Preset = UIFontSizePreset.Title
             });
 
-            w.AddContent(text);
+            //UIDateTimePicker dp = new UIDateTimePicker();
+            //w.AddContent(dp);
+
+            //UIText text = new UIText("", UIFontSizePreset.Message);
+            //dp.OnDateTimeChangedBasic.Subscribe(d =>
+            //{
+            //    text.Text = d.ToString("");
+            //});
+
+            //w.AddContent(text);
+
+            //UIColorPicker colorPicker = new UIColorPicker();
+            //w.AddContent(colorPicker);
+
+            //w.AddContent(new UITextInput());
 
             //TreeNode node = new("node1");
             //node.ClickInvocation.Subscribe(tree => Console.WriteLine(tree.Text));

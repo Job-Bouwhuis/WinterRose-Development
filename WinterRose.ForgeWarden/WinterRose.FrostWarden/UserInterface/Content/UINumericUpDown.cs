@@ -43,7 +43,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
     }
 
     // Inline text editor for typing values
-    private TextInput valueInput = new();
+    private UITextInput valueInput = new();
     private bool isEditing = false;
 
     // Hit / layout rects cached per-draw
@@ -180,7 +180,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
         valueInput.Text = ToStringFormatted(valueBacking);
 
         // subscribe to submit so typed values commit
-        valueInput.OnSubmit.Subscribe(Invocation.Create<TextInput, string>((_, text) =>
+        valueInput.OnSubmit.Subscribe(Invocation.Create<UITextInput, string>((_, text) =>
         {
             if (TryParseToT(text, out var parsed))
             {
@@ -197,7 +197,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
         }));
 
         // keep text in sync during inline typing if desired (no immediate commit)
-        valueInput.OnInputChanged.Subscribe(Invocation.Create<TextInput, string>((_, txt) =>
+        valueInput.OnInputChanged.Subscribe(Invocation.Create<UITextInput, string>((_, txt) =>
         {
             // noop for now; we only commit on submit/blurs
         }));
