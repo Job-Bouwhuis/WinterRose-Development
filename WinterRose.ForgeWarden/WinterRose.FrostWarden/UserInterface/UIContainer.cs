@@ -135,6 +135,7 @@ public abstract class UIContainer
 
     internal void UpdateContainer()
     {
+        Input.IsRequestingKeyboardFocus = false;
         if (!initialized)
         {
             initialized = true;
@@ -142,6 +143,7 @@ public abstract class UIContainer
                 c.Setup();
         }
         Update();
+        
     }
 
     protected virtual void OnContainerDragStart()
@@ -866,9 +868,9 @@ public abstract class UIContainer
     public UIContainer AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
     => AddText(RichText.Parse(text, Color.White), preset);
     public UIContainer AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
-        => AddContent(new UITextContent(text, preset));
+        => AddContent(new UIText(text, preset));
     public UIContainer AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
-        => AddContent(new UITextContent(text, preset));
+        => AddContent(new UIText(text, preset));
 
     public UIContainer AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
         => AddText(RichText.Parse(text, Color.White), preset);

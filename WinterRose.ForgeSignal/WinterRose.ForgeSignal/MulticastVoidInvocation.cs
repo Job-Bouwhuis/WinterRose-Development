@@ -139,6 +139,12 @@ public sealed class MulticastVoidInvocation<T1, T2> : Invocation
 
     public void Invoke(T1 arg1, T2 arg2) => InvokeInternal(arg1, arg2);
 
+    public static MulticastVoidInvocation<T1, T2> operator +(MulticastVoidInvocation<T1, T2> a, Action<T1, T2> b)
+    {
+        a.Subscribe(b);
+        return a;
+    }
+
     public Subscription Subscribe(VoidInvocation<T1, T2> invocation)
     {
         var sub = new Subscription
