@@ -188,7 +188,6 @@ namespace WinterRose.ForgeThread
 
             if (schedulers.TryGetValue(threadName, out var scheduler))
             {
-                // Continue on the ThreadPool then post the completion back to the loom's sync context.
                 sourceTask.ContinueWith(t =>
                 {
                     scheduler.SyncContext.Post(_ =>
@@ -201,7 +200,6 @@ namespace WinterRose.ForgeThread
             }
             else
             {
-                // No loom: just observe completion on ThreadPool
                 sourceTask.ContinueWith(t =>
                 {
                     if (t.IsFaulted) tcs.SetException(t.Exception ?? new Exception("Task faulted"));
@@ -211,7 +209,6 @@ namespace WinterRose.ForgeThread
             }
         }
 
-        // ----- UPDATED: ObserveTaskCompletion (non-generic) -----
         private void ObserveTaskCompletion(Task sourceTask, string threadName, TaskCompletionSource<object?> tcs)
         {
             if (sourceTask == null)
@@ -243,7 +240,6 @@ namespace WinterRose.ForgeThread
             }
         }
 
-        // --- Refactored InvokeOn overloads to use the helpers ---
 
         public Task<T> InvokeOn<T>(string threadName, Func<T> func, JobPriority priority = JobPriority.Normal)
         {
@@ -322,8 +318,6 @@ namespace WinterRose.ForgeThread
                         return;
                     }
 
-                    // Start the async function under the loom's TaskScheduler so the task itself is queued to the loom.
-                    // Unwrap to get the inner Task and observe it.
                     var task = Task.Factory.StartNew(
                         async () => await func(),
                         CancellationToken.None,
@@ -343,7 +337,6 @@ namespace WinterRose.ForgeThread
             return tcs.Task;
         }
 
-        // make the overload without bypassTick delegate to the one with bypassTick to avoid duplication
         public Task InvokeOn(string threadName, Func<Task> func, JobPriority priority = JobPriority.Normal)
         {
             return InvokeOn(threadName, func, priority, bypassTick: false);
@@ -452,16 +445,13 @@ namespace WinterRose.ForgeThread
             if (!threads.TryGetValue(name, out var loom)) throw new InvalidOperationException($"Thread '{name}' is not registered.");
             if (!loom.IsHostedMain) throw new InvalidOperationException($"Thread '{name}' is not a hosted main thread.");
 
-            // begin tick for the loom
             loom.BeginNextTick();
 
-            // run any scheduler work queued for this loom (continuations)
             if (schedulers.TryGetValue(name, out var mainScheduler))
             {
                 mainScheduler.RunTick();
             }
 
-            // if this main thread is part of a shared queue, process shared items first
             if (threadToSharedGroup.TryGetValue(name, out var groupName) && sharedQueues.TryGetValue(groupName, out var shared))
             {
                 int taken = 0;
@@ -479,7 +469,6 @@ namespace WinterRose.ForgeThread
             while (executed < maxItems && loom.TryDequeue(out var item))
             {
                 ExecuteScheduledItem(item, mainScheduler);
-                // after executing the item, run any continuations that were posted during execution
                 mainScheduler?.RunTick();
                 executed++;
             }
@@ -515,31 +504,26 @@ namespace WinterRose.ForgeThread
 
                 var yielded = handle.Routine.Current;
 
-                // update last-yield in the handle for consumers
                 if (yielded is TimeSpan)
                 {
-                    // don't set LastYield for time-waits; keep previous value
+                    // dont set LastYield for time waits. theyre not a genuine value
                 }
                 else
                 {
-                    // store any non-timeSpan (including null) as last-yield
                     handle.UpdateLastYield(yielded);
                 }
 
                 if (yielded == null)
                 {
-                    // resume next tick on same loom
                     EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None);
                 }
                 else if (yielded is TimeSpan ts)
                 {
-                    // schedule resume after timespan
                     var timer = new Timer(_ => EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None), null, ts, Timeout.InfiniteTimeSpan);
                     handle.AttachTimer(timer);
                 }
                 else
                 {
-                    // yielded a value (not a timespan) — treat as single-tick resume but keep the yielded value available
                     EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None);
                 }
             }
@@ -561,7 +545,6 @@ namespace WinterRose.ForgeThread
 
             LeaveSharedQueue(name);
 
-            // remove scheduler and tick rate entries
             schedulers.TryRemove(name, out _);
             tickRates.TryRemove(name, out _);
 
@@ -576,10 +559,7 @@ namespace WinterRose.ForgeThread
             {
                 if (waitFor.HasValue)
                 {
-                    if (!loom.ThreadInstance.Join(waitFor.Value))
-                    {
-                        // cannot forcefully abort; leave as background
-                    }
+                    loom.ThreadInstance.Join(waitFor.Value);
                 }
                 else
                 {
@@ -596,9 +576,7 @@ namespace WinterRose.ForgeThread
         {
             var keys = new List<string>(threads.Keys);
             foreach (var name in keys)
-            {
                 ShutdownThread(name, waitFor);
-            }
         }
 
         /// <summary>
@@ -613,7 +591,6 @@ namespace WinterRose.ForgeThread
             double targetMs = hasRate && ticksPerSecond > 0 ? 1000.0 / ticksPerSecond : 0.0;
             var sw = new System.Diagnostics.Stopwatch();
 
-            // determine if this worker is part of a shared group (snapshot each loop iteration)
             try
             {
                 while (!loom.IsCancellationRequested)
@@ -623,11 +600,9 @@ namespace WinterRose.ForgeThread
                     loom.BeginNextTick();
 
                     SharedWorkQueue? sharedQueue = null;
-                    // determine shared group membership for this iteration
                     var inGroup = threadToSharedGroup.TryGetValue(loom.Name, out var groupName)
                                   && sharedQueues.TryGetValue(groupName, out sharedQueue);
 
-                    // If in a shared group, try to consume from the shared queue first
                     if (inGroup)
                     {
                         while (sharedQueue!.Queue.TryDequeue(out var sharedItem))
@@ -636,7 +611,6 @@ namespace WinterRose.ForgeThread
                         }
                     }
 
-                    // then consume thread-local items as before
                     while (loom.TryTake(out var item))
                     {
                         ExecuteScheduledItem(item, schedulerExists ? scheduler : null);
@@ -650,12 +624,11 @@ namespace WinterRose.ForgeThread
                         var remaining = targetMs - elapsed;
                         if (remaining > 0)
                         {
-                            // wait either on the group's wake event (if in group) or on the thread-specific wake event
                             if (inGroup)
                             {
                                 try
                                 {
-                                    sharedQueue.Wake.Wait((int)remaining);
+                                    sharedQueue!.Wake.Wait((int)remaining);
                                     sharedQueue.Wake.Reset();
                                 }
                                 catch { }
@@ -683,11 +656,10 @@ namespace WinterRose.ForgeThread
             }
             catch (Exception)
             {
-                // swallow to keep thread alive
+                // TODO: make genuine workerthread exception handling
             }
             finally
             {
-                // flush remaining shared items (if any)
                 if (threadToSharedGroup.TryGetValue(loom.Name, out var finalGroup) &&
                     sharedQueues.TryGetValue(finalGroup, out var finalShared))
                 {
@@ -728,7 +700,7 @@ namespace WinterRose.ForgeThread
                 SynchronizationContext.SetSynchronizationContext(previousContext);
             }
         }
-        // --- updated EnqueueItem (replace previous implementation) ---
+
         private Task EnqueueItem(string threadName, Action action, JobPriority priority, CancellationToken cancellation, bool bypassTick = false)
         {
             if (disposed) throw new ObjectDisposedException(nameof(ThreadLoom));
@@ -737,17 +709,18 @@ namespace WinterRose.ForgeThread
 
             var item = new ScheduledItem(action, priority);
 
-            // if the target thread is a member of a shared queue, enqueue into the shared queue instead
             if (threadToSharedGroup.TryGetValue(threadName, out var groupName) &&
                 sharedQueues.TryGetValue(groupName, out var shared))
             {
                 shared.Queue.Enqueue(item);
-                // wake one or all members waiting on this group's wake event
-                try { shared.Wake.Set(); } catch { }
+                try 
+                { 
+                    shared.Wake.Set(); 
+                }
+                catch { }
             }
             else
             {
-                // existing behavior: enqueue on the thread-local loom queue
                 loom.EnqueueNextTick(item);
 
                 if (bypassTick && wakeEvents.TryGetValue(threadName, out var evt))

@@ -95,7 +95,7 @@ public class Dropdown<T> : UIContent
             var found = items.SearchMany(q, stringSelector, Fuzzy.ComparisonType.IgnoreCase);
             foreach (var f in found)
             {
-                if (f.score > 0)
+                if (f.score > 0.1)
                     filteredIndices.Add(items.IndexOf(f.item));
             }
         }
@@ -138,7 +138,6 @@ public class Dropdown<T> : UIContent
 
                     if (MultiSelect)
                     {
-                        OnSelected?.Invoke(this, SelectedItems);
                     }
                     else
                     {

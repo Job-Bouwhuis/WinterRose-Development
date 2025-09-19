@@ -292,16 +292,17 @@ internal class Program : Application
             //updown.DecimalPlaces = 0;
             //w.AddContent(updown);
 
-            UIDateTimePicker dp = new UIDateTimePicker();
-            w.AddContent(dp);
+            //UIDateTimePicker dp = new UIDateTimePicker();
+            //dp.Use24Hour = true;
+            //w.AddContent(dp);
 
-            UITextContent text = new UITextContent("", UIFontSizePreset.Message);
-            dp.OnDateTimeChangedBasic.Subscribe(d =>
-            {
-                text.Text = d.ToString("");
-            });
+            //UITextContent text = new UITextContent("", UIFontSizePreset.Message);
+            //dp.OnDateTimeChangedBasic.Subscribe(d =>
+            //{
+            //    text.Text = d.ToString("");
+            //});
 
-            w.AddContent(text);
+            //w.AddContent(text);
 
             //TreeNode node = new("node1");
             //node.ClickInvocation.Subscribe(tree => Console.WriteLine(tree.Text));
@@ -345,12 +346,12 @@ internal class Program : Application
             //}));
             //w.AddContent(ti2);
 
-            //Dropdown<string> dropdown = new();
-            //dropdown.SetItems(["Dajuksa", "is", "my", "favorite", "girl", "ever"]);
-            ////dropdown.SetItems(WinterUtils.ConsecutiveNumbers(25));
-            //dropdown.MultiSelect = true;
-            //w.AddContent(dropdown);
-            //dropdown.OnSelected.Subscribe(Invocation.Create((Dropdown<string> d, List<string> s) => Console.WriteLine(string.Join(", ", s))));
+            Dropdown<string> dropdown = new();
+            dropdown.SetItems(["Dajuksa", "is", "my", "favorite", "girl", "ever", "ill", "marry", "her", "in", "due", "time", "and", "make", "her", "mine", "forever"]);
+            //dropdown.SetItems(WinterUtils.ConsecutiveNumbers(25));
+            dropdown.MultiSelect = true;
+            w.AddContent(dropdown);
+            dropdown.OnSelected.Subscribe(Invocation.Create((Dropdown<string> d, List<string> s) => Console.WriteLine(string.Join(", ", s))));
 
             //Graph gall = LoadSimpleGraphFromCsv(
             //    "SorterOnePointOne.csv",

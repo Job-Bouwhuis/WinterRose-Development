@@ -73,7 +73,7 @@ public sealed class MultiThreadedSortedIterator<T> : IDisposable where T : IComp
             if (finished.All(f => f))
                 throw new InvalidOperationException("No more elements");
 
-            Task.Delay(1).Wait(); // small pause to avoid busy spin
+            Task.Yield();
         }
     }
 
