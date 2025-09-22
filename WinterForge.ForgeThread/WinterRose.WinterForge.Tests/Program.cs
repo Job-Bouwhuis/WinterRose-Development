@@ -36,7 +36,6 @@ internal class Program
         Console.WriteLine(stopwatch.ElapsedTicks);
         Console.WriteLine(stopwatch.ElapsedMilliseconds);
 
-
         return;
         Console.Clear();
         ForgeGuard.IncludeColorInMessageFormat = true;

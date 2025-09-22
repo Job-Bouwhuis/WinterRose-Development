@@ -4,13 +4,13 @@ namespace WinterRose.ForgeThreads.Tests;
 
 public static class ParallelQuickSort<T> where T : IComparable<T>
 {
-    private const int MIN_PARALLEL_SIZE = 10_000; // tweak this based on your dataset size
+    private const int MIN_PARALLEL_SIZE = 10_000;
 
     public static void Sort(T[] array, PooledThreadLoom loom)
     {
         var done = new CountdownEvent(1);
         QuickSort(array, 0, array.Length - 1, loom, done);
-        done.Wait(); // wait until all parallel tasks finish
+        done.Wait();
     }
 
     private static void QuickSort(T[] array, int left, int right, PooledThreadLoom loom, CountdownEvent done)
