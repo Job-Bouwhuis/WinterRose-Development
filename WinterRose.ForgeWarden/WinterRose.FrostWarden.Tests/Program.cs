@@ -22,6 +22,7 @@ using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Worlds;
+using WinterRose.StateKeeper;
 
 namespace WinterRose.ForgeWarden.Tests;
 

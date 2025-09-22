@@ -23,14 +23,16 @@ namespace WinterRose.ForgeGuardChecks
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            char[] chars = new char[encoding.GetMaxCharCount(count)];
-            int charCount = decoder.GetChars(buffer, offset, count, chars, 0);
-            writer.Write(chars, 0, charCount);
+            char[] array = new char[encoding.GetMaxCharCount(count)];
+            int chars = decoder.GetChars(buffer, offset, count, array, 0, true);
+            writer.Write(array, 0, chars);
         }
 
         public override void Write(ReadOnlySpan<byte> buffer)
         {
-
+            char[] array = new char[encoding.GetMaxCharCount(buffer.Length)];
+            int chars = decoder.GetChars(buffer, array, true);
+            writer.Write(array, 0, chars);
         }
 
         public override void WriteByte(byte value)
