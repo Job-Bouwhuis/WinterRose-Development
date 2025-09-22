@@ -58,10 +58,10 @@ internal class Program : Application
         
     }
 
-    public static Graph LoadSimpleGraphFromCsv(string filePath)
+    public static UIGraph LoadSimpleGraphFromCsv(string filePath)
     {
         var lines = File.ReadAllLines(filePath);
-        var graph = new Graph();
+        var graph = new UIGraph();
         var series = graph.GetSeries("Average Times");
 
         // skip header
@@ -83,9 +83,9 @@ internal class Program : Application
         return graph;
     }
 
-    public static Graph LoadSimpleGraphFromCsv(params string[] filePaths)
+    public static UIGraph LoadSimpleGraphFromCsv(params string[] filePaths)
     {
-        var graph = new Graph();
+        var graph = new UIGraph();
 
         int fileCount = filePaths.Length;
         for (int index = 0; index < filePaths.Length; index++)
@@ -117,7 +117,7 @@ internal class Program : Application
     }
 
 
-    public static Graph LoadGraphFromCsv(string filePath)
+    public static UIGraph LoadGraphFromCsv(string filePath)
     {
         var lines = File.ReadAllLines(filePath);
         var dataBySize = new Dictionary<int, List<(int threshold, float avg)>>();
@@ -142,7 +142,7 @@ internal class Program : Application
         }
 
         // Now create the graph
-        var graph = new Graph();
+        var graph = new UIGraph();
 
         Dictionary<string, Color> colorMap = new Dictionary<string, Color>();
 
@@ -279,7 +279,7 @@ internal class Program : Application
                             .AddProgressBar(-1)
                             .AddSprite(Assets.Load<Sprite>("bigimg"));
 
-            var w = new UIWindow("Trees", 400, 500, 100, 100);
+            var w = new UIWindow("Graph 1.4", 400, 500, 100, 100);
 
             //UIValueSlider<float> slider = new UIValueSlider<float>(1, 20, 1);
             //slider.Step = 1;
@@ -292,10 +292,10 @@ internal class Program : Application
             //updown.DecimalPlaces = 0;
             //w.AddContent(updown);
 
-            w.AddContent(new UIFPS()
-            {
-                Preset = UIFontSizePreset.Title
-            });
+            //w.AddContent(new UIFPS()
+            //{
+            //    Preset = UIFontSizePreset.Title
+            //});
 
             //UIDateTimePicker dp = new UIDateTimePicker();
             //w.AddContent(dp);
@@ -365,8 +365,7 @@ internal class Program : Application
             //Graph gall = LoadSimpleGraphFromCsv(
             //    "SorterOnePointOne.csv",
             //    "SorterOnePointTwo.csv",
-            //    "SorterOnePointThree.csv",
-            //    "SorterOnePointSix.csv"
+            //    "SorterOnePointThree.csv"
             //    );
             //gall.XAxisLabel = "Size";
             //gall.YAxisLabel = "Time (ms)";
@@ -387,16 +386,23 @@ internal class Program : Application
             // g4.YAxisLabel = "Time (ms)";
             // //w.AddContent(g4);
 
-            //Graph g = LoadGraphFromCsv("csv.txt"); // 1.4
-            //g.XTickInterval = 500;
-            //g.XAxisLabel = "Size";
+            //UIGraph g = LoadGraphFromCsv("csv.txt"); // 1.4
+            //g.XTickInterval = 100;
+            //g.XAxisLabel = "Threshold";
             //g.YAxisLabel = "Time (ms)";
             //w.AddContent(g);
 
-            // Graph g7 = LoadSimpleGraphFromCsv("SorterOnePointSix.csv");
-            // g7.XAxisLabel = "Size";
-            // g7.YAxisLabel = "Time (ms)";
-            // //w.AddContent(g7);
+            //UIGraph g5 = LoadGraphFromCsv("SorterOnePointFive.csv"); // 1.5
+            //g5.XTickInterval = 100;
+            //g5.XAxisLabel = "Threshold";
+            //g5.YAxisLabel = "Time (ms)";
+            //w.AddContent(g5);
+
+            UIGraph g7 = LoadGraphFromCsv("SorterOnePointSix.csv");
+            g7.XAxisLabel = "Size";
+            g7.YAxisLabel = "Time (ms)";
+            g7.XTickInterval = 100;
+            w.AddContent(g7);
 
 
             Toast t = new Toast(ToastType.Info, r, s)

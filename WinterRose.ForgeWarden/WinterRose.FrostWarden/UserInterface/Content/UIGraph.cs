@@ -6,19 +6,16 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace WinterRose.ForgeWarden.UserInterface;
-public class Graph : UIContent
+public class UIGraph : UIContent
 {
     private const float AXIS_MARGIN = 32f;
     private const float LEGEND_HEIGHT = 24f;
     private const float POINT_HIT_RADIUS = 6f;
     private const float DEFAULT_BAR_WIDTH = 12f;
-    private const float ZOOM_STEP = 1.1f;
-    private const float MIN_ZOOM = 0.1f;
-    private const float MAX_ZOOM = 10f;
-    private const int GRAPH_TEXT_SIZE = 12;
+    private const int GRAPH_TEXT_SIZE = 18;
 
     private const float TICK_LENGTH = 8f;
-    private const float LABEL_MARGIN = 4f;
+    private const float LABEL_MARGIN = 6f;
 
     private readonly List<Series> series = new();
     private Vector2 pan = new(0, 0);
@@ -220,11 +217,32 @@ public class Graph : UIContent
                 var pPx = DataToPixel(sp);
                 var tip = $"{series[si].Name} ({sp.X:0.###}, {sp.Y:0.###})";
                 var tw = ray.MeasureText(tip, GRAPH_TEXT_SIZE);
-                var tipRect = new Rectangle(pPx.X + 8, pPx.Y - 16, tw + 8, 20);
+
+                float tipW = tw + 8;
+                float tipH = 20;
+                float tipX = pPx.X + 8;
+                float tipY = pPx.Y - 16;
+
+                // Flip to left side if overflowing to the right
+                if (tipX + tipW > plotRect.X + plotRect.Width)
+                    tipX = pPx.X - 8 - tipW;
+
+                // Ensure it doesn't go past the left edge
+                if (tipX < plotRect.X)
+                    tipX = plotRect.X;
+
+                // Clamp vertically to stay inside plotRect
+                if (tipY < plotRect.Y)
+                    tipY = plotRect.Y;
+                if (tipY + tipH > plotRect.Y + plotRect.Height)
+                    tipY = plotRect.Y + plotRect.Height - tipH;
+
+                var tipRect = new Rectangle(tipX, tipY, tipW, tipH);
                 ray.DrawRectangleRec(tipRect, Style.TooltipBackground);
-                ray.DrawText(tip, (int)tipRect.X + 4, (int)tipRect.Y + 3, GRAPH_TEXT_SIZE, Style.TextSmall);
+                ray.DrawText(tip, (int)(tipRect.X + 4), (int)(tipRect.Y + 3), GRAPH_TEXT_SIZE, Style.TextSmall);
             }
         }
+
 
         // Axes (draw on top)
         DrawAxes(plotRect, worldMin, worldMax, bounds, DataToPixel);
@@ -364,6 +382,43 @@ public class Graph : UIContent
         }
     }
 
+    private string FormatNumberAbbrev(float value)
+    {
+        float abs = Math.Abs(value);
+        string suffix;
+        float divisor;
+
+        switch (abs)
+        {
+            case >= 1_000_000_000_000f:
+                suffix = "t";
+                divisor = 1_000_000_000_000f;
+                break;
+            case >= 1_000_000_000f:
+                suffix = "b";
+                divisor = 1_000_000_000f;
+                break;
+            case >= 1_000_000f:
+                suffix = "m";
+                divisor = 1_000_000f; 
+                break;
+            case >= 1_000f:
+                suffix = "k"; 
+                divisor = 1_000f;
+                break;
+            default:
+                suffix = "";
+                divisor = 1f;
+                break;
+        }
+
+        float scaled = value / divisor;
+
+        if (Math.Abs(scaled - (float)Math.Round(scaled)) < 1e-6f)
+            return ((int)Math.Round(scaled)).ToString() + suffix;
+        return scaled.ToString("0.#") + suffix;
+    }
+
     // updated method: DrawAxes (full replacement)
     private void DrawAxes(Rectangle plotRect, Vector2 worldMin, Vector2 worldMax, Rectangle bounds, Func<Vector2, Vector2> dataToPixel)
     {
@@ -383,24 +438,82 @@ public class Graph : UIContent
         float axisYPx = a.Y; // pixel Y coordinate of X axis
         if (XTickInterval > 0f)
         {
-            float startX = (float)Math.Ceiling(worldMin.X / XTickInterval) * XTickInterval;
-            for (float x = startX; x <= worldMax.X + 1e-6f; x += XTickInterval)
-            {
-                var px = dataToPixel(new Vector2(x, axisY));
-                var t1 = new Vector2(px.X, axisYPx - TICK_LENGTH * 0.5f);
-                var t2 = new Vector2(px.X, axisYPx + TICK_LENGTH * 0.5f);
-                ray.DrawLineEx(t1, t2, 1f, Style.AxisLine);
+            float baseStep = XTickInterval;
+            int[] multipliers = new[] { 1, 2, 5, 10, 20, 50, 100 };
 
-                var label = x.ToString("0.###");
-                int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
-                float lx = px.X - tw * 0.5f;
-                float ly = axisYPx + (TICK_LENGTH * 0.5f) + LABEL_MARGIN;
-                ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+            bool placed = false;
+            foreach (int mult in multipliers)
+            {
+                float step = baseStep * mult;
+                float first = (float)Math.Ceiling(worldMin.X / step) * step;
+                float lastLabelRight = float.NegativeInfinity;
+                bool collision = false;
+
+                for (float x = first; x <= worldMax.X + 1e-6f; x += step)
+                {
+                    var px = dataToPixel(new Vector2(x, axisY));
+                    var label = FormatNumberAbbrev(x);
+                    int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
+                    float lx = px.X - tw * 0.5f;
+                    float labelLeftWithMargin = lx - LABEL_MARGIN;
+                    if (labelLeftWithMargin <= lastLabelRight)
+                    {
+                        collision = true;
+                        break;
+                    }
+                    lastLabelRight = lx + tw + LABEL_MARGIN;
+                }
+
+                if (!collision)
+                {
+                    float start = (float)Math.Ceiling(worldMin.X / (baseStep * mult)) * (baseStep * mult);
+                    for (float x = start; x <= worldMax.X + 1e-6f; x += baseStep * mult)
+                    {
+                        var px = dataToPixel(new Vector2(x, axisY));
+                        var t1 = new Vector2(px.X, axisYPx - TICK_LENGTH * 0.5f);
+                        var t2 = new Vector2(px.X, axisYPx + TICK_LENGTH * 0.5f);
+                        ray.DrawLineEx(t1, t2, 1f, Style.AxisLine);
+
+                        var label = FormatNumberAbbrev(x);
+                        int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
+                        float lx = px.X - tw * 0.5f;
+                        float ly = axisYPx + (TICK_LENGTH * 0.5f) + LABEL_MARGIN;
+                        ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+                    }
+
+                    placed = true;
+                    break;
+                }
+            }
+
+            if (!placed)
+            {
+                float startX = (float)Math.Ceiling(worldMin.X / baseStep) * baseStep;
+                float lastLabelRight = float.NegativeInfinity;
+                for (float x = startX; x <= worldMax.X + 1e-6f; x += baseStep)
+                {
+                    var px = dataToPixel(new Vector2(x, axisY));
+                    var t1 = new Vector2(px.X, axisYPx - TICK_LENGTH * 0.5f);
+                    var t2 = new Vector2(px.X, axisYPx + TICK_LENGTH * 0.5f);
+                    ray.DrawLineEx(t1, t2, 1f, Style.AxisLine);
+
+                    var label = FormatNumberAbbrev(x);
+                    int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
+                    float lx = px.X - tw * 0.5f;
+                    float labelLeftWithMargin = lx - LABEL_MARGIN;
+                    if (labelLeftWithMargin > lastLabelRight)
+                    {
+                        float ly = axisYPx + (TICK_LENGTH * 0.5f) + LABEL_MARGIN;
+                        ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+                        lastLabelRight = lx + tw + LABEL_MARGIN;
+                    }
+                }
             }
         }
         else
         {
             int vTicks = Math.Max(1, ApproxTickCount);
+            float lastLabelRight = float.NegativeInfinity;
             for (int i = 0; i <= vTicks; i++)
             {
                 float t = i / (float)vTicks;
@@ -410,11 +523,16 @@ public class Graph : UIContent
                 var t2 = new Vector2(px.X, axisYPx + TICK_LENGTH * 0.5f);
                 ray.DrawLineEx(t1, t2, 1f, Style.AxisLine);
 
-                var label = dataX.ToString("0.###");
+                var label = FormatNumberAbbrev(dataX);
                 int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
                 float lx = px.X - tw * 0.5f;
-                float ly = axisYPx + (TICK_LENGTH * 0.5f) + LABEL_MARGIN;
-                ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+                float labelLeftWithMargin = lx - LABEL_MARGIN;
+                if (labelLeftWithMargin > lastLabelRight)
+                {
+                    float ly = axisYPx + (TICK_LENGTH * 0.5f) + LABEL_MARGIN;
+                    ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+                    lastLabelRight = lx + tw + LABEL_MARGIN;
+                }
             }
         }
 
@@ -423,46 +541,142 @@ public class Graph : UIContent
         bool axisOnLeft = Math.Abs(axisX - worldMin.X) < 0.00001f;
         if (YTickInterval > 0f)
         {
-            float startY = (float)Math.Ceiling(worldMin.Y / YTickInterval) * YTickInterval;
-            for (float y = startY; y <= worldMax.Y + 1e-6f; y += YTickInterval)
-            {
-                var py = dataToPixel(new Vector2(axisX, y));
-                var t1 = new Vector2(axisXPx - TICK_LENGTH * 0.5f, py.Y);
-                var t2 = new Vector2(axisXPx + TICK_LENGTH * 0.5f, py.Y);
-                ray.DrawLineEx(t1, t2, 1f, Style.AxisLine);
+            float baseStep = YTickInterval;
+            int[] multipliers = new[] { 1, 2, 5, 10, 20, 50, 100 };
+            bool placed = false;
 
-                var label = y.ToString("0.###");
-                int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
-                float lx;
-                if (axisOnLeft)
-                    lx = axisXPx + (TICK_LENGTH * 0.5f) + LABEL_MARGIN;
-                else
-                    lx = axisXPx - (TICK_LENGTH * 0.5f) - LABEL_MARGIN - tw;
-                float ly = py.Y - (GRAPH_TEXT_SIZE / 2f);
-                ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+            foreach (int mult in multipliers)
+            {
+                float step = baseStep * mult;
+                float first = (float)Math.Ceiling(worldMin.Y / step) * step;
+
+                // collect ticks (value + pixel Y), then sort by pixel Y (top -> bottom)
+                var candidateTicks = new List<(float value, float pixelY)>();
+                for (float y = first; y <= worldMax.Y + 1e-6f; y += step)
+                {
+                    var py = dataToPixel(new Vector2(axisX, y));
+                    candidateTicks.Add((y, py.Y));
+                }
+                candidateTicks.Sort((a, b) => a.pixelY.CompareTo(b.pixelY));
+
+                float lastLabelBottom = float.NegativeInfinity;
+                bool collision = false;
+                foreach (var item in candidateTicks)
+                {
+                    float pyY = item.pixelY;
+                    var label = FormatNumberAbbrev(item.value);
+                    int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
+                    float labelTop = pyY - (GRAPH_TEXT_SIZE / 2f) - LABEL_MARGIN;
+                    if (labelTop <= lastLabelBottom)
+                    {
+                        collision = true;
+                        break;
+                    }
+                    lastLabelBottom = pyY + (GRAPH_TEXT_SIZE / 2f) + LABEL_MARGIN;
+                }
+
+                if (!collision)
+                {
+                    // Draw using this multiplier (use same ordering so labels don't overlap)
+                    foreach (var item in candidateTicks)
+                    {
+                        float y = item.value;
+                        float pyY = item.pixelY;
+                        var t1 = new Vector2(axisXPx - TICK_LENGTH * 0.5f, pyY);
+                        var t2 = new Vector2(axisXPx + TICK_LENGTH * 0.5f, pyY);
+                        ray.DrawLineEx(t1, t2, 1f, Style.AxisLine);
+
+                        var label = FormatNumberAbbrev(y);
+                        int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
+                        float lx;
+                        if (axisOnLeft)
+                            lx = axisXPx + (TICK_LENGTH * 0.5f) + LABEL_MARGIN;
+                        else
+                            lx = axisXPx - (TICK_LENGTH * 0.5f) - LABEL_MARGIN - tw;
+                        float ly = pyY - (GRAPH_TEXT_SIZE / 2f);
+                        ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+                    }
+
+                    placed = true;
+                    break;
+                }
+            }
+
+            if (!placed)
+            {
+                // fallback: greedy placement on baseStep, but sort by pixel Y to handle screen coords correctly
+                float startY = (float)Math.Ceiling(worldMin.Y / baseStep) * baseStep;
+                var fallbackTicks = new List<(float value, float pixelY)>();
+                for (float y = startY; y <= worldMax.Y + 1e-6f; y += baseStep)
+                {
+                    var py = dataToPixel(new Vector2(axisX, y));
+                    fallbackTicks.Add((y, py.Y));
+                }
+                fallbackTicks.Sort((a, b) => a.pixelY.CompareTo(b.pixelY));
+
+                float lastLabelBottom = float.NegativeInfinity;
+                foreach (var item in fallbackTicks)
+                {
+                    float y = item.value;
+                    float pyY = item.pixelY;
+                    var t1 = new Vector2(axisXPx - TICK_LENGTH * 0.5f, pyY);
+                    var t2 = new Vector2(axisXPx + TICK_LENGTH * 0.5f, pyY);
+                    ray.DrawLineEx(t1, t2, 1f, Style.AxisLine);
+
+                    var label = FormatNumberAbbrev(y);
+                    int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
+                    float lx;
+                    if (axisOnLeft)
+                        lx = axisXPx + (TICK_LENGTH * 0.5f) + LABEL_MARGIN;
+                    else
+                        lx = axisXPx - (TICK_LENGTH * 0.5f) - LABEL_MARGIN - tw;
+                    float labelTop = pyY - (GRAPH_TEXT_SIZE / 2f) - LABEL_MARGIN;
+                    if (labelTop > lastLabelBottom)
+                    {
+                        float ly = pyY - (GRAPH_TEXT_SIZE / 2f);
+                        ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+                        lastLabelBottom = pyY + (GRAPH_TEXT_SIZE / 2f) + LABEL_MARGIN;
+                    }
+                }
             }
         }
         else
         {
             int hTicks = Math.Max(1, ApproxTickCount);
+            // build tick list and sort by pixel Y to avoid screen-order issues
+            var autoTicks = new List<(float value, float pixelY)>();
             for (int i = 0; i <= hTicks; i++)
             {
                 float t = i / (float)hTicks;
                 var dataY = worldMin.Y + t * (worldMax.Y - worldMin.Y);
                 var py = dataToPixel(new Vector2(axisX, dataY));
-                var t1 = new Vector2(axisXPx - TICK_LENGTH * 0.5f, py.Y);
-                var t2 = new Vector2(axisXPx + TICK_LENGTH * 0.5f, py.Y);
+                autoTicks.Add((dataY, py.Y));
+            }
+            autoTicks.Sort((a, b) => a.pixelY.CompareTo(b.pixelY));
+
+            float lastLabelBottom = float.NegativeInfinity;
+            foreach (var item in autoTicks)
+            {
+                float dataY = item.value;
+                float pyY = item.pixelY;
+                var t1 = new Vector2(axisXPx - TICK_LENGTH * 0.5f, pyY);
+                var t2 = new Vector2(axisXPx + TICK_LENGTH * 0.5f, pyY);
                 ray.DrawLineEx(t1, t2, 1f, Style.AxisLine);
 
-                var label = dataY.ToString("0.###");
+                var label = FormatNumberAbbrev(dataY);
                 int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
                 float lx;
                 if (axisOnLeft)
                     lx = axisXPx + (TICK_LENGTH * 0.5f) + LABEL_MARGIN;
                 else
                     lx = axisXPx - (TICK_LENGTH * 0.5f) - LABEL_MARGIN - tw;
-                float ly = py.Y - (GRAPH_TEXT_SIZE / 2f);
-                ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+                float labelTop = pyY - (GRAPH_TEXT_SIZE / 2f) - LABEL_MARGIN;
+                if (labelTop > lastLabelBottom)
+                {
+                    float ly = pyY - (GRAPH_TEXT_SIZE / 2f);
+                    ray.DrawText(label, (int)lx, (int)ly, GRAPH_TEXT_SIZE, Style.TextSmall);
+                    lastLabelBottom = pyY + (GRAPH_TEXT_SIZE / 2f) + LABEL_MARGIN;
+                }
             }
         }
 
@@ -565,7 +779,7 @@ public class Graph : UIContent
     public Series GetSeries(string name)
     {
         Series s = series.FirstOrDefault(s => s.Name == name);
-        if(s == null)
+        if (s == null)
         {
             s = new Series(name, SeriesType.Line);
             series.Add(s);
