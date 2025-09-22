@@ -14,7 +14,6 @@ using WinterRose.Reflection;
 using WinterRose.AnonymousTypes;
 using SnowLibraryTesting.difftest;
 
-
 const int chunkSize = 2 * 1024 * 1024; // 2 MB chunk size to force multiple chunks for 4.5 MB file
 
 // Original file data: bytes 0..4_500_000 (4.29 MB)

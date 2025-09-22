@@ -79,85 +79,107 @@ public abstract class Application
 
     public void Run(string title, int width, int height, ConfigFlags flags = ConfigFlags.ResizableWindow)
     {
-        if (!BulletPhysicsLoader.TryLoadBulletSharp())
-            return;
-
-        Task browserTask;
-        if(useBrowser)
-            browserTask = SetupEmbeddedBrowser();
-        else 
-            browserTask = Task.CompletedTask;
-        Assets.BuildAssetIndexes();
-
-        SetTargetFPS(0);
-        
-
-        Window = new Window(title, flags);
-        Window.Create(width, height);
-
-        SetExitKey(KeyboardKey.Null);
-
-        if (!browserTask.IsCompleted)
+        try
         {
-            Toasts.ShowToast(
-                new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
-                    .AddText("Browser is being downloaded", UIFontSizePreset.Title)
-                    .AddText("This can take a while.\nhowever the game is still playable", UIFontSizePreset.Subtext)
-                    .AddProgressBar(-1, pref => browserTask.IsCompleted ? 1 : -1, infiniteSpinText: "Waiting for browser download..."))
-                .ContinueWith(t => browserTask.IsCompletedSuccessfully ? 0 : 1,
-                new Toast(ToastType.Success, ToastRegion.Left, ToastStackSide.Top)
-                    .AddText("Browser Successfully Downloaded!")
-                , new Toast(ToastType.Error, ToastRegion.Left, ToastStackSide.Top)
-                    .AddText("Browser download failed", UIFontSizePreset.Message));
-        }
+            if (!BulletPhysicsLoader.TryLoadBulletSharp())
+                return;
 
-        BeginDrawing();
-        ClearBackground(ClearColor);
-        EndDrawing();
+            Task browserTask;
+            if (useBrowser)
+                browserTask = SetupEmbeddedBrowser();
+            else
+                browserTask = Task.CompletedTask;
+            Assets.BuildAssetIndexes();
 
-        World world;
-        Universe.CurrentWorld = world = CreateWorld();
-        Camera? camera = world.GetAll<Camera>().FirstOrDefault();
-        Camera.main = camera;
-        RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
+            SetTargetFPS(0);
 
-        while (!Window.ShouldClose() && !GameClosing)
-        {
-            InputManager.Update();
-            Time.Update();
 
-            if(ray.IsWindowResized())
+            Window = new Window(title, flags);
+            Window.Create(width, height);
+
+            unsafe
             {
-                ray.UnloadRenderTexture(worldTex);
-                worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
+                Console.WriteLine("INFO: Locking WindowsOS from shutting down (if on windows)");
+                nint windowHandle = (nint)GetWindowHandle();
+                ShutdownPreventer.LockShutdown("The game is still running");
             }
 
-            if(gracefulErrorHandling)
+            SetExitKey(KeyboardKey.Null);
+
+            if (!browserTask.IsCompleted)
             {
-                try
+                Toasts.ShowToast(
+                    new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
+                        .AddText("Browser is being downloaded", UIFontSizePreset.Title)
+                        .AddText("This can take a while.\nhowever the game is still playable", UIFontSizePreset.Subtext)
+                        .AddProgressBar(-1, pref => browserTask.IsCompleted ? 1 : -1, infiniteSpinText: "Waiting for browser download..."))
+                    .ContinueWith(t => browserTask.IsCompletedSuccessfully ? 0 : 1,
+                    new Toast(ToastType.Success, ToastRegion.Left, ToastStackSide.Top)
+                        .AddText("Browser Successfully Downloaded!")
+                    , new Toast(ToastType.Error, ToastRegion.Left, ToastStackSide.Top)
+                        .AddText("Browser download failed", UIFontSizePreset.Message));
+            }
+
+            BeginDrawing();
+            ClearBackground(ClearColor);
+            EndDrawing();
+
+            World world;
+            Universe.CurrentWorld = world = CreateWorld();
+            Camera? camera = world.GetAll<Camera>().FirstOrDefault();
+            Camera.main = camera;
+            RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
+
+            while (!Window.ShouldClose() && !GameClosing)
+            {
+                InputManager.Update();
+                Time.Update();
+
+                if (ray.IsWindowResized())
+                {
+                    ray.UnloadRenderTexture(worldTex);
+                    worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
+                }
+
+                if (gracefulErrorHandling)
+                {
+                    try
+                    {
+                        MainApplicationLoop(world, camera, worldTex);
+                    }
+                    catch (Exception ex)
+                    {
+                        capturedException = ex;
+                        HandleException(worldTex, ex, ExceptionDispatchInfo.Capture(ex));
+                        break;
+                    }
+                }
+                else
                 {
                     MainApplicationLoop(world, camera, worldTex);
                 }
-                catch (Exception ex)
-                {
-                    capturedException = ex;
-                    HandleException(worldTex, ex, ExceptionDispatchInfo.Capture(ex));
-                    break;
-                }
             }
-            else
-            {
-                MainApplicationLoop(world, camera, worldTex);
-            }
+
+            Console.WriteLine("INFO: Releasing all resources");
+
+            SpriteCache.DisposeAll();
+
+            Console.WriteLine("INFO: Removing windows shutdown lock");
+            ShutdownPreventer.UnlockShutdown();
+
+            Console.WriteLine("INFO: All resources released, Closing window");
         }
+        finally
+        {
+            ShutdownPreventer.UnlockShutdown();
+            try
+            {
+                Window.Close();
+            } 
+            catch { /* ignore */ }
 
-        Console.WriteLine("INFO: Releasing all resources");
-
-        SpriteCache.DisposeAll();
-
-        Console.WriteLine("INFO: All resources released, Closing window");
-        Window.Close();
-        Console.WriteLine("INFO: Everything cleared up, Bye bye!");
+            Console.WriteLine("INFO: End of 'run', Bye bye!");
+        }
     }
 
     private void MainApplicationLoop(World world, Camera? camera, RenderTexture2D worldTex)
