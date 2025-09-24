@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,6 +24,8 @@ public class UIGraph : UIContent
     private Vector2 panStart;
     private (int seriesIndex, int pointIndex)? selectedPoint = null;
 
+    public float YLerpSpeed { get; set; } = 0.01f;  // how fast Y-axis adapts
+
     /// <summary>Tick interval along X in data units. Set >0 to force a fixed interval. Set to 0 for automatic spacing.</summary>
     public float XTickInterval { get; set; } = 0f;
 
@@ -37,6 +40,11 @@ public class UIGraph : UIContent
 
     private const int DEFAULT_TICK_COUNT = 5;
 
+    public int MaxDataPoints { get; set; } = 1000;
+
+    private float currentMinY = 0f;
+    private float currentMaxY = 1f;
+
     public class Series
     {
         public List<Vector2> Points { get; } = new();
@@ -46,15 +54,36 @@ public class UIGraph : UIContent
         public string Name { get; set; }
         public SeriesType Type { get; set; }
 
-        public Series(string Name, SeriesType Type)
+        // max points visible per series
+
+        public int MaxDataPoints { get; set; }
+
+        public Series(string Name, int maxDataPoints, SeriesType Type)
         {
             this.Name = Name;
             this.Type = Type;
+            this.MaxDataPoints = maxDataPoints;
         }
 
         public void AddPoint(float x, float y)
         {
             Points.Add(new Vector2(x, y));
+        }
+
+        public void AddPointSliding(float y)
+        {
+            // Use index as X, X doesn't change dynamically
+            float x = Points.Count;
+            Points.Add(new Vector2(x, y));
+
+            // Keep only MaxDataPoints
+            if (Points.Count > MaxDataPoints)
+            {
+                Points.RemoveAt(0);
+                // Reindex X values so they stay 0..MaxDataPoints-1
+                for (int i = 0; i < Points.Count; i++)
+                    Points[i] = new Vector2(i, Points[i].Y);
+            }
         }
     }
 
@@ -75,6 +104,38 @@ public class UIGraph : UIContent
         // Default aspect: width : height = 2 : 1
         return maxWidth * 0.5f + LEGEND_HEIGHT + GRAPH_TEXT_SIZE + LABEL_MARGIN * 6;
     }
+
+    private bool TryGetVisibleYBounds(out float minY, out float maxY)
+    {
+        minY = float.MaxValue;
+        maxY = float.MinValue;
+        bool hasPoints = false;
+
+        foreach (var series in series)
+        {
+            int start = Math.Max(0, series.Points.Count - MaxDataPoints);
+            for (int i = start; i < series.Points.Count; i++)
+            {
+                var y = series.Points[i].Y;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+                hasPoints = true;
+            }
+        }
+
+        if (!hasPoints)
+            return false;
+
+        // Add a tiny padding to prevent degenerate cases
+        if (Math.Abs(maxY - minY) < 0.0001f)
+        {
+            minY -= 1;
+            maxY += 1;
+        }
+
+        return true;
+    }
+
 
     protected override void Draw(Rectangle bounds)
     {
@@ -119,26 +180,33 @@ public class UIGraph : UIContent
             worldMax = new Vector2(worldMax.X, worldMax.Y + 1);
         }
 
+        if (TryGetVisibleYBounds(out float visibleMinY, out float visibleMaxY))
+        {
+            // Apply padding
+            float padding = (visibleMaxY - visibleMinY) * 0.05f;
+            visibleMinY -= padding;
+            visibleMaxY += padding;
+
+            // Smooth lerp
+            currentMinY += (visibleMinY - currentMinY) * YLerpSpeed;
+            currentMaxY += (visibleMaxY - currentMaxY) * YLerpSpeed;
+
+            worldMin.Y = currentMinY;
+            worldMax.Y = currentMaxY;
+        }
+
         // Convert data -> pixel
         Vector2 DataToPixel(Vector2 data)
         {
-            float dataWidth = (worldMax.X - worldMin.X);
-            float dataHeight = (worldMax.Y - worldMin.Y);
+            float nx = data.X / (MaxDataPoints - 1); // normalized [0..1]
+            float px = plotRect.X + nx * plotRect.Width;
 
-            // normalized within data bounds [0..1]
-            float nx = (data.X - worldMin.X) / dataWidth;
-            float ny = (data.Y - worldMin.Y) / dataHeight;
-
-            // apply zoom and pan around center
-            var center = new Vector2(plotRect.X + plotRect.Width / 2, plotRect.Y + plotRect.Height / 2);
-            var scaledWidth = plotRect.Width;
-            var scaledHeight = plotRect.Height;
-
-            var px = center.X - (scaledWidth / 2) + nx * scaledWidth + pan.X;
-            var py = center.Y + (scaledHeight / 2) - ny * scaledHeight + pan.Y; // y flipped
+            float ny = (data.Y - worldMin.Y) / (worldMax.Y - worldMin.Y);
+            float py = plotRect.Y + plotRect.Height - ny * plotRect.Height; // Y flipped
 
             return new Vector2(px, py);
         }
+
 
         Vector2 PixelToData(Vector2 pixel)
         {
@@ -287,14 +355,20 @@ public class UIGraph : UIContent
 
     public void AddLineSeries(string name, IEnumerable<Vector2> points, Color? color = null)
     {
-        var s = new Series(name, SeriesType.Line) { Color = color ?? Color.White };
+        var s = new Series(name, MaxDataPoints, SeriesType.Line) { Color = color ?? Color.White };
         s.Points.AddRange(points);
         series.Add(s);
     }
 
+    public void AddValueToSeries(string seriesName, float value)
+    {
+        var s = GetSeries(seriesName);
+        s.AddPointSliding(value);
+    }
+
     public void AddBarSeries(string name, IEnumerable<Vector2> points, Color? color = null, float barWidth = DEFAULT_BAR_WIDTH)
     {
-        var s = new Series(name, SeriesType.Bar) { Color = color ?? Color.White, BarWidth = barWidth };
+        var s = new Series(name, MaxDataPoints, SeriesType.Bar) { Color = color ?? Color.White, BarWidth = barWidth };
         s.Points.AddRange(points);
         series.Add(s);
     }
@@ -781,7 +855,7 @@ public class UIGraph : UIContent
         Series s = series.FirstOrDefault(s => s.Name == name);
         if (s == null)
         {
-            s = new Series(name, SeriesType.Line);
+            s = new Series(name, MaxDataPoints, SeriesType.Line);
             series.Add(s);
         }
         return s;

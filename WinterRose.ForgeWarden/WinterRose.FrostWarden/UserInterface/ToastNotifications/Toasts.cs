@@ -60,12 +60,10 @@ public static class Toasts
         regions[ToastRegion.Center] = new ToastCenterRegionManager();
     }
 
-    public static Toast ShowToast<T>(T toast) where T : UIContainer
+    public static Toast ShowToast(Toast toast)
     {
-        Forge.Expect(toast).OfType<Toast>();
-        Toast t = toast as Toast;
-        regions[t.Region].EnqueueToast(t);
-        return t;
+        regions[toast.Region].EnqueueToast(toast);
+        return toast;
     }
 
     internal static void RequestReorder()

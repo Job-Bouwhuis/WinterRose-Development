@@ -56,7 +56,189 @@ internal class Program : Application
 
     public override void Draw()
     {
-        
+
+    }
+
+    public override World CreateWorld()
+    {
+        ray.SetTargetFPS(144);
+        ClearColor = Color.Beige;
+        RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
+
+        World world = new World("testworld");
+
+        var cam = world.CreateEntity<Camera>("cam");
+        //cam.AddComponent<Mover>();
+
+        var entity = world.CreateEntity("entity");
+        entity.transform.parent = cam.transform;
+        entity.transform.scale = new();
+        entity.AddComponent<ImportantComponent>();
+        entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
+
+        var vitals = entity.AddComponent<Vitality>();
+        vitals.Health.MaxHealth = 100;
+
+        // Add a StatusEffector so we can test status effects
+        var statusEffector = entity.AddComponent<StatusEffector>();
+
+        // 3. Create projectile
+        var projectile = world.CreateEntity<Projectile>("demoProjectile");
+        var projStats = new Projectile.ProjectileStats
+        {
+            DamageType = new PhysicalDamage(),
+            Damage = 15,
+            CritChance = 50, // 50% crit
+            CritMultiplier = 2.0f,
+            StatusChance = 1.0f // 100% chance to apply BurnEffect
+        };
+
+        // Assign stats to projectile
+        projectile.Stats = projStats;
+
+
+        // 5. Create trigger
+        var trigger = new StandardTrigger()
+        {
+            FireRate = 0.5f // 2 shots per second
+        };
+
+        // 6. Create weapon entity
+        var gun = world.CreateEntity("demoGun");
+
+        var magazine = gun.AddComponent<Magazine>(projectile, new PerShellReloadBehavior());
+        magazine.MaxAmmo = 25;
+        magazine.CurrentLoadedAmmo = 25;
+        magazine.AmmoReserves = 100;
+
+        var weapon = gun.AddComponent<Weapon>();
+
+        weapon.Trigger = trigger;
+
+        // Optional: add multiple triggers
+        weapon.AvailableTriggers.Add(trigger);
+
+        ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
+
+        var w = new UIWindow("Graph 1.4", 400, 500, 100, 100);
+        UIGraph FPSGrapher = new UIGraph();
+        FPSGrapher.MaxDataPoints = 288;
+        w.AddContent(FPSGrapher);
+
+        world.CreateEntity<InvocationComponent>("grapher").OnUpdate 
+            = Invocation.Create<InvocationComponent>(c =>
+            {
+                FPSGrapher.AddValueToSeries("FPS", ray.GetFPS());
+            });
+
+        w.Show();
+
+        void ShowToast(ToastRegion r, ToastStackSide s)
+        {
+            var d = new Dialog("Horizontal Big",
+                                "refer to \\L[https://github.com/Job-Bouwhuis/WinterRose.WinterForge|WinterForge github page] for info",
+                                DialogPlacement.RightBig, priority: DialogPriority.High)
+                            .AddContent(new UIButton("OK", (c, b) =>
+                            {
+                                ShowToast(r, s);
+                                c.Close();
+                            }))
+                            .AddProgressBar(-1)
+                            .AddSprite(Assets.Load<Sprite>("bigimg"));
+
+            var w = new UIWindow("Graph 1.4", 400, 500, 100, 100);
+
+            UIGraph FPSGrapher = new UIGraph();
+            w.AddContent(FPSGrapher);
+
+
+
+
+            //Graph gall = LoadSimpleGraphFromCsv(
+            //    "SorterOnePointOne.csv",
+            //    "SorterOnePointTwo.csv",
+            //    "SorterOnePointThree.csv"
+            //    );
+            //gall.XAxisLabel = "Size";
+            //gall.YAxisLabel = "Time (ms)";
+            // w.AddContent(gall);
+
+            // Graph g2 = LoadSimpleGraphFromCsv("SorterOnePointOne.csv");
+            // g2.XAxisLabel = "Size";
+            // g2.YAxisLabel = "Time (ms)";
+            // //w.AddContent(g2);
+
+            // Graph g3 = LoadSimpleGraphFromCsv("SorterOnePointTwo.csv");
+            // g3.XAxisLabel = "Size";
+            // g3.YAxisLabel = "Time (ms)";
+            // //w.AddContent(g3);
+
+            // Graph g4 = LoadSimpleGraphFromCsv("SorterOnePointThree.csv");
+            // g4.XAxisLabel = "Size";
+            // g4.YAxisLabel = "Time (ms)";
+            // //w.AddContent(g4);
+
+            //UIGraph g = LoadGraphFromCsv("csv.txt"); // 1.4
+            //g.XTickInterval = 100;
+            //g.XAxisLabel = "Threshold";
+            //g.YAxisLabel = "Time (ms)";
+            //w.AddContent(g);
+
+            //UIGraph g5 = LoadGraphFromCsv("SorterOnePointFive.csv"); // 1.5
+            //g5.XTickInterval = 100;
+            //g5.XAxisLabel = "Threshold";
+            //g5.YAxisLabel = "Time (ms)";
+            //w.AddContent(g5);
+
+            //UIGraph g7 = LoadGraphFromCsv("SorterOnePointSix.csv");
+            //g7.XAxisLabel = "Size";
+            //g7.YAxisLabel = "Time (ms)";
+            //g7.XTickInterval = 100;
+            //w.AddContent(g7);
+
+
+            Toast t = new Toast(ToastType.Info, r, s)
+                    //.AddText("Right?\n\n\nYes")
+                    //.AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(d))
+                    //.AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Bottom))
+                    .AddButton("show window normal", Invocation.Create<UIContainer, UIButton>((c, b) => w.Show()))
+                    .AddButton("show window collapsed", Invocation.Create<UIContainer, UIButton>((c, b) => w.ShowCollapsed()))
+                    .AddButton("show window maximized", Invocation.Create<UIContainer, UIButton>((c, b) => w.ShowMaximized()))
+                    .AddButton("close window", Invocation.Create<UIContainer, UIButton>((c, b) => w.Close()))
+                    .AddButton("close toast", Invocation.Create<UIContainer, UIButton>((c, b) => c.Close()))
+                    //.AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
+                    //.AddSprite(Assets.Load<Sprite>("bigimg"))
+                    //.AddContent(new HeavyFileDropContent())
+                    ;
+
+
+            t.Style.TimeUntilAutoDismiss = 0;
+            Toasts.ShowToast(t);
+        }
+
+
+        //Dialogs.Show(new Dialog("Vertical Big", "this is a cool dialog box\n\n\\s[star]\\!", DialogPlacement.HorizontalBig, priority: DialogPriority.AlwaysFirst).AddButton("Ok"));
+
+        //Dialogs.Show(new Dialog("Dialog top left", "yes", DialogPlacement.TopLeft).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog top right", "yes", DialogPlacement.TopRight).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog bottom left", "yes", DialogPlacement.BottomLeft).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog bottom right", "yes", DialogPlacement.BottomRight).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog Center", "yes", DialogPlacement.CenterSmall).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog top small", "yes", DialogPlacement.TopSmall).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog left small", "yes", DialogPlacement.LeftSmall).AddButton("Ok"));
+        //Dialogs.Show(new Dialog("Dialog right small", "yes", DialogPlacement.RightSmall).AddButton("Ok"));
+
+        //Dialogs.Show(new Dialog("Dialog bottom small", "yes \\c[red] rode text \\c[white]  \\s[star]\\!", DialogPlacement.BottomSmall).AddButton("Ok"));
+
+        //Dialogs.Show(new Dialog("Dialog right big", "yes", DialogPlacement.RightBig).AddButton("Ok"));
+
+
+
+        //world.SaveTemplate();
+
+
+
+        return world;
     }
 
     public static UIGraph LoadSimpleGraphFromCsv(string filePath)
@@ -170,7 +352,7 @@ internal class Program : Application
 
             Color color = FromHsl(hue, saturation, lightness);
             colorMap[seriesName] = color;
-            graphSeries.Color = color; 
+            graphSeries.Color = color;
 
             index++;
         }
@@ -204,249 +386,5 @@ internal class Program : Application
         if (2 * thue < 1) return t2;
         if (3 * thue < 2) return t1 + (t2 - t1) * ((2f / 3f) - thue) * 6;
         return t1;
-    }
-
-    public override World CreateWorld()
-    {
-        ray.SetTargetFPS(144);
-        ClearColor = Color.Beige;
-        RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
-
-        World world = new World("testworld");
-
-        var cam = world.CreateEntity<Camera>("cam");
-        //cam.AddComponent<Mover>();
-
-        var entity = world.CreateEntity("entity");
-        entity.transform.parent = cam.transform;
-        entity.transform.scale = new();
-        entity.AddComponent<ImportantComponent>();
-        entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
-
-        var vitals = entity.AddComponent<Vitality>();
-        vitals.Health.MaxHealth = 100;
-
-        // Add a StatusEffector so we can test status effects
-        var statusEffector = entity.AddComponent<StatusEffector>();
-
-        // 3. Create projectile
-        var projectile = world.CreateEntity<Projectile>("demoProjectile");
-        var projStats = new Projectile.ProjectileStats
-        {
-            DamageType = new PhysicalDamage(),
-            Damage = 15,
-            CritChance = 50, // 50% crit
-            CritMultiplier = 2.0f,
-            StatusChance = 1.0f // 100% chance to apply BurnEffect
-        };
-
-        // Assign stats to projectile
-        projectile.Stats = projStats;
-
-
-        // 5. Create trigger
-        var trigger = new StandardTrigger()
-        {
-            FireRate = 0.5f // 2 shots per second
-        };
-
-        // 6. Create weapon entity
-        var gun = world.CreateEntity("demoGun");
-
-        var magazine = gun.AddComponent<Magazine>(projectile, new PerShellReloadBehavior());
-        magazine.MaxAmmo = 25;
-        magazine.CurrentLoadedAmmo = 25;
-        magazine.AmmoReserves = 100;
-
-        var weapon = gun.AddComponent<Weapon>();
-
-        weapon.Trigger = trigger;
-
-        // Optional: add multiple triggers
-        weapon.AvailableTriggers.Add(trigger);
-
-        ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
-
-        void ShowToast(ToastRegion r, ToastStackSide s)
-        {
-            var d = new Dialog("Horizontal Big",
-                                "refer to \\L[https://github.com/Job-Bouwhuis/WinterRose.WinterForge|WinterForge github page] for info",
-                                DialogPlacement.RightBig, priority: DialogPriority.High)
-                            .AddContent(new UIButton("OK", (c, b) =>
-                            {
-                                ShowToast(r, s);
-                                c.Close();
-                            }))
-                            .AddProgressBar(-1)
-                            .AddSprite(Assets.Load<Sprite>("bigimg"));
-
-            var w = new UIWindow("Graph 1.4", 400, 500, 100, 100);
-
-            //UIValueSlider<float> slider = new UIValueSlider<float>(1, 20, 1);
-            //slider.Step = 1;
-            //slider.SnapToStep = true;
-            //slider.HoldShiftToDisableSnap = true;
-            //w.AddContent(slider);
-
-            //UINumericUpDown<float> updown = new UINumericUpDown<float>();
-            //updown.Label = "nummmm";
-            //updown.DecimalPlaces = 0;
-            //w.AddContent(updown);
-
-            //w.AddContent(new UIFPS()
-            //{
-            //    Preset = UIFontSizePreset.Title
-            //});
-
-            //UIDateTimePicker dp = new UIDateTimePicker();
-            //w.AddContent(dp);
-
-            //UIText text = new UIText("", UIFontSizePreset.Message);
-            //dp.OnDateTimeChangedBasic.Subscribe(d =>
-            //{
-            //    text.Text = d.ToString("");
-            //});
-
-            //w.AddContent(text);
-
-            //UIColorPicker colorPicker = new UIColorPicker();
-            //w.AddContent(colorPicker);
-
-            //w.AddContent(new UITextInput());
-
-            //TreeNode node = new("node1");
-            //node.ClickInvocation.Subscribe(tree => Console.WriteLine(tree.Text));
-            //node.AddChild(new TreeNode("node 2"));
-            //node.AddChild(new TreeNode("node 3", n => n.AddChild(new TreeNode("node 4"))));
-            //node.AddChild(new TreeNode("node 5", n => n.AddChild(new TreeNode("node 6"))));
-
-            //w.AddContent(node);
-
-            //w.AddButton("test");
-
-            //w.AddContent(new UICheckBox("check", Invocation.Create((bool b) => Console.WriteLine(b))));
-
-            //UIRadioButtons radio = new UIRadioButtons();
-
-            //radio.AddOption("opt1");
-            //radio.AddOption("opt2");
-            //radio.AddOption("opt3");
-            //radio.AddOption("opt4");
-
-            //radio.OnSelectionChangedBasic.Subscribe(x => x.ForEach(Console.WriteLine));
-            //radio.MaxSelected = 3;
-            //w.AddContent(radio);
-
-            //var ti = new TextInput();
-            //ti.Placeholder = "Username";
-            //ti.OnSubmit.Subscribe(Invocation.Create((TextInput i, string t) =>
-            //{
-            //    Console.WriteLine(t);
-            //    i.SetText("");
-            //}));
-            //w.AddContent(ti);
-
-            //var ti2 = new TextInput();
-            //ti2.IsPassword = true;
-            //ti2.Placeholder = "Password";
-            //ti2.OnSubmit.Subscribe(Invocation.Create((TextInput i, string t) =>
-            //{
-            //    Console.WriteLine(t);
-            //    i.SetText("");
-            //}));
-            //w.AddContent(ti2);
-
-            //Dropdown<string> dropdown = new();
-            //dropdown.SetItems(["Dajuksa", "is", "my", "favorite", "girl", "ever"]);
-            ////dropdown.SetItems(WinterUtils.ConsecutiveNumbers(25));
-            //dropdown.MultiSelect = true;
-            //w.AddContent(dropdown);
-            //dropdown.OnSelected.Subscribe(Invocation.Create((Dropdown<string> d, List<string> s) => Console.WriteLine(string.Join(", ", s))));
-
-            //Graph gall = LoadSimpleGraphFromCsv(
-            //    "SorterOnePointOne.csv",
-            //    "SorterOnePointTwo.csv",
-            //    "SorterOnePointThree.csv"
-            //    );
-            //gall.XAxisLabel = "Size";
-            //gall.YAxisLabel = "Time (ms)";
-            // w.AddContent(gall);
-
-            // Graph g2 = LoadSimpleGraphFromCsv("SorterOnePointOne.csv");
-            // g2.XAxisLabel = "Size";
-            // g2.YAxisLabel = "Time (ms)";
-            // //w.AddContent(g2);
-
-            // Graph g3 = LoadSimpleGraphFromCsv("SorterOnePointTwo.csv");
-            // g3.XAxisLabel = "Size";
-            // g3.YAxisLabel = "Time (ms)";
-            // //w.AddContent(g3);
-
-            // Graph g4 = LoadSimpleGraphFromCsv("SorterOnePointThree.csv");
-            // g4.XAxisLabel = "Size";
-            // g4.YAxisLabel = "Time (ms)";
-            // //w.AddContent(g4);
-
-            //UIGraph g = LoadGraphFromCsv("csv.txt"); // 1.4
-            //g.XTickInterval = 100;
-            //g.XAxisLabel = "Threshold";
-            //g.YAxisLabel = "Time (ms)";
-            //w.AddContent(g);
-
-            //UIGraph g5 = LoadGraphFromCsv("SorterOnePointFive.csv"); // 1.5
-            //g5.XTickInterval = 100;
-            //g5.XAxisLabel = "Threshold";
-            //g5.YAxisLabel = "Time (ms)";
-            //w.AddContent(g5);
-
-            UIGraph g7 = LoadGraphFromCsv("SorterOnePointSix.csv");
-            g7.XAxisLabel = "Size";
-            g7.YAxisLabel = "Time (ms)";
-            g7.XTickInterval = 100;
-            w.AddContent(g7);
-
-
-            Toast t = new Toast(ToastType.Info, r, s)
-                    //.AddText("Right?\n\n\nYes")
-                    //.AddButton("btn", (t, b) => ((Toast)t).OpenAsDialog(d))
-                    //.AddButton("btn2", (t, b) => Toasts.Success("Worked!", ToastRegion.Right, ToastStackSide.Bottom))
-                    .AddButton("show window normal", Invocation.Create<UIContainer, UIButton>((c, b) => w.Show()))
-                    .AddButton("show window collapsed", Invocation.Create<UIContainer, UIButton>((c, b) => w.ShowCollapsed()))
-                    .AddButton("show window maximized", Invocation.Create<UIContainer, UIButton>((c, b) => w.ShowMaximized()))
-                    .AddButton("close window", Invocation.Create<UIContainer, UIButton>((c, b) => w.Close()))
-                    .AddButton("close toast", Invocation.Create<UIContainer, UIButton>((c, b) => c.Close()))
-                    //.AddProgressBar(-1, infiniteSpinText: "Waiting for browser download...")
-                    //.AddSprite(Assets.Load<Sprite>("bigimg"))
-                    //.AddContent(new HeavyFileDropContent())
-                    ;
-
-
-            t.Style.TimeUntilAutoDismiss = 0;
-            Toasts.ShowToast(t);
-        }
-
-
-        //Dialogs.Show(new Dialog("Vertical Big", "this is a cool dialog box\n\n\\s[star]\\!", DialogPlacement.HorizontalBig, priority: DialogPriority.AlwaysFirst).AddButton("Ok"));
-
-        //Dialogs.Show(new Dialog("Dialog top left", "yes", DialogPlacement.TopLeft).AddButton("Ok"));
-        //Dialogs.Show(new Dialog("Dialog top right", "yes", DialogPlacement.TopRight).AddButton("Ok"));
-        //Dialogs.Show(new Dialog("Dialog bottom left", "yes", DialogPlacement.BottomLeft).AddButton("Ok"));
-        //Dialogs.Show(new Dialog("Dialog bottom right", "yes", DialogPlacement.BottomRight).AddButton("Ok"));
-        //Dialogs.Show(new Dialog("Dialog Center", "yes", DialogPlacement.CenterSmall).AddButton("Ok"));
-        //Dialogs.Show(new Dialog("Dialog top small", "yes", DialogPlacement.TopSmall).AddButton("Ok"));
-        //Dialogs.Show(new Dialog("Dialog left small", "yes", DialogPlacement.LeftSmall).AddButton("Ok"));
-        //Dialogs.Show(new Dialog("Dialog right small", "yes", DialogPlacement.RightSmall).AddButton("Ok"));
-
-        //Dialogs.Show(new Dialog("Dialog bottom small", "yes \\c[red] rode text \\c[white]  \\s[star]\\!", DialogPlacement.BottomSmall).AddButton("Ok"));
-
-        //Dialogs.Show(new Dialog("Dialog right big", "yes", DialogPlacement.RightBig).AddButton("Ok"));
-
-
-
-        //world.SaveTemplate();
-
-
-
-        return world;
     }
 }

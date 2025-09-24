@@ -97,13 +97,6 @@ public abstract class Application
             Window = new Window(title, flags);
             Window.Create(width, height);
 
-            unsafe
-            {
-                Console.WriteLine("INFO: Locking WindowsOS from shutting down (if on windows)");
-                nint windowHandle = (nint)GetWindowHandle();
-                ShutdownPreventer.LockShutdown("The game is still running");
-            }
-
             SetExitKey(KeyboardKey.Null);
 
             if (!browserTask.IsCompleted)
@@ -164,14 +157,12 @@ public abstract class Application
 
             SpriteCache.DisposeAll();
 
-            Console.WriteLine("INFO: Removing windows shutdown lock");
-            ShutdownPreventer.UnlockShutdown();
+            
 
             Console.WriteLine("INFO: All resources released, Closing window");
         }
         finally
         {
-            ShutdownPreventer.UnlockShutdown();
             try
             {
                 Window.Close();
