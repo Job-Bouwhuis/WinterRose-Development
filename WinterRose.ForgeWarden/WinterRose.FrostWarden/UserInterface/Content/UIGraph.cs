@@ -16,7 +16,7 @@ public class UIGraph : UIContent
     private const int GRAPH_TEXT_SIZE = 18;
 
     private const float TICK_LENGTH = 8f;
-    private const float LABEL_MARGIN = 6f;
+    private const float LABEL_MARGIN = 0f;
 
     private readonly List<Series> series = new();
     private Vector2 pan = new(0, 0);
@@ -24,7 +24,7 @@ public class UIGraph : UIContent
     private Vector2 panStart;
     private (int seriesIndex, int pointIndex)? selectedPoint = null;
 
-    public float YLerpSpeed { get; set; } = 0.01f;  // how fast Y-axis adapts
+    public float YLerpSpeed { get; set; } = 0.1f;  // how fast Y-axis adapts
 
     /// <summary>Tick interval along X in data units. Set >0 to force a fixed interval. Set to 0 for automatic spacing.</summary>
     public float XTickInterval { get; set; } = 0f;
@@ -182,40 +182,61 @@ public class UIGraph : UIContent
 
         if (TryGetVisibleYBounds(out float visibleMinY, out float visibleMaxY))
         {
-            // Apply padding
             float padding = (visibleMaxY - visibleMinY) * 0.05f;
             visibleMinY -= padding;
             visibleMaxY += padding;
 
-            // Smooth lerp
-            currentMinY += (visibleMinY - currentMinY) * YLerpSpeed;
-            currentMaxY += (visibleMaxY - currentMaxY) * YLerpSpeed;
+            // Only expand immediately
+            if (visibleMinY < currentMinY)
+                currentMinY = visibleMinY;
+            // Only shrink smoothly
+            else if (visibleMinY > currentMinY)
+                currentMinY += (visibleMinY - currentMinY) * YLerpSpeed;
+
+            if (visibleMaxY > currentMaxY)
+                currentMaxY = visibleMaxY;
+            else if (visibleMaxY < currentMaxY)
+                currentMaxY += (visibleMaxY - currentMaxY) * YLerpSpeed;
 
             worldMin.Y = currentMinY;
             worldMax.Y = currentMaxY;
         }
 
+
+        {
+            float visibleMinX = dataMin.X;
+            float visibleMaxX = dataMax.X;
+            float xRange = visibleMaxX - visibleMinX;
+            if (Math.Abs(xRange) < 0.0001f)
+            {
+                visibleMinX -= 1f;
+                visibleMaxX += 1f;
+                xRange = visibleMaxX - visibleMinX;
+            }
+            float xPadding = xRange * 0.05f;
+            worldMin.X = visibleMinX - xPadding;
+            worldMax.X = visibleMaxX + xPadding;
+        }
+
+        // Decide axisY to align with the lowest Y grid line (or 0 if 0 is inside range)
+        float axisY = (worldMin.Y <= 0f && worldMax.Y >= 0f) ? 0f : GetLowestYTick(worldMin, worldMax);
+
         // Convert data -> pixel
         Vector2 DataToPixel(Vector2 data)
         {
-            float nx = data.X / (MaxDataPoints - 1); // normalized [0..1]
+            float nx = (data.X - worldMin.X) / (worldMax.X - worldMin.X);
             float px = plotRect.X + nx * plotRect.Width;
 
             float ny = (data.Y - worldMin.Y) / (worldMax.Y - worldMin.Y);
-            float py = plotRect.Y + plotRect.Height - ny * plotRect.Height; // Y flipped
+            float py = plotRect.Y + plotRect.Height - ny * plotRect.Height;
 
             return new Vector2(px, py);
         }
 
-
         Vector2 PixelToData(Vector2 pixel)
         {
-            var center = new Vector2(plotRect.X + plotRect.Width / 2, plotRect.Y + plotRect.Height / 2);
-            var scaledWidth = plotRect.Width;
-            var scaledHeight = plotRect.Height;
-
-            float nx = (pixel.X - (center.X - scaledWidth / 2) - pan.X) / scaledWidth;
-            float ny = (center.Y + scaledHeight / 2 - pixel.Y - pan.Y) / scaledHeight;
+            float nx = (pixel.X - plotRect.X) / plotRect.Width;
+            float ny = 1f - (pixel.Y - plotRect.Y) / plotRect.Height;
 
             float x = worldMin.X + nx * (worldMax.X - worldMin.X);
             float y = worldMin.Y + ny * (worldMax.Y - worldMin.Y);
@@ -251,18 +272,14 @@ public class UIGraph : UIContent
             }
             else if (s.Type == SeriesType.Bar)
             {
-                // Bars are drawn around x coordinate; baseline at y=0 (or min world)
-                float baseY = 0f;
-                if (worldMin.Y > 0 && worldMax.Y > 0)
-                    baseY = worldMin.Y;
-                else if (worldMin.Y < 0 && worldMax.Y < 0)
-                    baseY = worldMax.Y;
+                // Bars baseline aligned to axisY (so it sits on the bottom grid line)
+                float baseY = axisY;
                 var basePixel = DataToPixel(new Vector2(0, baseY));
 
                 for (int p = 0; p < s.Points.Count; p++)
                 {
                     var dataPoint = s.Points[p];
-                    var centerPx = DataToPixel(new Vector2(dataPoint.X, 0)).X; // center X position for this x
+                    var centerPx = DataToPixel(new Vector2(dataPoint.X, baseY)).X; // center X position for this x
                     float halfW = s.BarWidth * 0.5f;
                     var topPx = DataToPixel(new Vector2(dataPoint.X, dataPoint.Y)).Y;
                     var rect = new Rectangle(centerPx - halfW, Math.Min(topPx, basePixel.Y), halfW * 2, Math.Abs(basePixel.Y - topPx));
@@ -313,7 +330,7 @@ public class UIGraph : UIContent
 
 
         // Axes (draw on top)
-        DrawAxes(plotRect, worldMin, worldMax, bounds, DataToPixel);
+        DrawAxes(plotRect, worldMin, worldMax, bounds, DataToPixel, axisY);
 
         DrawLegend(bounds);
     }
@@ -490,14 +507,36 @@ public class UIGraph : UIContent
 
         if (Math.Abs(scaled - (float)Math.Round(scaled)) < 1e-6f)
             return ((int)Math.Round(scaled)).ToString() + suffix;
-        return scaled.ToString("0.#") + suffix;
+        return Round(scaled).ToString() + suffix;
     }
 
+    private float Round(float f)
+    {
+        if (f == 0f)
+            return 0f;
+
+        // Determine the magnitude of the number
+        float absF = Math.Abs(f);
+        float scale = 1f;
+
+        // Reduce absF until it's >= 1, tracking the scale factor
+        while (absF < 1f)
+        {
+            absF *= 10f;
+            scale *= 10f;
+        }
+
+        // Round to 2 digits at this scale
+        float rounded = (float)Math.Floor(f * scale * 100f) / (scale * 100f);
+
+        return rounded;
+    }
+
+
     // updated method: DrawAxes (full replacement)
-    private void DrawAxes(Rectangle plotRect, Vector2 worldMin, Vector2 worldMax, Rectangle bounds, Func<Vector2, Vector2> dataToPixel)
+    private void DrawAxes(Rectangle plotRect, Vector2 worldMin, Vector2 worldMax, Rectangle bounds, Func<Vector2, Vector2> dataToPixel, float axisY)
     {
         // X axis at y = 0 if visible, else bottom
-        float axisY = worldMin.Y <= 0 && worldMax.Y >= 0 ? 0 : worldMin.Y;
         var a = dataToPixel(new Vector2(worldMin.X, axisY));
         var b = dataToPixel(new Vector2(worldMax.X, axisY));
         ray.DrawLineEx(a, b, 2f, Style.AxisLine);
@@ -530,6 +569,7 @@ public class UIGraph : UIContent
                     int tw = ray.MeasureText(label, GRAPH_TEXT_SIZE);
                     float lx = px.X - tw * 0.5f;
                     float labelLeftWithMargin = lx - LABEL_MARGIN;
+
                     if (labelLeftWithMargin <= lastLabelRight)
                     {
                         collision = true;
@@ -559,6 +599,7 @@ public class UIGraph : UIContent
                     break;
                 }
             }
+
 
             if (!placed)
             {
@@ -862,5 +903,14 @@ public class UIGraph : UIContent
     }
 
     public IReadOnlyList<Series> GetSeries() => series;
+
+    private float GetLowestYTick(Vector2 worldMin, Vector2 worldMax)
+    {
+        if (YTickInterval > 0f)
+        {
+            return (float)Math.Ceiling(worldMin.Y / YTickInterval) * YTickInterval;
+        }
+        return worldMin.Y;
+    }
 }
 

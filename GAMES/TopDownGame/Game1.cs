@@ -165,8 +165,6 @@ public class Game1 : Application
         long bestDeserializationTime = long.MaxValue;
         long worstDeserializationTime = long.MinValue;
 
-        InstructionExecutor.Debug = InstructionExecutor.DebugAutoPrint = true;
-
         while (i2++ < max2)
         {
             deserializationSW.Restart();

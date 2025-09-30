@@ -82,15 +82,14 @@ internal class Program : Application
         // Add a StatusEffector so we can test status effects
         var statusEffector = entity.AddComponent<StatusEffector>();
 
-        // 3. Create projectile
         var projectile = world.CreateEntity<Projectile>("demoProjectile");
         var projStats = new Projectile.ProjectileStats
         {
             DamageType = new PhysicalDamage(),
             Damage = 15,
-            CritChance = 50, // 50% crit
+            CritChance = 50,
             CritMultiplier = 2.0f,
-            StatusChance = 1.0f // 100% chance to apply BurnEffect
+            StatusChance = 1.0f
         };
 
         // Assign stats to projectile
@@ -125,13 +124,13 @@ internal class Program : Application
         FPSGrapher.MaxDataPoints = 288;
         w.AddContent(FPSGrapher);
 
-        world.CreateEntity<InvocationComponent>("grapher").OnUpdate 
-            = Invocation.Create<InvocationComponent>(c =>
-            {
-                FPSGrapher.AddValueToSeries("FPS", ray.GetFPS());
-            });
+        //world.CreateEntity<InvocationComponent>("grapher").OnUpdate
+        //    = Invocation.Create<InvocationComponent>(c =>
+        //    {
+        //        FPSGrapher.AddValueToSeries("FPS", ray.GetFrameTime());
+        //    });
 
-        w.Show();
+        //w.Show();
 
         void ShowToast(ToastRegion r, ToastStackSide s)
         {
@@ -146,22 +145,17 @@ internal class Program : Application
                             .AddProgressBar(-1)
                             .AddSprite(Assets.Load<Sprite>("bigimg"));
 
-            var w = new UIWindow("Graph 1.4", 400, 500, 100, 100);
+            var w = new UIWindow("Graph 1.1-2-3", 400, 500, 100, 100);
 
-            UIGraph FPSGrapher = new UIGraph();
-            w.AddContent(FPSGrapher);
-
-
-
-
-            //Graph gall = LoadSimpleGraphFromCsv(
+            //UIGraph gall = LoadSimpleGraphFromCsv(
             //    "SorterOnePointOne.csv",
             //    "SorterOnePointTwo.csv",
             //    "SorterOnePointThree.csv"
             //    );
+            //gall.XTickInterval = 25000;
             //gall.XAxisLabel = "Size";
             //gall.YAxisLabel = "Time (ms)";
-            // w.AddContent(gall);
+            //w.AddContent(gall);
 
             // Graph g2 = LoadSimpleGraphFromCsv("SorterOnePointOne.csv");
             // g2.XAxisLabel = "Size";
