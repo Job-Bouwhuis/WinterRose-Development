@@ -41,8 +41,10 @@ public abstract class Application
     {
         get
         {
-            if (Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow)) return Color.Blank;
+            if (Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow)) return new Color(0, 0, 0, 0);
             return clearColor;
+            
+
         }
         set
         {
@@ -138,7 +140,7 @@ public abstract class Application
                 {
                     try
                     {
-                        MainApplicationLoop(world, camera, worldTex);
+                        MainApplicationLoop(world, camera, ref worldTex);
                     }
                     catch (Exception ex)
                     {
@@ -149,7 +151,7 @@ public abstract class Application
                 }
                 else
                 {
-                    MainApplicationLoop(world, camera, worldTex);
+                    MainApplicationLoop(world, camera, ref worldTex);
                 }
             }
 
@@ -173,7 +175,7 @@ public abstract class Application
         }
     }
 
-    private void MainApplicationLoop(World world, Camera? camera, RenderTexture2D worldTex)
+    private void MainApplicationLoop(World world, Camera? camera, ref RenderTexture2D worldTex)
     {
         if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
             world.Update();
@@ -185,14 +187,17 @@ public abstract class Application
         Update();
 
         BeginDrawing();
+        Raylib.ClearBackground(ClearColor);
+        Raylib.DrawRectangle(0, 0, Window.Width, Window.Height, new Color(0, 0, 0, 1));
+
         ray.BeginBlendMode(BlendMode.Alpha);
 
-        Raylib.ClearBackground(ClearColor);
-       
-        if(!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
+
+        if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
         {
             Raylib.BeginTextureMode(worldTex);
             Raylib.ClearBackground(ClearColor);
+            Raylib.DrawRectangle(0, 0, Window.Width, Window.Height, new Color(0, 0, 0, 1));
 
             if (camera != null)
                 Raylib.BeginMode2D(camera.Camera2D);
@@ -281,8 +286,8 @@ public abstract class Application
                     {
                         Raylib.DrawTexturePro(
                              worldTex.Value.Texture,
-                             new Rectangle(0, 0, worldTex.Value.Texture.Width, -worldTex.Value.Texture.Height),  // src rectangle flipped Y
-                             new Rectangle(0, 0, Window.Width, Window.Height),                      // dest rectangle fullscreen
+                             new Rectangle(0, 0, worldTex.Value.Texture.Width, -worldTex.Value.Texture.Height),
+                             new Rectangle(0, 0, Window.Width, Window.Height),
                              Vector2.Zero,
                              0,
                              Color.White);
@@ -325,11 +330,13 @@ public abstract class Application
     protected void RunAsOverlay()
     {
         var monitorsize = Windows.GetScreenSize();
+
         Run("ForgeWarden Tests", monitorsize.X, monitorsize.Y,
-            ConfigFlags.TransparentWindow
-            | ConfigFlags.UndecoratedWindow
-            | ConfigFlags.BorderlessWindowMode
-            | ConfigFlags.TopmostWindow
-            | ConfigFlags.AlwaysRunWindow);
+            ConfigFlags.TransparentWindow | 
+            ConfigFlags.UndecoratedWindow | 
+            ConfigFlags.BorderlessWindowMode | 
+            ConfigFlags.TopmostWindow | 
+            ConfigFlags.AlwaysRunWindow
+            );
     }
 }

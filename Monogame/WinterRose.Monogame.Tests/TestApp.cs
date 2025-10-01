@@ -29,7 +29,7 @@ internal class TestApp : Application
         {
            
             var instructions = InstructionParser.ParseOpcodes(opcodes);
-            World ww = (World)new InstructionExecutor().Execute(instructions);
+            World ww = (World)new WinterForgeVM().Execute(instructions);
             return ww;
         }
 

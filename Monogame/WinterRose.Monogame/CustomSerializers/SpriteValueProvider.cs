@@ -11,7 +11,7 @@ namespace WinterRose.Monogame.CustomSerializers
 {
     class SpriteValueProvider : CustomValueProvider<Sprite>
     {
-        public override Sprite? CreateObject(object v, InstructionExecutor executor)
+        public override Sprite? CreateObject(object v, WinterForgeVM executor)
         {
             string value = (string)v;
             if (value.Contains('/'))

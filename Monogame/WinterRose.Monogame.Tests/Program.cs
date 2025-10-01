@@ -61,7 +61,7 @@ foreach (var assemblyFile in assemblyFiles)
 //    instructions = InstructionParser.ParseInstructions(opcodes);
 //}
 
-//InstructionExecutor executor = new();
+//WinterForgeVM executor = new();
 
 //int i = 0;
 //System.Diagnostics.Stopwatch execForge = new System.Diagnostics.Stopwatch();

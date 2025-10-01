@@ -8,6 +8,8 @@ namespace WinterRose.ForgeWarden.Windowing
         public int Width => ray.GetScreenWidth();
         public int Height => ray.GetScreenHeight();
 
+        public unsafe nint Handle => (nint)ray.GetWindowHandle();
+
         public Vectors.Vector2I Position => (Vectors.Vector2I)ray.GetWindowPosition();
 
         public string Title
@@ -41,25 +43,35 @@ namespace WinterRose.ForgeWarden.Windowing
         public void Create(int width, int height)
         {
             Raylib.SetConfigFlags(ConfigFlags);
+            if (ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
+            {
+                width++;
+                height++;
+            }
             Raylib.InitWindow(width, height, Title);
 
-            if(ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
+            if (ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
+                ray.SetWindowPosition(-1, -1);
+
+
+            if (ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
             {
-                MakeNonActivating(Windows.MyHandle.Handle);
-                UnfocusCurrentWindow(Windows.MyHandle.Handle);
-                HideFromTaskbarAndAltTab(Windows.MyHandle.Handle);
+                MakeNonActivating(Handle);
+                UnfocusCurrentWindow(Handle);
+                HideFromTaskbarAndAltTab(Handle);
 
-                MakeNonActivating(Windows.MyHandle.Handle);
-                UnfocusCurrentWindow(Windows.MyHandle.Handle);
-                HideFromTaskbarAndAltTab(Windows.MyHandle.Handle);
-
-                // Enable layered style for per-pixel alpha
-                int style = GetWindowLong(Windows.MyHandle.Handle, GWL_EXSTYLE);
+                // enable layered style so DWM/compositor knows window can have per-pixel alpha
+                int style = GetWindowLong(Handle, GWL_EXSTYLE);
                 style |= WS_EX_LAYERED;
-                SetWindowLong(Windows.MyHandle.Handle, GWL_EXSTYLE, style);
+                SetWindowLong(Handle, GWL_EXSTYLE, style);
 
-                // Use per-pixel alpha (255 = fully opaque where pixels are drawn)
-                SetLayeredWindowAttributes(Windows.MyHandle.Handle, 0, 255, LWA_ALPHA);
+                // don't force global alpha (LWA_ALPHA) — that will override per-pixel alpha.
+                // Instead, attempt DWM fallbacks and inspect backbuffer alpha bits.
+                TryDwmTransparencyFallbacks(Handle);
+
+                // Inspect the pixel format alpha bits so we know what the driver provided:
+                int alphaBits = GetBackbufferAlphaBits(Handle);
+                Console.WriteLine($"Alpha bits in PFD: {alphaBits}");
             }
         }
 
@@ -158,6 +170,119 @@ namespace WinterRose.ForgeWarden.Windowing
                 return true;
             }
             return false;
+        }
+
+        [DllImport("dwmapi.dll", PreserveSig = true)]
+        private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref MARGINS pMargins);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MARGINS
+        {
+            public int cxLeftWidth;
+            public int cxRightWidth;
+            public int cyTopHeight;
+            public int cyBottomHeight;
+        }
+
+        [DllImport("dwmapi.dll", PreserveSig = true)]
+        private static extern int DwmEnableBlurBehindWindow(IntPtr hwnd, ref DWM_BLURBEHIND pBlurBehind);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct DWM_BLURBEHIND
+        {
+            public uint dwFlags;
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool fEnable;
+            public IntPtr hRgnBlur;
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool fTransitionOnMaximized;
+        }
+
+        private const uint DWM_BB_ENABLE = 0x00000001;
+
+        // GDI / pixel format helpers
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetDC(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+        [DllImport("gdi32.dll")]
+        private static extern int GetPixelFormat(IntPtr hdc);
+
+        [DllImport("gdi32.dll")]
+        private static extern int DescribePixelFormat(IntPtr hdc, int iPixelFormat, uint nBytes, ref PIXELFORMATDESCRIPTOR ppfd);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PIXELFORMATDESCRIPTOR
+        {
+            public ushort nSize;
+            public ushort nVersion;
+            public uint dwFlags;
+            public byte iPixelType;
+            public byte cColorBits;
+            public byte cRedBits;
+            public byte cRedShift;
+            public byte cGreenBits;
+            public byte cGreenShift;
+            public byte cBlueBits;
+            public byte cBlueShift;
+            public byte cAlphaBits;
+            public byte cAlphaShift;
+            public byte cAccumBits;
+            public byte cAccumRedBits;
+            public byte cAccumGreenBits;
+            public byte cAccumBlueBits;
+            public byte cDepthBits;
+            public byte cStencilBits;
+            public byte cAuxBuffers;
+            public sbyte iLayerType;
+            public byte bReserved;
+            public uint dwLayerMask;
+            public uint dwVisibleMask;
+            public uint dwDamageMask;
+        }
+
+        // --- New helper: inspect alpha bits in the pixel format ---
+        private static int GetBackbufferAlphaBits(IntPtr hwnd)
+        {
+            IntPtr hdc = GetDC(hwnd);
+            if (hdc == IntPtr.Zero)
+                return -1;
+
+            int pf = GetPixelFormat(hdc);
+            PIXELFORMATDESCRIPTOR pfd = new PIXELFORMATDESCRIPTOR();
+            pfd.nSize = (ushort)Marshal.SizeOf<PIXELFORMATDESCRIPTOR>();
+            pfd.nVersion = 1;
+
+            int res = DescribePixelFormat(hdc, pf, (uint)pfd.nSize, ref pfd);
+            ReleaseDC(hwnd, hdc);
+
+            return pfd.cAlphaBits;
+        }
+
+        // --- New helper: try DWM fallbacks (extend frame, optionally blur) ---
+        private static void TryDwmTransparencyFallbacks(IntPtr hwnd)
+        {
+            // Extend frame into client area (-1 for full client glass)
+            try
+            {
+                var margins = new MARGINS { cxLeftWidth = -1, cxRightWidth = -1, cyTopHeight = -1, cyBottomHeight = -1 };
+                DwmExtendFrameIntoClientArea(hwnd, ref margins);
+            }
+            catch { /* ignore - best-effort */ }
+
+            // Try toggling blur-behind off then on (attempt to nudge DWM composition)
+            try
+            {
+                var bbOff = new DWM_BLURBEHIND { dwFlags = DWM_BB_ENABLE, fEnable = true, hRgnBlur = IntPtr.Zero, fTransitionOnMaximized = false };
+                DwmEnableBlurBehindWindow(hwnd, ref bbOff);
+
+                // If needed, enable blur (set fEnable = true). Leave disabled by default.
+                // var bbOn = new DWM_BLURBEHIND { dwFlags = DWM_BB_ENABLE, fEnable = true, hRgnBlur = IntPtr.Zero, fTransitionOnMaximized = false };
+                // DwmEnableBlurBehindWindow(hwnd, ref bbOn);
+            }
+            catch { /* ignore */ }
         }
     }
 }

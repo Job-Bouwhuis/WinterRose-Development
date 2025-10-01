@@ -6,12 +6,12 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeSignal;
 
 namespace WinterRose
 {
     public static partial class Windows
     {
-
         public class SystemTrayIcon
         {
             [DllImport("shell32.dll", CharSet = CharSet.Auto)]
@@ -64,14 +64,116 @@ namespace WinterRose
                 return IntPtr.Zero;
             }
 
-            public void AddIcon()
+            // ---------- new constants ----------
+            private const uint WM_LBUTTONUP = 0x0202;
+            private const uint WM_LBUTTONDBLCLK = 0x0203;
+            private const uint WM_RBUTTONUP = 0x0205;
+            private const int GWLP_WNDPROC = -4;
+
+            // ---------- events ----------
+            public MulticastVoidInvocation Click = new();
+            public MulticastVoidInvocation RightClick = new();
+            public MulticastVoidInvocation DoubleClick = new();
+
+            // ---------- fields for window proc hook ----------
+            private IntPtr originalWndProc = IntPtr.Zero;
+            private WindowProcDelegate? windowProcDelegate; // keep delegate alive so it doesn't get GC'd
+
+            // ---------- delegate type ----------
+            private delegate IntPtr WindowProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+            // ---------- P/Invoke for hooking (32/64-bit safe) ----------
+            [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+            private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr newProc);
+
+            [DllImport("user32.dll", EntryPoint = "SetWindowLongW", SetLastError = true)]
+            private static extern IntPtr SetWindowLong32(IntPtr hWnd, int nIndex, IntPtr newProc);
+
+            [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+            private static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+            [DllImport("user32.dll", CharSet = CharSet.Auto)]
+            private static extern IntPtr DefWindowProc(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+            // ---------- register/unregister helpers ----------
+            private void RegisterWindowProcHook()
             {
+                if (notifyIconData.hWnd == IntPtr.Zero)
+                    return;
+
+                // prevent double register
+                if (originalWndProc != IntPtr.Zero)
+                    return;
+
+                windowProcDelegate = new WindowProcDelegate(WndProc);
+                IntPtr newProcPtr = Marshal.GetFunctionPointerForDelegate(windowProcDelegate);
+
+                if (IntPtr.Size == 8)
+                {
+                    originalWndProc = SetWindowLongPtr64(notifyIconData.hWnd, GWLP_WNDPROC, newProcPtr);
+                }
+                else
+                {
+                    originalWndProc = SetWindowLong32(notifyIconData.hWnd, GWLP_WNDPROC, newProcPtr);
+                }
+            }
+
+            private void UnregisterWindowProcHook()
+            {
+                if (notifyIconData.hWnd == IntPtr.Zero || originalWndProc == IntPtr.Zero)
+                    return;
+
+                if (IntPtr.Size == 8)
+                {
+                    SetWindowLongPtr64(notifyIconData.hWnd, GWLP_WNDPROC, originalWndProc);
+                }
+                else
+                {
+                    SetWindowLong32(notifyIconData.hWnd, GWLP_WNDPROC, originalWndProc);
+                }
+
+                originalWndProc = IntPtr.Zero;
+                windowProcDelegate = null;
+            }
+
+            // ---------- WndProc ----------
+            private IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+            {
+                try
+                {
+                    if(msg == WM_TRAYICON)
+                        if (notifyIconData.uID == (uint)wParam.ToInt32())
+                        {
+                            uint mouseMsg = (uint)lParam.ToInt32();
+                            if (mouseMsg == WM_LBUTTONUP) Click.Invoke();
+                            else if (mouseMsg == WM_RBUTTONUP) RightClick.Invoke();
+                            else if (mouseMsg == WM_LBUTTONDBLCLK) DoubleClick.Invoke();
+                        }
+                }
+                catch
+                {
+                    // swallow exceptions from handlers to avoid breaking window proc
+                }
+
+                // call original proc (or default if none)
+                if (originalWndProc != IntPtr.Zero)
+                    return CallWindowProc(originalWndProc, hWnd, msg, wParam, lParam);
+
+                return DefWindowProc(hWnd, msg, wParam, lParam);
+            }
+
+            // ---------- small ShowInTray / DeleteIcon updates ----------
+            // replace your existing ShowInTray and DeleteIcon bodies with these (or add Register/Unregister calls)
+            public void ShowInTray()
+            {
+                RegisterWindowProcHook();
                 Shell_NotifyIcon(NIM_ADD, ref notifyIconData);
             }
 
-            public void RemoveIcon()
+            public void DeleteIcon()
             {
                 Shell_NotifyIcon(NIM_DELETE, ref notifyIconData);
+                UnregisterWindowProcHook();
             }
         }
     }

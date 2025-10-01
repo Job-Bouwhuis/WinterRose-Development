@@ -10,7 +10,7 @@ using WinterRose.WinterForgeSerializing.Workers;
 namespace TopDownGame.CustomSerializers;
 internal class RarityProvider : CustomValueProvider<Rarity>
 {
-    public override Rarity? CreateObject(object value, InstructionExecutor executor)
+    public override Rarity? CreateObject(object value, WinterForgeVM executor)
     {
         if (value is "null")
             return null;

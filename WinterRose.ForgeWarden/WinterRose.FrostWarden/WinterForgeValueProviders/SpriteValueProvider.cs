@@ -11,7 +11,7 @@ namespace WinterRose.ForgeWarden.WinterForgeValueProviders
 {
     class SpriteValueProvider : CustomValueProvider<Sprite>
     {
-        public override Sprite? CreateObject(object value, InstructionExecutor executor)
+        public override Sprite? CreateObject(object value, WinterForgeVM executor)
         {
             return SpriteCache.Get((string)value);
         }

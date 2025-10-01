@@ -36,6 +36,8 @@ internal class Program : Application
     const int SCREEN_WIDTH = 1280;
     const int SCREEN_HEIGHT = 720;
 
+    static Windows.SystemTrayIcon icon;
+
     // for on steam deck
     //const int SCREEN_WIDTH = 960;
     //const int SCREEN_HEIGHT = 540;
@@ -51,7 +53,11 @@ internal class Program : Application
         NamedControl reload = new("reload");
         reload.AddBinding(KeyboardKey.R);
 
-        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
+        //new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
+
+        new Program().RunAsOverlay();
+
+        icon.DeleteIcon();
     }
 
     public override void Draw()
@@ -61,6 +67,10 @@ internal class Program : Application
 
     public override World CreateWorld()
     {
+        icon = new(Window.Handle, 0, "test", "AppLogo.ico");
+        icon.ShowInTray();
+        icon.RightClick.Subscribe(Invocation.Create(Close));
+
         ray.SetTargetFPS(144);
         ClearColor = Color.Beige;
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
@@ -131,6 +141,8 @@ internal class Program : Application
         //    });
 
         //w.Show();
+
+        icon.Click.Subscribe(Invocation.Create(() => ShowToast(ToastRegion.Right, ToastStackSide.Top)));
 
         void ShowToast(ToastRegion r, ToastStackSide s)
         {

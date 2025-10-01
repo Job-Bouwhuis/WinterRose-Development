@@ -13,7 +13,7 @@ namespace TopDownGame.CustomSerializers
 {
     class InventorySerializer : CustomValueProvider<Inventory>
     {
-        public override Inventory? CreateObject(object value, InstructionExecutor executor) => AssetDatabase.LoadAsset<Inventory>((string)value);
+        public override Inventory? CreateObject(object value, WinterForgeVM executor) => AssetDatabase.LoadAsset<Inventory>((string)value);
         public override object CreateString(Inventory inv, ObjectSerializer serializer)
         {
             inv.Save();

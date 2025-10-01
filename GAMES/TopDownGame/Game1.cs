@@ -46,7 +46,7 @@ public class Game1 : Application
 
         //var instr = InstructionParser.ParseOpcodes(opcodes);
 
-        //var exec = new InstructionExecutor();
+        //var exec = new WinterForgeVM();
         //var result = exec.Execute(instr);
 
         //WinterRose.Monogame.Debug.Log(CameraIndex, true);

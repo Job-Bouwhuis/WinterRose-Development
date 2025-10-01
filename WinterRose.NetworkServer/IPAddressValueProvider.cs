@@ -12,7 +12,7 @@ public class IPAddressValueProvider : CustomValueProvider<IPAddress>
         return obj.ToString();
     }
 
-    public override IPAddress? CreateObject(object value, InstructionExecutor executor)
+    public override IPAddress? CreateObject(object value, WinterForgeVM executor)
     {
         return IPAddress.Parse((string)value);
     }

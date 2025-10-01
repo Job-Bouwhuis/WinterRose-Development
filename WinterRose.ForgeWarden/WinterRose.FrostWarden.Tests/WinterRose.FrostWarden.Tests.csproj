@@ -38,6 +38,9 @@
     <None Update="csv.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="perspective-dice-six-faces-random_38559.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Scene1.obj">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
