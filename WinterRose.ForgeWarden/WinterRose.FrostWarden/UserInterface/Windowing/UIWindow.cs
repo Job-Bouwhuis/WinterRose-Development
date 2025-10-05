@@ -234,7 +234,7 @@ public class UIWindow : UIContainer
         Maximized = !isMaximized;
     }
 
-    public void Show()
+    public virtual void Show()
     {
         WindowManager.Show(this);
 

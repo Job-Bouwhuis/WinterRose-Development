@@ -18,13 +18,13 @@ public class RichText
     {
         get
         {
-            for (int i = Elements.Count; i >= 0; i--)
+            if (Elements == null || Elements.Count == 0) return Color.White;
+            for (int i = Elements.Count - 1; i >= 0; i--)
             {
-                RichElement? element = Elements[i];
-                if (element is RichGlyph glyph)
-                    return glyph.Color;
-                if (element is RichSprite sprite)
-                    return sprite.Tint;
+                RichElement element = Elements[i];
+                if (element is RichGlyph glyph) return glyph.Color;
+                if (element is RichSprite sprite) return sprite.Tint;
+                if (element is RichWord word) return word.Color;
             }
             return Color.White;
         }
@@ -118,10 +118,9 @@ public class RichText
         bool first = true;
         foreach (RichElement element in elements)
         {
-            if (element is RichGlyph rg)
+            if (element is RichWord rw)
             {
-                var size = ray.MeasureTextEx(Font, "" + rg.Character, FontSize, Spacing);
-
+                var size = ray.MeasureTextEx(Font, rw.Text, FontSize, Spacing);
                 if (first)
                 {
                     first = false;
@@ -129,8 +128,25 @@ public class RichText
                 }
                 if (size.X > 0)
                     r.Width += size.X + Spacing;
-                if (rg.Character is '\n')
+                continue;
+            }
+
+            if (element is RichGlyph rg)
+            {
+                var size = ray.MeasureTextEx(Font, rg.Character.ToString(), FontSize, Spacing);
+                if (first)
+                {
+                    first = false;
+                    r.Height = size.Y;
+                }
+                if (rg.Character == '\n')
+                {
                     r.Height += size.Y;
+                }
+                else if (size.X > 0)
+                {
+                    r.Width += size.X + Spacing;
+                }
                 continue;
             }
 
@@ -139,6 +155,11 @@ public class RichText
                 float spriteHeight = rs.BaseSize * FontSize;
                 float scale = spriteHeight / s.Height;
                 r.Width += s.Width * scale + Spacing;
+                if (first)
+                {
+                    first = false;
+                    r.Height = Math.Max(r.Height, s.Height * scale);
+                }
                 continue;
             }
         }
@@ -162,58 +183,69 @@ public class RichText
     }
 
     public static RichText Parse(string text, int fontSize = 12) => Parse(text, Color.White, fontSize);
-    
+
     public static RichText Parse(string text, Color defaultColor, int fontSize = 12)
     {
         var elements = new List<RichElement>();
         Color currentColor = defaultColor;
-        int i = 0;
+        var sb = new StringBuilder(); // accumulates a word
+        void FlushWord(string? linkUrl = null)
+        {
+            if (sb.Length == 0) return;
+            elements.Add(new RichWord(sb.ToString(), currentColor, linkUrl));
+            sb.Clear();
+        }
 
+        int i = 0;
         while (i < text.Length)
         {
             try
             {
                 if (text[i] == '\\' && i + 1 < text.Length)
                 {
-                    if (text[i + 1] == 'c' && text[i + 2] == '[')
+                    // color tag
+                    if (text[i + 1] == 'c' && i + 2 < text.Length && text[i + 2] == '[')
                     {
                         int close = text.IndexOf(']', i + 3);
                         if (close > 0)
                         {
+                            FlushWord();
                             string colorStr = text[(i + 3)..close];
                             currentColor = ParseColor(colorStr, defaultColor);
                             i = close + 1;
                             continue;
                         }
                     }
-                    else if (text[i + 1] == 's' && text[i + 2] == '[')
+                    // sprite tag
+                    else if (text[i + 1] == 's' && i + 2 < text.Length && text[i + 2] == '[')
                     {
-
                         int close = text.IndexOf(']', i + 3);
                         if (close > 0)
                         {
+                            FlushWord();
                             string spriteKey = text[(i + 3)..close];
-                            RichSprite s;
-                            elements.Add(s = new RichSprite(spriteKey, RichSpriteRegistry.GetSourceFor(spriteKey), 1f, currentColor));
+                            RichSprite s = new RichSprite(spriteKey, RichSpriteRegistry.GetSourceFor(spriteKey), 1f, currentColor);
+                            elements.Add(s);
                             i = close + 1;
 
                             if (text.Length >= close + 2)
                             {
-                                if (text[close + 1] is '\\' && text[close + 2] is '!')
+                                if (text[close + 1] == '\\' && text[close + 2] == '!')
                                 {
                                     s.Clickable = true;
                                     i += 2;
                                 }
                             }
-
                             continue;
                         }
                     }
-                    else if (text[i + 1] == 'L' && text[i + 2] == '[')
+                    // link tag \L[url|display] or \L[url]
+                    else if (text[i + 1] == 'L' && i + 2 < text.Length && text[i + 2] == '[')
                     {
                         int close = text.IndexOf(']', i + 3);
                         if (close > 0)
                         {
+                            FlushWord();
                             string content = text[(i + 3)..close];
                             string linkUrl = content;
                             string displayText = content;
@@ -225,13 +257,14 @@ public class RichText
                                 displayText = content[(eq + 1)..];
                             }
 
-                            // Add each character as a RichGlyph but attach link metadata
-                            foreach (char c in displayText)
+                            // split displayText into words and spaces, emit RichWord with LinkUrl
+                            var parts = displayText.Split(' ');
+                            for (int p = 0; p < parts.Length; p++)
                             {
-                                elements.Add(new RichGlyph(c, currentColor)
-                                {
-                                    GlyphLinkUrl = linkUrl
-                                });
+                                if (parts[p].Length > 0)
+                                    elements.Add(new RichWord(parts[p], currentColor, linkUrl));
+                                if (p < parts.Length - 1)
+                                    elements.Add(new RichGlyph(' ', currentColor));
                             }
 
                             i = close + 1;
@@ -242,14 +275,29 @@ public class RichText
             }
             catch
             {
-                // ignore, and draw characters as normal if anything here fails
+                // fall through to treat as normal char
             }
 
-            elements.Add(new RichGlyph(text[i], currentColor));
+            char c = text[i];
+            // whitespace handling: flush word, then add a glyph for the whitespace
+            if (char.IsWhiteSpace(c))
+            {
+                FlushWord();
+                elements.Add(new RichGlyph(c, currentColor));
+                i++;
+                continue;
+            }
+
+            // accumulate into current word
+            sb.Append(c);
             i++;
         }
 
-        return new RichText(elements) {
+        // final flush
+        if (sb.Length > 0) FlushWord();
+
+        return new RichText(elements)
+        {
             FontSize = fontSize
         };
     }
@@ -262,6 +310,10 @@ public class RichText
         {
             switch (element)
             {
+                case RichWord word:
+                    width += Raylib.MeasureTextEx(font.Value, word.Text, FontSize, 1).X;
+                    break;
+
                 case RichGlyph glyph:
                     width += Raylib.MeasureTextEx(font.Value, glyph.Character.ToString(), FontSize, 1).X;
                     break;
@@ -312,7 +364,11 @@ public class RichText
 
         foreach (var element in Elements)
         {
-            if (element is RichGlyph glyph)
+            if (element is RichWord word)
+            {
+                clonedElements.Add(new RichWord(word.Text, word.Color, word.LinkUrl));
+            }
+            else if (element is RichGlyph glyph)
             {
                 clonedElements.Add(new RichGlyph(glyph.Character, glyph.Color));
             }

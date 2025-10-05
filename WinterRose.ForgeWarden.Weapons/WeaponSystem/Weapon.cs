@@ -28,8 +28,7 @@ public class Weapon : Component, IUpdatable
 
         if(Input.IsDown("fire"))
         {
-            Console.WriteLine("fire" + time++);
-            if(Trigger.CanFire())
+            if(Trigger.CanFire() && Magazine.CanFire())
             {
                 if(Trigger.TryFire())
                 {

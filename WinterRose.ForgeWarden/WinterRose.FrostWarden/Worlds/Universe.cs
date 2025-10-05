@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeWarden.Editor;
 using WinterRose.ForgeWarden.Input;
 
 namespace WinterRose.ForgeWarden.Worlds
@@ -11,6 +12,8 @@ namespace WinterRose.ForgeWarden.Worlds
     {
         private static World currentWorld = null;
         private static World? nextWorld = null;
+
+        public static Hierarchy Hirarchy { get; } = new();
 
         public static InputContext Input { get; }
 

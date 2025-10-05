@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using WinterRose.ForgeGuardChecks;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DependencyInjection;
 using WinterRose.ForgeWarden.DependencyInjection.Handlers;
@@ -148,8 +149,6 @@ public class Entity
 
             components.Remove(component);
         }
-        
-
     }
     public T? GetComponent<T>() where T : Component
     {
@@ -177,6 +176,12 @@ public class Entity
         foreach (var comp in components)
             if (comp is T c)
                 yield return c;
+    }
+
+    public IEnumerable<Component> GetAllComponents()
+    {
+        foreach(var comp in components)
+            yield return comp;
     }
 
     internal void InjectIntoComponents(World world)

@@ -8,11 +8,17 @@ using WinterRose.ForgeSignal;
 namespace WinterRose.ForgeWarden;
 public class InvocationComponent : Component, IUpdatable, IRenderable
 {
+    [Hide]
     public VoidInvocation<InvocationComponent> OnAwake { get; set; }
+    [Hide]
     public VoidInvocation<InvocationComponent> OnStart { get; set; }
+    [Hide]
     public VoidInvocation<InvocationComponent> OnDestroyEvent { get; set; }
+    [Hide]
     public VoidInvocation<InvocationComponent> OnVanishEvent { get; set; }
+    [Hide]
     public VoidInvocation<InvocationComponent> OnUpdate { get; set; }
+    [Hide]
     public VoidInvocation<InvocationComponent, Matrix4x4> OnDraw { get; set; }
 
     protected override void Awake()

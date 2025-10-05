@@ -7,6 +7,7 @@ using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DamageSystem;
 using WinterRose.ForgeWarden.DamageSystem.WeaponSystem;
+using WinterRose.ForgeWarden.Editor;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.HealthSystem;
 using WinterRose.ForgeWarden.Input;
@@ -52,10 +53,11 @@ internal class Program : Application
 
         NamedControl reload = new("reload");
         reload.AddBinding(KeyboardKey.R);
+        reload.Register();
 
-        //new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
+        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        new Program().RunAsOverlay();
+        //new Program().RunAsOverlay();
 
         icon.DeleteIcon();
     }
@@ -109,7 +111,7 @@ internal class Program : Application
         // 5. Create trigger
         var trigger = new StandardTrigger()
         {
-            FireRate = 0.5f // 2 shots per second
+            FireRate = 10f
         };
 
         // 6. Create weapon entity
@@ -129,18 +131,19 @@ internal class Program : Application
 
         ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
 
-        var w = new UIWindow("Graph 1.4", 400, 500, 100, 100);
+        var w = new UIWindow("FPS Graph", 400, 500, 100, 100);
         UIGraph FPSGrapher = new UIGraph();
         FPSGrapher.MaxDataPoints = 288;
+        w.AddContent(new UIFPS());
         w.AddContent(FPSGrapher);
 
-        //world.CreateEntity<InvocationComponent>("grapher").OnUpdate
-        //    = Invocation.Create<InvocationComponent>(c =>
-        //    {
-        //        FPSGrapher.AddValueToSeries("FPS", ray.GetFrameTime());
-        //    });
+        world.CreateEntity<InvocationComponent>("grapher").OnUpdate
+            = Invocation.Create<InvocationComponent>(c =>
+            {
+                FPSGrapher.AddValueToSeries("FPS", ray.GetFPS());
+            });
 
-        //w.Show();
+        w.Show();
 
         icon.Click.Subscribe(Invocation.Create(() => ShowToast(ToastRegion.Right, ToastStackSide.Top)));
 
@@ -242,7 +245,7 @@ internal class Program : Application
 
         //world.SaveTemplate();
 
-
+        Universe.Hirarchy.Show();
 
         return world;
     }

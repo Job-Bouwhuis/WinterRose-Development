@@ -6,10 +6,12 @@ namespace WinterRose.ForgeWarden;
 
 public abstract class Component : IComponent
 {
-    [WFInclude(Priority = int.MaxValue)]
+    [WFInclude(Priority = int.MaxValue), Hide]
     public Entity owner { get; internal set; }
+    [Hide]
     public Transform transform => owner.transform;
 
+    [Hide]
     public InputContext Input => owner.Input;
 
     public float awakeTime { get; private set; }

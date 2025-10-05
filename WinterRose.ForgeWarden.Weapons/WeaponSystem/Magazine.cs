@@ -10,8 +10,7 @@ public class Magazine : Component, IUpdatable
     public StaticCombinedModifier<float> Multishot { get; set; } = 1;
     public StaticCombinedModifier<int> AmmoConsumedPerShot { get; set; } = 1;
     public StaticCombinedModifier<int> MaxAmmo { get; set; } = 25;
-    public StaticCombinedModifier<int> CurrentAmmo { get; set; } = 25;
-    public StaticCombinedModifier<int> AmmoReserves { get; set; } = 1000;
+    public int AmmoReserves { get; set; } = 1000;
     public int CurrentLoadedAmmo { get; set; }
     public StaticCombinedModifier<float> ReloadTime { get; set; } = 2;
 
@@ -20,6 +19,7 @@ public class Magazine : Component, IUpdatable
 
     public IReadOnlyList<Projectile> TakeProjectiles()
     {
+        CurrentLoadedAmmo -= AmmoConsumedPerShot;
         return new List<Projectile>();
     }
 
@@ -38,4 +38,6 @@ public class Magazine : Component, IUpdatable
         if(AmmoReserves < 0)
             AmmoReserves = 0;
     }
+
+    public virtual bool CanFire() => CurrentLoadedAmmo >= AmmoConsumedPerShot;
 }

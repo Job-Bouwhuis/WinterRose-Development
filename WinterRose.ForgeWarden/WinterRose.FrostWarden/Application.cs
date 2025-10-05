@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
+using WinterRose.ForgeWarden.Editor;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.Physics;
@@ -119,9 +120,8 @@ public abstract class Application
             ClearBackground(ClearColor);
             EndDrawing();
 
-            World world;
-            Universe.CurrentWorld = world = CreateWorld();
-            Camera? camera = world.GetAll<Camera>().FirstOrDefault();
+            Universe.CurrentWorld = CreateWorld();
+            Camera? camera = Universe.CurrentWorld.GetAll<Camera>().FirstOrDefault();
             Camera.main = camera;
             RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
 
@@ -140,7 +140,7 @@ public abstract class Application
                 {
                     try
                     {
-                        MainApplicationLoop(world, camera, ref worldTex);
+                        MainApplicationLoop(camera, ref worldTex);
                     }
                     catch (Exception ex)
                     {
@@ -151,7 +151,7 @@ public abstract class Application
                 }
                 else
                 {
-                    MainApplicationLoop(world, camera, ref worldTex);
+                    MainApplicationLoop(camera, ref worldTex);
                 }
             }
 
@@ -175,10 +175,12 @@ public abstract class Application
         }
     }
 
-    private void MainApplicationLoop(World world, Camera? camera, ref RenderTexture2D worldTex)
+    private void MainApplicationLoop(Camera? camera, ref RenderTexture2D worldTex)
     {
         if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
-            world.Update();
+            Universe.CurrentWorld.Update();
+
+        Universe.Hirarchy.UpdateHirarchy();
 
         WindowManager.Update();
         Dialogs.Update(Time.deltaTime);
@@ -202,7 +204,7 @@ public abstract class Application
             if (camera != null)
                 Raylib.BeginMode2D(camera.Camera2D);
 
-            world.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
+            Universe.CurrentWorld.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
 
             if (camera != null)
                 Raylib.EndMode2D();

@@ -5,24 +5,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeSignal;
+using WinterRose.ForgeWarden.Worlds;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 public class TreeNode : UIContent
 {
     private static readonly Dictionary<TreeNode, (TreeNode node, double time)> GlobalLastClickByRoot = new Dictionary<TreeNode, (TreeNode, double)>();
+    private readonly Dictionary<UIContent, Rectangle> ChildLastRowRects = new Dictionary<UIContent, Rectangle>();
 
-
-    // Public API
     public string Text { get; set; }
     public object Context { get; set; }
 
-    public List<TreeNode> Children { get; } = new List<TreeNode>();
+    public List<UIContent> Children { get; } = new List<UIContent>();
     public TreeNode Parent { get; private set; }
 
     public bool IsCollapsed { get; private set; } = false;
 
-    public MulticastVoidInvocation<TreeNode> ClickInvocation { get; } = new();
-    public MulticastVoidInvocation<TreeNode> DoubleClickInvocation { get; } = new();
+    public MulticastVoidInvocation<TreeNode> ClickInvocation { get; set; } = new();
+    public MulticastVoidInvocation<TreeNode> DoubleClickInvocation { get; set; } = new();
 
     // Internal click state (no leading underscores)
     private double lastClickTime = -1.0;
@@ -44,19 +44,40 @@ public class TreeNode : UIContent
         configurator(this);
     }
 
-    public void AddChild(TreeNode child)
+    public void AddChild(UIContent child)
     {
         if (child == null) return;
-        if (child.Parent != null) child.Parent.RemoveChild(child);
-        child.Parent = this;
+
+        // if the child is a TreeNode, detach it from its previous parent
+        if (child is TreeNode tn && tn.Parent != null)
+            tn.Parent.RemoveChild(tn);
+
         Children.Add(child);
+
+        // If the child is a TreeNode, set its parent
+        if (child is TreeNode treeChild)
+            treeChild.Parent = this;
+
+        // adopt owner and run setup so child is ready immediately
+        if (owner != null)
+        {
+            child.owner = owner;
+            child.Setup();
+        }
     }
 
-    public bool RemoveChild(TreeNode child)
+    public bool RemoveChild(UIContent child)
     {
         if (child == null) return false;
         var removed = Children.Remove(child);
-        if (removed) child.Parent = null!;
+        if (removed)
+        {
+            // clear TreeNode parent link when applicable
+            if (child is TreeNode treeChild)
+                treeChild.Parent = null;
+            // remove any stored hit rect
+            ChildLastRowRects.Remove(child);
+        }
         return removed;
     }
 
@@ -153,10 +174,10 @@ public class TreeNode : UIContent
         lastRowRect = rowRect;
 
         // Mouse position
-        int mx = Raylib_cs.Raylib.GetMouseX();
-        int my = Raylib_cs.Raylib.GetMouseY();
+        float mx = Input.MousePosition.X;
+        float my = Input.MousePosition.Y;
         bool mouseOverRow = mx >= rowRect.X && mx <= rowRect.X + rowRect.Width && my >= rowRect.Y && my <= rowRect.Y + rowRect.Height;
-
+        
         // Background and hover highlight
         Raylib_cs.Raylib.DrawRectangleRec(rowRect, Style.TreeNodeBackground);
         if (mouseOverRow)
@@ -198,8 +219,37 @@ public class TreeNode : UIContent
             foreach (var child in Children)
             {
                 float childHeight = child.GetHeight(childWidth);
-                var childBounds = new Rectangle(bounds.X + Style.TreeNodeIndentWidth, y, childWidth, childHeight);
-                child.Draw(childBounds);
+                var childBounds = new Rectangle(bounds.X + Style.TreeNodeIndentWidth, (int)y, (int)childWidth, (int)childHeight);
+
+                // Hit / hover / click delegation similar to UIColumns
+                if (child.IsContentHovered(childBounds))
+                {
+                    child.OnHover();
+                    child.IsHovered = true;
+
+                    foreach (var button in Enum.GetValues<MouseButton>())
+                    {
+                        if (Input.IsPressed(button))
+                            child.OnContentClicked(button);
+                    }
+                }
+                else
+                {
+                    foreach (var button in Enum.GetValues<MouseButton>())
+                        if (Input.IsPressed(button))
+                            child.OnClickedOutsideOfContent(button);
+
+                    if (child.IsHovered)
+                        child.OnHoverEnd();
+                    child.IsHovered = false;
+                }
+
+                // draw child using its normal draw path
+                child.InternalDraw(childBounds);
+
+                // store last drawn rect for hit testing when clicks bubble
+                ChildLastRowRects[child] = childBounds;
+
                 y += childHeight;
             }
         }
@@ -218,9 +268,9 @@ public class TreeNode : UIContent
 
     protected internal override void Update()
     {
-        if(owner is null)
+        if (owner is null)
         {
-            if(Parent != null)
+            if (Parent != null)
             {
                 owner = Parent.owner;
             }
@@ -247,22 +297,22 @@ public class TreeNode : UIContent
     protected internal override void OnContentClicked(MouseButton button)
     {
         // Ensure the click physically happened inside this node's row rect.
-        int mx = Raylib_cs.Raylib.GetMouseX();
-        int my = Raylib_cs.Raylib.GetMouseY();
+        float mx = Input.MousePosition.X;
+        float my = Input.MousePosition.Y;
         bool insideThisRow = mx >= lastRowRect.X && mx <= lastRowRect.X + lastRowRect.Width
                              && my >= lastRowRect.Y && my <= lastRowRect.Y + lastRowRect.Height;
 
         if (!insideThisRow)
         {
             // If the click wasn't on this node's row, see if it hits any child.
-            // Delegate to the first child whose stored row rect contains the click.
+            // Delegate to the first child whose stored rect contains the click.
             foreach (var child in Children)
             {
-                // If the child hasn't been drawn yet it may have an empty rect; skip those.
-                if (child.lastRowRect.Width <= 0 || child.lastRowRect.Height <= 0) continue;
+                if (!ChildLastRowRects.TryGetValue(child, out var rect)) continue;
+                if (rect.Width <= 0 || rect.Height <= 0) continue;
 
-                bool insideChildRow = mx >= child.lastRowRect.X && mx <= child.lastRowRect.X + child.lastRowRect.Width
-                                      && my >= child.lastRowRect.Y && my <= child.lastRowRect.Y + child.lastRowRect.Height;
+                bool insideChildRow = mx >= rect.X && mx <= rect.X + rect.Width
+                                      && my >= rect.Y && my <= rect.Y + rect.Height;
 
                 if (insideChildRow)
                 {
@@ -346,10 +396,18 @@ public class TreeNode : UIContent
             GlobalLastClickByRoot.Remove(this);
         }
 
-        // Let children clean up first, then sever parent links and clear the list.
+        // Let children clean up first
         foreach (var child in Children)
         {
             child.OnOwnerClosing();
+
+            // sever parent link for TreeNode children
+            if (child is TreeNode treeChild)
+                treeChild.Parent = null;
         }
+
+        // clear tracking structures
+        Children.Clear();
+        ChildLastRowRects.Clear();
     }
 }

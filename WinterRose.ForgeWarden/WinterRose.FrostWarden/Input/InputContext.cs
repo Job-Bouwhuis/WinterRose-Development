@@ -78,7 +78,7 @@ public class InputContext
             return false;
 
         if (!Controls.TryGetValue(controlName, out var control))
-            return false;
+            throw new InvalidInputException(controlName);
 
         return control.IsPressed(Provider, out var binding) && HasRightFocus(binding); // Named controls assumed keyboard/gamepad
     }

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.ForgeWarden.Input;
 using PuppeteerSharp.BrowserData;
+using WinterRose.ForgeSignal;
 
 namespace WinterRose.ForgeWarden.Worlds;
 
