@@ -7,7 +7,7 @@ public class FullReloadBehavior : ReloadBehavior
     public override void StartReload()
     {
         IsReloading = true;
-        timer = Magazine.ReloadTime;
+        timer = ReloadTime;
     }
 
     protected internal override void Update()

@@ -4,13 +4,14 @@ public class PerShellReloadBehavior : ReloadBehavior
 {
     private float timer;
     public bool UsePerShellTime { get; set; } = false; // false = total reload time distributed, true = per-shell time
-
+    [AsProgressBar]
+    public override float ReloadProgress => IsReloading ? (float)Magazine.CurrentLoadedAmmo / Magazine.MaxAmmo : 1f;
     public override void StartReload()
     {
         IsReloading = true;
         timer = UsePerShellTime
-            ? Magazine.ReloadTime
-            : Magazine.ReloadTime / Magazine.MaxAmmo;
+            ? ReloadTime
+            : ReloadTime / Magazine.MaxAmmo;
     }
 
     protected internal override void Update()
@@ -30,8 +31,8 @@ public class PerShellReloadBehavior : ReloadBehavior
             Magazine.ConsumeAmmo(1);
 
             timer = UsePerShellTime
-                ? Magazine.ReloadTime
-                : Magazine.ReloadTime / Magazine.MaxAmmo;
+                ? ReloadTime
+                : ReloadTime / Magazine.MaxAmmo;
         }
 
         if (Magazine.CurrentLoadedAmmo >= Magazine.MaxAmmo)

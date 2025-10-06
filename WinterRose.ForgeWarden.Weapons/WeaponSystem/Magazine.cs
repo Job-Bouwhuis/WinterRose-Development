@@ -12,7 +12,6 @@ public class Magazine : Component, IUpdatable
     public StaticCombinedModifier<int> MaxAmmo { get; set; } = 25;
     public int AmmoReserves { get; set; } = 1000;
     public int CurrentLoadedAmmo { get; set; }
-    public StaticCombinedModifier<float> ReloadTime { get; set; } = 2;
 
     public void StartReload() => ReloadBehavior.StartReload();
     public void Update() => ReloadBehavior.Update();

@@ -1,4 +1,5 @@
 ﻿using BulletSharp;
+using Microsoft.DiaSymReader;
 using Raylib_cs;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -69,6 +70,8 @@ internal class Program : Application
 
     public override World CreateWorld()
     {
+        DebugNavigator.Open(typeof(Application), nameof(Run));
+
         icon = new(Window.Handle, 0, "test", "AppLogo.ico");
         icon.ShowInTray();
         icon.RightClick.Subscribe(Invocation.Create(Close));
@@ -117,7 +120,10 @@ internal class Program : Application
         // 6. Create weapon entity
         var gun = world.CreateEntity("demoGun");
 
-        var magazine = gun.AddComponent<Magazine>(projectile, new PerShellReloadBehavior());
+        var magazine = gun.AddComponent<Magazine>(projectile, new PerShellReloadBehavior()
+        {
+            ReloadTime = 5
+        });
         magazine.MaxAmmo = 25;
         magazine.CurrentLoadedAmmo = 25;
         magazine.AmmoReserves = 100;

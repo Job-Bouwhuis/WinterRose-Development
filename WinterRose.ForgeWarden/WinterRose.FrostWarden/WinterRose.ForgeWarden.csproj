@@ -33,6 +33,12 @@
 
 	<ItemGroup>
 		<PackageReference Include="BulletSharp" Version="0.11.1" />
+		<PackageReference Include="EnvDTE" Version="17.14.40260" />
+		<PackageReference Include="Microsoft.DiaSymReader" Version="2.0.0" />
+		<PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.6.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="PuppeteerSharp" Version="20.2.2" />
 		<PackageReference Include="Raylib-cs" Version="7.0.1" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
