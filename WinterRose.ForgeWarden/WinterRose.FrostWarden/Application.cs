@@ -96,7 +96,6 @@ public abstract class Application
 
             SetTargetFPS(0);
 
-
             Window = new Window(title, flags);
             Window.Create(width, height);
 
@@ -197,27 +196,37 @@ public abstract class Application
 
         if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
         {
-            Raylib.BeginTextureMode(worldTex);
+            //Raylib.BeginTextureMode(worldTex);
             Raylib.ClearBackground(ClearColor);
             Raylib.DrawRectangle(0, 0, Window.Width, Window.Height, new Color(0, 0, 0, 1));
 
             if (camera != null)
-                Raylib.BeginMode2D(camera.Camera2D);
+            {
+                if (camera.is3D)
+                    Raylib.BeginMode3D(camera.Camera3D);
+                else
+                    Raylib.BeginMode2D(camera.Camera2D);
+            }
 
             Universe.CurrentWorld.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
 
             if (camera != null)
-                Raylib.EndMode2D();
+            {
+                if (camera.is3D)
+                    Raylib.EndMode3D();
+                else
+                    Raylib.EndMode2D();
+            }
 
-            Raylib.EndTextureMode();
+            //Raylib.EndTextureMode();
 
-            Raylib.DrawTexturePro(
-                worldTex.Texture,
-                new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),
-                new Rectangle(0, 0, Window.Width, Window.Height), 
-                Vector2.Zero,
-                0,
-                Color.White);
+            //Raylib.DrawTexturePro(
+            //    worldTex.Texture,
+            //    new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),
+            //    new Rectangle(0, 0, Window.Width, Window.Height), 
+            //    Vector2.Zero,
+            //    0,
+            //    Color.White);
         }
 
         WindowManager.Draw();

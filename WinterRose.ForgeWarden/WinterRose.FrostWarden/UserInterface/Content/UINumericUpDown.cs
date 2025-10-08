@@ -9,7 +9,7 @@ using WinterRose.ForgeSignal;
 
 namespace WinterRose.ForgeWarden.UserInterface.Content;
 
-public class UINumericUpDown<T> : UIContent where T : INumber<T>
+public class UINumericUpDown<T> : UIContent where T : INumber<T>, IMinMaxValue<T>
 {
     // Layout constants
     private const float CONTROL_HEIGHT = 28f;
@@ -17,6 +17,8 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
     private const float BUTTON_WIDTH = 20f;         // width of the stacked ^/v button column
     private const float BUTTON_SPACING = 2f;
     private const float LABEL_PADDING = 8f;
+
+    public bool ReadOnly { get; set; }
 
     // Public API
     public string Label { get; set; } = "";
@@ -39,7 +41,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
     public T Value
     {
         get => valueBacking;
-        set => ClampAndSet(value, invokeCallbacks: true);
+        set => SetValue(value, true);
     }
 
     // Inline text editor for typing values
@@ -69,16 +71,21 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
         MinValue = min;
         MaxValue = max;
         valueBacking = initial;
-        ClampAndSet(initial, invokeCallbacks: false);
+        if (initial is int)
+            DecimalPlaces = -1;
+        SetValue(initial, false);
     }
 
-    public UINumericUpDown() : this((T)Convert.ChangeType(0, typeof(T)), (T)Convert.ChangeType(100, typeof(T)), (T)Convert.ChangeType(0, typeof(T)))
+    public UINumericUpDown() : this(T.MinValue, T.MaxValue, T.Zero)
     {
     }
 
     // clamp, round and set internal value; optionally fire callbacks
-    private void ClampAndSet(T newVal, bool invokeCallbacks)
+    public void SetValue(T newVal, bool invokeCallbacks = true)
     {
+        if (ReadOnly)
+            return;
+
         if (MinValue > MaxValue)
         {
             var tmp = MinValue;
@@ -184,7 +191,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
         {
             if (TryParseToT(text, out var parsed))
             {
-                ClampAndSet(parsed, invokeCallbacks: true);
+                SetValue(parsed, invokeCallbacks: true);
             }
             else
             {
@@ -252,7 +259,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
                 try
                 {
                     var tVal = (T)Convert.ChangeType(target, typeof(T));
-                    ClampAndSet(tVal, invokeCallbacks: true);
+                    SetValue(tVal, invokeCallbacks: true);
                 }
                 catch
                 {
@@ -394,7 +401,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
             double curr = Convert.ToDouble(valueBacking);
             double step = Convert.ToDouble(Step);
             double next = curr + step;
-            ClampAndSet((T)Convert.ChangeType(next, typeof(T)), invokeCallbacks: true);
+            SetValue((T)Convert.ChangeType(next, typeof(T)), invokeCallbacks: true);
             return;
         }
 
@@ -405,7 +412,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
             double curr = Convert.ToDouble(valueBacking);
             double step = Convert.ToDouble(Step);
             double next = curr - step;
-            ClampAndSet((T)Convert.ChangeType(next, typeof(T)), invokeCallbacks: true);
+            SetValue((T)Convert.ChangeType(next, typeof(T)), invokeCallbacks: true);
             return;
         }
 
@@ -431,7 +438,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>
         {
             if (TryParseToT(valueInput.Text, out var parsed))
             {
-                ClampAndSet(parsed, invokeCallbacks: true);
+                SetValue(parsed, invokeCallbacks: true);
             }
             else
             {

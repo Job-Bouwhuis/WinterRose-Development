@@ -19,6 +19,8 @@ public class UICheckBox : UIContent
 
     public RichText Text { get; set; }
 
+    public bool ReadOnly { get; set; }
+
     // State
     private bool checkedState;
     public bool Checked
@@ -26,7 +28,10 @@ public class UICheckBox : UIContent
         get => checkedState;
         set
         {
-            if (checkedState == value) return;
+            if (ReadOnly)
+                return;
+            if (checkedState == value)
+                return;
             checkedState = value;
             // set animation target
             targetProgress = checkedState ? 1f : 0f;
@@ -35,6 +40,17 @@ public class UICheckBox : UIContent
             OnCheckedChanged?.Invoke(owner, this, checkedState);
             OnCheckedChangedBasic?.Invoke(checkedState);
         }
+    }
+
+    public void SetCheckedNoEvent(bool value)
+    {
+        if (ReadOnly)
+            return;
+        if (checkedState == value) 
+            return;
+        checkedState = value;
+        checkedState = value;
+        targetProgress = checkedState ? 1f : 0f;
     }
 
     // Invocation hooks

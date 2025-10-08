@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace WinterRose.ForgeWarden;
-public static class DebugNavigator
+public static class IDENavigator
 {
     public static void Open(Type type, string methodName = null, int relativeLine = 0)
     {

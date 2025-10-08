@@ -218,6 +218,44 @@ namespace WinterRose.ForgeWarden.Components
             q.Z = cr * cp * sy - sr * sp * cy;
             return q;
         }
-    }
+        private static Quaternion CreateLookRotation(Vector3 forward, Vector3 up)
+        {
+            forward = Vector3.Normalize(forward);
+            up = Vector3.Normalize(up);
 
+            Vector3 right = Vector3.Normalize(Vector3.Cross(up, forward));
+            up = Vector3.Cross(forward, right);
+
+            Matrix4x4 m = new Matrix4x4(
+                right.X, right.Y, right.Z, 0,
+                up.X, up.Y, up.Z, 0,
+                forward.X, forward.Y, forward.Z, 0,
+                0, 0, 0, 1);
+
+            Quaternion q = Quaternion.CreateFromRotationMatrix(m);
+            return q;
+        }
+
+
+        public void LookAt(Transform target)
+        {
+            if (target == null)
+                return;
+
+            Vector3 direction = Vector3.Normalize(target.position - position);
+
+            // Handle degenerate case where target is at same position
+            if (direction == Vector3.Zero)
+                return;
+
+            // Define what 'up' means for your world (usually Y+)
+            Vector3 up = Vector3.UnitY;
+
+            // Build rotation from forward direction
+            Quaternion lookRotation = CreateLookRotation(direction, up);
+            rotation = lookRotation;
+            MarkDirty(true);
+        }
+
+    }
 }

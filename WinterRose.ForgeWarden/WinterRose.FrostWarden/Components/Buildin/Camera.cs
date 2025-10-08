@@ -4,18 +4,17 @@ using WinterRose.WIP.TestClasses;
 
 public class Camera : Component
 {
-    public bool useOrthographic = true;
-    public float orthographicSize = 540f; // Half of 1080p height
+    public bool UseOrthographic { get; set; } = true;
+    public float OrthographicSize { get; set; } = 540f; // Half of 1080p height
 
-    public float near = 0.01f;
-    public float far = 1000f;
+    public float near { get; set; } = 0.01f;
+    public float far { get; set; } = 1000f;
 
-    public bool is3D = false;
+    public bool is3D { get; set; } = false;
     public static Camera main { get; internal set; }
 
     public Vector2 Resolution { get; set; } = Application.Current.Window.Size;
 
-    // Returns a Raylib-style Camera2D for 2D rendering
     public Camera2D Camera2D => new Camera2D
     {
         Offset = Resolution / 2,
@@ -24,7 +23,6 @@ public class Camera : Component
         Zoom = owner.transform.scale.Z
     };
 
-    // Prepares a Raylib Camera3D struct from the Transform
     public Camera3D Camera3D => new Camera3D
     {
         Position = owner.transform.position,
@@ -34,7 +32,6 @@ public class Camera : Component
         Projection = CameraProjection.Perspective
     };
 
-    // Optional matrix-level API if doing custom shaders later
     public Matrix4x4 ViewMatrix
     {
         get
@@ -52,10 +49,10 @@ public class Camera : Component
 
     public Matrix4x4 GetProjectionMatrix(int width, int height)
     {
-        if (useOrthographic)
+        if (UseOrthographic)
         {
-            float halfWidth = orthographicSize * width / height;
-            float halfHeight = orthographicSize;
+            float halfWidth = OrthographicSize * width / height;
+            float halfHeight = OrthographicSize;
 
             return Matrix4x4.CreateOrthographicOffCenter(
                 -halfWidth, halfWidth,

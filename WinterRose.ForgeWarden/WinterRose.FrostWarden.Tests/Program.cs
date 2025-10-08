@@ -70,20 +70,33 @@ internal class Program : Application
 
     public override World CreateWorld()
     {
-        DebugNavigator.Open(typeof(Application), nameof(Run));
-
         icon = new(Window.Handle, 0, "test", "AppLogo.ico");
         icon.ShowInTray();
         icon.RightClick.Subscribe(Invocation.Create(Close));
 
         ray.SetTargetFPS(144);
-        ClearColor = Color.Beige;
+        //ClearColor = Color.Beige;
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
 
         World world = new World("testworld");
 
         var cam = world.CreateEntity<Camera>("cam");
-        //cam.AddComponent<Mover>();
+        cam.is3D = true;
+        cam.UseOrthographic = false;
+        cam.AddComponent<CameraFreeFly>();
+
+        var coeb = world.CreateEntity<MeshRenderer>("coeb");
+        coeb.mesh = PrimitiveMeshFactory.CreateCube(1);
+
+        // position cube at origin
+        coeb.transform.position = new Vector3(0, 0, 0);
+
+        // position camera 5 units back and 2 units up
+        cam.transform.position = new Vector3(0, 2, -5);
+
+        // make camera look at the cube
+        cam.transform.LookAt(coeb.transform);
+
 
         var entity = world.CreateEntity("entity");
         entity.transform.parent = cam.transform;

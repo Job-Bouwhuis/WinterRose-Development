@@ -27,7 +27,7 @@ public class TrackedValue
         val = memberData.GetValue(Owner);
     }
 
-    public bool HasValueChanged()
+    internal bool HasValueChanged()
     {
         object? v = memberData.GetValue(Owner);
         if (!(v is null && val is null) && !Equals(v, val))
@@ -36,5 +36,11 @@ public class TrackedValue
             return true;
         }
         return false;
+    }
+
+    internal void Set(object? newVal)
+    {
+        memberData.SetValue(Owner, newVal);
+        val = newVal;
     }
 }
