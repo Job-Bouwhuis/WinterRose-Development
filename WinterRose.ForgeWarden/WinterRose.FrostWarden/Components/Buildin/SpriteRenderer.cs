@@ -22,9 +22,9 @@ namespace WinterRose.ForgeWarden.Components
         private SpriteRenderer() { } // for serialization
 
         [WFInclude]
-        public FrostShader? Shader { get; private set; }
+        public ForgeShader? Shader { get; private set; }
 
-        public void SetShader(FrostShader s)
+        public void SetShader(ForgeShader s)
         {
             Shader = s;
         }

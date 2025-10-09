@@ -157,7 +157,7 @@ internal class Program : Application
         w.AddContent(FPSGrapher);
 
         world.CreateEntity<InvocationComponent>("grapher").OnUpdate
-            = Invocation.Create<InvocationComponent>(c =>
+            = Invocation.Create<InvocationComponent>(self =>
             {
                 FPSGrapher.AddValueToSeries("FPS", ray.GetFPS());
             });

@@ -4,41 +4,46 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeSignal;
+using WinterRose.ForgeWarden.Worlds;
 
 namespace WinterRose.ForgeWarden.Shaders
 {
-    public class FrostShader
+    public class MaterialShader : ForgeShader
     {
-        public Shader ShaderHandle { get; private set; }
+        public MaterialShader(ref Material mat, string vertexPath, string fragmentPath) : base(vertexPath, fragmentPath)
+        {
+            Material = mat;
+            Material.Shader = ShaderHandle;
+            ShaderHandle = mat.Shader;
+        }
 
-        private int uniformTimeLocation = -1;
-        private int uniformAcumulatedTimeLocation = -1;
-        private int uniformResolutionLocation = -1;
-        private int uniformMousePosLocation = -1;
+        public Material Material;
 
-        private bool hasTimeUniform => uniformTimeLocation != -1;
-        private bool hasUniformAcumulatedTimeLocation => uniformAcumulatedTimeLocation != -1;
-        private bool hasResolutionUniform => uniformResolutionLocation != -1;
-        private bool hasMousePosUniform => uniformMousePosLocation != -1;
+        public override void Apply(Vector2? resolution = null)
+        {
+            ray.BeginShaderMode(Material.Shader);
+            SetDefaults();
+        }
+    }
+
+
+    public class ForgeShader
+    {
+        public Shader ShaderHandle { get; protected set; }
 
         public string? VertexPath { get; }
         public string? FragmentPath { get; }
 
-        public FrostShader(string vertexPath, string fragmentPath) : this(Raylib.LoadShader(vertexPath, fragmentPath))
+        public ForgeShader(string vertexPath, string fragmentPath) : this(Raylib.LoadShader(vertexPath, fragmentPath))
         {
             VertexPath = vertexPath;
             FragmentPath = fragmentPath;
         }
 
-        public FrostShader(Shader handle)
+        public ForgeShader(Shader handle)
         {
             ShaderHandle = handle;
-            int textureLoc = Raylib.GetShaderLocation(ShaderHandle, "texture0");
-            Raylib.SetShaderValue(ShaderHandle, textureLoc, new int[] { 0 }, ShaderUniformDataType.UInt);
-            uniformTimeLocation = Raylib.GetShaderLocation(ShaderHandle, "deltaTime");
-            uniformAcumulatedTimeLocation = Raylib.GetShaderLocation(ShaderHandle, "time");
-            uniformResolutionLocation = Raylib.GetShaderLocation(ShaderHandle, "resolution");
-            uniformMousePosLocation = Raylib.GetShaderLocation(ShaderHandle, "mousePos");
 
             VertexPath = null;
             FragmentPath = null;
@@ -53,7 +58,7 @@ namespace WinterRose.ForgeWarden.Shaders
             ShaderUniformDataType type;
 
             void* rawValue = &value;
-            lock(this)
+            lock (this)
             {
                 if (typeof(T) == typeof(float))
                 {
@@ -76,6 +81,8 @@ namespace WinterRose.ForgeWarden.Shaders
                     type = ShaderUniformDataType.Vec4;
                     Vector4 c = Raylib.ColorNormalize((Color)(object)value!);
                     rawValue = &c;
+                    SetValue(location, rawValue, type);
+                    return true;
                 }
                 else if (typeof(T) == typeof(int))
                 {
@@ -85,7 +92,8 @@ namespace WinterRose.ForgeWarden.Shaders
                 {
                     type = ShaderUniformDataType.Int;
                     int b = (bool)(object)value! ? 1 : 0;
-                    rawValue = &b;
+                    SetValue(location, &b, type);
+                    return true;
                 }
                 else
                 {
@@ -93,28 +101,35 @@ namespace WinterRose.ForgeWarden.Shaders
                     return false;
                 }
 
-                Raylib.SetShaderValue(ShaderHandle, location, rawValue, type);
+                SetValue(location, rawValue, type);
             }
-            
+
             return true;
         }
 
-        // All parameters are nullable, so you only update the ones you want
-        public void Apply(Vector2? resolution = null)
+        protected virtual unsafe void SetValue(int location, void* rawValue, ShaderUniformDataType type)
+        {
+            Raylib.SetShaderValue(ShaderHandle, location, rawValue, type);
+        }
+
+        public void SetDefaults(Vector2? resolution = null)
+        {
+            TrySetValue("deltaTime", Time.deltaTime);
+
+            if (resolution.HasValue)
+                TrySetValue("resolution", resolution.Value);
+
+            TrySetValue("mousePos", Universe.Input.MousePosition);
+
+            TrySetValue("time", Time.sinceStartup);
+
+            TrySetValue("lightDir", Universe.SunDirection);
+        }
+
+        public virtual void Apply(Vector2? resolution = null)
         {
             Raylib.BeginShaderMode(ShaderHandle);
-
-            if (hasTimeUniform)
-                Raylib.SetShaderValue(ShaderHandle, uniformTimeLocation, Time.deltaTime, ShaderUniformDataType.Float);
-
-            if (hasResolutionUniform && resolution.HasValue)
-                Raylib.SetShaderValue(ShaderHandle, uniformResolutionLocation, resolution.Value, ShaderUniformDataType.Vec2);
-
-            if (hasMousePosUniform)
-                Raylib.SetShaderValue(ShaderHandle, uniformMousePosLocation, ray.GetMousePosition(), ShaderUniformDataType.Vec2);
-
-            if (hasUniformAcumulatedTimeLocation)
-                Raylib.SetShaderValue(ShaderHandle, uniformAcumulatedTimeLocation, Time.sinceStartup, ShaderUniformDataType.Float);
+            SetDefaults(resolution);
         }
 
         public void End()

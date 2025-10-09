@@ -45,15 +45,11 @@ public class CameraFreeFly : Component, IUpdatable
         float speed = moveSpeed * Time.deltaTime;
         if (Input.IsDown(KeyboardKey.LeftShift)) speed *= sprintMultiplier;
 
-        Vector3 forward = Vector3.Transform(-Vector3.UnitZ, transform.rotation);
-        Vector3 right = Vector3.Transform(Vector3.UnitX, transform.rotation);
-        Vector3 up = Vector3.UnitY;
-
-        if (Input.IsDown(KeyboardKey.W)) transform.position += forward * speed;
-        if (Input.IsDown(KeyboardKey.S)) transform.position -= forward * speed;
-        if (Input.IsDown(KeyboardKey.D)) transform.position += right * speed;
-        if (Input.IsDown(KeyboardKey.A)) transform.position -= right * speed;
-        if (Input.IsDown(KeyboardKey.Space)) transform.position += up * speed;
-        if (Input.IsDown(KeyboardKey.LeftControl)) transform.position -= up * speed;
+        if (Input.IsDown(KeyboardKey.W)) transform.position += transform.forward * speed;
+        if (Input.IsDown(KeyboardKey.S)) transform.position -= transform.forward * speed;
+        if (Input.IsDown(KeyboardKey.D)) transform.position -= transform.right * speed;
+        if (Input.IsDown(KeyboardKey.A)) transform.position += transform.right * speed;
+        if (Input.IsDown(KeyboardKey.Space)) transform.position += Vector3.UnitY * speed;
+        if (Input.IsDown(KeyboardKey.LeftControl)) transform.position -= Vector3.UnitY * speed;
     }
 }
