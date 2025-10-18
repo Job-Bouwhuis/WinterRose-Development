@@ -196,7 +196,7 @@ public abstract class Application
 
         if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
         {
-            //Raylib.BeginTextureMode(worldTex);
+            Raylib.BeginTextureMode(worldTex);
             Raylib.ClearBackground(ClearColor);
             Raylib.DrawRectangle(0, 0, Window.Width, Window.Height, new Color(0, 0, 0, 1));
 
@@ -218,15 +218,15 @@ public abstract class Application
                     Raylib.EndMode2D();
             }
 
-            //Raylib.EndTextureMode();
+            Raylib.EndTextureMode();
 
-            //Raylib.DrawTexturePro(
-            //    worldTex.Texture,
-            //    new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),
-            //    new Rectangle(0, 0, Window.Width, Window.Height), 
-            //    Vector2.Zero,
-            //    0,
-            //    Color.White);
+            Raylib.DrawTexturePro(
+                worldTex.Texture,
+                new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),
+                new Rectangle(0, 0, Window.Width, Window.Height),
+                Vector2.Zero,
+                0,
+                Color.White);
         }
 
         WindowManager.Draw();

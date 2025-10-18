@@ -200,9 +200,9 @@ public class Dialog : UIContainer
     /// <param name="ProgressProvider">The function that provides further values</param>
     /// <param name="closesToastWhenComplete">When true, and the progress becomes 1, it requests the toast to close.</param>
     /// <returns></returns>
-    public new Dialog AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, bool closesToastWhenComplete = true, string infiniteSpinText = "Working...")
+    public new Dialog AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, string infiniteSpinText = "Working...")
     {
-        return AddContent(new UIProgressContent(initialProgress, ProgressProvider, closesToastWhenComplete, infiniteSpinText));
+        return AddContent(new UIProgress(initialProgress, ProgressProvider, infiniteSpinText));
     }
 
     /// <summary>

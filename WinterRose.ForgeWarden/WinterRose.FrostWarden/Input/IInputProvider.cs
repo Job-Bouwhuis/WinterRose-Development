@@ -41,4 +41,8 @@ public interface IInputProvider
     /// The mouse move delta since the last frame
     /// </summary>
     Vector2 MouseDelta { get; }
+    /// <summary>
+    /// The delta of a scrollwheel this frame
+    /// </summary>
+    float ScrollDelta { get; }
 }

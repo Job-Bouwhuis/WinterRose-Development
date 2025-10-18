@@ -96,7 +96,7 @@ public class RaylibInputProvider : IInputProvider
     public Vector2 MousePosition => currentMousePosition;
     /// <inheritdoc cref="IInputProvider.MouseDelta"/>
     public Vector2 MouseDelta => currentMousePosition - lastMousePosition;
-
+    public float ScrollDelta => ray.GetMouseWheelMove();
     public RaylibInputProvider(int gamepadIndex = 0)
     {
         this.gamepadIndex = gamepadIndex;

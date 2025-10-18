@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace WinterRose.ForgeWarden.UserInterface;
-public class FileDropContent : UIContent
+internal class FileDropContent : UIContent
 {
     private const int WM_DROPFILES = 0x0233;
 

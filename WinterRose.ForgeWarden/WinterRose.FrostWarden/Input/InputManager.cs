@@ -134,7 +134,7 @@ public static class InputManager
                     mouseFocusGiven = true;
                     higherMouesGivenHere = true;
                 }
-                else if ((!ctx.IsRequestingMouseFocus && !ctx.HasKeyboardFocus) || hasHigherMouse)
+                else if (!ctx.IsRequestingMouseFocus || hasHigherMouse)
                 {
                     // Release mouse focus if not requesting and no keyboard focus holding it,
                     // or if a higher-priority context already has mouse focus
@@ -144,8 +144,13 @@ public static class InputManager
                 // Optionally, let the context know about higher-priority contexts
                 if (!higherKeyboardGivenHere)
                     ctx.HighestPriorityKeyboardAbove = highestKeyboardRequest;
+                else
+                    ctx.HighestPriorityKeyboardAbove = null;
+
                 if (!higherMouesGivenHere)
                     ctx.HighestPriorityMouseAbove = highestMouseRequest;
+                else
+                    ctx.HighestPriorityMouseAbove = null;
             }
         }
 

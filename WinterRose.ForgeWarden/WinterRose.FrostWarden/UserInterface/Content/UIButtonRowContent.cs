@@ -11,7 +11,8 @@ using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
-public class ButtonRowContent : UIContent
+[Obsolete(DiagnosticId = "WR-Use-UIRow-Instead")]
+public class UIButtonRowContent : UIContent
 {
     private static readonly VoidInvocation<UIContainer, UIButton> alwaysTrueFunc = Invocation.Create<UIContainer, UIButton>(
         (container, button) =>
@@ -27,12 +28,12 @@ public class ButtonRowContent : UIContent
     public float PaddingY { get; set; } = 4;
     public float Spacing { get; set; } = 6;
 
-    public ButtonRowContent()
+    public UIButtonRowContent()
     {
 
     }
 
-    public ButtonRowContent(params List<UIButton> buttons) => Buttons = buttons;
+    public UIButtonRowContent(params List<UIButton> buttons) => Buttons = buttons;
 
     public UIButton AddButton(string text, VoidInvocation<UIContainer, UIButton>? onClick = null)
     {

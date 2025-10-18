@@ -5,10 +5,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface;
 
 namespace WinterRose.ForgeWarden.UserInterface;
-public class UIProgressContent : UIContent
+public class UIProgress : UIContent
 {
     public float ProgressValue { get; set; }
     public Func<float, float>? ProgressProvider { get; }
@@ -31,14 +32,19 @@ public class UIProgressContent : UIContent
     private float visualLeft = 0f;
     private float maxWidth;
     private float growSpeed, moveSpeed, shrinkSpeed;
-    private float visualRight = 0f; // actually the right edge of bar
-    private readonly bool closesToastWhenComplete;
+    private float visualRight = 0f;
+    private float edgeTransitionT = 1f;
+    private float edgeStartLeft = 0f;
+    private float edgeStartRight = 0f;
+    private float prevTargetLeft = float.NaN;
+    private float prevTargetRight = float.NaN;
+    public float EdgeTransitionDuration { get; set; } = 0.25f;
+    public Curve PercentCurve { get; set; } = Curves.ExtraSlowFastSlow;
 
-    public UIProgressContent(float initialProgress = 0f, Func<float, float>? ProgressProvider = null, bool closesToastWhenComplete = true, string infiniteSpinText = "Working...")
+    public UIProgress(float initialProgress = 0f, Func<float, float>? ProgressProvider = null, string infiniteSpinText = "Working...")
     {
         ProgressValue = Math.Clamp(initialProgress, -1f, 1f);
         this.ProgressProvider = ProgressProvider;
-        this.closesToastWhenComplete = closesToastWhenComplete;
         InfiniteSpinText = infiniteSpinText;
     }
 
@@ -67,9 +73,6 @@ public class UIProgressContent : UIContent
             ProgressValue = 0;
         else if (ProgressValue is not -1 and < -0.1f)
             ProgressValue = -1;
-
-        if (ProgressValue >= 1 && closesToastWhenComplete)
-            Close();
     }
 
     protected override void Draw(Rectangle bounds)
@@ -140,16 +143,49 @@ public class UIProgressContent : UIContent
         }
         else
         {
-            // Target edges for actual progress
+            // Target edges for actual progress (computed from bounds)
             float targetLeft = barBg.X;
             float targetRight = barBg.X + barBg.Width * Math.Clamp(ProgressValue, 0f, 1f);
 
-            // Smoothly interpolate from current visual edges to target edges
-            float lerpSpeed = (owner.IsClosing ? 100f : 5f) * Time.deltaTime;
+            // Detect target change and start a new transition when it changes
+            bool targetChanged = float.IsNaN(prevTargetLeft) ||
+                                 MathF.Abs(targetLeft - prevTargetLeft) > 0.5f ||
+                                 MathF.Abs(targetRight - prevTargetRight) > 0.5f;
 
-            visualLeft = Lerp(visualLeft, targetLeft, lerpSpeed);
-            visualRight = Lerp(visualRight, targetRight, lerpSpeed);
+            if (targetChanged)
+            {
+                prevTargetLeft = targetLeft;
+                prevTargetRight = targetRight;
 
+                // capture current visual edges as start points
+                edgeStartLeft = visualLeft;
+                edgeStartRight = visualRight;
+
+                // restart transition
+                edgeTransitionT = 0f;
+            }
+
+            // Advance transition (uses Time.deltaTime so it's frame-rate independent)
+            if (edgeTransitionT < 1f)
+            {
+                edgeTransitionT += Time.deltaTime / Math.Max(0.0001f, EdgeTransitionDuration);
+                float easedT = PercentCurve.Evaluate(Math.Clamp(edgeTransitionT, 0f, 1f));
+
+                visualLeft = Lerp(edgeStartLeft, targetLeft, easedT);
+                visualRight = Lerp(edgeStartRight, targetRight, easedT);
+
+                if (edgeTransitionT >= 1f)
+                {
+                    visualLeft = targetLeft;
+                    visualRight = targetRight;
+                }
+            }
+            else
+            {
+                // finished — keep exact targets
+                visualLeft = targetLeft;
+                visualRight = targetRight;
+            }
 
             Rectangle barFillRect = new(visualLeft, barBg.Y, visualRight - visualLeft, barBg.Height);
             ray.DrawRectangleRec(barFillRect, fill);

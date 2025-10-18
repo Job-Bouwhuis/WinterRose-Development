@@ -478,9 +478,10 @@ public abstract class UIContainer
         float eased = Curves.Linear.Evaluate(ScrollbarAnimProgress);
         ScrollbarCurrentWidth = Lerp(SCROLLBAR_COLLAPSED_WIDTH, SCROLLBAR_EXPANDED_WIDTH, eased);
 
+        Console.WriteLine(IsHovered());
         if (IsHovered())
-        { 
-            float wheel = Raylib_cs.Raylib.GetMouseWheelMove();
+        {
+            float wheel = Input.ScrollDelta;
             if (Math.Abs(wheel) > 0.001f)
             {
                 ContentScrollY -= wheel * SCROLL_WHEEL_SPEED;
@@ -796,7 +797,7 @@ public abstract class UIContainer
         }
     }
 
-    public virtual bool IsHovered() => Input.IsMouseHovering(CurrentPosition) /*|| OverrideIsHoveredState*/;
+    public virtual bool IsHovered() => Input.IsMouseHovering(CurrentPosition);
 
     public virtual void Close()
     {
@@ -853,9 +854,9 @@ public abstract class UIContainer
     /// <param name="ProgressProvider">The function that provides further values</param>
     /// <param name="closesToastWhenComplete">When true, and the progress becomes 1, it requests the toast to close.</param>
     /// <returns></returns>
-    public UIContainer AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, bool closesToastWhenComplete = true, string infiniteSpinText = "Working...")
+    public UIContainer AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, string infiniteSpinText = "Working...")
     {
-        return AddContent(new UIProgressContent(initialProgress, ProgressProvider, closesToastWhenComplete, infiniteSpinText));
+        return AddContent(new UIProgress(initialProgress, ProgressProvider, infiniteSpinText));
     }
 
     /// <summary>
