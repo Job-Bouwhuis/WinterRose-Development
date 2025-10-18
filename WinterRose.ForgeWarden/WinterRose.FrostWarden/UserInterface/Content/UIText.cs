@@ -12,7 +12,7 @@ namespace WinterRose.ForgeWarden.UserInterface;
 public enum UIFontSizePreset
 {
     Title,
-    Message,
+    Text,
     Subtitle,
     Subtext
 }
@@ -41,7 +41,7 @@ public class UIText : UIContent
     {
         { UIFontSizePreset.Title, 24 },
         { UIFontSizePreset.Subtitle, 18 },
-        { UIFontSizePreset.Message, 14 },
+        { UIFontSizePreset.Text, 14 },
         { UIFontSizePreset.Subtext, 7 }
     };
     private RichText text;
@@ -52,13 +52,13 @@ public class UIText : UIContent
         this.text = text;
     }
 
-    public UIText(RichText message, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public UIText(RichText message, UIFontSizePreset preset = UIFontSizePreset.Text)
     {
         Text = message;
         Preset = preset;
     }
 
-    public UIText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public UIText(string text, UIFontSizePreset preset = UIFontSizePreset.Text)
         : this(RichText.Parse(text), preset) { }
 
 

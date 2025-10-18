@@ -274,7 +274,6 @@ public class InputContext
     }
     internal bool IsMouseHovering(Rectangle bounds)
     {
-        Console.WriteLine($"b:{bounds} --- m:{Provider.MousePosition} --- overshadowed:{HighestPriorityMouseAbove is not null} --- by:{HighestPriorityMouseAbove?.Priority}");
         if (HighestPriorityMouseAbove is not null)
             return false;
         

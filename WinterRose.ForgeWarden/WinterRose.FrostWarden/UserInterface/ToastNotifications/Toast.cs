@@ -122,10 +122,10 @@ public class Toast : UIContainer
     => AddText(RichText.Parse(text, Color.White), preset);
     public new Toast AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
         => AddContent(new UIText(text, preset));
-    public new Toast AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public new Toast AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Text)
         => AddContent(new UIText(text, preset));
 
-    public new Toast AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public new Toast AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Text)
         => AddText(RichText.Parse(text, Color.White), preset);
 
     /// <summary>

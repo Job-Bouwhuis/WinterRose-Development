@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Tweens;
 
-namespace WinterRose.ForgeWarden.UserInterface.Content;
+namespace WinterRose.ForgeWarden.UserInterface;
 public class UICircleProgress : UIContent
 {
     public float ProgressValue { get; private set; } = 0f;
@@ -174,12 +174,13 @@ public class UICircleProgress : UIContent
         }
 
         return (fromDeg + delta * Math.Clamp(t, 0f, 1f)) % 360f;
-
-        Curves.SlowFastSlow.Evaluate(delta);
     }
 
     protected internal override void Update()
     {
+        if(visualProgress != 1)
+            Style.PauseAutoDismissTimer = true;
+
         bool prevWasIndeterminate = wasIndeterminate;
 
         if (ProgressProvider is not null)

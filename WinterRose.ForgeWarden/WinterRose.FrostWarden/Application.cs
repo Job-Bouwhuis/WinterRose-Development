@@ -15,6 +15,7 @@ using WinterRose.ForgeWarden.Resources;
 using WinterRose.ForgeWarden.Shaders;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface;
+using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
@@ -103,16 +104,28 @@ public abstract class Application
 
             if (!browserTask.IsCompleted)
             {
+                Toast t = null;
                 Toasts.ShowToast(
-                    new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
+                    t = new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
                         .AddText("Browser is being downloaded", UIFontSizePreset.Title)
-                        .AddText("This can take a while.\nhowever the game is still playable", UIFontSizePreset.Subtext)
-                        .AddProgressBar(-1, pref => browserTask.IsCompleted ? 1 : -1, infiniteSpinText: "Waiting for browser download..."))
+                        .AddText("This can take a while.\nhowever the game is still playable", UIFontSizePreset.Text)
+                    //.AddContent(new UICircleProgress(-1, pref =>
+                    //{
+                    //    if (browserTask.IsCompleted)
+                    //        t!.Close();
+                    //    return browserTask.IsCompleted ? 1 : -1;
+                    //}, "Downloading Browser...")))
+                    .AddProgressBar(-1, pref =>
+                    {
+                    if (browserTask.IsCompleted)
+                        t!.Close();
+                    return browserTask.IsCompleted ? 1 : -1;
+                }, infiniteSpinText: "Waiting for browser download..."))
                     .ContinueWith(t => browserTask.IsCompletedSuccessfully ? 0 : 1,
                     new Toast(ToastType.Success, ToastRegion.Left, ToastStackSide.Top)
-                        .AddText("Browser Successfully Downloaded!")
-                    , new Toast(ToastType.Error, ToastRegion.Left, ToastStackSide.Top)
-                        .AddText("Browser download failed", UIFontSizePreset.Message));
+                        .AddText("Browser Successfully Downloaded!"),
+                    new Toast(ToastType.Error, ToastRegion.Left, ToastStackSide.Top)
+                        .AddText("Browser download failed", UIFontSizePreset.Text));
             }
 
             BeginDrawing();

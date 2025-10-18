@@ -109,7 +109,7 @@ public abstract class UIContainer
 
     protected bool isHoverTarget = false;
 
-    public bool PauseAutoDismissTimer { get; set; }
+    private bool PauseAutoDismissTimer { get; set; }
     internal float TimeShown;
 
     public ContainerStyle Style { get; set; }
@@ -384,7 +384,7 @@ public abstract class UIContainer
         IsDragTarget = true;
 
         //Console.WriteLine(PauseAutoDismissTimer);
-        if(prevPauseDragMovement != PauseAutoDismissTimer && !PauseAutoDismissTimer)
+        if(prevPauseDragMovement != PauseAutoDismissTimer && !PauseAutoDismissTimer && !Style.PauseAutoDismissTimer)
         {
             TargetPosition += Input.Provider.MousePosition;
             AnimationElapsed = 1 - AnimationElapsed;
@@ -478,7 +478,6 @@ public abstract class UIContainer
         float eased = Curves.Linear.Evaluate(ScrollbarAnimProgress);
         ScrollbarCurrentWidth = Lerp(SCROLLBAR_COLLAPSED_WIDTH, SCROLLBAR_EXPANDED_WIDTH, eased);
 
-        Console.WriteLine(IsHovered());
         if (IsHovered())
         {
             float wheel = Input.ScrollDelta;
@@ -817,7 +816,7 @@ public abstract class UIContainer
 
     protected virtual void HandleAutoClose()
     {
-        if (!PauseAutoDismissTimer && Style.TimeUntilAutoDismiss > 0 && !IsHovered())
+        if (!PauseAutoDismissTimer && !Style.PauseAutoDismissTimer && Style.TimeUntilAutoDismiss > 0 && !IsHovered())
         {
             TimeShown += Time.deltaTime;
             if (TimeShown >= Style.TimeUntilAutoDismiss)
@@ -870,9 +869,9 @@ public abstract class UIContainer
     => AddText(RichText.Parse(text, Color.White), preset);
     public UIContainer AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
         => AddContent(new UIText(text, preset));
-    public UIContainer AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public UIContainer AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Text)
         => AddContent(new UIText(text, preset));
 
-    public UIContainer AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public UIContainer AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Text)
         => AddText(RichText.Parse(text, Color.White), preset);
 }
