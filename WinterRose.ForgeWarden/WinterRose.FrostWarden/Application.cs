@@ -158,8 +158,6 @@ public abstract class Application
 
             SpriteCache.DisposeAll();
 
-            
-
             Console.WriteLine("INFO: All resources released, Closing window");
         }
         finally

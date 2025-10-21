@@ -22,24 +22,14 @@ internal class InjectAssetHandler : IInjectionHandler<InjectAssetAttribute>
 
     public object? CreateAsset(string name, Type targetType)
     {
-        // Get the Type object for the Assets class
         Type assetsType = typeof(Assets);
-
-        // Look for the public static generic method "Load" with no parameters
         var loadMethodInfo = assetsType.GetMethod(
             nameof(Assets.Load),
             1,
             System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
             [typeof(string)]
         );
-
-        if (loadMethodInfo == null)
-            return null; // Method not found
-
-        // Construct the generic method using the target type
-        var genericLoadMethod = loadMethodInfo.MakeGenericMethod(targetType);
-
-        // Invoke the static method (no instance, no parameters)
+        var genericLoadMethod = loadMethodInfo!.MakeGenericMethod(targetType);
         return genericLoadMethod.Invoke(null, [name]);
     }
 

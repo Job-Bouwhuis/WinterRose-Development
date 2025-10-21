@@ -160,6 +160,8 @@ internal class Inspector : UIWindow
 
     private bool IsInvalidMember(MemberData member)
     {
+        // TODO: expand with a attribute that when applied never shows a member of said type
+        // TODO: expand with a collection of types in this class that when member type is contains, it doesnt showfdsa
         return member.Attributes.Any(x => x is HideAttribute)
             || member.Type.IsAssignableTo(typeof(Invocation))
             || member.Name.Contains("<")

@@ -34,6 +34,9 @@ public class RaylibInputProvider : IInputProvider
         static extern IntPtr XOpenDisplay(IntPtr display);
 
         [DllImport("libX11.so.6")]
+        static extern IntPtr XDefaultRootWindow(IntPtr display);
+
+        [DllImport("libX11.so.6")]
         static extern int XQueryPointer(IntPtr display, IntPtr window, out IntPtr rootReturn,
                                         out IntPtr childReturn, out int rootX, out int rootY,
                                         out int winX, out int winY, out uint maskReturn);
@@ -70,17 +73,26 @@ public class RaylibInputProvider : IInputProvider
                 IntPtr display = XOpenDisplay(IntPtr.Zero);
                 if (display != IntPtr.Zero)
                 {
-                    XQueryPointer(display, IntPtr.Zero, out _, out _, out int rootX, out int rootY,
-                                    out int winX, out int winY, out _);
+                    IntPtr root = XDefaultRootWindow(display);
+
+                    if (root != IntPtr.Zero)
+                    {
+                        XQueryPointer(display, root, out _, out _, out int rootX, out int rootY,
+                            out _, out _, out _);
+
+                        int winPosX = Application.Current.Window.Position.X;
+                        int winPosY = Application.Current.Window.Position.Y;
+                        int winW = Application.Current.Window.Width;
+                        int winH = Application.Current.Window.Height;
+
+                        if (rootX >= winPosX && rootX <= winPosX + winW &&
+                            rootY >= winPosY && rootY <= winPosY + winH)
+                        {
+                            mouse = new Vector2(rootX - winPosX, rootY - winPosY);
+                        }
+                    }
+
                     XCloseDisplay(display);
-
-                    int winPosX = Application.Current.Window.Position.X;
-                    int winPosY = Application.Current.Window.Position.Y;
-                    int winW = Application.Current.Window.Width;
-                    int winH = Application.Current.Window.Height;
-
-                    if (rootX >= winPosX && rootX <= winPosX + winW && rootY >= winPosY && rootY <= winPosY + winH)
-                        mouse = new Vector2(rootX - winPosX, rootY - winPosY);
                 }
             }
 
