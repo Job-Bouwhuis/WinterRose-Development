@@ -14,6 +14,8 @@ public class FileDestination : ILogDestination
         if (!di.Exists)
             di.Create();
 
+        CleanupOldFiles(di);
+
         string fileName = Path.Combine(di.FullName, date + ".log");
 
         FileInfo fi = new FileInfo(fileName);
@@ -32,4 +34,20 @@ public class FileDestination : ILogDestination
         await fileStream.WriteAsync(Encoding.UTF8.GetBytes(entry.ToString(LogVerbosity.Detailed) + Environment.NewLine));
         await fileStream.FlushAsync();
     }
+    
+    private void CleanupOldFiles(DirectoryInfo dir)
+    {
+        var files = dir.GetFiles("*.log")
+            .OrderBy(f => f.CreationTime)
+            .ToList();
+
+        while (files.Count > MaxFilesToKeep)
+        {
+            files[0].Delete();
+            files.RemoveAt(0);
+        }
+    }
+
+    private const int MaxFilesToKeep
+        = 10;
 }

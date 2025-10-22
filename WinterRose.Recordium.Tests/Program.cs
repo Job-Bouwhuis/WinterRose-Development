@@ -18,6 +18,16 @@ class Program
         logger.Error("error test");
         logger.Critical("critical test");
         logger.Catastrophic("catastrophic test");
+
+        try
+        {
+            throw new Exception("test");
+        }
+        catch (Exception ex)
+        {
+            logger.Catastrophic(ex, "Unhandled exception during execution of app");
+        }
+        throw new Exception("uncaught");
         Console.ReadLine();
     }
 }
