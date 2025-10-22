@@ -357,5 +357,6 @@ namespace WinterRose.ForgeWarden.UserInterface
         public float TreeNodeHeight { get; set; } = 20;
         public float TreeNodeIndentWidth { get; set; } = 16;
         public double DoubleClickSeconds { get; set; } = 0.15;
+        public bool PauseAutoDismissTimer { get; set; }
     }
 }

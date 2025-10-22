@@ -22,6 +22,14 @@ public static class Curves
         { 1f, 1f }     
     });
 
+    public static readonly Curve ExtraSlowFastSlow = new Curve(new SortedDictionary<float, float>
+    {
+        { 0f, 0f },
+        { 0.3f, 0.15f },
+        { 0.6f, 0.8f },
+        { 0.8f, 0.95f },
+        { 1f, 1f }
+    });
 
     public static readonly Curve EaseOutBackLow = new Curve(new SortedDictionary<float, float>
     {

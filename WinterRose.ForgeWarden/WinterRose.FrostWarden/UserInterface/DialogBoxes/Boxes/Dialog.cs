@@ -78,7 +78,7 @@ public class Dialog : UIContainer
         float scaleRef = Math.Min(bounds.Width, bounds.Height);
         float messageScale = scaleRef * 0.04f;
 
-        UIText messageContent = new UIText(message, UIFontSizePreset.Message);
+        UIText messageContent = new UIText(message, UIFontSizePreset.Text);
         messageContent.Text.FontSize = (int)Math.Clamp(messageScale, 10, 24);
 
         messageContent.owner = this;
@@ -200,9 +200,9 @@ public class Dialog : UIContainer
     /// <param name="ProgressProvider">The function that provides further values</param>
     /// <param name="closesToastWhenComplete">When true, and the progress becomes 1, it requests the toast to close.</param>
     /// <returns></returns>
-    public new Dialog AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, bool closesToastWhenComplete = true, string infiniteSpinText = "Working...")
+    public new Dialog AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, string infiniteSpinText = "Working...")
     {
-        return AddContent(new UIProgressContent(initialProgress, ProgressProvider, closesToastWhenComplete, infiniteSpinText));
+        return AddContent(new UIProgress(initialProgress, ProgressProvider, infiniteSpinText));
     }
 
     /// <summary>
@@ -216,10 +216,10 @@ public class Dialog : UIContainer
     => AddText(RichText.Parse(text, Color.White), preset);
     public new Dialog AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
         => AddContent(new UIText(text, preset));
-    public new Dialog AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public new Dialog AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Text)
         => AddContent(new UIText(text, preset));
 
-    public new Dialog AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public new Dialog AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Text)
         => AddText(RichText.Parse(text, Color.White), preset);
 }
 

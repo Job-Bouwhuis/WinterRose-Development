@@ -4,12 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeWarden.Input;
 
 namespace WinterRose.ForgeWarden.UserInterface.Windowing;
 internal static class WindowManager
 {
-    // Reserve a priority block for the windowing system.
-    // You can increase PRIORITY_RANGE easily if you need more slots.
     private const int PRIORITY_BASE = 100000;
     private const int PRIORITY_RANGE = 10000;
 
@@ -17,7 +16,6 @@ internal static class WindowManager
 
     internal static void Update()
     {
-        // first update all windows so their input states are refreshed
         for (int i = 0; i < windows.Count; i++)
         {
             if (!windows[i].IsClosing)
@@ -25,48 +23,47 @@ internal static class WindowManager
 
             if (windows[i].IsFullyClosed)
             {
-                windows.RemoveAt(i);
+                InputManager.UnregisterContext(windows[i].Input);
+                windows.RemoveAt(i);              
                 i--;
+
             }
         }
 
-        // then check input from top-most to bottom-most so top windows get precedence when deciding
         for (int i = windows.Count - 1; i >= 0; i--)
         {
             UIWindow w = windows[i];
             if (w.IsClosing)
                 continue;
 
-            // If user left-clicked this window (Input.IsDown only returns true when the input system allowed it),
-            // bring it to front so it is drawn last and receives highest priority.
             if (w.Input.IsPressed(MouseButton.Left))
             {
                 BringToFront(w);
-                break; // one click => one window receives focus
+                break;
             }
         }
     }
 
     internal static void Draw()
     {
-        // draw in list order; windows at the end are drawn last (top-most)
         for (int i = 0; i < windows.Count; i++)
         {
             windows[i].Draw();
         }
     }
 
-    internal static void Show(UIWindow uIWindow)
+    internal static void Show(UIWindow uiWindow)
     {
-        if(!windows.Contains(uIWindow))
+        if(!windows.Contains(uiWindow))
         {
-            windows.Add(uIWindow);
+            InputManager.RegisterContext(uiWindow.Input);
+            windows.Add(uiWindow);
         }
         else
         {
             // TODO: Make border of window flash red
         }
-        BringToFront(uIWindow);
+        BringToFront(uiWindow);
     }
 
     internal static void BringToFront(UIWindow window)
@@ -74,7 +71,6 @@ internal static class WindowManager
         int idx = windows.IndexOf(window);
         if (idx < 0) return;
 
-        // if already top-most, still ensure priorities are consistent
         if (idx != windows.Count - 1)
         {
             windows.RemoveAt(idx);

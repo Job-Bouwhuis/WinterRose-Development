@@ -24,7 +24,7 @@ public class UIWindow : UIContainer
     private PendingAction pendingAction = PendingAction.None;
     private ShowMode showMode = ShowMode.Standard;
 
-    private InputContext input = new(new RaylibInputProvider(), -10000, true);
+    private InputContext input = new(new RaylibInputProvider(), -10000, false);
     private RichText title;
 
     private float collapseProgress = 0f;      // 0 = full, 1 = collapsed
@@ -1091,35 +1091,27 @@ public class UIWindow : UIContainer
 
     public override void Close()
     {
-        
-
-        // if already requested, ignore
         if (IsClosed) return;
 
         if (!isMaximized)
             fullPosCache.Position = CurrentPosition.Position;
 
-        // mark request immediately
         IsClosed = true;
-        // if we're maximized, unmaximize first, then collapse, then close
         if (isMaximized || maximizeAnimationActive || (maximizeProgress > 0f && maximizeTarget > 0f))
         {
-            // queue collapse to happen after the un-maximize completes
             pendingAction = PendingAction.CollapseAfterUnmaximize;
             closeAfterCollapse = true;
-            Maximized = false; // start unmaximize
+            Maximized = false;
             return;
         }
 
-        // if we are not yet fully collapsed, collapse first then close
         if (collapseProgress < 1f || (collapseTarget > 0f && collapseProgress < collapseTarget))
         {
             closeAfterCollapse = true;
-            Collapsed = true; // start collapse
+            Collapsed = true;
             return;
         }
 
-        // already collapsed -> start the final shrink+fade immediately
         StartCloseAnimation();
         base.Close();
     }

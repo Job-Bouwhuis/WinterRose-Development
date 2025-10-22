@@ -150,19 +150,19 @@ internal class Program : Application
 
         ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
 
-        var w = new UIWindow("FPS Graph", 400, 500, 100, 100);
-        UIGraph FPSGrapher = new UIGraph();
-        FPSGrapher.MaxDataPoints = 288;
-        w.AddContent(new UIFPS());
-        w.AddContent(FPSGrapher);
+        //var w = new UIWindow("FPS Graph", 400, 500, 100, 100);
+        //UIGraph FPSGrapher = new UIGraph();
+        //FPSGrapher.MaxDataPoints = 288;
+        //w.AddContent(new UIFPS());
+        //w.AddContent(FPSGrapher);
 
-        world.CreateEntity<InvocationComponent>("grapher").OnUpdate
-            = Invocation.Create<InvocationComponent>(self =>
-            {
-                FPSGrapher.AddValueToSeries("FPS", ray.GetFPS());
-            });
+        //world.CreateEntity<InvocationComponent>("grapher").OnUpdate
+        //    = Invocation.Create<InvocationComponent>(c =>
+        //    {
+        //        FPSGrapher.AddValueToSeries("FPS", ray.GetFPS());
+        //    });
 
-        w.Show();
+        //w.Show();
 
         //icon.Click.Subscribe(Invocation.Create(() => ShowToast(ToastRegion.Right, ToastStackSide.Top)));
 
@@ -180,6 +180,37 @@ internal class Program : Application
                             .AddSprite(Assets.Load<Sprite>("bigimg"));
 
             var w = new UIWindow("Graph 1.1-2-3", 400, 500, 100, 100);
+
+            var progressProv = (float oldProgress) =>
+            {
+                w.Input.IsRequestingKeyboardFocus = true;
+
+                if (w.Input.IsDown(MouseButton.Left))
+                    return 0f;
+                if (w.Input.IsDown(MouseButton.Right))
+                    return -1;
+
+                for (int i = 0; i <= 9; i++)
+                {
+                    KeyboardKey key = (KeyboardKey)((int)KeyboardKey.Zero + i);
+                    if (w.Input.IsDown(key))
+                    {
+                        // 0 maps to 100%, 1–9 map to 10–90%
+                        float percent = (i == 0 ? 1f : i / 10f);
+                        return percent;
+                    }
+                }
+
+                return oldProgress;
+            };
+
+
+            w.AddContent(new UICircleProgress(0, progressProvider: progressProv, infiniteSpinText: "spinn")
+            {
+                AlwaysShowText = true,
+            });
+            w.AddContent(new UIProgress(0, progressProv));
+
 
             //UIGraph gall = LoadSimpleGraphFromCsv(
             //    "SorterOnePointOne.csv",

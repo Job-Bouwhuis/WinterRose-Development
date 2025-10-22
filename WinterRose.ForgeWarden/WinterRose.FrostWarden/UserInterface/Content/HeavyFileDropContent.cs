@@ -8,7 +8,7 @@ using WinterRose.ForgeWarden.Input;
 
 namespace WinterRose.ForgeWarden.UserInterface.DragDrop;
 
-public class HeavyFileDropContent : UIContent
+internal class HeavyFileDropContent : UIContent
 {
     private OLEDragDrop oleDragDrop;
 

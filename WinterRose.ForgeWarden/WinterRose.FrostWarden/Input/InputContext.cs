@@ -57,6 +57,8 @@ public class InputContext
             (k, o) => o);
     }
     public IInputProvider Provider { get; }
+    public float ScrollDelta => Provider.ScrollDelta;
+
     private readonly Dictionary<InputBinding, double> heldStartTimes = [];
     private readonly Dictionary<InputBinding, (int, double)> pressCounts = [];
 
@@ -274,7 +276,10 @@ public class InputContext
     {
         if (HighestPriorityMouseAbove is not null)
             return false;
-        return ray.CheckCollisionPointRec(Provider.MousePosition, bounds);
+        
+        if (ray.CheckCollisionPointRec(Provider.MousePosition, bounds))
+            return true;
+        return false;
     }
 }
 

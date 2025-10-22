@@ -5,9 +5,9 @@ using WinterRose.ForgeWarden.Utility;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
-public class Dropdown<T> : UIContent
+public class UIDropdown<T> : UIContent
 {
-    public MulticastVoidInvocation<Dropdown<T>, List<T>> OnSelected { get; set; } = new();
+    public MulticastVoidInvocation<UIDropdown<T>, List<T>> OnSelected { get; set; } = new();
 
     private readonly UITextInput filterInput;
     private readonly List<T> items = new();
@@ -49,7 +49,7 @@ public class Dropdown<T> : UIContent
 
     InputContext dropdownInput;
 
-    public Dropdown(Func<T, string> stringSelector)
+    public UIDropdown(Func<T, string> stringSelector)
     {
         filterInput = new();
         // default placeholder on filter
@@ -72,7 +72,7 @@ public class Dropdown<T> : UIContent
         this.stringSelector = stringSelector;
     }
 
-    public Dropdown() : this(o => o.ToString()) { }
+    public UIDropdown() : this(o => o.ToString()) { }
 
     public void SetItems(IEnumerable<T> newItems)
     {

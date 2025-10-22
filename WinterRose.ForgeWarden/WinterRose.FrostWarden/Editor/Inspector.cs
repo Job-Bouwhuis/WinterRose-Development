@@ -89,7 +89,7 @@ internal class Inspector : UIWindow
             return null;
 
         seen.Add(c);
-        TreeNode node = new TreeNode(fieldName);
+        UITreeNode node = new UITreeNode(fieldName);
         node.owner = this;
 
         if (c is IEnumerable e)
@@ -98,7 +98,7 @@ internal class Inspector : UIWindow
             foreach (var it in e)
             {
                 UIContent content = CreateObjectTreeNode(it, "Index: " + i, seen);
-                if (content is TreeNode childNode)
+                if (content is UITreeNode childNode)
                     childNode.Collapse();
                 node.AddChild(content);
                 i++;
@@ -118,7 +118,7 @@ internal class Inspector : UIWindow
             else if (!WinterForge.SupportedPrimitives.Contains(m.Type))
             {
                 UIContent content = CreateObjectTreeNode(m.GetValue(c), m.Name, seen);
-                if (content is TreeNode childNode)
+                if (content is UITreeNode childNode)
                     childNode.Collapse();
                 child = content;
             }
@@ -146,7 +146,7 @@ internal class Inspector : UIWindow
         return true;
     }
 
-    private void MakeTrackedUIContent(object c, MemberData m, TreeNode node)
+    private void MakeTrackedUIContent(object c, MemberData m, UITreeNode node)
     {
         TrackedValue val = new TrackedValue(c, m.Name);
         var drawer = new NoCustomDrawer();

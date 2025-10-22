@@ -106,9 +106,9 @@ public class Toast : UIContainer
     /// <param name="ProgressProvider">The function that provides further values</param>
     /// <param name="closesToastWhenComplete">When true, and the progress becomes 1, it requests the toast to close.</param>
     /// <returns></returns>
-    public new Toast AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, bool closesToastWhenComplete = true, string infiniteSpinText = "Working...")
+    public new Toast AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, string infiniteSpinText = "Working...")
     {
-        return AddContent(new UIProgressContent(initialProgress, ProgressProvider, closesToastWhenComplete, infiniteSpinText));
+        return AddContent(new UIProgress(initialProgress, ProgressProvider, infiniteSpinText));
     }
 
     /// <summary>
@@ -122,10 +122,10 @@ public class Toast : UIContainer
     => AddText(RichText.Parse(text, Color.White), preset);
     public new Toast AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
         => AddContent(new UIText(text, preset));
-    public new Toast AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public new Toast AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Text)
         => AddContent(new UIText(text, preset));
 
-    public new Toast AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Message)
+    public new Toast AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Text)
         => AddText(RichText.Parse(text, Color.White), preset);
 
     /// <summary>
