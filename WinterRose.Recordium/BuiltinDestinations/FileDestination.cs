@@ -4,13 +4,41 @@ namespace WinterRose.Recordium;
 
 public class FileDestination : ILogDestination
 {
+    private int prioNum = 0;
     private Stream fileStream;
+
+    private Lock locker = new();
+    readonly PriorityQueue<LogEntry, int> logEntries = new();
+
+    public void Enqueue(LogEntry entry)
+    {
+        locker.Enter();
+        logEntries.Enqueue(entry, prioNum++);
+        locker.Exit();
+    }
+
+    public bool TryDequeue(out LogEntry entry)
+    {
+        locker.Enter();
+        try
+        {
+            if (logEntries.TryDequeue(out entry, out _))
+                return true;
+
+            entry = null;
+            return false;
+        }
+        finally
+        {
+            locker.Exit();
+        }
+    }
 
     public FileDestination(string fileDirectory)
     {
-        string date =  DateTime.UtcNow.ToString("yyyy.MM.dd_HH.mm.ss");
+        string date = DateTime.UtcNow.ToString("yyyy.MM.dd_HH.mm.ss");
 
-        DirectoryInfo di =  new DirectoryInfo(fileDirectory);
+        DirectoryInfo di = new DirectoryInfo(fileDirectory);
         if (!di.Exists)
             di.Create();
 
@@ -22,19 +50,46 @@ public class FileDestination : ILogDestination
         fileStream = new FileStream(fileName, FileMode.Create);
 
         // create shortcut in same dir to latest file (the one were creating now)
-        FileInfo shortcut = new  FileInfo(Path.Combine(di.FullName, "latest.log"));
-        if(shortcut.Exists)
+        FileInfo shortcut = new FileInfo(Path.Combine(di.FullName, "latest.log"));
+        if (shortcut.Exists)
             shortcut.Delete();
         shortcut.CreateAsSymbolicLink(fi.FullName);
+
+        AppDomain.CurrentDomain.ProcessExit += CurrentDomainOnProcessExit;
+    }
+
+    ~FileDestination()
+    {
+        AppDomain.CurrentDomain.ProcessExit -= CurrentDomainOnProcessExit;
+    }
+
+    private void CurrentDomainOnProcessExit(object? sender, EventArgs e)
+    {
+        Console.WriteLine("Process exiting!");
+        CommitWrite().GetAwaiter().GetResult();
     }
 
     public bool Invalidated { get; set; }
+
     public async Task WriteAsync(LogEntry entry)
     {
-        await fileStream.WriteAsync(Encoding.UTF8.GetBytes(entry.ToString(LogVerbosity.Detailed) + Environment.NewLine));
-        await fileStream.FlushAsync();
+        Enqueue(entry);
+        if(logEntries.Count > CommitEvery)
+            await CommitWrite();
     }
-    
+
+    private async Task CommitWrite()
+    {
+        locker.Enter();
+        while (TryDequeue(out LogEntry entry))
+        {
+            await fileStream.WriteAsync(
+                Encoding.UTF8.GetBytes(entry.ToString(LogVerbosity.Detailed) + Environment.NewLine));
+            await fileStream.FlushAsync();
+        }
+        locker.Exit();
+    }
+
     private void CleanupOldFiles(DirectoryInfo dir)
     {
         var files = dir.GetFiles("*.log")
@@ -50,4 +105,6 @@ public class FileDestination : ILogDestination
 
     private const int MaxFilesToKeep
         = 10;
+
+    private const int CommitEvery = 50;
 }
