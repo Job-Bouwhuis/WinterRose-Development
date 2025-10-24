@@ -25,9 +25,8 @@ class Program
         }
         catch (Exception ex)
         {
-            logger.Catastrophic(ex, "Unhandled exception during execution of app");
+            logger.Catastrophic(ex, "a manually logged exception caught using try catch.");
         }
-        throw new Exception("uncaught");
-        Console.ReadLine();
+        throw new Exception("an uncaught exception (this is the message of the exception, not a seperate message)");
     }
 }

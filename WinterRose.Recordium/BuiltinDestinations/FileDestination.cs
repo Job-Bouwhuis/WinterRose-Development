@@ -17,6 +17,26 @@ public class FileDestination : ILogDestination
         locker.Exit();
     }
 
+    public void Cleanup()
+    {
+        locker.Enter();
+        try
+        {
+            while (logEntries.TryDequeue(out LogEntry entry, out _))
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(entry.ToString(LogVerbosity.Detailed) + Environment.NewLine);
+                fileStream.Write(bytes, 0, bytes.Length);
+            }
+
+            fileStream.Flush();
+            fileStream.Dispose();
+        }
+        finally
+        {
+            locker.Exit();
+        }
+    }
+
     public bool TryDequeue(out LogEntry entry)
     {
         locker.Enter();
@@ -54,19 +74,6 @@ public class FileDestination : ILogDestination
         if (shortcut.Exists)
             shortcut.Delete();
         shortcut.CreateAsSymbolicLink(fi.FullName);
-
-        AppDomain.CurrentDomain.ProcessExit += CurrentDomainOnProcessExit;
-    }
-
-    ~FileDestination()
-    {
-        AppDomain.CurrentDomain.ProcessExit -= CurrentDomainOnProcessExit;
-    }
-
-    private void CurrentDomainOnProcessExit(object? sender, EventArgs e)
-    {
-        Console.WriteLine("Process exiting!");
-        CommitWrite().GetAwaiter().GetResult();
     }
 
     public bool Invalidated { get; set; }
@@ -74,7 +81,7 @@ public class FileDestination : ILogDestination
     public async Task WriteAsync(LogEntry entry)
     {
         Enqueue(entry);
-        if(logEntries.Count > CommitEvery)
+        if (logEntries.Count > CommitEvery)
             await CommitWrite();
     }
 
@@ -87,6 +94,7 @@ public class FileDestination : ILogDestination
                 Encoding.UTF8.GetBytes(entry.ToString(LogVerbosity.Detailed) + Environment.NewLine));
             await fileStream.FlushAsync();
         }
+
         locker.Exit();
     }
 

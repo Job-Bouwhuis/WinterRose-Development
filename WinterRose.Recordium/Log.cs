@@ -8,10 +8,14 @@ namespace WinterRose.Recordium;
 /// </summary>
 public class Log
 {
-    private static readonly Log UnhandledExceptionsLog = new Log("Global Unhandled Exceptions");
+    private static readonly List<WeakReference<Log>> LOG_INSTANCES = new();
+    private static readonly object LOG_INSTANCES_LOCK = new();
+
+    private static readonly Log UnhandledExceptionsLog = new("Global Unhandled Exceptions");
 
     public string Category { get; }
     public List<ILogDestination> Destinations { get; }
+    private int cleanedUpFlag = 0;
 
     /// <summary>
     /// Creates a new logger
@@ -20,8 +24,14 @@ public class Log
     /// <param name="destinations">Extends on the destinations provided at <see cref="LogDestinations"/></param>
     public Log(string category, params List<ILogDestination> destinations)
     {
+        Console.WriteLine("registering log category: " + category);
         Category = category;
         Destinations = LogDestinations.GetAllDestinations(destinations);
+
+        lock (LOG_INSTANCES_LOCK)
+        {
+            LOG_INSTANCES.Add(new WeakReference<Log>(this));
+        }
     }
 
     private static (string? file, int line) ExtractSource(Exception ex)
@@ -60,7 +70,84 @@ public class Log
                     $"{(args.IsTerminating ? "This is causing the app to crash!" : "")}",
                     "Unknown", 0);
             }
+
+            FlushAll();
         };
+
+        AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+        {
+            FlushAll();
+        };
+    }
+    private void Cleanup()
+    {
+        if (Interlocked.Exchange(ref cleanedUpFlag, 1) == 1)
+            return;
+
+        List<ILogDestination> globalDestinations = LogDestinations.GetAllDestinations();
+
+        foreach (var dest in Destinations)
+        {
+            if (!globalDestinations.Contains(dest))
+                dest.Cleanup();
+        }
+
+        // remove this instance from the global list and compact dead refs
+        lock (LOG_INSTANCES_LOCK)
+        {
+            for (int i = LOG_INSTANCES.Count - 1; i >= 0; i--)
+            {
+                var wr = LOG_INSTANCES[i];
+                if (wr.TryGetTarget(out var target))
+                {
+                    if (ReferenceEquals(target, this))
+                        LOG_INSTANCES.RemoveAt(i);
+                }
+                else
+                {
+                    LOG_INSTANCES.RemoveAt(i);
+                }
+            }
+        }
+    }
+    
+    private static void FlushAll()
+    {
+        List<WeakReference<Log>> snapshot;
+        lock (LOG_INSTANCES_LOCK)
+        {
+            snapshot = LOG_INSTANCES.ToList();
+        }
+
+        foreach (var weak in snapshot)
+        {
+            try
+            {
+                if (weak.TryGetTarget(out var log))
+                {
+                    log.Cleanup();
+                }
+            }
+            catch (Exception ex)
+            {
+                try { Console.WriteLine("Exception while flushing logs: " + ex); } catch { }
+            }
+        }
+
+        // cleanup dead refs
+        lock (LOG_INSTANCES_LOCK)
+        {
+            for (int i = LOG_INSTANCES.Count - 1; i >= 0; i--)
+            {
+                if (!LOG_INSTANCES[i].TryGetTarget(out _))
+                    LOG_INSTANCES.RemoveAt(i);
+            }
+        }
+
+        foreach (var globalDest in LogDestinations.GetAllDestinations())
+        {
+            globalDest.Cleanup();
+        }
     }
 
     public void Write(LogEntry entry)
