@@ -13,7 +13,7 @@ public class ConsoleDestination : ILogDestination
             LogSeverity.Warning => ConsoleColor.Yellow,
             LogSeverity.Error => ConsoleColor.Red,
             LogSeverity.Critical => ConsoleColor.Magenta,
-            LogSeverity.Catastrophic => ConsoleColor.DarkRed,
+            LogSeverity.Fatal => ConsoleColor.DarkRed,
             _ => ConsoleColor.White
         };
 

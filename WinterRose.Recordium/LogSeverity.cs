@@ -36,5 +36,5 @@ public enum LogSeverity
     /// <summary>
     /// The system experienced a failure that it cant recover from
     /// </summary>
-    Catastrophic
+    Fatal
 }

@@ -17,7 +17,7 @@ class Program
         logger.Warning("error test");
         logger.Error("error test");
         logger.Critical("critical test");
-        logger.Catastrophic("catastrophic test");
+        logger.Fatal("catastrophic test");
 
         try
         {
@@ -25,7 +25,7 @@ class Program
         }
         catch (Exception ex)
         {
-            logger.Catastrophic(ex, "a manually logged exception caught using try catch.");
+            logger.Fatal(ex, "a manually logged exception caught using try catch.");
         }
         throw new Exception("an uncaught exception (this is the message of the exception, not a seperate message)");
     }

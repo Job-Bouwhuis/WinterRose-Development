@@ -57,7 +57,7 @@ public class Log
             if (args.ExceptionObject is Exception ex)
             {
                 var (file, line) = ExtractSource(ex);
-                UnhandledExceptionsLog.Catastrophic(ex,
+                UnhandledExceptionsLog.Fatal(ex,
                     $"Unhandled exception thrown!" +
                     $"{(args.IsTerminating ? " This is causing the app to crash!" : "")}",
                     file ?? "Unknown",
@@ -65,7 +65,7 @@ public class Log
             }
             else
             {
-                UnhandledExceptionsLog.Catastrophic(
+                UnhandledExceptionsLog.Fatal(
                     $"Exception of type {args.ExceptionObject.GetType().Name} thrown and unhandled. " +
                     $"{(args.IsTerminating ? "This is causing the app to crash!" : "")}",
                     "Unknown", 0);
@@ -253,20 +253,20 @@ public class Log
         await WriteAsync(CreateEntry(LogSeverity.Critical, message, fileName, lineNumber));
     }
 
-    public void Catastrophic(string message, [CallerFilePath] string? fileName = null,
+    public void Fatal(string message, [CallerFilePath] string? fileName = null,
         [CallerLineNumber] int lineNumber = 0)
     {
-        Write(CreateEntry(LogSeverity.Catastrophic, message, fileName, lineNumber));
+        Write(CreateEntry(LogSeverity.Fatal, message, fileName, lineNumber));
     }
     
-    public void Catastrophic(Exception ex, string message = "", [CallerFilePath] string? fileName = null, [CallerLineNumber] int lineNumber = 0)
+    public void Fatal(Exception ex, string message = "", [CallerFilePath] string? fileName = null, [CallerLineNumber] int lineNumber = 0)
     {
-        Write(CreateEntry(LogSeverity.Catastrophic, ex, message, fileName, lineNumber));
+        Write(CreateEntry(LogSeverity.Fatal, ex, message, fileName, lineNumber));
     }
 
-    public async Task CatastrophicAsync(string message, [CallerFilePath] string? fileName = null,
+    public async Task FatalAsync(string message, [CallerFilePath] string? fileName = null,
         [CallerLineNumber] int lineNumber = 0)
     {
-        await WriteAsync(CreateEntry(LogSeverity.Catastrophic, message, fileName, lineNumber));
+        await WriteAsync(CreateEntry(LogSeverity.Fatal, message, fileName, lineNumber));
     }
 }

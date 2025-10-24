@@ -108,7 +108,7 @@ public class LogEntry
                 $"[{time}] [{Severity}] {Message}",
 
             LogVerbosity.Detailed =>
-                $"[{time}] [{Category}] {Severity}: {Message} ({shortFile}:{LineNumber})",
+                $"[{time}] [{Category}] {shortFile}:{LineNumber} - [{Severity}]: {Message}",
 
             LogVerbosity.Full =>
                 BuildFullString(time, shortFile),
@@ -117,7 +117,7 @@ public class LogEntry
         };
 
         if(verbosity is not LogVerbosity.Full && Exception != null)
-                res += FormatException(Exception);
+                res += FormatException(Exception, 1);
         return res;
     }
 
@@ -127,14 +127,14 @@ public class LogEntry
                       $"({shortFile}:{LineNumber}, Thread {ThreadId})";
 
         if (Exception != null)
-            info += FormatException(Exception);
+            info += FormatException(Exception, 1);
 
         return info;
     }
 
     private static string FormatException(Exception ex, int indentLevel = 0)
     {
-        string indent = new string(' ', indentLevel * 2);
+        string indent = new string('\t', indentLevel);
         string result = $"{Environment.NewLine}{indent}Exception: {ex.GetType().FullName}: {ex.Message}";
         result += $"{Environment.NewLine}{indent}{ex.StackTrace}";
 
