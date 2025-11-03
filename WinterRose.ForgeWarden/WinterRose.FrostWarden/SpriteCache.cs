@@ -28,7 +28,12 @@ namespace WinterRose.ForgeWarden
             else if (Assets.Exists(source))
                 newSprite = Assets.Load<Sprite>(source);
             else
+            {
+                if (!File.Exists(source))
+                    throw new InvalidOperationException("File doesnt exists: " + source);
                 newSprite = new Sprite(ray.LoadTexture(source), false);
+            }
+
 
             cache[source] = newSprite;
             return newSprite;

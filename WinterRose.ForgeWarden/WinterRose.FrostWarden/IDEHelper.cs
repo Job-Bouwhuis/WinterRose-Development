@@ -5,12 +5,15 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using WinterRose.Recordium;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 public static class IDEHelper
 {
+    static Log log = new Log("IDEHelper");
     public static bool OpenFileAt(string filePath, int line)
     {
+
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             return false;
 
@@ -27,7 +30,7 @@ public static class IDEHelper
         }
         catch (Exception ex)
         {
-            Console.WriteLine("IDEHelper failed: " + ex.Message);
+            log.Debug(ex, "IDEHelper failed");
             return false;
         }
     }

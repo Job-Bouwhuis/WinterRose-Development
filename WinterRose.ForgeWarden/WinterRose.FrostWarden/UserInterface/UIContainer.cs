@@ -383,7 +383,6 @@ public abstract class UIContainer
 
         IsDragTarget = true;
 
-        //Console.WriteLine(PauseAutoDismissTimer);
         if(prevPauseDragMovement != PauseAutoDismissTimer && !PauseAutoDismissTimer && !Style.PauseAutoDismissTimer)
         {
             TargetPosition += Input.Provider.MousePosition;

@@ -21,11 +21,12 @@ public static class RichSpriteRegistry
     /// <param name="key">The key identifying the sprite to retrieve.</param>
     /// <exception cref="ForgeGuardChecks.Exceptions.ValueNullException"></exception>
     /// <returns>The sprite associated with the given key.</returns>
-    public static Sprite GetSprite(string key)
+    public static Sprite GetSprite(string key, bool throwIfNull = true)
     {
         bool found = spriteMap.TryGetValue(key, out var sprite);
-        Forge.Expect(found && sprite != null).True();
-        return sprite!;
+        if(throwIfNull)
+            Forge.Expect(found && sprite != null).True();
+        return sprite;
     }
 
     /// <summary>

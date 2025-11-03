@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.AnonymousTypes;
+using WinterRose.Recordium;
 using WinterRose.Reflection;
 using WinterRose.WinterForgeSerializing;
 
@@ -14,7 +15,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
     public static class Assets
     {
         private record HandlerEntry(MethodInfo SaveMethod, MethodInfo LoadMethod, MethodInfo InitializeNewAssetMethod, string[] interestedExtensions);
-
+        private static Log log = new Log("Assets");
         private static Dictionary<string, AssetHeader> assetHeaders = [];
         private static Dictionary<Type, HandlerEntry> handerTypeMap = []; 
         private const string ASSET_HEADER_EXTENSION = ".fwah";
@@ -23,7 +24,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 
         internal static void BuildAssetIndexes()
         {
-            Console.WriteLine("INFO: Registering asset handlers");
+            log.Info("Registering asset handlers");
 
             Type[] types = TypeWorker.FindTypesWithInterface(typeof(IAssetHandler<>));
 
@@ -75,7 +76,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 
             FileInfo[] headerFiles = new DirectoryInfo(ASSET_ROOT).GetFiles($"*{ASSET_HEADER_EXTENSION}");
 
-            Console.WriteLine("INFO: Registering asset headers");
+            log.Info("Registering asset headers");
 
             foreach (FileInfo file in headerFiles)
             {
@@ -88,7 +89,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             }
 
 
-            Console.WriteLine("INFO: Indexing unknown asset files");
+            log.Info("Indexing unknown asset files");
 
             HashSet<string> knownHeaderPaths = new HashSet<string>(
                 assetHeaders.Select(h => Path.Combine(ASSET_ROOT, h.Key + ASSET_HEADER_EXTENSION)),
@@ -113,16 +114,14 @@ namespace WinterRose.ForgeWarden.AssetPipeline
                         .FirstOrDefault(
                         handler => handler.Value.interestedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase));
                     if(kvp.Value is not null)
-                    {
                         kvp.Value.InitializeNewAssetMethod.Invoke(null, [header]);
-                    }
                     string headerPath = ASSET_ROOT + header.Name + ASSET_HEADER_EXTENSION;
                     WinterForge.SerializeToFile(header, headerPath);
                     assetHeaders.Add(header.Name, header);
                 }
             }
 
-            Console.WriteLine("INFO: Asset database initialized");
+            log.Info("Asset database initialized");
         }
 
         /// <summary>

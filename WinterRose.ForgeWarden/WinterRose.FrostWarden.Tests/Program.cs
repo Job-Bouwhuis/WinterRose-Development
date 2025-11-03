@@ -24,7 +24,9 @@ using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Worlds;
+using WinterRose.Recordium;
 using WinterRose.StateKeeper;
+using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.ForgeWarden.Tests;
 
@@ -57,7 +59,6 @@ internal class Program : Application
         reload.Register();
 
         new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
-
         //new Program().RunAsOverlay();
 
         //icon.DeleteIcon();
@@ -77,25 +78,26 @@ internal class Program : Application
         ray.SetTargetFPS(144);
         //ClearColor = Color.Beige;
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
+        RichSpriteRegistry.RegisterSprite("wf", new Sprite("tex"));
 
         World world = new World("testworld");
 
         var cam = world.CreateEntity<Camera>("cam");
-        cam.is3D = true;
-        cam.UseOrthographic = false;
-        cam.AddComponent<CameraFreeFly>();
+        //cam.is3D = true;
+        //cam.UseOrthographic = false;
+        //cam.AddComponent<CameraFreeFly>();
 
-        var coeb = world.CreateEntity<MeshRenderer>("coeb");
-        coeb.mesh = PrimitiveMeshFactory.CreateCube(1);
+        //var coeb = world.CreateEntity<MeshRenderer>("coeb");
+        //coeb.mesh = PrimitiveMeshFactory.CreateCube(1);
 
-        // position cube at origin
-        coeb.transform.position = new Vector3(0, 0, 0);
+        //// position cube at origin
+        //coeb.transform.position = new Vector3(0, 0, 0);
 
-        // position camera 5 units back and 2 units up
-        cam.transform.position = new Vector3(0, 2, -5);
+        //// position camera 5 units back and 2 units up
+        //cam.transform.position = new Vector3(0, 2, -5);
 
-        // make camera look at the cube
-        cam.transform.LookAt(coeb.transform);
+        //// make camera look at the cube
+        //cam.transform.LookAt(coeb.transform);
 
 
         var entity = world.CreateEntity("entity");
@@ -150,11 +152,10 @@ internal class Program : Application
 
         ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
 
-        //var w = new UIWindow("FPS Graph", 400, 500, 100, 100);
+        var w = new UIWindow("FPS Graph", 400, 500, 100, 100);
         //UIGraph FPSGrapher = new UIGraph();
         //FPSGrapher.MaxDataPoints = 288;
-        //w.AddContent(new UIFPS());
-        //w.AddContent(FPSGrapher);
+
 
         //world.CreateEntity<InvocationComponent>("grapher").OnUpdate
         //    = Invocation.Create<InvocationComponent>(c =>
@@ -162,7 +163,13 @@ internal class Program : Application
         //        FPSGrapher.AddValueToSeries("FPS", ray.GetFPS());
         //    });
 
-        //w.Show();
+        var input = new UITextInput();
+        input.Text = "This is a test\nWith multiline!";
+        input.InjectStringAt(6, @"\s[wf]");
+        w.AddContent(input);
+        //w.AddContent(new UIFPS());
+        //w.AddContent(FPSGrapher);
+        w.Show();
 
         //icon.Click.Subscribe(Invocation.Create(() => ShowToast(ToastRegion.Right, ToastStackSide.Top)));
 
@@ -295,7 +302,7 @@ internal class Program : Application
 
         //world.SaveTemplate();
 
-        Universe.Hirarchy.Show();
+        //Universe.Hirarchy.Show();
 
         return world;
     }

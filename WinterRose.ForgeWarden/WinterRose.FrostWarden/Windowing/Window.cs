@@ -1,10 +1,13 @@
 ﻿using Raylib_cs;
 using System.Runtime.InteropServices;
+using WinterRose.Recordium;
 
 namespace WinterRose.ForgeWarden.Windowing
 {
     public class Window
     {
+        static Log log = new Log("Window");
+
         public int Width => ray.GetScreenWidth();
         public int Height => ray.GetScreenHeight();
 
@@ -71,7 +74,7 @@ namespace WinterRose.ForgeWarden.Windowing
 
                 // Inspect the pixel format alpha bits so we know what the driver provided:
                 int alphaBits = GetBackbufferAlphaBits(Handle);
-                Console.WriteLine($"Alpha bits in PFD: {alphaBits}");
+                log.Debug($"Alpha bits in PFD: {alphaBits}");
             }
         }
 

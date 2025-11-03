@@ -2,6 +2,7 @@
 using Raylib_cs;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -22,6 +23,7 @@ using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Windowing;
 using WinterRose.ForgeWarden.Worlds;
+using WinterRose.Recordium;
 using static Raylib_cs.Raylib;
 
 namespace WinterRose.ForgeWarden;
@@ -29,6 +31,8 @@ namespace WinterRose.ForgeWarden;
 public abstract class Application
 {
     public static Application Current { get; private set; }
+
+    Log log;
 
     public bool ShowFPS { get; set; }
     public Window Window { get; private set; }
@@ -65,6 +69,13 @@ public abstract class Application
         HasMouseFocus = true
     };
 
+    static Application()
+    {
+        LogDestinations.AddDestination(new ConsoleDestination());
+        LogDestinations.AddDestination(new FileDestination("logs"));
+        RaylibLog.Setup();
+    }
+
     public Application(bool UseBrowser = true, bool GracefulErrorHandling =
 #if RELEASE
          true) // use try catch with graceful error dialog box upon error rather than just closing without reason
@@ -77,6 +88,7 @@ public abstract class Application
         Current = this;
         useBrowser = UseBrowser;
         gracefulErrorHandling = GracefulErrorHandling;
+        log = new Log("Engine");
     }
 
     public abstract World CreateWorld();
@@ -109,12 +121,6 @@ public abstract class Application
                     t = new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
                         .AddText("Browser is being downloaded", UIFontSizePreset.Title)
                         .AddText("This can take a while.\nhowever the game is still playable", UIFontSizePreset.Text)
-                    //.AddContent(new UICircleProgress(-1, pref =>
-                    //{
-                    //    if (browserTask.IsCompleted)
-                    //        t!.Close();
-                    //    return browserTask.IsCompleted ? 1 : -1;
-                    //}, "Downloading Browser...")))
                     .AddProgressBar(-1, pref =>
                     {
                     if (browserTask.IsCompleted)
@@ -167,11 +173,11 @@ public abstract class Application
                 }
             }
 
-            Console.WriteLine("INFO: Releasing all resources");
+            log.Info("Releasing all resources");
 
             SpriteCache.DisposeAll();
 
-            Console.WriteLine("INFO: All resources released, Closing window");
+            log.Info("All resources released, Closing window");
         }
         finally
         {
@@ -181,7 +187,7 @@ public abstract class Application
             } 
             catch { /* ignore */ }
 
-            Console.WriteLine("INFO: End of 'run', Bye bye!");
+            log.Info("End of 'run', Bye bye!");
         }
     }
 
@@ -266,7 +272,7 @@ public abstract class Application
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR: Failed to initialize embedded browser: {ex.Message}");
+                log.Error($"Failed to initialize embedded browser: {ex.Message}");
             }
         });
     }

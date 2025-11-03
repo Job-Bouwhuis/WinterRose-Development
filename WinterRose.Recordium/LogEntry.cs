@@ -97,7 +97,7 @@ public class LogEntry
     public string ToString(LogVerbosity verbosity)
     {
         string shortFile = Path.GetFileName(FileName);
-        string time = Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff");
+        string time = Timestamp.ToString("yy-MMM-dd HH:mm:ss");
 
         var res = verbosity switch
         {
@@ -107,8 +107,7 @@ public class LogEntry
             LogVerbosity.Normal =>
                 $"[{time}] [{Severity}] {Message}",
 
-            LogVerbosity.Detailed =>
-                $"[{time}] [{Category}] {shortFile}:{LineNumber} - [{Severity}]: {Message}",
+            LogVerbosity.Detailed => BuildDetailString(time, shortFile),
 
             LogVerbosity.Full =>
                 BuildFullString(time, shortFile),
@@ -119,6 +118,14 @@ public class LogEntry
         if(verbosity is not LogVerbosity.Full && Exception != null)
                 res += FormatException(Exception, 1);
         return res;
+    }
+
+    private string BuildDetailString(string time, string shortFile)
+    {
+        if (string.IsNullOrWhiteSpace(shortFile))
+            return $"[{time}] [{Category}] - [{Severity}]: {Message}";
+
+        return $"[{time}] [{Category}] {shortFile}:{LineNumber} - [{Severity}]: {Message}";
     }
 
     private string BuildFullString(string time, string shortFile)

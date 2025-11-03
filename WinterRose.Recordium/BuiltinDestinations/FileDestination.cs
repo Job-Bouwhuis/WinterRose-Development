@@ -1,57 +1,38 @@
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace WinterRose.Recordium;
 
 public class FileDestination : ILogDestination
 {
-    private int prioNum = 0;
     private Stream fileStream;
 
-    private Lock locker = new();
-    readonly PriorityQueue<LogEntry, int> logEntries = new();
+    readonly ConcurrentQueue<LogEntry> logEntries = new();
 
     public void Enqueue(LogEntry entry)
     {
-        locker.Enter();
-        logEntries.Enqueue(entry, prioNum++);
-        locker.Exit();
+        logEntries.Enqueue(entry);
     }
 
     public void Cleanup()
     {
-        locker.Enter();
-        try
+        while (logEntries.TryDequeue(out LogEntry entry))
         {
-            while (logEntries.TryDequeue(out LogEntry entry, out _))
-            {
-                byte[] bytes = Encoding.UTF8.GetBytes(entry.ToString(LogVerbosity.Detailed) + Environment.NewLine);
-                fileStream.Write(bytes, 0, bytes.Length);
-            }
+            byte[] bytes = Encoding.UTF8.GetBytes(entry.ToString(LogVerbosity.Detailed) + Environment.NewLine);
+            fileStream.Write(bytes, 0, bytes.Length);
+        }
 
-            fileStream.Flush();
-            fileStream.Dispose();
-        }
-        finally
-        {
-            locker.Exit();
-        }
+        fileStream.Flush();
+        fileStream.Dispose();
     }
 
     public bool TryDequeue(out LogEntry entry)
     {
-        locker.Enter();
-        try
-        {
-            if (logEntries.TryDequeue(out entry, out _))
-                return true;
+        if (logEntries.TryDequeue(out entry))
+            return true;
 
-            entry = null;
-            return false;
-        }
-        finally
-        {
-            locker.Exit();
-        }
+        entry = null;
+        return false;
     }
 
     public FileDestination(string fileDirectory)
@@ -69,7 +50,6 @@ public class FileDestination : ILogDestination
         FileInfo fi = new FileInfo(fileName);
         fileStream = new FileStream(fileName, FileMode.Create);
 
-        // create shortcut in same dir to latest file (the one were creating now)
         FileInfo shortcut = new FileInfo(Path.Combine(di.FullName, "latest.log"));
         if (shortcut.Exists)
             shortcut.Delete();
@@ -87,15 +67,12 @@ public class FileDestination : ILogDestination
 
     private async Task CommitWrite()
     {
-        locker.Enter();
         while (TryDequeue(out LogEntry entry))
         {
             await fileStream.WriteAsync(
                 Encoding.UTF8.GetBytes(entry.ToString(LogVerbosity.Detailed) + Environment.NewLine));
             await fileStream.FlushAsync();
         }
-
-        locker.Exit();
     }
 
     private void CleanupOldFiles(DirectoryInfo dir)

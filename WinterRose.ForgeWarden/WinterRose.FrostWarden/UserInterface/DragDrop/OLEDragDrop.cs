@@ -8,6 +8,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Input;
+using WinterRose.Recordium;
 
 namespace WinterRose.ForgeWarden.UserInterface.DragDrop;
 
@@ -135,17 +136,20 @@ internal interface IDropTarget
 [ComVisible(true)]
 internal class DropTargetImpl : IDropTarget
 {
+    static Log log = new Log("Win-DropTarget");
+
     private readonly OLEDragDrop parent;
 
     public DropTargetImpl(OLEDragDrop parent)
     {
         this.parent = parent;
-        if (Win.DEBUG) Console.WriteLine("[DropTargetImpl] created");
+        if (Win.DEBUG) 
+            log.Debug("[DropTargetImpl] created");
     }
 
     public int DragEnter(IDataObject pDataObj, int grfKeyState, POINTL pt, ref int pdwEffect)
     {
-        if (Win.DEBUG) Console.WriteLine("[DropTargetImpl] DragEnter called");
+        if (Win.DEBUG) log.Debug("DragEnter called");
 
         try
         {
@@ -162,7 +166,7 @@ internal class DropTargetImpl : IDropTarget
             if (wasAwaiting)
             {
                 // Mark we received OLE DragEnter during detection window
-                if (DEBUG) Console.WriteLine("[DropTargetImpl] DragEnter arrived while awaiting detection window - confirming OLE drag");
+                if (DEBUG) log.Debug("DragEnter arrived while awaiting detection window - confirming OLE drag");
 
                 // notify parent immediately that the heuristic drag was genuine (true)
                 parent.HandleGlobalDragValidation(true);
@@ -183,11 +187,11 @@ internal class DropTargetImpl : IDropTarget
             try
             {
                 files = ExtractFileListFromDataObject(pDataObj);
-                if (DEBUG) Console.WriteLine($"[DropTargetImpl] DragEnter extracted {files?.Count ?? 0} file(s)");
+                if (DEBUG) log.Debug($"DragEnter extracted {files?.Count ?? 0} file(s)");
             }
             catch (Exception ex)
             {
-                if (DEBUG) Console.WriteLine("[DropTargetImpl] ExtractFileListFromDataObject failed: " + ex);
+                if (DEBUG) log.Debug("ExtractFileListFromDataObject failed: " + ex);
                 files = null;
             }
 
@@ -195,18 +199,18 @@ internal class DropTargetImpl : IDropTarget
             {
                 parent.OnDragEnterFiles(files);
                 pdwEffect = parent.CanAcceptFiles(files) ? 1 : 0;
-                if (DEBUG) Console.WriteLine($"[DropTargetImpl] DragEnter -> file path branch pdwEffect={pdwEffect}");
+                if (DEBUG) log.Debug($"DragEnter -> file path branch pdwEffect={pdwEffect}");
             }
             else
             {
                 parent.OnDragEnterData(pDataObj);
                 pdwEffect = parent.CanAcceptData(pDataObj) ? 1 : 0;
-                if (DEBUG) Console.WriteLine($"[DropTargetImpl] DragEnter -> generic data branch pdwEffect={pdwEffect}");
+                if (DEBUG) log.Debug($"DragEnter -> generic data branch pdwEffect={pdwEffect}");
             }
         }
         catch (Exception ex)
         {
-            if (DEBUG) Console.WriteLine("[DropTargetImpl] DragEnter exception: " + ex);
+            if (DEBUG) log.Debug("DragEnter exception: " + ex);
             pdwEffect = 0;
         }
         return 0;
@@ -228,7 +232,7 @@ internal class DropTargetImpl : IDropTarget
         }
         catch (Exception ex)
         {
-            if (DEBUG) Console.WriteLine("[DropTargetImpl] DragOver exception: " + ex);
+            if (DEBUG) log.Debug("DragOver exception: " + ex);
             pdwEffect = 0;
         }
         return 0;
@@ -236,32 +240,32 @@ internal class DropTargetImpl : IDropTarget
 
     public int DragLeave()
     {
-        if (DEBUG) Console.WriteLine("[DropTargetImpl] DragLeave called");
+        if (DEBUG) log.Debug("DragLeave called");
         try
         {
             parent.IOnDragLeave();
         }
         catch (Exception ex)
         {
-            if (DEBUG) Console.WriteLine("[DropTargetImpl] DragLeave exception: " + ex);
+            if (DEBUG) log.Debug("DragLeave exception: " + ex);
         }
         return 0;
     }
 
     public int Drop(IDataObject pDataObj, int grfKeyState, POINTL pt, ref int pdwEffect)
     {
-        if (DEBUG) Console.WriteLine("[DropTargetImpl] Drop called");
+        if (DEBUG) log.Debug("Drop called");
         try
         {
             List<string> files = null;
             try
             {
                 files = ExtractFileListFromDataObject(pDataObj);
-                if (DEBUG) Console.WriteLine($"[DropTargetImpl] Drop extracted {files?.Count ?? 0} file(s)");
+                if (DEBUG) log.Debug($"Drop extracted {files?.Count ?? 0} file(s)");
             }
             catch (Exception ex)
             {
-                if (DEBUG) Console.WriteLine("[DropTargetImpl] ExtractFileListFromDataObject failed during Drop: " + ex);
+                if (DEBUG) log.Debug("ExtractFileListFromDataObject failed during Drop: " + ex);
                 files = null;
             }
 
@@ -269,19 +273,19 @@ internal class DropTargetImpl : IDropTarget
             {
                 parent.IOnDropFiles(files);
                 pdwEffect = parent.CanAcceptFiles(files) ? 1 : 0;
-                if (DEBUG) Console.WriteLine($"[DropTargetImpl] Drop -> file branch pdwEffect={pdwEffect}");
+                if (DEBUG) log.Debug($"Drop -> file branch pdwEffect={pdwEffect}");
             }
             else
             {
                 // Generic data drop
                 parent.IOnDropData(pDataObj);
                 pdwEffect = parent.CanAcceptData(pDataObj) ? 1 : 0;
-                if (DEBUG) Console.WriteLine($"[DropTargetImpl] Drop -> generic data branch pdwEffect={pdwEffect}");
+                if (DEBUG) log.Debug($"Drop -> generic data branch pdwEffect={pdwEffect}");
             }
         }
         catch (Exception ex)
         {
-            if (DEBUG) Console.WriteLine("[DropTargetImpl] Drop exception: " + ex);
+            if (DEBUG) log.Debug("Drop exception: " + ex);
             pdwEffect = 0;
         }
         finally
@@ -292,7 +296,7 @@ internal class DropTargetImpl : IDropTarget
             }
             catch (Exception ex)
             {
-                if (DEBUG) Console.WriteLine("[DropTargetImpl] OnDragLeave during Drop finally failed: " + ex);
+                if (DEBUG) log.Debug("OnDragLeave during Drop finally failed: " + ex);
             }
         }
         return 0;
@@ -302,7 +306,7 @@ internal class DropTargetImpl : IDropTarget
     public static List<string> ExtractFileListFromDataObject(IDataObject dataObj)
     {
         var results = new List<string>();
-        if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] entry");
+        if (DEBUG) log.Debug("entry");
 
         // Build FORMATETC for CF_HDROP, TYMED_HGLOBAL
         FORMATETC fmt = new FORMATETC
@@ -317,20 +321,20 @@ internal class DropTargetImpl : IDropTarget
         STGMEDIUM medium;
         try
         {
-            if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] calling dataObj.GetData");
+            if (DEBUG) log.Debug("calling dataObj.GetData");
             dataObj.GetData(ref fmt, out medium);
-            if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] GetData succeeded for CF_HDROP");
+            if (DEBUG) log.Debug("GetData succeeded for CF_HDROP");
         }
         catch (COMException comEx)
         {
             // If the format is not present or invalid, try to fallback to text extraction. Don't rethrow.
-            if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] GetData failed for CF_HDROP: " + comEx);
+            if (DEBUG) log.Debug("GetData failed for CF_HDROP: " + comEx);
             // try text fallback below
             return TryExtractTextAsPseudoFileList(dataObj);
         }
         catch (Exception ex)
         {
-            if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] GetData unexpected exception: " + ex);
+            if (DEBUG) log.Debug("GetData unexpected exception: " + ex);
             return TryExtractTextAsPseudoFileList(dataObj);
         }
 
@@ -339,11 +343,11 @@ internal class DropTargetImpl : IDropTarget
             if ((int)medium.tymed == TYMED_HGLOBAL)
             {
                 IntPtr hDrop = medium.unionmember; // handle to HDROP
-                if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] hDrop = " + hDrop);
+                if (DEBUG) log.Debug("hDrop = " + hDrop);
                 if (hDrop != IntPtr.Zero)
                 {
                     uint count = DragQueryFile(hDrop, 0xFFFFFFFF, null, 0);
-                    if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] DragQueryFile count = " + count);
+                    if (DEBUG) log.Debug("DragQueryFile count = " + count);
                     for (uint i = 0; i < count; i++)
                     {
                         int len = (int)DragQueryFile(hDrop, i, null, 0);
@@ -351,23 +355,23 @@ internal class DropTargetImpl : IDropTarget
                         if (DragQueryFile(hDrop, i, sb, sb.Capacity) > 0)
                         {
                             var path = sb.ToString();
-                            if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] file[" + i + "] = " + path);
+                            if (DEBUG) log.Debug("file[" + i + "] = " + path);
                             results.Add(path);
                         }
                         else
                         {
-                            if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] DragQueryFile returned 0 for index " + i);
+                            if (DEBUG) log.Debug("DragQueryFile returned 0 for index " + i);
                         }
                     }
                 }
                 else
                 {
-                    if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] hDrop was IntPtr.Zero");
+                    if (DEBUG) log.Debug("hDrop was IntPtr.Zero");
                 }
             }
             else
             {
-                if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] medium.tymed != TYMED_HGLOBAL");
+                if (DEBUG) log.Debug("medium.tymed != TYMED_HGLOBAL");
                 // fallback to text extraction
                 return TryExtractTextAsPseudoFileList(dataObj);
             }
@@ -378,15 +382,15 @@ internal class DropTargetImpl : IDropTarget
             try
             {
                 ReleaseStgMedium(ref medium);
-                if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] ReleaseStgMedium called");
+                if (DEBUG) log.Debug("ReleaseStgMedium called");
             }
             catch (Exception ex)
             {
-                if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] ReleaseStgMedium failed: " + ex);
+                if (DEBUG) log.Debug("ReleaseStgMedium failed: " + ex);
             }
         }
 
-        if (DEBUG) Console.WriteLine("[ExtractFileListFromDataObject] returning " + results.Count + " file(s)");
+        if (DEBUG) log.Debug("returning " + results.Count + " file(s)");
         return results;
     }
 
@@ -394,7 +398,7 @@ internal class DropTargetImpl : IDropTarget
     private static List<string> TryExtractTextAsPseudoFileList(IDataObject dataObj)
     {
         var results = new List<string>();
-        if (DEBUG) Console.WriteLine("[TryExtractTextAsPseudoFileList] trying CF_UNICODETEXT fallback");
+        if (DEBUG) log.Debug("trying CF_UNICODETEXT fallback");
 
         FORMATETC fmtText = new FORMATETC
         {
@@ -412,7 +416,7 @@ internal class DropTargetImpl : IDropTarget
         }
         catch (Exception ex)
         {
-            if (DEBUG) Console.WriteLine("[TryExtractTextAsPseudoFileList] GetData for CF_UNICODETEXT failed: " + ex);
+            if (DEBUG) log.Debug("GetData for CF_UNICODETEXT failed: " + ex);
             return results;
         }
 
@@ -431,7 +435,7 @@ internal class DropTargetImpl : IDropTarget
                             string text = Marshal.PtrToStringUni(ptr);
                             if (!string.IsNullOrEmpty(text))
                             {
-                                if (DEBUG) Console.WriteLine("[TryExtractTextAsPseudoFileList] extracted text: " + text);
+                                if (DEBUG) log.Debug("extracted text: " + text);
                                 // mark it so the consumer knows it's text not a file path
                                 results.Add("TEXT://" + text);
                             }
@@ -446,20 +450,22 @@ internal class DropTargetImpl : IDropTarget
         }
         catch (Exception ex)
         {
-            if (DEBUG) Console.WriteLine("[TryExtractTextAsPseudoFileList] exception while extracting text: " + ex);
+            if (DEBUG) log.Debug("exception while extracting text: " + ex);
         }
         finally
         {
             try { ReleaseStgMedium(ref medium); } catch { }
         }
 
-        if (DEBUG) Console.WriteLine("[TryExtractTextAsPseudoFileList] returning " + results.Count + " pseudo-file(s)");
+        if (DEBUG) log.Debug("returning " + results.Count + " pseudo-file(s)");
         return results;
     }
 }
 
 public class OLEDragDrop : IDisposable
 {
+    static Log log = new Log("Win-OLEDragDrop");
+
     // --- Public events for users of this class ---
     public event Action OnDragDetected;
     public event Action OnDragStopped;
@@ -497,9 +503,9 @@ public class OLEDragDrop : IDisposable
 
     public static void InitOle()
     {
-        if (DEBUG) Console.WriteLine("[InitOle] calling OleInitialize");
+        if (DEBUG) log.Debug("calling OleInitialize");
         int hr = OleInitialize(IntPtr.Zero);
-        if (DEBUG) Console.WriteLine("[InitOle] OleInitialize returned 0x" + hr.ToString("X8"));
+        if (DEBUG) log.Debug("OleInitialize returned 0x" + hr.ToString("X8"));
         if (hr < 0) throw new Exception($"OleInitialize failed with HRESULT 0x{hr:X8}");
     }
 
@@ -507,7 +513,7 @@ public class OLEDragDrop : IDisposable
     {
         IntPtr hwnd = Windows.MyHandle.Handle;
 
-        try { InitOle(); } catch (Exception ex) { if (DEBUG) Console.WriteLine("[OLEDragDrop] InitOle failed: " + ex); }
+        try { InitOle(); } catch (Exception ex) { if (DEBUG) log.Debug("InitOle failed: " + ex); }
 
         try
         {
@@ -642,7 +648,7 @@ public class OLEDragDrop : IDisposable
 
     public virtual void HandleGlobalDragValidation(bool valid)
     {
-        if (DEBUG) Console.WriteLine("[GlobalDragValidation] heuristic drag validity = " + valid);
+        if (DEBUG) log.Debug("heuristic drag validity = " + valid);
         if(valid)
             OnDragDetected?.Invoke();
         else
@@ -695,10 +701,10 @@ public class OLEDragDrop : IDisposable
     // simple acceptance policy: override/replace with your own logic (extensions, sizes, etc.)
     internal bool CanAcceptFiles(List<string> files)
     {
-        if (DEBUG) Console.WriteLine("[CanAcceptFiles] validating " + (files?.Count ?? 0) + " files");
+        if (DEBUG) log.Debug("validating " + (files?.Count ?? 0) + " files");
         if (files == null || files.Count == 0)
         {
-            if (DEBUG) Console.WriteLine("[CanAcceptFiles] no files -> false");
+            if (DEBUG) log.Debug("no files -> false");
             return false;
         }
 
@@ -706,23 +712,23 @@ public class OLEDragDrop : IDisposable
         {
             try
             {
-                if (DEBUG) Console.WriteLine("[CanAcceptFiles] candidate: " + path);
+                if (DEBUG) log.Debug("candidate: " + path);
             }
             catch (Exception ex)
             {
-                if (DEBUG) Console.WriteLine("[CanAcceptFiles] exception validating " + path + " : " + ex);
+                if (DEBUG) log.Debug("exception validating " + path + " : " + ex);
                 return false;
             }
         }
 
-        if (DEBUG) Console.WriteLine("[CanAcceptFiles] returning true");
+        if (DEBUG) log.Debug("returning true");
         return true; // default: accept
     }
 
     // Generic IDataObject entry point (non-file)
     internal void OnDragEnterData(IDataObject dataObj)
     {
-        if (DEBUG) Console.WriteLine("[HeavyFileDropContent] OnDragEnterData called (generic)");
+        if (DEBUG) log.Debug("OnDragEnterData called (generic)");
         // Default behavior: do nothing. Consumers can override to inspect IDataObject.
 
         // If we were awaiting a drop-check, call validation hook for generic data
@@ -732,10 +738,10 @@ public class OLEDragDrop : IDisposable
             {
                 awaitingDropCheck = false;
                 bool accepted = CanAcceptData(dataObj);
-                if (DEBUG) Console.WriteLine("[Passthrough] Generic DragEnter arrived during awaiting window -> genuine generic drag detected accepted=" + accepted);
+                if (DEBUG) log.Debug("Generic DragEnter arrived during awaiting window -> genuine generic drag detected accepted=" + accepted);
                 HandleGlobalDragValidation(accepted);
                 if(accepted)
-                    Console.WriteLine("[OnDragEnterData] Drag enter data accepted");
+                    log.Debug("Drag enter data accepted");
             }
         }
     }
@@ -753,7 +759,7 @@ public class OLEDragDrop : IDisposable
     // Called by DropTargetImpl
     internal void IOnDragLeave()
     {
-        if (DEBUG) Console.WriteLine("[HeavyFileDropContent] OnDragLeave called");
+        if (DEBUG) log.Debug("OnDragLeave called");
         lock (stateLock)
         {
             IsDraggingNow = false;
@@ -765,7 +771,7 @@ public class OLEDragDrop : IDisposable
     // Generic IDataObject drop
     internal void IOnDropData(IDataObject dataObj)
     {
-        if (DEBUG) Console.WriteLine("[HeavyFileDropContent] OnDropData called (generic)");
+        if (DEBUG) log.Debug("OnDropData called (generic)");
         // Default: try to extract text and treat it as a pseudo-file (consumer may override)
         try
         {
@@ -802,44 +808,44 @@ public class OLEDragDrop : IDisposable
         }
         catch (Exception ex)
         {
-            if (DEBUG) Console.WriteLine("[OnDropData] generic extraction failed: " + ex);
+            if (DEBUG) log.Debug("generic extraction failed: " + ex);
         }
     }
 
     // Called by DropTargetImpl
     internal void IOnDropFiles(List<string> files)
     {
-        if (DEBUG) Console.WriteLine("[HeavyFileDropContent] OnDropFiles called with files count: " + (files?.Count ?? 0));
+        if (DEBUG) log.Debug("OnDropFiles called with files count: " + (files?.Count ?? 0));
         if (files == null || files.Count == 0) return;
 
         if (CanAcceptFiles(files))
         {
-            if (DEBUG) Console.WriteLine("[HeavyFileDropContent] OnDropFiles accepted files");
+            if (DEBUG) log.Debug("OnDropFiles accepted files");
             foreach (var f in files)
             {
                 try { HandleDroppedFile(f); }
                 catch (Exception ex)
                 {
-                    if (DEBUG) Console.WriteLine("[HeavyFileDropContent] HandleDroppedFile threw for " + f + " : " + ex);
+                    if (DEBUG) log.Debug("HandleDroppedFile threw for " + f + " : " + ex);
                 }
             }
         }
         else
         {
-            if (DEBUG) Console.WriteLine("[HeavyFileDropContent] OnDropFiles rejected files");
+            if (DEBUG) log.Debug("OnDropFiles rejected files");
         }
     }
 
     // actual dropped-file handler — do your upload / enqueue etc. here
     internal void HandleDroppedFile(string path)
     {
-        if (DEBUG) Console.WriteLine("HeavyFileDropContent: dropped -> " + path);
+        if (DEBUG) log.Debug("HeavyFileDropContent: dropped -> " + path);
     }
 
     // handle dropped text (from CF_UNICODETEXT)
     protected virtual void HandleDroppedText(string text)
     {
-        if (DEBUG) Console.WriteLine("HeavyFileDropContent: dropped text -> " + text);
+        if (DEBUG) log.Debug("HeavyFileDropContent: dropped text -> " + text);
     }
 
     public void Dispose()

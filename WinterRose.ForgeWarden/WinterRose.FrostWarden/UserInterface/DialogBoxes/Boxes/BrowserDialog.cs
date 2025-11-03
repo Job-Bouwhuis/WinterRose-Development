@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using WinterRose;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
+using WinterRose.Recordium;
 using Color = Raylib_cs.Color;
 using Image = Raylib_cs.Image;
 using Rectangle = Raylib_cs.Rectangle;
@@ -21,6 +22,8 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 public class BrowserDialog : Dialog, IDisposable
 {
     private static volatile int favicoNum = 0;
+
+    private Log log = new Log("Browser");
 
     private IBrowser browser;
     private Texture2D? webTexture;
@@ -101,7 +104,8 @@ public class BrowserDialog : Dialog, IDisposable
             {
                 _ = page.GoBackAsync().ContinueWith(t =>
                 {
-                    if (t.Exception != null) Console.WriteLine("GoBackAsync failed: " + t.Exception);
+                    if (t.Exception != null)
+                        log.Critical(t.Exception, "GoBackAsync failed");
                 });
             }
         });
@@ -113,7 +117,8 @@ public class BrowserDialog : Dialog, IDisposable
             {
                 _ = page.GoForwardAsync().ContinueWith(t =>
                 {
-                    if (t.Exception != null) Console.WriteLine("GoForwardAsync failed: " + t.Exception);
+                    if (t.Exception != null)
+                        log.Critical(t.Exception, "GoForwardAsync failed");
                 });
             }
         });
@@ -134,7 +139,7 @@ public class BrowserDialog : Dialog, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Failed to open external browser: " + ex);
+                    log.Error(ex, "Failed to open external browser");
                 }
             }
         });
@@ -179,12 +184,12 @@ public class BrowserDialog : Dialog, IDisposable
                 }
                 else
                 {
-                    Console.WriteLine("Clipboard copy not supported on this OS.");
-                }
+                     log.Error("Clipboard copy not supported on this OS.");
+                } 
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to copy URL: " + ex);
+                log.Critical(ex, "Failed to copy URL");
             }
         });
 
@@ -223,7 +228,7 @@ public class BrowserDialog : Dialog, IDisposable
             }
             catch (NavigationException nex)
             {
-                Console.WriteLine($"Navigation failed: {nex.Message}");
+                log.Error(nex, "Navigation failed");
                 navigationFailed = true;
                 failedUrl = link;
                 return; // stop initialization here
@@ -234,13 +239,13 @@ public class BrowserDialog : Dialog, IDisposable
             UpdateFaviconAsync().ContinueWith(t =>
             {
                 if (t.Exception != null)
-                    Console.WriteLine("Exception in UpdateFaviconAsync: " + t.Exception);
+                    log.Error(t.Exception, "Exception in UpdateFaviconAsync");
             });
 
             if (page == null)
                 return;
 
-            page.Console += (sender, e) => { Console.WriteLine("BROWSER: " + e.Message.Text); };
+            page.Console += (sender, e) => { log.Debug(e.Message.Text); };
             page.DOMContentLoaded += async (sender, e) =>
             {
                 try
@@ -250,12 +255,12 @@ public class BrowserDialog : Dialog, IDisposable
                     UpdateFaviconAsync().ContinueWith(t =>
                     {
                         if (t.Exception != null)
-                            Console.WriteLine("Exception in UpdateFaviconAsync: " + t.Exception);
+                            log.Warning(t.Exception, "Exception in UpdateFaviconAsync");
                     });
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Exception in DOMContentLoaded handler: " + ex);
+                    log.Critical(ex, "Exception in DOMContentLoaded handler: ");
                 }
             };
 
@@ -263,12 +268,12 @@ public class BrowserDialog : Dialog, IDisposable
                 .ContinueWith(t =>
                 {
                     if (t.Exception != null)
-                        Console.WriteLine("Screenshot task failed: " + t.Exception);
+                        log.Critical(t.Exception, "Browser display feed failed");
                 });
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Exception in InitializeBrowserPage: " + ex);
+            log.Critical(ex, "Exception in InitializeBrowserPage");
         }
     }
 
@@ -323,7 +328,7 @@ public class BrowserDialog : Dialog, IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Exception in UpdateFaviconAsync: " + ex);
+            log.Error(ex, "Exception in UpdateFaviconAsync: ");
         }
     }
 
@@ -391,7 +396,7 @@ public class BrowserDialog : Dialog, IDisposable
             var tex = ray.LoadTexture(currentFaviconPath);
             if (tex.Id == 0)
             {
-                Console.WriteLine("BROWSER: Failed to load Favico for website");
+                log.Warning("Favico was badly or never loaded");
                 return;
             }
             faviconTexture = tex;
@@ -443,31 +448,6 @@ public class BrowserDialog : Dialog, IDisposable
         HandleInput(bounds);
     }
 
-    private Rectangle GetWebTextureDrawRect(Rectangle bounds)
-    {
-        if (!webTexture.HasValue) return new Rectangle();
-
-        float maxWidth = bounds.Width - UIConstants.CONTENT_PADDING * 2;
-        float reservedForButtons = 55 + UIConstants.CONTENT_PADDING;
-        float maxHeight = bounds.Height - bounds.Y - reservedForButtons;
-
-        float aspect = (float)webTexture.Value.Width / webTexture.Value.Height;
-
-        float targetWidth = maxWidth;
-        float targetHeight = targetWidth / aspect;
-
-        if (targetHeight > maxHeight)
-        {
-            targetHeight = maxHeight;
-            targetWidth = targetHeight * aspect;
-        }
-
-        float drawX = bounds.X + (bounds.Width - targetWidth) / 2;
-        float drawY = bounds.Y - UIConstants.CONTENT_PADDING;
-
-        return new Rectangle(drawX, drawY, targetWidth, targetHeight);
-    }
-
     public void HandleInput(Rectangle bounds)
     {
         if (page == null || !webTexture.HasValue) return;
@@ -490,7 +470,7 @@ public class BrowserDialog : Dialog, IDisposable
                     .ContinueWith(t =>
                     {
                         if (t.Exception != null)
-                            Console.WriteLine("Mouse.ClickAsync failed: " + t.Exception);
+                            log.Warning(t.Exception, "Mouse.ClickAsync failed");
                     });
             }
 
@@ -501,7 +481,7 @@ public class BrowserDialog : Dialog, IDisposable
                     .ContinueWith(t =>
                     {
                         if (t.Exception != null)
-                            Console.WriteLine("Mouse.WheelAsync failed: " + t.Exception);
+                            log.Warning(t.Exception, "Mouse.WheelAsync failed: ");
                     });
             }
         }
@@ -523,7 +503,7 @@ public class BrowserDialog : Dialog, IDisposable
                     .ContinueWith(t =>
                     {
                         if (t.Exception != null)
-                            Console.WriteLine("Keyboard.PressAsync failed: " + t.Exception);
+                            log.Warning(t.Exception, "Exception in InitializeBrowserPage");
                     });
             }
         }
@@ -543,7 +523,7 @@ public class BrowserDialog : Dialog, IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Exception in CaptureScreenshotAsync: " + ex);
+            log.Critical(ex, "Exception in InitializeBrowserPage");
         }
         finally
         {

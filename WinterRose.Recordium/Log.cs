@@ -192,6 +192,11 @@ public class Log
         Write(CreateEntry(LogSeverity.Debug, message, fileName, lineNumber));
     }
 
+    public void Debug(Exception ex, string message = "", [CallerFilePath] string? fileName = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        Write(CreateEntry(LogSeverity.Debug, ex, message, fileName, lineNumber));
+    }
+
     public async Task DebugAsync(string message, [CallerFilePath] string? fileName = null,
         [CallerLineNumber] int lineNumber = 0)
     {
@@ -212,6 +217,11 @@ public class Log
     public void Warning(string message, [CallerFilePath] string? fileName = null, [CallerLineNumber] int lineNumber = 0)
     {
         Write(CreateEntry(LogSeverity.Warning, message, fileName, lineNumber));
+    }
+
+    public void Warning(Exception ex, string message = "", [CallerFilePath] string? fileName = null, [CallerLineNumber] int lineNumber = 0)
+    {
+        Write(CreateEntry(LogSeverity.Warning, ex, message, fileName, lineNumber));
     }
 
     public async Task WarningAsync(string message, [CallerFilePath] string? fileName = null,

@@ -127,11 +127,11 @@ public static class RichTextRenderer
 
                         Raylib.DrawTextureEx(texture, new Vector2(x, y), 0, scale, tintedSpriteColor);
 
-                        if (sprite.Clickable)
+                        if (sprite.Clickable && input != null)
                         {
                             var imageRect = new Rectangle((int)x, (int)y, (int)(texture.Width * scale), (int)(texture.Height * scale));
-                            // store a temporary "fake" url with null to reuse link processing; handle directly
-                            if (ray.CheckCollisionPointRec(input.MousePosition, imageRect) && ray.IsMouseButtonPressed(MouseButton.Left))
+                            
+                            if (ray.CheckCollisionPointRec(input.MousePosition, imageRect) && input.IsDown(MouseButton.Left))
                             {
                                 Toasts.Error("Sprite dialog is temporarily out of order");
                             }

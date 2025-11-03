@@ -83,7 +83,6 @@ public class RichText
 
     public static RichText operator +(RichText a, char b)
     {
-
         var combinedElements = new List<RichElement>(a.Elements) { new RichGlyph(b,  a.lastColorInSequence)};
         return new RichText(combinedElements) { Font = a.Font, Spacing = a.Spacing, FontSize = a.FontSize };
     }

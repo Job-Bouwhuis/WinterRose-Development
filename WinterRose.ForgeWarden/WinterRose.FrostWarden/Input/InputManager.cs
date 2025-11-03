@@ -14,6 +14,8 @@ public static class InputManager
     private static readonly Dictionary<InputContext, int> contextPriorities = new();
 
     internal static bool EnablePassThrough { get; private set; } = false;
+    static bool focusOwnedByOverlay;
+    static nint prevHWind;
 
     public static InputContext RegisterContext(InputContext context)
     {
@@ -156,15 +158,33 @@ public static class InputManager
 
         if (Application.Current.Window.ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
         {
-            if (!keyboardFocusGiven && !mouseFocusGiven && EnablePassThrough)
+            // Handle mouse pass-through state
+            if (!mouseFocusGiven && !EnablePassThrough)
             {
                 EnablePassthrough(Windows.MyHandle.Handle);
-                EnablePassThrough = false;
+                EnablePassThrough = true;
             }
-            else if ((keyboardFocusGiven || mouseFocusGiven) && !EnablePassThrough)
+            else if (mouseFocusGiven && EnablePassThrough)
             {
                 DisablePassthrough(Windows.MyHandle.Handle);
-                EnablePassThrough = true;
+                EnablePassThrough = false;
+            }
+
+            if (mouseFocusGiven && !focusOwnedByOverlay)
+            {
+                prevHWind = GetForegroundWindow();
+                Windows.MyHandle.Focus();
+                focusOwnedByOverlay = true;
+            }
+            else if (!mouseFocusGiven && focusOwnedByOverlay)
+            {
+                if (prevHWind != IntPtr.Zero && prevHWind != Windows.MyHandle.Handle)
+                {
+                    SetForegroundWindow(prevHWind);
+                    prevHWind = nint.Zero;
+                }
+
+                focusOwnedByOverlay = false;
             }
         }
     }
@@ -178,6 +198,13 @@ public static class InputManager
 
     [DllImport("user32.dll")]
     private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
 
     public static void EnablePassthrough(IntPtr hwnd)
     {

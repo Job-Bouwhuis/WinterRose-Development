@@ -48,6 +48,7 @@
 		<ProjectReference Include="..\..\ForgeMantle\ForgeMantle\WinterRose.ForgeMantle.csproj" />
 		<ProjectReference Include="..\..\StateKeeper\WinterRose.StateKeeper\WinterRose.StateKeeper.csproj" />
 		<ProjectReference Include="..\..\WinterRose.ForgeSignal\WinterRose.ForgeSignal\WinterRose.ForgeSignal.csproj" />
+		<ProjectReference Include="..\..\WinterRose.Recordium\WinterRose.Recordium.csproj" />
 		<ProjectReference Include="..\..\WinterRose\WinterRose\WinterRose.csproj" />
 	</ItemGroup>
 
