@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,7 +25,11 @@ public class SubSystemManager
             {
                 if (t == typeof(SubSystem))
                     continue;
+                log.Info($"Initializing subsystem '{t.Name}'");
+                var stopwatch = Stopwatch.StartNew();
                 var subsys = (SubSystem)ActivatorExtra.CreateInstance(t);
+                stopwatch.Stop();
+                log.Info($"Took {stopwatch.Elapsed.TotalMilliseconds}ms");
                 if(subsys is null)
                 {
                     log.Error($"Failed to start subsystem {t.Name}");

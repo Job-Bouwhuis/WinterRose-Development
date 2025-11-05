@@ -4,6 +4,7 @@ using WinterRose;
 using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.UserInterface;
+using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.Worlds;
 using WinterRoseUtilityApp.SubSystems;
@@ -40,6 +41,16 @@ internal class Program : Application
             foreach (var item in trayItems)
                 t.AddContent(item);
 
+            bool currentStartupState = StartupManager.IsStartupEnabled();
+            UICheckBox startup = new UICheckBox("Start when the PC does?", 
+                Invocation.Create((UIContainer c, UICheckBox b, bool newState) =>
+                {
+                    newState = !StartupManager.IsStartupEnabled();
+                    StartupManager.SetStartup(newState);
+                    b.Checked = newState;
+                }
+            ), currentStartupState);
+            t.AddContent(startup);
             t.AddButton("Close App", 
                 Invocation.Create<UIContainer, UIButton>((c, b) => Close()));
             Toasts.ShowToast(t);
