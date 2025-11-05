@@ -36,4 +36,12 @@ public interface IAssetHandler<T>
     /// <param name="asset">The asset to save.</param>
     /// <returns>True when successfully saved, false if not</returns>
     public static abstract bool SaveAsset(AssetHeader header, T asset);
+
+    /// <summary>
+    /// Saves the asset using the specified name.
+    /// </summary>
+    /// <param name="assetName">The name to use when saving the asset</param>
+    /// <param name="asset">The asset to save.</param>
+    /// <returns>True when successfully saved, false if not</returns>
+    public static abstract bool SaveAsset(string assetName, T asset);
 }

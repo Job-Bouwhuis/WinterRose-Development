@@ -33,7 +33,6 @@ public class UITextInput : UIContent
     }
     static readonly Dictionary<char, InlineHandler> INLINE_HANDLERS = new()
     {
-        // color token: \c[red] or \c[#FFAABB] etc.
         ['c'] = new InlineHandler
         {
             Render = (self, inner, ctx) =>
@@ -42,10 +41,9 @@ public class UITextInput : UIContent
                     ctx.color = parsed;
                 return ctx.color;
             },
-            Measure = (self, inner, fs) => 0f // color token consumes no width
+            Measure = (self, inner, fs) => 0f
         },
 
-        // sprite token: \s[key] -> draw sprite inline and advance ctx.x
         ['s'] = new InlineHandler
         {
             Render = (self, inner, ctx) =>
@@ -56,14 +54,11 @@ public class UITextInput : UIContent
                     if (sprite != null)
                     {
                         var texture = sprite.Texture;
-                        // keep same scale logic you used previously (sprite.BaseSize in relation to fontSize)
                         float spriteHeight = ctx.fontSize;
                         float scale = spriteHeight / texture.Height;
 
-                        // draw with current color tint
                         Raylib.DrawTextureEx(texture, new Vector2(ctx.x, ctx.y), 0, scale, ctx.color);
 
-                        // advance X by sprite width + spacing
                         ctx.x += texture.Width * scale + self.Style.TextBoxTextSpacing;
                     }
                 }
@@ -80,10 +75,8 @@ public class UITextInput : UIContent
                 return texture.Width * scale + self.Style.TextBoxTextSpacing;
             }
         }
-        // add more handlers by inserting new entries here keyed by the token char
     };
 
-    // --- state ---
     private string text = "";
     private int caretIndex = 0;
     private bool hasFocus = false;
@@ -96,7 +89,7 @@ public class UITextInput : UIContent
     /// if the text contains '\n' or when the user activates multiline via Shift+Enter
     /// (provided AllowMultiline is true).
     /// </summary>
-    public bool IsMultiline { get; private set; } = false;
+    public bool IsMultiline { get; set; } = false;
 
     /// <summary>
     /// When <see cref="IsMultiline"/> = <see langword="true"/> this many lines is the minimum amount of lines the box will render as even if the lines arent occupied by characters
@@ -111,7 +104,6 @@ public class UITextInput : UIContent
     /// </summary>
     public bool AllowMultiline { get; set; } = true;
 
-    // selection state (flat indices into `text`)
     private int selStart = 0; // inclusive
     private int selEnd = 0;   // exclusive
     private int selAnchor = 0; // where selection started
@@ -271,7 +263,7 @@ public class UITextInput : UIContent
             }
 
             // navigation & editing keys
-            if (Input.IsPressed(KeyboardKey.Backspace))
+            if (Input.IsPressed(KeyboardKey.Backspace, TimeSpan.FromSeconds(0.4), TimeSpan.FromSeconds(0.05)))
             {
                 if (HasSelection())
                 {
@@ -351,12 +343,10 @@ public class UITextInput : UIContent
             // Enter -> submit
             if (Input.IsPressed(KeyboardKey.Enter))
             {
-                // `shift` is computed earlier in Update()
-                bool shiftHeld = shift;
 
                 if (!IsMultiline)
                 {
-                    if (AllowMultiline && shiftHeld)
+                    if (AllowMultiline && shift)
                     {
                         // Activate multiline and insert newline
                         text = text.Insert(caretIndex, "\n");
@@ -377,7 +367,7 @@ public class UITextInput : UIContent
                     // Currently multiline:
                     // - plain Enter inserts newline
                     // - Shift+Enter submits
-                    if (shiftHeld)
+                    if (shift)
                     {
                         OnSubmit?.Invoke(this, text);
                     }
@@ -963,6 +953,11 @@ public class UITextInput : UIContent
 
     private void UpdateMultilineState()
     {
+        if(MinLines > 1)
+        {
+            IsMultiline = true;
+            return;
+        }
         if (!AllowMultiline)
         {
             IsMultiline = false;

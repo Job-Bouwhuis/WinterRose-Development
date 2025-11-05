@@ -176,6 +176,7 @@ public abstract class ToastRegionManager
                     Toast? continuationToast = toast.GetContinueWithToast();
                     if (continuationToast != null)
                         EnqueueToast(continuationToast);
+                    RecalculatePositions();
                 }
                 continue;
             }
@@ -198,7 +199,7 @@ public abstract class ToastRegionManager
         activeToasts.Remove(toast);
         RecalculatePositions();
         toast.ToastManager = null;
-    }
+    } 
 
     internal void EnqueueToast(Toast toast)
     {

@@ -181,6 +181,8 @@ public class Toast : UIContainer
 
         return continueWithOptions[index];
     }
+
+    public void Show() => Toasts.ShowToast(this);
 }
 
 

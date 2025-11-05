@@ -30,6 +30,7 @@ public class UIColumns : UIContent
 
     // columns content storage
     public List<List<UIContent>> ColumnsContents { get; } = new();
+    private readonly List<ColumnState> columnStates = new();
 
     // per-column runtime state
     private class ColumnState
@@ -44,7 +45,7 @@ public class UIColumns : UIContent
         public float LastTotalContentHeight = 0f;
     }
 
-    private readonly List<ColumnState> columnStates = new();
+    
 
     public UIColumns()
     {
@@ -55,6 +56,15 @@ public class UIColumns : UIContent
     {
         base.Setup();
         EnsureColumns(ColumnCount);
+
+        foreach (var row in ColumnsContents)
+        {
+            foreach (UIContent c in row)
+            {
+                c.owner = owner;
+                c.Setup();
+            }
+        }
     }
 
     private void EnsureColumns(int count)
@@ -367,6 +377,13 @@ public class UIColumns : UIContent
         // Ensure we always have at least one column
         if (ColumnCount == 0)
             EnsureColumns(DEFAULT_COLUMN_COUNT);
+    }
+
+    public void Clear()
+    {
+        ColumnsContents.Clear();
+        columnStates.Clear();
+        EnsureColumns(DEFAULT_COLUMN_COUNT);
     }
 }
 

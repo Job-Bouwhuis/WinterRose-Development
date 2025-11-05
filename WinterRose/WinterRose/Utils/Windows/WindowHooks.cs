@@ -199,9 +199,7 @@ namespace WinterRose
         {
             IntPtr hWnd = GetForegroundWindow();
             if (hWnd == IntPtr.Zero)
-            {
                 throw new Exception("Failed to get window handle.");
-            }
 
             _customWndProc = CustomWndProc;
             _oldWndProc = GetWindowLongPtr(hWnd, GWL_WNDPROC);

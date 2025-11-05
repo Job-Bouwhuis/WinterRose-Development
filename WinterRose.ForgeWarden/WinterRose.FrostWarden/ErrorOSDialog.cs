@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace WinterRose.ForgeWarden;
 
-public static class ErrorDialog
+public static class ErrorOSDialog
 {
     public static void Show(string message, string title = "Error")
     {

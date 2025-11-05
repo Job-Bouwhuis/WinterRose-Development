@@ -265,7 +265,7 @@ public class UIDropdown<T> : UIContent
         }
 
         Color drawColor = nothingSelectedForDisplay
-            ? new Color(160, 160, 160, (int)(255 * Style.ContentAlpha))
+            ? new Color(160, 160, 160).WithAlpha(Style.ContentAlpha)
             : Style.TextBoxText;
 
         Raylib.DrawTextEx(font, selText ?? "", textPos, fontSize, spacing, drawColor);
@@ -417,4 +417,6 @@ public class UIDropdown<T> : UIContent
     {
         CloseDropdown();
     }
+
+    public void AddOption(T option) => items.Add(option);
 }

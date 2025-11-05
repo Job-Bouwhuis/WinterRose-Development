@@ -69,7 +69,7 @@ internal class Program : Application
 
     }
 
-    public override World CreateWorld()
+    public override World CreateFirstWorld()
     {
         //icon = new(Window.Handle, 0, "test", "AppLogo.ico");
         //icon.ShowInTray();

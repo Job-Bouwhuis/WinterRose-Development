@@ -69,8 +69,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinterRose.ForgeGuard", "Wi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForgeGuardTests", "ForgeGuardTests\ForgeGuardTests.csproj", "{30C87F4A-904C-492A-9730-C8853F59F58B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NewFolder1", "NewFolder1", "{A238E221-92C0-4874-B192-77BE4D9071CD}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WinterRose.ForgeWarden", "WinterRose.ForgeWarden", "{01B91BF3-F7F4-4776-8F1A-C6C4FB2E4B5F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WinterRose.Diff", "WinterRose.Diff", "{C32B1E62-EA26-42DF-BC5A-78D7A4C016F7}"

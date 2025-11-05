@@ -50,6 +50,7 @@ internal static class ToastToDialogMorpher
         toast.IsMorphDrawing = true;
         dialog.DrawContentOnly = true;
         Dialogs.AddImmediately(dialog);
+        //dialog.NoAutoMove = true;
         dialog.Style.ContentAlpha = 0;
         dialog.CurrentAnim = new()
         {
@@ -137,6 +138,7 @@ internal static class ToastToDialogMorpher
             {
                 ctx.Dialog.DrawContentOnly = false;
                 activeMorphs.RemoveAt(i);
+                ctx.Dialog.TargetPosition = ctx.Dialog.CurrentPosition.Position;
             }
         }
     }

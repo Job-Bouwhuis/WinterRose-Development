@@ -67,6 +67,15 @@ public class UIRows : UIContent
     {
         base.Setup();
         EnsureRows(RowCount);
+
+        foreach(var row in RowsContents)
+        {
+            foreach(UIContent c in row)
+            {
+                c.owner = owner;
+                c.Setup();
+            }
+        }
     }
 
     private void EnsureRows(int count)

@@ -14,10 +14,18 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 {
     public static class Assets
     {
-        private record HandlerEntry(MethodInfo SaveMethod, MethodInfo LoadMethod, MethodInfo InitializeNewAssetMethod, string[] interestedExtensions);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="SaveMethodH">saves based on header</param>
+        /// <param name="SaveMethodS">saves based on asset name</param>
+        /// <param name="LoadMethod"></param>
+        /// <param name="InitializeNewAssetMethod"></param>
+        /// <param name="interestedExtensions"></param>
+        private record HandlerEntry(MethodInfo SaveMethodH, MethodInfo SaveMethodS, MethodInfo LoadMethod, MethodInfo InitializeNewAssetMethod, string[] interestedExtensions);
         private static Log log = new Log("Assets");
         private static Dictionary<string, AssetHeader> assetHeaders = [];
-        private static Dictionary<Type, HandlerEntry> handerTypeMap = []; 
+        private static Dictionary<Type, HandlerEntry> handerTypeMap = [];
         private const string ASSET_HEADER_EXTENSION = ".fwah";
         private const string ASSET_EXTENSION = ".fwasset";
         private const string ASSET_ROOT = "Assets/";
@@ -31,14 +39,22 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             foreach (Type type in types)
             {
                 Type[] interfaces = type.GetInterfaces();
-                foreach(Type interf in interfaces.Where(i => i.Name.Contains("IAssetHandler")))
+                foreach (Type interf in interfaces.Where(i => i.Name.Contains("IAssetHandler")))
                 {
                     Type assetType = interf.GetGenericArguments()[0];
-                    MethodInfo? saveMethod = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                    MethodInfo? saveMethodH = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
                         .FirstOrDefault(m =>
                             m.Name == "SaveAsset" &&
                             m.GetParameters().Length == 2 &&
                             m.GetParameters()[0].ParameterType == typeof(AssetHeader) &&
+                            m.GetParameters()[1].ParameterType == assetType &&
+                            m.ReturnType == typeof(bool));
+
+                    MethodInfo? saveMethodS = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
+                        .FirstOrDefault(m =>
+                            m.Name == "SaveAsset" &&
+                            m.GetParameters().Length == 2 &&
+                            m.GetParameters()[0].ParameterType == typeof(string) &&
                             m.GetParameters()[1].ParameterType == assetType &&
                             m.ReturnType == typeof(bool));
 
@@ -56,16 +72,21 @@ namespace WinterRose.ForgeWarden.AssetPipeline
                             m.GetParameters()[0].ParameterType == typeof(AssetHeader) &&
                             m.ReturnType == typeof(bool));
 
-                    if (saveMethod == null || loadMethod == null)
+                    if (saveMethodH == null 
+                        || loadMethod == null 
+                        || saveMethodS == null 
+                        || initializeNewAssetMethod == null)
                         throw new InvalidOperationException($"Asset handler {type.FullName} does not have required methods.");
+
                     var rh = new ReflectionHelper(type);
                     var mem = rh.GetMember("InterestedInExtensions");
-                    var ie = (string[])mem.GetValue();
+                    var interestedExtensions = (string[])mem.GetValue();
                     handerTypeMap[assetType] = new HandlerEntry(
-                        saveMethod,
+                        saveMethodH,
+                        saveMethodS,
                         loadMethod,
                         initializeNewAssetMethod,
-                        ie
+                        interestedExtensions
                         );
                 }
             }
@@ -82,7 +103,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             {
                 // Deserialize the asset header from the file
                 AssetHeader header = WinterForge.DeserializeFromFile<AssetHeader>(file.FullName);
-                if (header != null)
+                if (header.IsValid)
                 {
                     assetHeaders.Add(header.Name, header);
                 }
@@ -113,7 +134,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
                     var kvp = handerTypeMap
                         .FirstOrDefault(
                         handler => handler.Value.interestedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase));
-                    if(kvp.Value is not null)
+                    if (kvp.Value is not null)
                         kvp.Value.InitializeNewAssetMethod.Invoke(null, [header]);
                     string headerPath = ASSET_ROOT + header.Name + ASSET_HEADER_EXTENSION;
                     WinterForge.SerializeToFile(header, headerPath);
@@ -130,7 +151,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
         /// </summary>
         internal static void FinalizeHeaders()
         {
-            foreach(AssetHeader header in assetHeaders.Values)
+            foreach (AssetHeader header in assetHeaders.Values)
             {
                 // Serialize the header to a file
                 string headerPath = ASSET_ROOT + header.Name + ASSET_HEADER_EXTENSION;
@@ -144,20 +165,31 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             return new AssetHeader(name, path, [], new Anonymous());
         }
 
-        public static void CreateAsset<T>(T asset, string name)
+        public static AssetHeader CreateAsset<T>(T asset, string name)
         {
             AssetHeader assetHeader = CreateHeader(name, null);
             assetHeaders.Add(assetHeader.Name, assetHeader);
 
             string assetPath = ASSET_ROOT + name + ASSET_EXTENSION;
-            
-            File.Create(assetPath).Close(); 
+
+            File.Create(assetPath).Close();
+
+            Assets.GetHandler<T>().SaveMethodH.Invoke(null, [assetHeader, asset]);
+            return assetHeader;
+        }
+
+        private static HandlerEntry GetHandler<T>()
+        {
+            if (handerTypeMap.TryGetValue(typeof(T), out HandlerEntry handler))
+                return handler;
+
+            throw new AssetException($"Handler for type {typeof(T).FullName} not found");
         }
 
         public static AssetHeader GetHeader(string name)
         {
-            assetHeaders.TryGetValue(name, out AssetHeader? header);
-            if (header is null)
+            assetHeaders.TryGetValue(name, out AssetHeader header);
+            if (!header.IsValid)
                 throw new AssetNotFoundException(name);
             return header;
         }
@@ -184,11 +216,23 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             }
 
             if (assetResult is null)
-                return null; 
+                return null;
 
             return Unsafe.As<T>(assetResult);
         }
 
         public static T Load<T>(string name) where T : class => Load<T>(GetHeader(name));
+        public static void Save<T>(string name, T accounts)
+        {
+            if(!Exists(name))
+            {
+                CreateAsset(accounts, name);
+            }
+            else
+            {
+                var handler = GetHandler<T>();
+                handler.SaveMethodS.Invoke(null, [name, accounts]);
+            }
+        }
     }
 }

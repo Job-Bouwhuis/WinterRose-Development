@@ -34,6 +34,7 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
         public static DialogShowState Show(Dialog dialog)
         {
             Rectangle newBounds = GetDialogBounds(dialog.Placement);
+            dialog.TargetPosition = newBounds.Position;
             bool placementConflict = activeDialogs.Any(d => ray.CheckCollisionRecs(GetDialogBounds(d.Placement), newBounds));
 
             if (activeDialogs.Contains(dialog))
@@ -401,6 +402,7 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
         internal static void AddImmediately(Dialog dialog)
         {
             activeDialogs.Add(dialog);
+            dialog.TargetPosition = GetDialogBounds(dialog.Placement).Position;
         }
     }
 }

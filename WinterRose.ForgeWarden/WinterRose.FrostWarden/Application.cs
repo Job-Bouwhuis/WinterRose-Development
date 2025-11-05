@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Editor;
@@ -34,9 +35,17 @@ public abstract class Application
 
     Log log;
 
+    /// <summary>
+    /// Called when the game is about to close either gracefully or by unhandled exception
+    /// </summary>
+    public MulticastVoidInvocation GameClosing { get; } = new();
+
     public bool ShowFPS { get; set; }
     public Window Window { get; private set; }
-    public static bool GameClosing { get; private set; }
+    /// <summary>
+    /// True when the engine is in the process of finishing up and close
+    /// </summary>
+    public bool GameIsClosing { get; private set; }
 
     private Color clearColor = Color.LightGray;
 
@@ -60,7 +69,6 @@ public abstract class Application
 
     private readonly bool useBrowser;
     private readonly bool gracefulErrorHandling;
-    private Exception? capturedException = null;
     internal bool AllowThrow = false;
 
     private InputContext EngineLevelInput = new(new RaylibInputProvider(), int.MaxValue)
@@ -74,6 +82,16 @@ public abstract class Application
         LogDestinations.AddDestination(new ConsoleDestination());
         LogDestinations.AddDestination(new FileDestination("logs"));
         RaylibLog.Setup();
+
+        AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+        {
+            Current!.GameClosing.Invoke();
+        };
+
+        AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+        {
+            Current!.GameClosing.Invoke();
+        };
     }
 
     public Application(bool UseBrowser = true, bool GracefulErrorHandling =
@@ -91,7 +109,11 @@ public abstract class Application
         log = new Log("Engine");
     }
 
-    public abstract World CreateWorld();
+    /// <summary>
+    /// The world that the engine will start up with, 
+    /// </summary>
+    /// <returns></returns>
+    public abstract World CreateFirstWorld();
 
     public void Run(string title, int width, int height, ConfigFlags flags = ConfigFlags.ResizableWindow)
     {
@@ -138,12 +160,12 @@ public abstract class Application
             ClearBackground(ClearColor);
             EndDrawing();
 
-            Universe.CurrentWorld = CreateWorld();
+            Universe.CurrentWorld = CreateFirstWorld();
             Camera? camera = Universe.CurrentWorld.GetAll<Camera>().FirstOrDefault();
             Camera.main = camera;
             RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
 
-            while (!Window.ShouldClose() && !GameClosing)
+            while (!Window.ShouldClose() && !GameIsClosing)
             {
                 InputManager.Update();
                 Time.Update();
@@ -162,7 +184,6 @@ public abstract class Application
                     }
                     catch (Exception ex)
                     {
-                        capturedException = ex;
                         HandleException(worldTex, ex, ExceptionDispatchInfo.Capture(ex));
                         break;
                     }
@@ -175,6 +196,7 @@ public abstract class Application
 
             log.Info("Releasing all resources");
 
+            Closing();
             SpriteCache.DisposeAll();
 
             log.Info("All resources released, Closing window");
@@ -260,6 +282,7 @@ public abstract class Application
 
     public virtual void Update() { }
     public virtual void Draw() { }
+    public virtual void Closing() { }
 
     private Task SetupEmbeddedBrowser()
     {
@@ -281,6 +304,9 @@ public abstract class Application
     {
         try
         {
+            log.Critical(ex, "Unhandled exception during execution of main engine loop");
+
+
             ray.EndDrawing();
             Dialogs.CloseAll(true);
             Dialogs.Show(new ExceptionDialog(ex, info));
@@ -341,9 +367,9 @@ public abstract class Application
 
     }
 
-    public static void Close()
+    public void Close()
     {
-        GameClosing = true;
+        GameIsClosing = true;
     }
 
     /// <summary>
@@ -355,11 +381,11 @@ public abstract class Application
     /// and <see cref="UIWindow"/>
     /// </summary>
     [SupportedOSPlatform("windows")]
-    protected void RunAsOverlay()
+    protected void RunAsOverlay(string title = "Overlay")
     {
         var monitorsize = Windows.GetScreenSize();
 
-        Run("ForgeWarden Tests", monitorsize.X, monitorsize.Y,
+        Run(title, monitorsize.X, monitorsize.Y,
             ConfigFlags.TransparentWindow | 
             ConfigFlags.UndecoratedWindow | 
             ConfigFlags.BorderlessWindowMode | 

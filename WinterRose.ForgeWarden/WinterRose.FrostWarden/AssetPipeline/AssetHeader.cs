@@ -7,16 +7,17 @@ using WinterRose.AnonymousTypes;
 
 namespace WinterRose.ForgeWarden.AssetPipeline
 {
-    public sealed class AssetHeader : IEquatable<AssetHeader>
+    public struct AssetHeader : IEquatable<AssetHeader>
     {
-        [WFInclude]
         public string Name { get; internal set; }
-        [WFInclude]
         public string Path { get; internal set; }
-        [WFInclude]
         public List<string> Tag { get; internal set; }
-        [WFInclude]
         public Anonymous? Metadata { get; internal set; } = null;
+
+        public bool IsValid => 
+            !string.IsNullOrWhiteSpace(Name) 
+            && !string.IsNullOrWhiteSpace(Path)
+            && Tag != null;
 
         public AssetHeader(string name, string path)
         {
@@ -25,7 +26,10 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             Tag = [];
         }
 
-        private AssetHeader() { } // For serialization purposes
+        /// <summary>
+        /// Exists for serialization. use the other constructors
+        /// </summary>
+        public AssetHeader() { }
 
         public AssetHeader(string name, string path, List<string> tag, Anonymous? metadata = null)
         {
@@ -37,7 +41,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 
         public override bool Equals(object? obj)
         {
-            return Equals(obj as AssetHeader);
+            return Equals((AssetHeader)obj);
         }
 
         public bool Equals(AssetHeader? other)
@@ -45,9 +49,9 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             if (other == null)
                 return false;
 
-            return string.Equals(Name, other.Name, StringComparison.Ordinal)
-                && string.Equals(Path, other.Path, StringComparison.OrdinalIgnoreCase)
-                && Tag.SequenceEqual(other.Tag);
+            return string.Equals(Name, other.Value.Name, StringComparison.Ordinal)
+                && string.Equals(Path, other.Value.Path, StringComparison.OrdinalIgnoreCase)
+                && Tag.SequenceEqual(other.Value.Tag);
         }
 
         public override int GetHashCode()
@@ -63,12 +67,21 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             return hash;
         }
 
+        /// <summary>
+        /// Loads this header through the asset pipeline.
+        /// </summary>
+        /// <remarks>Do not call this within <see cref="IAssetHandler{T}.LoadAsset(AssetHeader)"/></remarks>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public T? LoadAs<T>() where T : class
         {
             if (string.IsNullOrEmpty(Path))
                 throw new InvalidOperationException("Asset path is not set.");
             return Assets.Load<T>(this);
         }
+
+        public bool Equals(AssetHeader other) => throw new NotImplementedException();
     }
 
 }

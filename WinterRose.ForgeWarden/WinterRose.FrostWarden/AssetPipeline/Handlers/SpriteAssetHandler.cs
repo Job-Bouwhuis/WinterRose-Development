@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.AnonymousTypes;
+using WinterRose.ForgeWarden.AssetPipeline;
 
 namespace WinterRose.ForgeWarden.AssetPipeline.Handlers
 {
@@ -53,6 +54,8 @@ namespace WinterRose.ForgeWarden.AssetPipeline.Handlers
         }
 
         public static bool SaveAsset(AssetHeader header, SpriteGif asset) => SaveAsset(header, asset);
+        public static bool SaveAsset(string assetName, Sprite asset) => SaveAsset(Assets.GetHeader(assetName), asset);
+        public static bool SaveAsset(string assetName, SpriteGif asset) => SaveAsset(Assets.GetHeader(assetName), asset);
         static SpriteGif IAssetHandler<SpriteGif>.LoadAsset(AssetHeader header) => LoadAsset(header) as SpriteGif 
             ?? throw new Exception("Given sprite was not a gif");
     }

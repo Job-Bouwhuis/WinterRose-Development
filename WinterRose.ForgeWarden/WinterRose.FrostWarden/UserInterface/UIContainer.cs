@@ -15,6 +15,18 @@ namespace WinterRose.ForgeWarden.UserInterface;
 
 public abstract class UIContainer
 {
+    private const string LMBHOTKEY = "UICONTAINER_LEFT_MOUSE_BUTTON";
+    private const string RMBHOTKEY = "UICONTAINER_RIGHT_MOUSE_BUTTON";
+    private const string MMBHOTKEY = "UICONTAINER_MIDDLE_MOUSE_BUTTON";
+    static UIContainer()
+    {
+        GlobalHotkey.RegisterHotkey(LMBHOTKEY, true, 0x01);
+        GlobalHotkey.RegisterHotkey(RMBHOTKEY, true, 0x02);
+        GlobalHotkey.RegisterHotkey(MMBHOTKEY, true, 0x04);
+    }
+
+    private static readonly InputBinding LEFT_MOUSE_BINDING = new InputBinding(InputDeviceType.Mouse, 0);
+
     // --- Input ---
     public abstract InputContext Input { get; }
 
@@ -519,8 +531,12 @@ public abstract class UIContainer
             else
             {
                 foreach (var button in Enum.GetValues<MouseButton>())
-                    if (Input.IsPressed(button))
+                    if (GlobalHotkey.IsTriggered(LMBHOTKEY)
+                        || GlobalHotkey.IsTriggered(RMBHOTKEY)
+                        || GlobalHotkey.IsTriggered(MMBHOTKEY))
+                    {
                         content.OnClickedOutsideOfContent(button);
+                    }
 
                 if (content.IsHovered)
                     content.OnHoverEnd();

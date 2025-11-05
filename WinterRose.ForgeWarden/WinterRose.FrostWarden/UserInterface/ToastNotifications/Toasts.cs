@@ -129,7 +129,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Neutral(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Neutral, region, side).AddText(message));
+        return ShowToast(new Toast(ToastType.Neutral, region, side).AddText(message, UIFontSizePreset.Title));
     }
 
     /// <summary>
@@ -141,7 +141,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Success(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Success, region, side).AddText(message));
+        return ShowToast(new Toast(ToastType.Success, region, side).AddText(message, UIFontSizePreset.Title));
     }
 
     /// <summary>
@@ -153,7 +153,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Info(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Info, region, side).AddText(message));
+        return ShowToast(new Toast(ToastType.Info, region, side).AddText(message, UIFontSizePreset.Title));
     }
 
     /// <summary>
@@ -165,7 +165,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Warning(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Warning, region, side).AddText(message));
+        return ShowToast(new Toast(ToastType.Warning, region, side).AddText(message, UIFontSizePreset.Title));
     }
 
     /// <summary>
@@ -177,7 +177,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Error(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Error, region, side).AddText(message));
+        return ShowToast(new Toast(ToastType.Error, region, side).AddText(message, UIFontSizePreset.Title));
     }
 
     /// <summary>
@@ -189,7 +189,7 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Fatal(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Fatal, region, side).AddText(message));
+        return ShowToast(new Toast(ToastType.Fatal, region, side).AddText(message, UIFontSizePreset.Title));
     }
 
     /// <summary>
@@ -201,6 +201,6 @@ public static class Toasts
     /// <returns>The created Toast instance.</returns>
     public static Toast Highlight(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
     {
-        return ShowToast(new Toast(ToastType.Highlight, region, side).AddText(message));
+        return ShowToast(new Toast(ToastType.Highlight, region, side).AddText(message, UIFontSizePreset.Title));
     }
 }

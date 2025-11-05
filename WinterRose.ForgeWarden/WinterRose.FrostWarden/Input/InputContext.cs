@@ -5,11 +5,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Recordium;
 
 namespace WinterRose.ForgeWarden.Input;
 
 public class InputContext
 {
+    static Log log = new Log("InputContext");
+
     public int Priority { get; set; }
 
     public bool HasAnyFocus => HasKeyboardFocus || HasMouseFocus;
@@ -59,8 +62,9 @@ public class InputContext
     public IInputProvider Provider { get; }
     public float ScrollDelta => Provider.ScrollDelta;
 
-    private readonly Dictionary<InputBinding, double> heldStartTimes = [];
-    private readonly Dictionary<InputBinding, (int, double)> pressCounts = [];
+    private readonly Dictionary<int, double> heldStartTimes = [];
+    private readonly Dictionary<int, (int, double)> pressCounts = [];
+    private readonly Dictionary<int, double> nextRepeatTime = new();
 
     public InputContext(IInputProvider provider, int priority) : this(provider, priority, true) { }
     public InputContext(IInputProvider provider, int priority, bool autoRegister)
@@ -72,9 +76,12 @@ public class InputContext
             InputManager.RegisterContext(this);
     }
 
+    public void SetKeyboardFocus(bool focus) => HasKeyboardFocus = focus;
+    public void SetMouseFocus(bool focus) => HasMouseFocus = focus;
 
     /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)"/>
-    public bool IsPressed(string controlName)
+    /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)"/>
+    public bool IsPressed(string controlName, TimeSpan? repeatAfter = null, TimeSpan? repeatTimeout = null)
     {
         if (!IsActive)
             return false;
@@ -82,8 +89,18 @@ public class InputContext
         if (!Controls.TryGetValue(controlName, out var control))
             throw new InvalidInputException(controlName);
 
-        return control.IsPressed(Provider, out var binding) && HasRightFocus(binding); // Named controls assumed keyboard/gamepad
+        foreach (var binding in control.Bindings)
+        {
+            if (!HasRightFocus(binding))
+                continue;
+
+            if (IsPressed(binding, repeatAfter, repeatTimeout))
+                return true;
+        }
+
+        return false;
     }
+
     /// <inheritdoc cref="IInputProvider.IsDown(InputBinding)"/>
     public bool IsDown(string controlName)
     {
@@ -109,6 +126,10 @@ public class InputContext
     /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)"/>
     public bool IsPressed(KeyboardKey key)
         => IsPressed(new InputBinding(InputDeviceType.Keyboard, (int)key));
+    /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)"/>
+    public bool IsPressed(KeyboardKey key, TimeSpan? repeatAfter = null, TimeSpan? repeatTimeout = null)
+    => IsPressed(new InputBinding(InputDeviceType.Keyboard, (int)key), repeatAfter, repeatTimeout);
+
     /// <inheritdoc cref="IInputProvider.IsDown(InputBinding)"/>
     public bool IsDown(KeyboardKey key)
         => IsDown(new InputBinding(InputDeviceType.Keyboard, (int)key));
@@ -172,18 +193,18 @@ public class InputContext
 
                 if (IsPressed(binding))
                 {
-                    if (!pressCounts.TryGetValue(binding, out var state))
+                    if (!pressCounts.TryGetValue(binding.Code, out var state))
                         state = (0, 0);
 
                     int count = state.Item1 + 1;
                     double lastTime = state.Item2;
 
-                    pressCounts[binding] = (count, now);
+                    pressCounts[binding.Code] = (count, now);
 
                     if (count >= times && now - lastTime <= interval.TotalSeconds)
                     {
                         // Reset counter after success
-                        pressCounts[binding] = (0, now);
+                        pressCounts[binding.Code] = (0, now);
                         return true;
                     }
                 }
@@ -204,29 +225,70 @@ public class InputContext
 
         if (IsDown(binding))
         {
-            if (!heldStartTimes.ContainsKey(binding))
-                heldStartTimes[binding] = now;
+            if (!heldStartTimes.TryGetValue(binding.Code, out double value))
+            {
+                value = now;
+                heldStartTimes[binding.Code] = value;
+            }
 
-            double heldTime = now - heldStartTimes[binding];
+            double heldTime = now - value;
             return heldTime >= duration.TotalSeconds;
         }
         else
         {
-            heldStartTimes.Remove(binding);
+            heldStartTimes.Remove(binding.Code);
         }
 
         return false;
     }
-
-    private bool IsPressed(InputBinding binding)
+    /// <summary>
+    /// Was this input held down for the given duration
+    /// </summary>
+    /// <param name="binding"></param>
+    /// <param name="duration"></param>
+    /// <returns></returns>
+    public bool HeldFor(NamedControl binding, TimeSpan duration)
     {
-        if (!IsActive)
+        bool any = false;
+        foreach(InputBinding b in binding.Bindings)
+            if (HeldFor(b, duration))
+                any = true;
+
+        return any;
+    }
+
+
+    private bool IsPressed(InputBinding binding, TimeSpan? repeatAfter = null, TimeSpan? repeatTimeout = null)
+    {
+        if (!IsActive || !HasRightFocus(binding))
             return false;
 
-        if (!HasRightFocus(binding))
-            return false;
+        double now = Raylib.GetTime();
 
-        return Provider.IsPressed(binding);
+        if (Provider.IsPressed(binding))
+        {
+            if (repeatAfter.HasValue)
+                nextRepeatTime[binding.Code] = now + repeatAfter.Value.TotalSeconds;
+            return true;
+        }
+
+        if (repeatAfter.HasValue)
+        {
+            if (HeldFor(binding, repeatAfter.Value))
+            {
+                if (!nextRepeatTime.TryGetValue(binding.Code, out double nextTime))
+                    nextTime = now;
+
+                if (now >= nextTime)
+                {
+                    double interval = repeatTimeout?.TotalSeconds ?? repeatAfter.Value.TotalSeconds;
+                    nextRepeatTime[binding.Code] = now + interval;
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
     private bool IsDown(InputBinding binding)
     {
@@ -259,7 +321,7 @@ public class InputContext
             _ => false
         };
 
-    internal void Update()
+    public void Update()
     {
         Provider.Update();
     }
