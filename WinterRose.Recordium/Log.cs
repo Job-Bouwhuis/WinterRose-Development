@@ -24,7 +24,6 @@ public class Log
     /// <param name="destinations">Extends on the destinations provided at <see cref="LogDestinations"/></param>
     public Log(string category, params List<ILogDestination> destinations)
     {
-        Console.WriteLine("registering log category: " + category);
         Category = category;
         Destinations = LogDestinations.GetAllDestinations(destinations);
 

@@ -69,6 +69,7 @@ internal struct NoteManager : IAssetHandler<List<Note>>
     }
     #endregion
 
+    private static AssetHeader header;
     private static readonly object SYNC_OBJECT = new();
     private static List<Note> notes = [];
 
@@ -83,8 +84,6 @@ internal struct NoteManager : IAssetHandler<List<Note>>
                 log.Warning("Last ditch save attempt!");
             }));
     }
-
-    private AssetHeader header;
 
     public NoteManager()
     {
@@ -112,28 +111,42 @@ internal struct NoteManager : IAssetHandler<List<Note>>
         }
     }
 
+    public static MulticastVoidInvocation OnNotesChanged { get; } = new();
+
     public void Add(Note note)
     {
         lock (SYNC_OBJECT)
+        {
             notes.Add(note);
+            Save();
+            OnNotesChanged.Invoke();
+        }
     }
 
     public bool Remove(Note note)
     {
         lock (SYNC_OBJECT)
-            return notes.Remove(note);
+        {
+            var res = notes.Remove(note);
+            Save();
+            OnNotesChanged.Invoke();
+            return res;
+        }
+
     }
 
     public void Save()
     {
         lock (SYNC_OBJECT)
             SaveAsset(header, notes);
+        OnNotesChanged.Invoke();
     }
 
     public void Reload()
     {
         lock (SYNC_OBJECT)
             LoadAsset(header);
+        OnNotesChanged.Invoke(this);
     }
 
     public List<(Note item, float score)> Search(

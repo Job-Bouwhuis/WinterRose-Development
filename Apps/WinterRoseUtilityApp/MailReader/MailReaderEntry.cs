@@ -32,8 +32,6 @@ internal class MailReaderEntry : SubSystem
 
     private void SetupReader(Task task)
     {
-        
-
         var accounts = EmailAuthManager.GetSavedAccounts();
         foreach (var account in accounts)
         {

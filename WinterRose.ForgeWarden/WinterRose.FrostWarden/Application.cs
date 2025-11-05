@@ -76,6 +76,7 @@ public abstract class Application
         HasKeyboardFocus = true,
         HasMouseFocus = true
     };
+    private List<Action> debugDraws = [];
 
     static Application()
     {
@@ -274,6 +275,14 @@ public abstract class Application
         Toasts.Draw();
         Draw();
 
+        for (int i = 0; i < debugDraws.Count; i++)
+        {
+            Action? dd = debugDraws[i];
+            dd();
+        }
+
+        debugDraws.Clear();
+
         if (ShowFPS)
             ray.DrawFPS(10, 10);
         ray.EndBlendMode();
@@ -393,4 +402,6 @@ public abstract class Application
             ConfigFlags.AlwaysRunWindow
             );
     }
+
+    internal void AddDebugDraw(Action value) => debugDraws.Add(value);
 }

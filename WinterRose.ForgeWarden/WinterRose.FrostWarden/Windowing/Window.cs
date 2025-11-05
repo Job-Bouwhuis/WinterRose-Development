@@ -75,6 +75,15 @@ namespace WinterRose.ForgeWarden.Windowing
                 // Inspect the pixel format alpha bits so we know what the driver provided:
                 int alphaBits = GetBackbufferAlphaBits(Handle);
                 log.Debug($"Alpha bits in PFD: {alphaBits}");
+
+                unsafe
+                {
+                    var ctx = (nint)Raylib.GetWindowHandle();
+                    var hdc = GetDC(ctx);
+                    var pfd = new PIXELFORMATDESCRIPTOR();
+                    DescribePixelFormat(hdc, GetPixelFormat(hdc), (uint)Marshal.SizeOf(pfd), ref pfd);
+                    log.Debug($"PFD flags: {pfd.dwFlags}, alpha bits: {pfd.cAlphaBits}");
+                }
             }
         }
 

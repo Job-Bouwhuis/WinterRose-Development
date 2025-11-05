@@ -182,7 +182,32 @@ public abstract class UIContainer
     {
         // if style doesn't allow dragging/resizing, skip (adjust as needed)
         if (!Style.AllowUserResizing)
+        {
+            if (Style.MaxAutoScaleHeight <= 0)
+                return;
+
+            float contentHeight = 0;
+
+            // measure content heights at the current width
+            foreach (var content in Contents)
+            {
+                float h = content.GetHeight(CurrentPosition.Width);
+                contentHeight += h + UIConstants.CONTENT_PADDING;
+            }
+
+            // clamp to min/max height
+            float targetHeight = Math.Clamp(contentHeight, MIN_HEIGHT, Style.MaxAutoScaleHeight);
+
+            // only adjust height if it’s significantly different
+            if (Math.Abs(CurrentPosition.Height - targetHeight) > 0.01f)
+            {
+                TargetSize = new Vector2(
+                    CurrentPosition.Width,
+                    targetHeight);
+            }
+
             return;
+        }
 
         var mouse = Input.Provider.MousePosition;
 
@@ -506,8 +531,9 @@ public abstract class UIContainer
         if (IsScrollbarVisible)
             contentWidth = Math.Max(0f, availableContentWidthCandidate - (ScrollbarCurrentWidth + UIConstants.CONTENT_PADDING));
 
-        foreach (var content in Contents)
+        for (int i = 0; i < Contents.Count; i++)
         {
+            UIContent? content = Contents[i];
             float contentHeight = content.GetHeight(contentWidth);
             Rectangle contentBounds = new Rectangle(
                 contentX,
@@ -889,4 +915,10 @@ public abstract class UIContainer
 
     public UIContainer AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Text)
         => AddText(RichText.Parse(text, Color.White), preset);
+
+    public void RemoveContent(UIContent element)
+    {
+        element.OnOwnerClosing();
+        Contents.Remove(element);
+    }
 }

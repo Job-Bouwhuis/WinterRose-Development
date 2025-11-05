@@ -171,6 +171,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             assetHeaders.Add(assetHeader.Name, assetHeader);
 
             string assetPath = ASSET_ROOT + name + ASSET_EXTENSION;
+            assetHeader.Path = assetPath;
 
             File.Create(assetPath).Close();
 

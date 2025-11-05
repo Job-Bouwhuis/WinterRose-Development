@@ -7,7 +7,7 @@ using WinterRose.AnonymousTypes;
 
 namespace WinterRose.ForgeWarden.AssetPipeline
 {
-    public struct AssetHeader : IEquatable<AssetHeader>
+    public class AssetHeader : IEquatable<AssetHeader>
     {
         public string Name { get; internal set; }
         public string Path { get; internal set; }
@@ -39,19 +39,14 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             Metadata = metadata;
         }
 
-        public override bool Equals(object? obj)
-        {
-            return Equals((AssetHeader)obj);
-        }
-
         public bool Equals(AssetHeader? other)
         {
             if (other == null)
                 return false;
 
-            return string.Equals(Name, other.Value.Name, StringComparison.Ordinal)
-                && string.Equals(Path, other.Value.Path, StringComparison.OrdinalIgnoreCase)
-                && Tag.SequenceEqual(other.Value.Tag);
+            return string.Equals(Name, other.Name, StringComparison.Ordinal)
+                && string.Equals(Path, other.Path, StringComparison.OrdinalIgnoreCase)
+                && Tag.SequenceEqual(other.Tag);
         }
 
         public override int GetHashCode()
@@ -80,8 +75,6 @@ namespace WinterRose.ForgeWarden.AssetPipeline
                 throw new InvalidOperationException("Asset path is not set.");
             return Assets.Load<T>(this);
         }
-
-        public bool Equals(AssetHeader other) => throw new NotImplementedException();
     }
 
 }

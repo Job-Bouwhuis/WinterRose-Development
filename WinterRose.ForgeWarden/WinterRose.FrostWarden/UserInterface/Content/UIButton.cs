@@ -5,6 +5,7 @@ using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.Recordium;
 using WinterRose.WIP.TestClasses;
 
 namespace WinterRose.ForgeWarden.UserInterface;
@@ -52,7 +53,10 @@ public class UIButton : UIContent
     /// <summary>
     /// Invoke the OnClick handler for this button
     /// </summary>
-    protected internal override void OnContentClicked(MouseButton button) => OnClick.Invoke(owner, this);
+    protected internal override void OnContentClicked(MouseButton button)
+    {
+        OnClick.Invoke(owner, this);
+    }
 
     protected internal override void Update()
     {

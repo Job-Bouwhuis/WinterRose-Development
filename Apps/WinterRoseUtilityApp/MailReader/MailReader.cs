@@ -13,7 +13,7 @@ internal static class MailReader
 
     static Log log = new Log("Mail Reader");
 
-    public static async Task<List<MailFolder>> FetchFolders(EmailAccount account)
+    public static async Task<List<MailFolder>> FetchFolders(EmailAccount account, int retries = 0)
     {
         try
         {
@@ -24,9 +24,36 @@ internal static class MailReader
             var response = await http.GetAsync($"{BaseUrl}/mailfolders");
             response.EnsureSuccessStatusCode();
 
+            List<MailFolder> folders = [];
+
             var json = await response.Content.ReadAsStringAsync();
             var folderResult = JsonConvert.DeserializeObject<MailFolderResponse>(json);
-            return folderResult.Folders;
+
+            folders.AddRange(folderResult.Folders);
+
+            while(!string.IsNullOrWhiteSpace(folderResult.ODataNextLink))
+            {
+                response = await http.GetAsync(folderResult.ODataNextLink);
+                response.EnsureSuccessStatusCode();
+                json = await response.Content.ReadAsStringAsync();
+                folderResult = JsonConvert.DeserializeObject<MailFolderResponse>(json);
+
+                folders.AddRange(folderResult.Folders);
+            }
+
+            return folders;
+        }
+        catch (HttpRequestException ex) when (retries == 0 && ex.Message.Contains("401 (Unauthorized)"))
+        {
+            log.Warning("Access token expired, attempting silent re-login...");
+            bool relogged = await OutlookAuthHandler.LoginAsync(account);
+            if (!relogged)
+            {
+                log.Error("Re-login failed. Aborting folder fetch.");
+                return [];
+            }
+
+            return await FetchFolders(account, 1);
         }
         catch (Exception e)
         {
@@ -35,7 +62,7 @@ internal static class MailReader
         }
     }
 
-    public static async Task<List<MailMessage>> FetchEmails(EmailAccount account, string folderId)
+    public static async Task<List<MailMessage>> FetchEmails(EmailAccount account, string folderId, int retries = 0)
     {
         try
         {
@@ -51,6 +78,18 @@ internal static class MailReader
             var messagesResult = JsonConvert.DeserializeObject<MailMessagesResponse>(json);
 
             return messagesResult.Value;
+        }
+        catch (HttpRequestException ex) when (retries == 0 && ex.Message.Contains("401 (Unauthorized)"))
+        {
+            log.Warning("Access token expired, attempting silent re-login...");
+            bool relogged = await OutlookAuthHandler.LoginAsync(account);
+            if (!relogged)
+            {
+                log.Error("Re-login failed. Aborting folder fetch.");
+                return [];
+            }
+
+            return await FetchEmails(account, folderId, 1);
         }
         catch (Exception ex)
         {

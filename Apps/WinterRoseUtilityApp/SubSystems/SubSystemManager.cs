@@ -24,7 +24,13 @@ public class SubSystemManager
             {
                 if (t == typeof(SubSystem))
                     continue;
-                subSystems.Add((SubSystem)ActivatorExtra.CreateInstance(t));
+                var subsys = (SubSystem)ActivatorExtra.CreateInstance(t);
+                if(subsys is null)
+                {
+                    log.Error($"Failed to start subsystem {t.Name}");
+                    continue;
+                }
+                subSystems.Add(subsys);
             }
 
             foreach (SubSystem subSystem in subSystems)

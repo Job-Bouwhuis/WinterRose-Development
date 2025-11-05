@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
@@ -59,7 +60,7 @@ internal static class ContainerCreators
         cols.AddToColumn(0, new UIButton("Discard", (c, b) => c.Close()));
         cols.AddToColumn(1, new UIButton("Save", (c, b) =>
         {
-            if(string.IsNullOrWhiteSpace(titleInput.Text))
+            if (string.IsNullOrWhiteSpace(titleInput.Text))
             {
                 Toasts.Error("Note must have a title!");
                 titleInput.Focus();
@@ -98,14 +99,111 @@ internal static class ContainerCreators
         cols.AddToColumn(0, filterCols);
 
         var manager = new NoteManager();
-        foreach(var note in manager.Notes)
+        foreach (var note in manager.Notes)
         {
-            cols.AddToColumn(1, 
+            cols.AddToColumn(1,
                 new UIButton(note.Title, (c, b) =>
                 {
-                    Toasts.Error("Not implemented", ToastRegion.Center);
+                    NoteDetails(note).Show();
                 }));
         }
+
+        MulticastVoidInvocation.Subscription sub = NoteManager.OnNotesChanged.Subscribe(Invocation.Create(() =>
+        {
+            cols.ClearColumn(1);
+            foreach (var note in manager.Notes)
+            {
+                cols.AddToColumn(1,
+                    new UIButton(note.Title, (c, b) =>
+                    {
+                        NoteDetails(note).Show();
+                    }));
+            }
+        }));
+
+        window.OnClosing.Subscribe(Invocation.Create((UIWindow wind) =>
+        {
+            sub.Dispose();
+        }));
+
+        return window;
+    }
+
+    internal static UIWindow NoteDetails(Note note)
+    {
+        UIWindow window = new UIWindow(note.Title, 700, 900);
+
+        UIColumns cols = new();
+        window.AddContent(cols);
+
+        // Title
+        cols.AddToColumn(0, new UIText(note.Title, UIFontSizePreset.Title));
+
+        // Metadata
+        UIColumns metaCols = new();
+        metaCols.AddToColumn(0, new UIText($"Created: {note.CreatedDate:g}", UIFontSizePreset.Subtext));
+        metaCols.AddToColumn(1, new UIText($"Updated: {note.LastUpdatedDate:g}", UIFontSizePreset.Subtext));
+        cols.AddToColumn(0, metaCols);
+
+        UIText body = new UIText(note.Body, UIFontSizePreset.Text);
+        cols.AddToColumn(0, body);
+
+        if (note.AttachedFiles.Any())
+        {
+            cols.AddToColumn(0, new UIText("Attachments:", UIFontSizePreset.Subtitle));
+            foreach (var file in note.AttachedFiles)
+            {
+                cols.AddToColumn(0, new UIButton(file, (c, b) =>
+                {
+                    Toasts.Info($"not implemented opening file: {file}");
+                }));
+            }
+        }
+
+        if (note.Tags.Any())
+        {
+            cols.AddToColumn(0, new UIText("Tags:", UIFontSizePreset.Subtitle));
+            UIColumns tagsCols = new();
+            foreach (var tag in note.Tags)
+            {
+                tagsCols.AddToColumn(0, new UIText($"#{tag}", UIFontSizePreset.Subtext));
+            }
+            cols.AddToColumn(0, tagsCols);
+        }
+
+        // Footer buttons
+        UIColumns footerCols = new();
+        footerCols.AddToColumn(0, new UIButton("Edit", (c, b) =>
+        {
+            Toasts.Info("Edit window coming soon...");
+        }));
+        footerCols.AddToColumn(1, new UIButton("Delete", (c, b) =>
+        {
+            new ConfirmationDialog($@"\c[red]Confirm deletion of note {note.Title}", ConfirmationDialog.Preset.YesNo, s =>
+            {
+                if (s is "Yes")
+                {
+                    new NoteManager().Remove(note);
+                }
+            }).Show();
+        }));
+        cols.AddToColumn(0, footerCols);
+
+
+        MulticastVoidInvocation.Subscription sub = NoteManager.OnNotesChanged.Subscribe(Invocation.Create(() =>
+        {
+            var notes = new NoteManager().Notes;
+            if(!notes.Contains(note))
+            {
+                window.Close();
+            }
+        }));
+
+        window.OnClosing.Subscribe(Invocation.Create((UIWindow wind) =>
+        {
+            sub.Dispose();
+        }));
+
         return window;
     }
 }

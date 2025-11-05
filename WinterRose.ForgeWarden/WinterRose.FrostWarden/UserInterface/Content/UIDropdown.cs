@@ -28,7 +28,11 @@ public class UIDropdown<T> : UIContent
     private Rectangle lastBounds;
 
     public IReadOnlyList<T> Items => items;
-    public int SelectedIndex => selectedIndex;
+    public int SelectedIndex
+    {
+        get => selectedIndex;
+        set => selectedIndex = value;
+    }
     public T? SelectedItem =>
         !MultiSelect && selectedIndex >= 0 && selectedIndex < items.Count
             ? items[selectedIndex]
@@ -272,116 +276,119 @@ public class UIDropdown<T> : UIContent
 
         if (isOpen)
         {
-            float itemHeight = MathF.Max(Style.TextBoxMinHeight, Style.TextBoxFontSize + Style.TextBoxTextSpacing * 2f);
-            float totalHeight = filteredIndices.Count * itemHeight;
-            int visibleCount = Math.Min(MaxVisibleItems, Math.Max(0, filteredIndices.Count));
-            float listHeight = itemHeight * visibleCount;
-
-            Rectangle listRect = new Rectangle(box.X, box.Y + box.Height, box.Width, listHeight);
-            dropdownInput.IsRequestingMouseFocus =
-                ray.CheckCollisionPointRec(Input.Provider.MousePosition, listRect);
-
-            if (totalHeight > listHeight && Raylib.CheckCollisionPointRec(Input.Provider.MousePosition, listRect))
+            Application.Current.AddDebugDraw(() =>
             {
-                float wheel = ray.GetMouseWheelMove();
-                if (wheel != 0)
+                float itemHeight = MathF.Max(Style.TextBoxMinHeight, Style.TextBoxFontSize + Style.TextBoxTextSpacing * 2f);
+                float totalHeight = filteredIndices.Count * itemHeight;
+                int visibleCount = Math.Min(MaxVisibleItems, Math.Max(0, filteredIndices.Count));
+                float listHeight = itemHeight * visibleCount;
+
+                Rectangle listRect = new Rectangle(box.X, box.Y + box.Height, box.Width, listHeight);
+                dropdownInput.IsRequestingMouseFocus =
+                    ray.CheckCollisionPointRec(Input.Provider.MousePosition, listRect);
+
+                if (totalHeight > listHeight && Raylib.CheckCollisionPointRec(Input.Provider.MousePosition, listRect))
                 {
-                    scrollOffset -= wheel * itemHeight;
-                    scrollOffset = Math.Clamp(scrollOffset, 0, Math.Max(0, totalHeight - listHeight));
-                }
-            }
-
-            ray.DrawRectangleRec(listRect, Style.TextBoxBackground);
-            ray.DrawRectangleLinesEx(listRect, 1f, Style.TextBoxBorder);
-
-            ScissorStack.Push(listRect);
-
-            for (int i = 0; i < filteredIndices.Count; i++)
-            {
-                float y = listRect.Y + i * itemHeight - scrollOffset;
-                if (y + itemHeight < listRect.Y || y > listRect.Y + listRect.Height)
-                    continue;
-
-                int itemIndex = filteredIndices[i];
-                Rectangle itemRect = new Rectangle(listRect.X, y, listRect.Width, itemHeight);
-
-                bool mouseOver = Raylib.CheckCollisionPointRec(Input.Provider.MousePosition, itemRect);
-                bool highlighted = (i == highlightedIndex);
-
-                bool isSelected = MultiSelect
-                    ? selectedIndices.Contains(itemIndex)
-                    : (itemIndex == selectedIndex);
-
-                if (mouseOver)
-                    ray.DrawRectangleRec(itemRect, Style.ScrollbarThumb);
-                else if (highlighted)
-                    ray.DrawRectangleRec(itemRect, new Color(100, 100, 100, 120));
-
-                // start text position; may be moved right if there's a checkbox
-                float itPosX = itemRect.X + ItemPadding;
-                float itPosY = itemRect.Y + (itemRect.Height - fontSize) / 2f - 1f;
-
-                // draw multi-select checkbox first (so text never overlaps it)
-                if (MultiSelect)
-                {
-                    float boxSize = itemHeight * 0.5f;
-                    float boxX = itemRect.X + ItemPadding;
-                    float boxY = itemRect.Y + (itemHeight - boxSize) / 2f;
-                    var checkRect = new Rectangle(boxX, boxY, boxSize, boxSize);
-
-                    ray.DrawRectangleLinesEx(checkRect, 1f, Style.TextBoxText);
-
-                    if (isSelected)
-                        ray.DrawRectangleRec(checkRect, Style.TextBoxText);
-
-                    // move text start to the right of the checkbox
-                    itPosX = boxX + boxSize + ItemSpacing;
-                }
-
-                // draw the item text at adjusted position
-                Vector2 itPos = new Vector2(itPosX, itPosY);
-                Raylib.DrawTextEx(font, stringSelector(items[itemIndex]) ?? "", itPos, fontSize, spacing, Style.TextBoxText);
-
-                // mouse click handling remains the same (no change)
-                if (mouseOver && dropdownInput.Provider.IsPressed(new InputBinding(InputDeviceType.Mouse, 0)))
-                {
-                    if (itemRect.X >= listRect.X &&
-                        itemRect.Y >= listRect.Y &&
-                        itemRect.X + itemRect.Width <= listRect.X + listRect.Width &&
-                        itemRect.Y + itemRect.Height <= listRect.Y + listRect.Height)
+                    float wheel = ray.GetMouseWheelMove();
+                    if (wheel != 0)
                     {
-                        CommitSelection(itemIndex);
-                        Input.IsRequestingMouseFocus = true;
-                        ScissorStack.Pop();
-                        return;
+                        scrollOffset -= wheel * itemHeight;
+                        scrollOffset = Math.Clamp(scrollOffset, 0, Math.Max(0, totalHeight - listHeight));
                     }
                 }
-            }
 
-            ScissorStack.Pop();
+                ray.DrawRectangleRec(listRect, Style.TextBoxBackground);
+                ray.DrawRectangleLinesEx(listRect, 1f, Style.TextBoxBorder);
 
-            if (totalHeight > listHeight)
-            {
-                float scrollbarHeight = listHeight * (listHeight / totalHeight);
-                float scrollbarY = listRect.Y + (scrollOffset / (totalHeight - listHeight)) * (listHeight - scrollbarHeight);
+                ScissorStack.Push(listRect);
 
-                Rectangle scrollbarRect = new Rectangle(listRect.X + listRect.Width - 6, scrollbarY, 6, scrollbarHeight);
-                ray.DrawRectangleRec(scrollbarRect, Style.ScrollbarThumb);
-            }
+                for (int i = 0; i < filteredIndices.Count; i++)
+                {
+                    float y = listRect.Y + i * itemHeight - scrollOffset;
+                    if (y + itemHeight < listRect.Y || y > listRect.Y + listRect.Height)
+                        continue;
 
-            if (AllowTyping)
-            {
-                Rectangle inputRect = new Rectangle(bounds.X, bounds.Y, bounds.Width, bounds.Height);
-                filterInput.RenderInline(inputRect);
-            }
+                    int itemIndex = filteredIndices[i];
+                    Rectangle itemRect = new Rectangle(listRect.X, y, listRect.Width, itemHeight);
 
-            float arrowSize = box.Height * 0.5f;
-            var arrowCenter = new Vector2(box.X + box.Width - Style.TextBoxTextSpacing - arrowSize, box.Y + box.Height / 2f);
+                    bool mouseOver = Raylib.CheckCollisionPointRec(Input.Provider.MousePosition, itemRect);
+                    bool highlighted = (i == highlightedIndex);
 
-            Vector2 a = new(arrowCenter.X - arrowSize * 0.5f, arrowCenter.Y - arrowSize * 0.25f);
-            Vector2 b = new(arrowCenter.X + arrowSize * 0.5f, arrowCenter.Y - arrowSize * 0.25f);
-            Vector2 c = new(arrowCenter.X, arrowCenter.Y + arrowSize * 0.35f);
-            ray.DrawTriangle(a, b, c, Style.TextBoxText);
+                    bool isSelected = MultiSelect
+                        ? selectedIndices.Contains(itemIndex)
+                        : (itemIndex == selectedIndex);
+
+                    if (mouseOver)
+                        ray.DrawRectangleRec(itemRect, Style.ScrollbarThumb);
+                    else if (highlighted)
+                        ray.DrawRectangleRec(itemRect, new Color(100, 100, 100, 120));
+
+                    // start text position; may be moved right if there's a checkbox
+                    float itPosX = itemRect.X + ItemPadding;
+                    float itPosY = itemRect.Y + (itemRect.Height - fontSize) / 2f - 1f;
+
+                    // draw multi-select checkbox first (so text never overlaps it)
+                    if (MultiSelect)
+                    {
+                        float boxSize = itemHeight * 0.5f;
+                        float boxX = itemRect.X + ItemPadding;
+                        float boxY = itemRect.Y + (itemHeight - boxSize) / 2f;
+                        var checkRect = new Rectangle(boxX, boxY, boxSize, boxSize);
+
+                        ray.DrawRectangleLinesEx(checkRect, 1f, Style.TextBoxText);
+
+                        if (isSelected)
+                            ray.DrawRectangleRec(checkRect, Style.TextBoxText);
+
+                        // move text start to the right of the checkbox
+                        itPosX = boxX + boxSize + ItemSpacing;
+                    }
+
+                    // draw the item text at adjusted position
+                    Vector2 itPos = new Vector2(itPosX, itPosY);
+                    Raylib.DrawTextEx(font, stringSelector(items[itemIndex]) ?? "", itPos, fontSize, spacing, Style.TextBoxText);
+
+                    // mouse click handling remains the same (no change)
+                    if (mouseOver && dropdownInput.Provider.IsPressed(new InputBinding(InputDeviceType.Mouse, 0)))
+                    {
+                        if (itemRect.X >= listRect.X &&
+                            itemRect.Y >= listRect.Y &&
+                            itemRect.X + itemRect.Width <= listRect.X + listRect.Width &&
+                            itemRect.Y + itemRect.Height <= listRect.Y + listRect.Height)
+                        {
+                            CommitSelection(itemIndex);
+                            Input.IsRequestingMouseFocus = true;
+                            ScissorStack.Pop();
+                            return;
+                        }
+                    }
+                }
+
+                ScissorStack.Pop();
+
+                if (totalHeight > listHeight)
+                {
+                    float scrollbarHeight = listHeight * (listHeight / totalHeight);
+                    float scrollbarY = listRect.Y + (scrollOffset / (totalHeight - listHeight)) * (listHeight - scrollbarHeight);
+
+                    Rectangle scrollbarRect = new Rectangle(listRect.X + listRect.Width - 6, scrollbarY, 6, scrollbarHeight);
+                    ray.DrawRectangleRec(scrollbarRect, Style.ScrollbarThumb);
+                }
+
+                if (AllowTyping)
+                {
+                    Rectangle inputRect = new Rectangle(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+                    filterInput.RenderInline(inputRect);
+                }
+
+                float arrowSize = box.Height * 0.5f;
+                var arrowCenter = new Vector2(box.X + box.Width - Style.TextBoxTextSpacing - arrowSize, box.Y + box.Height / 2f);
+
+                Vector2 a = new(arrowCenter.X - arrowSize * 0.5f, arrowCenter.Y - arrowSize * 0.25f);
+                Vector2 b = new(arrowCenter.X + arrowSize * 0.5f, arrowCenter.Y - arrowSize * 0.25f);
+                Vector2 c = new(arrowCenter.X, arrowCenter.Y + arrowSize * 0.35f);
+                ray.DrawTriangle(a, b, c, Style.TextBoxText);
+            });
         }
     }
 

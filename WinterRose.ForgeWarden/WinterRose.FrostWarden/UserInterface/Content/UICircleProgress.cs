@@ -6,14 +6,15 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 public class UICircleProgress : UIContent
 {
     public float ProgressValue { get; private set; } = 0f;
-    public Func<float, float>? ProgressProvider { get; }
-    public string Text { get; }
+    public Func<UICircleProgress, float, float>? ProgressProvider { get; set; }
+    public string Text { get; set; }
 
     private float visualProgress = 0f;
     private float percentStart;
@@ -54,6 +55,8 @@ public class UICircleProgress : UIContent
     private float transitionT = 0f;
     private float percentTransitionT = 0;
     public float StateTransitionDuration { get; set; } = 0.05f;
+    public bool DontShowProgressPercent { get; set; }
+
     private float capturedStartDeg = 0f;
     private float capturedEndDeg = 0f;
     private float targetEndDeg = 0f;
@@ -69,7 +72,7 @@ public class UICircleProgress : UIContent
     private float visualProgressTarget;
     private float visualProgressTransitionT;
 
-    public UICircleProgress(float initialProgress = 0f, Func<float, float>? progressProvider = null, string infiniteSpinText = "Working...")
+    public UICircleProgress(float initialProgress = 0f, Func<UICircleProgress, float, float>? progressProvider = null, string infiniteSpinText = "Working...")
     {
         currentSweepDeg = MinSweepDeg;
         ProgressValue = Math.Clamp(initialProgress, -1f, 1f);
@@ -84,16 +87,43 @@ public class UICircleProgress : UIContent
 
     public override Vector2 GetSize(Rectangle availableArea)
     {
-        // Make the control square and as large as possible inside available area, keep a minimum sensible size
-        int minSide = Math.Min((int)availableArea.Width, (int)availableArea.Height);
-        minSide = Math.Max(minSide, 30); // minimum
-        return new Vector2(minSide, minSide);
+        // Determine maximum square side
+        float side = Math.Min(availableArea.Width, availableArea.Height);
+        side = Math.Max(side, 30); // enforce minimum
+
+        // compute radii like in Draw
+        float half = side / 2f;
+        float outerRadiusLocal = half - Padding;
+        outerRadiusLocal = Math.Max(outerRadiusLocal, 8f);
+        float innerRadiusLocal = outerRadiusLocal * (1f - ThicknessRatio);
+        innerRadiusLocal = Math.Max(innerRadiusLocal, 3f);
+
+        // Determine text height
+        int fontSize = Math.Clamp((int)innerRadiusLocal, 10, 28);
+        float textHeight = fontSize; // rough approximation
+
+        // Add bottom padding for text (so it fits inside the container)
+        float totalHeight = outerRadiusLocal * 2f + textHeight;
+        float totalWidth = outerRadiusLocal * 2f;
+
+        return new Vector2(totalWidth, totalHeight);
     }
 
-    protected internal override float GetHeight(float maxWidth)
+    protected internal override float GetHeight(float maxWdith)
     {
-        // height equals chosen square side
-        return GetSize(new Rectangle(0, 0, (int)maxWidth, (int)maxWidth)).Y;
+        maxWdith = Math.Max(maxWdith, 30);
+
+        float half = maxWdith / 2f;
+        float outerRadiusLocal = half - Padding;
+        outerRadiusLocal = Math.Max(outerRadiusLocal, 8f);
+
+        float innerRadiusLocal = outerRadiusLocal * (1f - ThicknessRatio);
+        innerRadiusLocal = Math.Max(innerRadiusLocal, 3f);
+
+        int fontSize = Math.Clamp((int)innerRadiusLocal, 10, 28);
+        float textHeight = fontSize;
+
+        return outerRadiusLocal * 2f + textHeight;
     }
 
     protected internal override void Setup()
@@ -172,19 +202,16 @@ public class UICircleProgress : UIContent
             // otherwise, force clockwise motion
             delta += 360f;
         }
-
+        
         return (fromDeg + delta * Math.Clamp(t, 0f, 1f)) % 360f;
     }
 
     protected internal override void Update()
     {
-        if(visualProgress != 1)
-            Style.PauseAutoDismissTimer = true;
-
         bool prevWasIndeterminate = wasIndeterminate;
 
         if (ProgressProvider is not null)
-            ProgressValue = ProgressProvider(ProgressValue);
+            ProgressValue = ProgressProvider(this, ProgressValue);
 
         // normalize sentinel for indeterminate: -1 == indeterminate
         if (ProgressValue is < 0f and > -0.1f)
@@ -331,12 +358,83 @@ public class UICircleProgress : UIContent
         Color fill = Style.ProgressBarFill;
         Color textColor = Style.White;
 
-        // Draw background ring as a stroked arc (full 360)
+        // Draw ring arcs as before...
+        DrawProgressArc();
+
+        // --- Text layout calculation (instead of drawing via Raylib) ---
+        string? infiniteTextToShow = (ProgressValue == -1 || AlwaysShowText) && !string.IsNullOrWhiteSpace(Text)
+            ? Text
+            : null;
+
+        bool percentEligible = ProgressValue != -1;
+        string? percentText = percentEligible && !DontShowProgressPercent ? $"{displayedPercent:F1}%" : null;
+
+        int fontSize = Math.Clamp((int)(innerRadius), 10, 28);
+        float innerDiameter = innerRadius * 2f;
+        float paddingInside = 8f;
+
+        // Measure text widths using your measurement method
+
+        RichText? infText = null;
+        if(infiniteTextToShow is not null)
+        {
+            infText = infiniteTextToShow;
+            infText.FontSize = fontSize;
+        }
+
+        RichText? percText = null;
+        if (percentText is not null)
+        {
+            percText = percentText!;
+            percText.FontSize = fontSize;
+        }
+
+        float infWidth = infiniteTextToShow is null ? 0 : infText.MeasureText(null);
+        float percWidth = percentText is null ? 0 : percText.MeasureText(null);
+
+        bool drawInfinite = infiniteTextToShow is not null;
+        bool drawPercent = percentText is not null;
+
+        if (drawInfinite && drawPercent)
+        {
+            float combinedWidth = infWidth + percWidth + 6f; // spacing between
+            if (combinedWidth + paddingInside > innerDiameter)
+                drawPercent = false; // hide percent first
+        }
+
+        // Compute positions for your own renderer
+        if (drawInfinite && drawPercent)
+        {
+            float totalWidth = infWidth + percWidth + 6f;
+            Vector2 infPos = new(center.X - totalWidth / 2f, center.Y - fontSize / 2f);
+            Vector2 percPos = new(infPos.X + infWidth + 6f, center.Y - fontSize / 2f);
+
+            RichTextRenderer.DrawRichText(infText, infPos, totalWidth, null);
+            RichTextRenderer.DrawRichText(percText, percPos, totalWidth, null);
+            
+        }
+        else if (drawInfinite)
+        {
+            Vector2 infPos = new(center.X - infWidth / 2f, center.Y - fontSize / 2f);
+
+            RichTextRenderer.DrawRichText(infText, infPos, bounds.Width - infPos.X, null);
+        }
+        else if (drawPercent)
+        {
+            Vector2 percPos = new(center.X - percWidth / 2f, center.Y - fontSize / 2f);
+
+            RichTextRenderer.DrawRichText(infText, percPos, bounds.Width - percPos.X, null);
+        }
+    }
+
+    private void DrawProgressArc()
+    {
         float midRadius = (outerRadius + innerRadius) * 0.5f;
         float thickness = outerRadius - innerRadius;
-        DrawThickArc(center, midRadius, thickness, 0f, 360f, Segments, bgRing);
 
-        // Determine sweep to draw from visualProgress when determinate
+        // Background ring (full 360°)
+        DrawThickArc(center, midRadius, thickness, 0f, 360f, Segments, Style.ProgressBarBackground);
+
         if (transitioningToDeterminate)
         {
             float eased = (float)(0.5f - 0.5f * Math.Cos(Math.PI * Math.Clamp(transitionT, 0f, 1f)));
@@ -349,15 +447,14 @@ public class UICircleProgress : UIContent
                 eased,
                 15f
             );
-            DrawThickArc(center, midRadius, thickness, drawStart, drawEnd, Segments, fill);
+
+            DrawThickArc(center, midRadius, thickness, drawStart, drawEnd, Segments, Style.ProgressBarFill);
         }
         else if (transitioningToIndeterminate)
         {
-            // interpolate from captured determinate arc into the *live* spinner arc
             float t = Math.Clamp(transitionToIndeterminateT, 0f, 1f);
             float eased = (float)(0.5f - 0.5f * Math.Cos(Math.PI * t));
 
-            // spinnerRotationDeg & currentSweepDeg are being updated during transition, so interpolate to their current live values
             float drawStart = LerpAngle(capturedStartDeg, NormalizeAngle(spinnerRotationDeg), eased);
             float drawEnd = LerpAngleWithSpinnerRange(
                 capturedEndDeg,
@@ -368,7 +465,7 @@ public class UICircleProgress : UIContent
                 15f
             );
 
-            DrawThickArc(center, midRadius, thickness, drawStart, drawEnd, Segments, fill);
+            DrawThickArc(center, midRadius, thickness, drawStart, drawEnd, Segments, Style.ProgressBarFill);
         }
         else if (ProgressValue != -1)
         {
@@ -378,73 +475,13 @@ public class UICircleProgress : UIContent
             float endDeg = startDeg + sweep;
 
             if (sweep > 0.001f)
-                DrawThickArc(center, midRadius, thickness, startDeg, endDeg, Segments, fill);
+                DrawThickArc(center, midRadius, thickness, startDeg, endDeg, Segments, Style.ProgressBarFill);
         }
         else
         {
             float startDeg = spinnerRotationDeg;
             float endDeg = spinnerRotationDeg + currentSweepDeg;
-            DrawThickArc(center, midRadius, thickness, startDeg, endDeg, Segments, fill);
-        }
-
-        // Draw inner text with space-aware logic:
-        // - InfiniteSpinText is shown when indeterminate OR AlwaysShowInfiniteText is true (and text non-empty)
-        // - Percent text is shown when determinate
-        // - If both would be shown but don't fit, percent text is hidden (infinite text has priority)
-        string? infiniteTextToShow = (ProgressValue == -1 || AlwaysShowText) && !string.IsNullOrWhiteSpace(Text)
-            ? Text
-            : null;
-
-        bool percentEligible = ProgressValue != -1;
-        string percentText = $"{displayedPercent:F1}%";
-        if (!percentEligible)
-            percentText = null;
-
-        int fontSize = Math.Clamp((int)(innerRadius * 0.6f), 10, 28);
-
-        // available inner area for text
-        float innerDiameter = innerRadius * 2f;
-        float paddingInside = 8f; // small breathing room
-
-        // measure widths (ray.MeasureText returns int)
-        int infWidth = infiniteTextToShow is null ? 0 : ray.MeasureText(infiniteTextToShow, fontSize);
-        int percWidth = percentText is null ? 0 : ray.MeasureText(percentText, fontSize);
-
-        bool drawInfinite = infiniteTextToShow is not null;
-        bool drawPercent = percentText is not null;
-
-        // If both would be drawn, check fit. percent disappears first if there's no room.
-        if (drawInfinite && drawPercent)
-        {
-            float combinedWidth = infWidth + percWidth + 6f; // spacing between
-            if (combinedWidth + paddingInside > innerDiameter)
-            {
-                // not enough space: hide percent
-                drawPercent = false;
-            }
-        }
-
-        // Choose how to layout text:
-        if (drawInfinite && drawPercent)
-        {
-            // draw both side-by-side centered
-            float totalW = infWidth + percWidth + 6f;
-            float leftX = center.X - totalW / 2f;
-
-            ray.DrawText(infiniteTextToShow, (int)leftX, (int)(center.Y - fontSize / 2f), fontSize, textColor);
-            ray.DrawText(percentText, (int)(leftX + infWidth + 6f), (int)(center.Y - fontSize / 2f), fontSize, textColor);
-        }
-        else if (drawInfinite)
-        {
-            float textWidth = infWidth;
-            float textX = center.X - textWidth / 2f;
-            ray.DrawText(infiniteTextToShow, (int)textX, (int)(center.Y - fontSize / 2f), fontSize, textColor);
-        }
-        else if (drawPercent)
-        {
-            float textWidth = percWidth;
-            float textX = center.X - textWidth / 2f;
-            ray.DrawText(percentText, (int)textX, (int)(center.Y - fontSize / 2f), fontSize, textColor);
+            DrawThickArc(center, midRadius, thickness, startDeg, endDeg, Segments, Style.ProgressBarFill);
         }
     }
 

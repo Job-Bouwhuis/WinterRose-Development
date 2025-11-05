@@ -455,5 +455,7 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>, IMinMaxValue<T
         // ensure input is blurred / cleaned
         valueInput.Blur();
     }
+
+    public void Focus() => valueInput.Focus();
 }
 

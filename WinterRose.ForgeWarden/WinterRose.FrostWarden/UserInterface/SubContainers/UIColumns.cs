@@ -31,6 +31,7 @@ public class UIColumns : UIContent
     // columns content storage
     public List<List<UIContent>> ColumnsContents { get; } = new();
     private readonly List<ColumnState> columnStates = new();
+    private bool setupCalled;
 
     // per-column runtime state
     private class ColumnState
@@ -65,6 +66,7 @@ public class UIColumns : UIContent
                 c.Setup();
             }
         }
+        setupCalled = true;
     }
 
     private void EnsureColumns(int count)
@@ -92,7 +94,8 @@ public class UIColumns : UIContent
         int idx = Math.Clamp(columnIndex, 0, ColumnCount - 1);
         ColumnsContents[idx].Add(content);
         content.owner = owner;
-        content.Setup();
+        if(setupCalled)
+            content.Setup();
     }
 
     public void ClearColumn(int columnIndex)
@@ -120,8 +123,9 @@ public class UIColumns : UIContent
             float colHeight = 0f;
             if (c < ColumnsContents.Count)
             {
-                foreach (var child in ColumnsContents[c])
+                for (int i = 0; i < ColumnsContents[c].Count; i++)
                 {
+                    UIContent? child = ColumnsContents[c][i];
                     colHeight += child.GetHeight((int)columnWidth);
                     colHeight += ColumnPadding;
                 }
@@ -143,7 +147,6 @@ public class UIColumns : UIContent
 
     protected internal override void Update()
     {
-        // Update children logic (non-visual updates)
         foreach (var column in ColumnsContents)
         {
             foreach (var child in column)
@@ -158,13 +161,6 @@ public class UIColumns : UIContent
                 child.OnOwnerClosing();
     }
 
-    protected internal override void OnHover()
-    {
-        // Delegate hover checks to children when Draw/Update set last-known rectangles.
-        // Nothing specific here; children will receive hover in Draw's per-column hit test.
-        base.OnHover();
-    }
-
     protected internal override void OnHoverEnd()
     {
         foreach (var column in ColumnsContents)
@@ -172,15 +168,8 @@ public class UIColumns : UIContent
                 child.OnHoverEnd();
     }
 
-    protected internal override void OnContentClicked(MouseButton button)
-    {
-        // If a child was hovered earlier it will have received click in Draw's hit testing.
-        base.OnContentClicked(button);
-    }
-
     protected internal override void OnClickedOutsideOfContent(MouseButton button)
     {
-        // Propagate to children so they can respond as needed
         foreach (var column in ColumnsContents)
             foreach (var child in column)
                 child.OnClickedOutsideOfContent(button);

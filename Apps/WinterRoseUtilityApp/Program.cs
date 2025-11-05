@@ -1,4 +1,5 @@
 ﻿using BulletSharp.SoftBody;
+using Microsoft.Graph.IdentityGovernance.AccessReviews.Definitions.FilterByCurrentUserWithOn;
 using WinterRose;
 using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden;
@@ -11,8 +12,11 @@ namespace WinterRoseUtilityApp;
 
 internal class Program : Application
 {
+    public static new Program Current => (Program)Application.Current;
     SubSystemManager subSystemManager;
     Windows.SystemTrayIcon trayIcon;
+    private List<UIContent> trayItems = [];
+
     private static void Main(string[] args)
     {
         new Program().RunAsOverlay();
@@ -32,6 +36,10 @@ internal class Program : Application
         {
             Toast t = new Toast(ToastType.Neutral, ToastRegion.Right, ToastStackSide.Bottom);
             t.Style.TimeUntilAutoDismiss = 8;
+
+            foreach (var item in trayItems)
+                t.AddContent(item);
+
             t.AddButton("Close App", 
                 Invocation.Create<UIContainer, UIButton>((c, b) => Close()));
             Toasts.ShowToast(t);
@@ -50,6 +58,8 @@ internal class Program : Application
         subSystemManager.Tick();
     }
 
-    
-    
+    internal void AddTrayItem(UIContent uIButton)
+    {
+        trayItems.Add(uIButton);
+    }
 }

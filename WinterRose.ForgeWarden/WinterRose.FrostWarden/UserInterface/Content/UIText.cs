@@ -39,10 +39,10 @@ public class UIText : UIContent
     // Base guideline sizes for each preset (can adjust as needed)
     private static readonly Dictionary<UIFontSizePreset, int> PresetBaseSizes = new()
     {
-        { UIFontSizePreset.Title, 24 },
-        { UIFontSizePreset.Subtitle, 18 },
-        { UIFontSizePreset.Text, 14 },
-        { UIFontSizePreset.Subtext, 7 }
+        { UIFontSizePreset.Title, 26 },
+        { UIFontSizePreset.Subtitle, 20 },
+        { UIFontSizePreset.Text, 16 },
+        { UIFontSizePreset.Subtext, 10 }
     };
     private RichText text;
     private UIFontSizePreset preset;

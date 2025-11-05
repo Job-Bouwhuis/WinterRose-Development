@@ -1,5 +1,6 @@
 ﻿using Raylib_cs;
 using System;
+using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
@@ -210,6 +211,7 @@ public class UIWindow : UIContainer
         get => title;
         set => title = value ?? "";
     }
+    public MulticastVoidInvocation<UIWindow> OnClosing { get; } = new();
 
     public UIWindow(RichText title, float width, float height) : this(title, width, height, 10, 10) { }
 
@@ -1114,6 +1116,7 @@ public class UIWindow : UIContainer
 
         StartCloseAnimation();
         base.Close();
+        OnClosing.Invoke(this);
     }
 
     protected static Vector2 LerpVec2(Vector2 a, Vector2 b, float t)

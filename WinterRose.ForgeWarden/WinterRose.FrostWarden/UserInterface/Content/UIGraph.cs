@@ -26,6 +26,9 @@ public class UIGraph : UIContent
 
     public float YLerpSpeed { get; set; } = 0.1f;  // how fast Y-axis adapts
 
+    // NEW: cap for requested height (0 = no cap)
+    public float MaxHeight { get; set; } = 0f;
+
     /// <summary>Tick interval along X in data units. Set >0 to force a fixed interval. Set to 0 for automatic spacing.</summary>
     public float XTickInterval { get; set; } = 0f;
 
@@ -95,14 +98,27 @@ public class UIGraph : UIContent
 
     public override Vector2 GetSize(Rectangle availableArea)
     {
-        // Request to take all available area by default
-        return new Vector2(availableArea.Width, availableArea.Height);
+        // Ask for our preferred height, but respect available area and MaxHeight
+        float desiredHeight = GetHeight(availableArea.Width);
+
+        if (MaxHeight > 0f)
+            desiredHeight = Math.Min(desiredHeight, MaxHeight);
+
+        float height = Math.Min(desiredHeight, availableArea.Height);
+
+        return new Vector2(availableArea.Width, height);
     }
 
     protected internal override float GetHeight(float maxWidth)
     {
-        // Default aspect: width : height = 2 : 1
-        return maxWidth * 0.5f + LEGEND_HEIGHT + GRAPH_TEXT_SIZE + LABEL_MARGIN * 6;
+        // Mirror the vertical space consumed by Draw: plot aspect + reserved bottom area + margins
+        float bottomReserved = LEGEND_HEIGHT + GRAPH_TEXT_SIZE + LABEL_MARGIN * 6;
+        float baseHeight = (maxWidth * 0.5f) + bottomReserved + (AXIS_MARGIN * 2f) + 8f;
+
+        if (MaxHeight > 0f)
+            baseHeight = Math.Min(baseHeight, MaxHeight);
+
+        return baseHeight;
     }
 
     private bool TryGetVisibleYBounds(out float minY, out float maxY)
@@ -147,9 +163,13 @@ public class UIGraph : UIContent
         float bottomReserved = LEGEND_HEIGHT + GRAPH_TEXT_SIZE + LABEL_MARGIN * 6;
         var plotRect = new Rectangle(
             bounds.X + AXIS_MARGIN,
-            bounds.Y + 8,
-            bounds.Width - AXIS_MARGIN - 8,
-            bounds.Height - AXIS_MARGIN / 2 - bottomReserved);
+            bounds.Y + AXIS_MARGIN,
+            bounds.Width - AXIS_MARGIN * 2f,
+            bounds.Height - AXIS_MARGIN * 2f - bottomReserved
+        );
+
+        if (plotRect.Height < 16f)
+            plotRect.Height = 16f;
 
         // Clip region: draw inside plotRect only
         ray.DrawRectangleRec(plotRect, Style.PanelBackgroundDarker);
@@ -377,9 +397,9 @@ public class UIGraph : UIContent
         series.Add(s);
     }
 
-    public void AddValueToSeries(string seriesName, float value)
+    public void AddValueToSeries(string seriesName, float value, Color? color = null)
     {
-        var s = GetSeries(seriesName);
+        var s = GetSeries(seriesName, color);
         s.AddPointSliding(value);
     }
 
@@ -891,7 +911,19 @@ public class UIGraph : UIContent
         return (float)Math.Sqrt(dx * dx + dy * dy);
     }
 
-    public Series GetSeries(string name)
+    public Series GetSeries(string name, Color? color = null)
+    {
+        Series s = series.FirstOrDefault(s => s.Name == name);
+        if (s == null)
+        {
+            s = new Series(name, MaxDataPoints, SeriesType.Line);
+            s.Color = color ?? Color.White;
+            series.Add(s);
+        }
+        return s;
+    }
+
+    public void SetSeriesColor(string name, Color c)
     {
         Series s = series.FirstOrDefault(s => s.Name == name);
         if (s == null)
@@ -899,7 +931,7 @@ public class UIGraph : UIContent
             s = new Series(name, MaxDataPoints, SeriesType.Line);
             series.Add(s);
         }
-        return s;
+        s.Color = c;
     }
 
     public IReadOnlyList<Series> GetSeries() => series;

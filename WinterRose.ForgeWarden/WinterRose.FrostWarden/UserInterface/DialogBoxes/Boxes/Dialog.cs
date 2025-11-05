@@ -3,6 +3,7 @@ using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
+using WinterRose.Recordium;
 using Color = Raylib_cs.Color;
 using Rectangle = Raylib_cs.Rectangle;
 
@@ -10,12 +11,15 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 
 public class Dialog : UIContainer
 {
+    private static Log log = new Log("Dialogs");
+
     public DialogPlacement Placement { get; set; }
     public DialogPriority Priority { get; }
 
     public Rectangle DialogPlacementBounds => Dialogs.GetDialogBounds(Placement);
 
-    public const float DIALOG_CONTENT_PADDING = 4;
+    public Action<Dialog, object>? OnResult { get; set; }
+    private object? dialogResult;
 
     public float YAnimateTime { get; internal set; }
     internal bool WasBumped { get; set; }
@@ -58,6 +62,11 @@ public class Dialog : UIContainer
         SetupTitle(title);
     }
 
+    public void SetResult(object result)
+    {
+        dialogResult = result;
+    }
+
     protected virtual void SetupTitle(string title)
     {
         Rectangle bounds = Dialogs.GetDialogBounds(Placement);
@@ -88,7 +97,13 @@ public class Dialog : UIContainer
     public override void Close()
     {
         base.Close();
+
         CurrentAnim = CurrentAnim with { Elapsed = 0, Completed = false };
+
+        if (OnResult != null)
+        {
+            OnResult.Invoke(this, dialogResult ?? new object());
+        }
     }
 
     public virtual new Dialog AddContent(UIContent content)

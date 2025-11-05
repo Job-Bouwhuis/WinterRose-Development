@@ -345,8 +345,11 @@ namespace WinterRose.ForgeWarden.UserInterface
 
         public Font Font { get; set; }
         public float BorderSize { get; set; } = 2;
-        public bool AutoScale { get; internal set; }
-        public int TimeUntilAutoDismiss { get; set; }
+        public bool AutoScale { get; set; }
+        /// <summary>
+        /// time, in seconds, until the container automatically closes
+        /// </summary>
+        public float TimeUntilAutoDismiss { get; set; }
 
         public float CaretBlinkingRate { get; set; } = 0.25f; // seconds
         public float CaretWidth { get; set; } = 2;
@@ -358,5 +361,7 @@ namespace WinterRose.ForgeWarden.UserInterface
         public float TreeNodeIndentWidth { get; set; } = 16;
         public double DoubleClickSeconds { get; set; } = 0.15;
         public bool PauseAutoDismissTimer { get; set; }
+        public int MaxAutoScaleWidth { get; set; } = 500;
+        public int MaxAutoScaleHeight { get; set; } = 700;
     }
 }
