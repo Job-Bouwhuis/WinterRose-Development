@@ -60,7 +60,11 @@ namespace WinterRose.ForgeWarden.Components
         public Vector3 scale
         {
             get => _scale;
-            set { _scale = value; MarkDirty(true); }
+            set 
+            { 
+                _scale = value; 
+                MarkDirty(true); 
+            }
         }
 
         public ref Vector3 scaleRef => ref _scale;
@@ -77,10 +81,10 @@ namespace WinterRose.ForgeWarden.Components
         {
             get
             {
-                if (_localDirty)
+                if (_dirty)
                 {
                     RecalculateLocalMatrix();
-                    _localDirty = false;
+                    _dirty = false;
                 }
                 return _localMatrix;
             }
@@ -90,13 +94,13 @@ namespace WinterRose.ForgeWarden.Components
         {
             get
             {
-                if (_worldDirty)
+                if (_dirty)
                 {
                     _worldMatrix = parent != null
                         ? localMatrix * parent.worldMatrix
                         : localMatrix;
 
-                    _worldDirty = false;
+                    _dirty = false;
                 }
 
                 return _worldMatrix;
@@ -134,8 +138,7 @@ namespace WinterRose.ForgeWarden.Components
         private Matrix4x4 _localMatrix = Matrix4x4.Identity;
         private Matrix4x4 _worldMatrix = Matrix4x4.Identity;
 
-        private bool _localDirty = true;
-        private bool _worldDirty = true;
+        private bool _dirty = true;
 
         private Transform? _parent;
 
@@ -144,8 +147,7 @@ namespace WinterRose.ForgeWarden.Components
 
         private void MarkDirty(bool recursive = false)
         {
-            _localDirty = true;
-            _worldDirty = true;
+            _dirty = true;
 
             if (recursive)
             {
@@ -154,14 +156,9 @@ namespace WinterRose.ForgeWarden.Components
             }
         }
 
-        private void RecalculateLocalMatrix()
-        {
-            var translation = Matrix4x4.CreateTranslation(_position);
-            var rotation = Matrix4x4.CreateFromQuaternion(_rotation);
-            var scale = Matrix4x4.CreateScale(_scale);
-
-            _localMatrix = scale * rotation * translation;
-        }
+        private void RecalculateLocalMatrix() => _localMatrix = Matrix4x4.CreateScale(_scale)
+             * Matrix4x4.CreateFromQuaternion(_rotation)
+             * Matrix4x4.CreateTranslation(_position);
 
         public void Translate(BulletSharp.Math.Matrix trans)
         {

@@ -45,7 +45,7 @@ internal static class ContainerCreators
             cpuGraph.AddValueToSeries("CPU Usage", usage.AverageUsage ?? 0, Color.Blue);
 
             var info = sys.GetCpuTemperature();
-            cpuGraph.AddValueToSeries("CPU Temperature", info.AverageTemperature ?? 0, Color.Orange);
+            cpuGraph.AddValueToSeries("CPU Temperature", info.CoreTemperatures.Sum(), Color.Orange);
         });
         window.AddContent(cpuUpdater);
 

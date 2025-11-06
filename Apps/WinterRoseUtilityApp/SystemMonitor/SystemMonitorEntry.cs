@@ -8,6 +8,8 @@ using WinterRose.ForgeWarden.UserInterface;
 using WinterRoseUtilityApp.SubSystems;
 
 namespace WinterRoseUtilityApp.SystemMonitor;
+
+[SubSystemSkip]
 internal class SystemMonitorEntry : SubSystem
 {
     readonly Dictionary<string, RollingAverage> cpuUsageAverages = new();
@@ -22,7 +24,11 @@ internal class SystemMonitorEntry : SubSystem
             foreach (var sub in hardware.SubHardware)
                 sub.Accept(this);
         }
-        public void VisitSensor(ISensor sensor) { }
+        public void VisitSensor(ISensor sensor) 
+        {
+            if(sensor.Hardware.HardwareType == HardwareType.Cpu && sensor.SensorType == SensorType.Temperature)
+                Console.WriteLine(sensor.Value ?? -404);
+        }
         public void VisitParameter(IParameter parameter) { }
     }
 
@@ -41,10 +47,11 @@ internal class SystemMonitorEntry : SubSystem
         computer = new Computer
         {
             IsCpuEnabled = true,
-            IsMemoryEnabled = true,
-            IsGpuEnabled = true,
-            IsMotherboardEnabled = true,
-            IsStorageEnabled = true,
+            //IsMemoryEnabled = true,
+            //IsGpuEnabled = true,
+            //IsMotherboardEnabled = true,
+            //IsStorageEnabled = true,
+            //IsNetworkEnabled = true
         };
 
         Program.Current.AddTrayItem(new UIButton("Show system stats", (c, b) =>
@@ -56,7 +63,21 @@ internal class SystemMonitorEntry : SubSystem
     public override void Init()
     {
         computer.Open();
-        computer.Accept(visitor);
+
+        foreach (var hardware in computer.Hardware)
+        {
+            Console.WriteLine($"[HW] {hardware.Name} ({hardware.HardwareType})");
+
+            foreach (var sensor in hardware.Sensors)
+                Console.WriteLine($"  [SENSOR] {sensor.SensorType} {sensor.Name} = {sensor.Value}");
+
+            foreach (var sub in hardware.SubHardware)
+            {
+                Console.WriteLine($"  [SUBHW] {sub.Name}");
+                foreach (var sensor in sub.Sensors)
+                    Console.WriteLine($"    [SENSOR] {sensor.SensorType} {sensor.Name} = {sensor.Value}");
+            }
+        }
 
         // filter out integrated graphics
         HardwareList = computer.Hardware
@@ -80,8 +101,6 @@ internal class SystemMonitorEntry : SubSystem
     {
         computer.Close();
     }
-
- 
 
     public struct CpuUsageInfo
     {
@@ -127,9 +146,11 @@ internal class SystemMonitorEntry : SubSystem
         {
             UpdateRecursive(cpu);
 
-            foreach (var sensor in cpu.Sensors)
+            ISensor[] tempSens = cpu.Sensors.Where(s => s.SensorType == SensorType.Temperature).ToArray();
+
+            foreach (var sensor in tempSens)
             {
-                if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
+                if (sensor.Value.HasValue)
                 {
                     string key = $"{cpu.Name}:{sensor.Name}";
                     float value = sensor.Value.Value;
@@ -238,7 +259,7 @@ internal class SystemMonitorEntry : SubSystem
 
     public float? GetGpuUsage()
     {
-        var gpu = HardwareList.FirstOrDefault(h => h.HardwareType == HardwareType.GpuNvidia || h.HardwareType == HardwareType.GpuAmd);
+        var gpu = HardwareList.FirstOrDefault(h => h.HardwareType is HardwareType.GpuNvidia or HardwareType.GpuAmd);
         if (gpu == null) return null;
 
         var sensor = gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name.Contains("Core", StringComparison.OrdinalIgnoreCase));

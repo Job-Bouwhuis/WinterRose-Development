@@ -14,6 +14,8 @@ namespace WinterRose.ForgeWarden.Components
         [WFInclude]
         public Sprite Sprite { get; set; }
 
+        public Color Tint { get; set; } = Color.White;
+
         public SpriteRenderer(Sprite sprite)
         {
             this.Sprite = sprite;
@@ -48,13 +50,18 @@ namespace WinterRose.ForgeWarden.Components
             float rotationRadians = MathF.Atan2(finalMatrix.M21, finalMatrix.M11);
             float rotationDegrees = rotationRadians * (180f / MathF.PI);
 
+            var scaledOrigin = new Vector2(
+                (Sprite.Width * scale.X) / 2f,
+                (Sprite.Height * scale.Y) / 2f
+            );
+
             Raylib.DrawTexturePro(
                 Sprite.Texture,
                 new Rectangle(0, 0, Sprite.Width, Sprite.Height),
                 new Rectangle(position2D.X, position2D.Y, Sprite.Width * scale.X, Sprite.Height * scale.Y),
-                new Vector2(Sprite.Width / 2f, Sprite.Height / 2f),
+                scaledOrigin,
                 rotationDegrees,
-                Color.White
+                Tint
             );
 
             Shader?.End();

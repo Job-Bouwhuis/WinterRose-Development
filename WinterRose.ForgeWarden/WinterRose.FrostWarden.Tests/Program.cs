@@ -24,6 +24,7 @@ using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Worlds;
+using WinterRose.FrostWarden.Tests;
 using WinterRose.Recordium;
 using WinterRose.StateKeeper;
 using WinterRose.WinterForgeSerializing;
@@ -32,13 +33,17 @@ namespace WinterRose.ForgeWarden.Tests;
 
 internal class Program : Application
 {
+    // fullscreen PC
+    const int SCREEN_WIDTH = 2560;
+    const int SCREEN_HEIGHT = 1440;
+
     // for on PC
     //const int SCREEN_WIDTH = 1920;
     //const int SCREEN_HEIGHT = 1080;
 
     // for on laptop
-    const int SCREEN_WIDTH = 1280;
-    const int SCREEN_HEIGHT = 720;
+    //const int SCREEN_WIDTH = 1280;
+    //const int SCREEN_HEIGHT = 720;
 
     //static Windows.SystemTrayIcon icon;
 
@@ -58,7 +63,7 @@ internal class Program : Application
         reload.AddBinding(KeyboardKey.R);
         reload.Register();
 
-        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
+        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT, ConfigFlags.FullscreenMode);
         //new Program().RunAsOverlay();
 
         //icon.DeleteIcon();
@@ -83,34 +88,20 @@ internal class Program : Application
         World world = new World("testworld");
 
         var cam = world.CreateEntity<Camera>("cam");
-        //cam.is3D = true;
-        //cam.UseOrthographic = false;
-        //cam.AddComponent<CameraFreeFly>();
-
-        //var coeb = world.CreateEntity<MeshRenderer>("coeb");
-        //coeb.mesh = PrimitiveMeshFactory.CreateCube(1);
-
-        //// position cube at origin
-        //coeb.transform.position = new Vector3(0, 0, 0);
-
-        //// position camera 5 units back and 2 units up
-        //cam.transform.position = new Vector3(0, 2, -5);
-
-        //// make camera look at the cube
-        //cam.transform.LookAt(coeb.transform);
-
 
         var entity = world.CreateEntity("entity");
         entity.transform.parent = cam.transform;
-        entity.transform.scale = new();
+        entity.transform.scale = new(0.4f);
         entity.AddComponent<ImportantComponent>();
-        entity.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(50, 50, Color.Red));
-
+        entity.AddComponent<SpriteRenderer>(Assets.Load<Sprite>("Rositta"));
+        entity.AddComponent<CharacterController>();
         var vitals = entity.AddComponent<Vitality>();
         vitals.Health.MaxHealth = 100;
 
         // Add a StatusEffector so we can test status effects
         var statusEffector = entity.AddComponent<StatusEffector>();
+
+        #region weapon stuff
 
         var projectile = world.CreateEntity<Projectile>("demoProjectile");
         var projStats = new Projectile.ProjectileStats
@@ -146,32 +137,8 @@ internal class Program : Application
         var weapon = gun.AddComponent<Weapon>();
 
         weapon.Trigger = trigger;
-
-        // Optional: add multiple triggers
         weapon.AvailableTriggers.Add(trigger);
-
-        ShowToast(ToastRegion.Right, ToastStackSide.Bottom);
-
-        var w = new UIWindow("FPS Graph", 400, 500, 100, 100);
-        //UIGraph FPSGrapher = new UIGraph();
-        //FPSGrapher.MaxDataPoints = 288;
-
-
-        //world.CreateEntity<InvocationComponent>("grapher").OnUpdate
-        //    = Invocation.Create<InvocationComponent>(c =>
-        //    {
-        //        FPSGrapher.AddValueToSeries("FPS", ray.GetFPS());
-        //    });
-
-        var input = new UITextInput();
-        input.Text = "This is a test\nWith multiline!";
-        input.InjectStringAt(6, @"\s[wf]");
-        w.AddContent(input);
-        //w.AddContent(new UIFPS());
-        //w.AddContent(FPSGrapher);
-        w.Show();
-
-        //icon.Click.Subscribe(Invocation.Create(() => ShowToast(ToastRegion.Right, ToastStackSide.Top)));
+        #endregion
 
         void ShowToast(ToastRegion r, ToastStackSide s)
         {
@@ -187,37 +154,6 @@ internal class Program : Application
                             .AddSprite(Assets.Load<Sprite>("bigimg"));
 
             var w = new UIWindow("Graph 1.1-2-3", 400, 500, 100, 100);
-
-            var progressProv = (float oldProgress) =>
-            {
-                w.Input.IsRequestingKeyboardFocus = true;
-
-                if (w.Input.IsDown(MouseButton.Left))
-                    return 0f;
-                if (w.Input.IsDown(MouseButton.Right))
-                    return -1;
-
-                for (int i = 0; i <= 9; i++)
-                {
-                    KeyboardKey key = (KeyboardKey)((int)KeyboardKey.Zero + i);
-                    if (w.Input.IsDown(key))
-                    {
-                        // 0 maps to 100%, 1–9 map to 10–90%
-                        float percent = (i == 0 ? 1f : i / 10f);
-                        return percent;
-                    }
-                }
-
-                return oldProgress;
-            };
-
-
-            w.AddContent(new UICircleProgress(0, progressProvider: progressProv, infiniteSpinText: "spinn")
-            {
-                AlwaysShowText = true,
-            });
-            w.AddContent(new UIProgress(0, progressProv));
-
 
             //UIGraph gall = LoadSimpleGraphFromCsv(
             //    "SorterOnePointOne.csv",
@@ -297,12 +233,6 @@ internal class Program : Application
         //Dialogs.Show(new Dialog("Dialog bottom small", "yes \\c[red] rode text \\c[white]  \\s[star]\\!", DialogPlacement.BottomSmall).AddButton("Ok"));
 
         //Dialogs.Show(new Dialog("Dialog right big", "yes", DialogPlacement.RightBig).AddButton("Ok"));
-
-
-
-        //world.SaveTemplate();
-
-        //Universe.Hirarchy.Show();
 
         return world;
     }
