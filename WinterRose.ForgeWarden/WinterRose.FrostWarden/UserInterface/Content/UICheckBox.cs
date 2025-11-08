@@ -72,6 +72,10 @@ public class UICheckBox : UIContent
             OnCheckedChangedBasic.Subscribe(onChanged);
     }
 
+    public UICheckBox() : this("New Checkbox")
+    {
+    }
+
     public UICheckBox(RichText text, VoidInvocation<UIContainer, UICheckBox, bool>? onChanged = null, bool initial = false)
     {
         Text = text;

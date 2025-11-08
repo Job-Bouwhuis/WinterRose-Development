@@ -1,4 +1,5 @@
-﻿using WinterRose.ForgeWarden.Components;
+﻿using System.Runtime.CompilerServices;
+using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.Input;
 
@@ -14,9 +15,16 @@ public abstract class Component : IComponent
     [Hide]
     public InputContext Input => owner.Input;
 
+    [ReadOnly]
     public float awakeTime { get; private set; }
+
+    [ReadOnly]
     public float startTime { get; private set; }
+
+    [ReadOnly]
     public float vanishTime { get; private set; }
+
+    [ReadOnly]
     public float destroyTime { get; private set; }
 
     protected virtual void Awake() { }

@@ -8,18 +8,25 @@ using WinterRose.Reflection;
 namespace WinterRose.ForgeWarden.Editor;
 public class TrackedValue
 {
-    public object Owner { get; }
+    public object Owner => owner;
+
     public string MemberName { get; }
     private ReflectionHelper reflection;
     private MemberData memberData;
 
     private object? val;
+    private object owner;
 
     public object? Value => val;
 
+    public ref T GetValueRef<T>()
+    {
+        return ref memberData.GetValueRef<object, T>(ref owner);
+    }
+
     public TrackedValue(object owner, string memberName)
     {
-        Owner = owner;
+        this.owner = owner;
         MemberName = memberName;
         reflection = new ReflectionHelper(owner);
         memberData = reflection.GetMember(memberName) 

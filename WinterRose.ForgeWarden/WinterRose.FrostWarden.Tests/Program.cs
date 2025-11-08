@@ -34,16 +34,16 @@ namespace WinterRose.ForgeWarden.Tests;
 internal class Program : Application
 {
     // fullscreen PC
-    const int SCREEN_WIDTH = 2560;
-    const int SCREEN_HEIGHT = 1440;
+    //const int SCREEN_WIDTH = 2560;
+    //const int SCREEN_HEIGHT = 1440;
 
     // for on PC
     //const int SCREEN_WIDTH = 1920;
     //const int SCREEN_HEIGHT = 1080;
 
     // for on laptop
-    //const int SCREEN_WIDTH = 1280;
-    //const int SCREEN_HEIGHT = 720;
+    const int SCREEN_WIDTH = 1280;
+    const int SCREEN_HEIGHT = 720;
 
     //static Windows.SystemTrayIcon icon;
 
@@ -63,7 +63,7 @@ internal class Program : Application
         reload.AddBinding(KeyboardKey.R);
         reload.Register();
 
-        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT, ConfigFlags.FullscreenMode);
+        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
         //new Program().RunAsOverlay();
 
         //icon.DeleteIcon();
@@ -100,6 +100,8 @@ internal class Program : Application
 
         // Add a StatusEffector so we can test status effects
         var statusEffector = entity.AddComponent<StatusEffector>();
+
+        Universe.Hirarchy.Show();
 
         #region weapon stuff
 

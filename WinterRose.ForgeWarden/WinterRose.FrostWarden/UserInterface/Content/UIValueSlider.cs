@@ -6,30 +6,21 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
+using WinterRose.ForgeWarden.UserInterface.Content;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
-public class UIValueSlider<T> : UIContent where T : INumber<T>
+public class UIValueSlider<T> : NumericControlBase<T> where T : INumber<T>, IMinMaxValue<T>
 {
     // Layout constants
     private const float SLIDER_HEIGHT = 28f;
     private const float TRACK_HEIGHT = 6f;
     private const float HANDLE_RADIUS = 8f;
-    private const float PADDING = 6f;
 
     // Animation smoothing (higher = snappier)
     private const double ANIMATION_RATE = 14.0;
 
     private float labelWidthReserved;
-
-    // Public API
-    public T MinValue { get; set; }
-    public T MaxValue { get; set; }
-
-    /// <summary>
-    /// Step size used for snapping. If Step == 0 then snapping is disabled.
-    /// </summary>
-    public T Step { get; set; } = T.Zero;
 
     /// <summary>
     /// If true, the slider will snap to steps. Holding shift will override snap when HoldShiftToDisableSnap == true.
@@ -46,13 +37,13 @@ public class UIValueSlider<T> : UIContent where T : INumber<T>
     public MulticastVoidInvocation<T> OnValueChangedBasic { get; set; } = new();
 
     // Internal state (store value as T but compute with doubles)
-    private T valueBacking;
-    public T Value
+    public override T Value
     {
-        get => valueBacking;
+        get => base.Value;
         set
         {
-            ClampAndSet(value, invokeCallbacks: true);
+            ClampAndSet(value, true);
+            animatedValueD = Convert.ToDouble(base.Value);
         }
     }
 
@@ -76,11 +67,14 @@ public class UIValueSlider<T> : UIContent where T : INumber<T>
     {
         MinValue = min;
         MaxValue = max;
-        valueBacking = initial;
-        // initialize animated value to actual initial value
         animatedValueD = Convert.ToDouble(initial);
-        // ensure in-range
-        ClampAndSet(initial, invokeCallbacks: false);
+        SetValue(initial, invokeCallbacks: false);
+
+        TypedValueChanged.Subscribe(Invocation.Create((T t) =>
+        {
+            OnValueChanged?.Invoke(owner, this, t);
+            OnValueChangedBasic?.Invoke(t);
+        }));
     }
 
     public UIValueSlider() : this((T)Convert.ChangeType(0, typeof(T)), (T)Convert.ChangeType(1, typeof(T)), (T)Convert.ChangeType(0, typeof(T)))
@@ -121,10 +115,9 @@ public class UIValueSlider<T> : UIContent where T : INumber<T>
 
         var newT = (T)Convert.ChangeType(clamped, typeof(T));
         bool changed = !Equals(valueBacking, newT);
-        valueBacking = newT;
+        base.Value = newT;
 
-        // update animated target immediately (it will smoothly approach the new backing value)
-        animatedValueD = animatedValueD; // no-op (we update via Update smoothing loop)
+        animatedValueD = Convert.ToDouble(base.Value);
 
         if (changed && invokeCallbacks)
         {
@@ -145,8 +138,8 @@ public class UIValueSlider<T> : UIContent where T : INumber<T>
     // Map a mouse X coordinate to a value (double) using the provided slider bounds
     private double MouseXToValue(Rectangle bounds, float mouseX)
     {
-        float left = bounds.X + PADDING + HANDLE_RADIUS;
-        float right = bounds.X + bounds.Width - PADDING - HANDLE_RADIUS;
+        float left = bounds.X + UIConstants.CONTENT_PADDING + HANDLE_RADIUS;
+        float right = bounds.X + bounds.Width - UIConstants.CONTENT_PADDING - HANDLE_RADIUS;
         float usable = Math.Max(1f, right - left);
 
         float clampedX = Math.Clamp(mouseX, left, right);
@@ -162,8 +155,8 @@ public class UIValueSlider<T> : UIContent where T : INumber<T>
         double maxD = Convert.ToDouble(MaxValue);
         if (maxD - minD == 0) return bounds.X + bounds.Width * 0.5f;
 
-        float left = bounds.X + PADDING + HANDLE_RADIUS;
-        float right = bounds.X + bounds.Width - PADDING - HANDLE_RADIUS;
+        float left = bounds.X + UIConstants.CONTENT_PADDING + HANDLE_RADIUS;
+        float right = bounds.X + bounds.Width - UIConstants.CONTENT_PADDING - HANDLE_RADIUS;
         float usable = Math.Max(1f, right - left);
         float t = (float)((valueD - minD) / (maxD - minD));
         return left + t * usable;
@@ -215,7 +208,6 @@ public class UIValueSlider<T> : UIContent where T : INumber<T>
             else
             {
                 double newVal = MouseXToValue(sliderBounds, Input.Provider.MousePosition.X);
-                // if Step snapping overridden by shift, temporarily ignore snap
                 if (SnapToStep && Step > T.Zero && HoldShiftToDisableSnap &&
                     (Input.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)KeyboardKey.LeftShift))
                     || Input.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)KeyboardKey.RightShift))))
@@ -265,8 +257,8 @@ public class UIValueSlider<T> : UIContent where T : INumber<T>
 
         // track rect inside sliderBounds
         float trackY = sliderBounds.Y + sliderBounds.Height / 2f;
-        float left = sliderBounds.X + PADDING + HANDLE_RADIUS;
-        float right = sliderBounds.X + sliderBounds.Width - PADDING - HANDLE_RADIUS;
+        float left = sliderBounds.X + UIConstants.CONTENT_PADDING + HANDLE_RADIUS;
+        float right = sliderBounds.X + sliderBounds.Width - UIConstants.CONTENT_PADDING - HANDLE_RADIUS;
         float trackTop = trackY - TRACK_HEIGHT / 2f;
         float trackHeight = TRACK_HEIGHT;
         var trackRect = new Rectangle(left, trackTop, Math.Max(1f, right - left), trackHeight);

@@ -119,7 +119,11 @@ public sealed class MulticastVoidInvocation<T1> : Invocation
         }
 
         if (exceptions.Count > 0)
+        {
+            if (error is null)
+                throw new AggregateException(exceptions);
             error?.Invoke(new AggregateException(exceptions));
+        }
     }
 }
 public sealed class MulticastVoidInvocation<T1, T2> : Invocation

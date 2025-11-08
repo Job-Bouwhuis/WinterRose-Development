@@ -7,9 +7,10 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeSignal;
 
-namespace WinterRose.ForgeWarden.UserInterface.Content;
+namespace WinterRose.ForgeWarden.UserInterface;
 
-public class UINumericUpDown<T> : UIContent where T : INumber<T>, IMinMaxValue<T>
+public class UINumericUpDown<T> : NumericControlBase<T>
+    where T : INumber<T>, IMinMaxValue<T>
 {
     // Layout constants
     private const float CONTROL_HEIGHT = 28f;
@@ -19,9 +20,6 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>, IMinMaxValue<T
     private const float LABEL_PADDING = 8f;
 
     public bool ReadOnly { get; set; }
-
-    // Public API
-    public string Label { get; set; } = "";
 
     public T MinValue { get; set; }
     public T MaxValue { get; set; }
@@ -35,14 +33,6 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>, IMinMaxValue<T
     /// <summary> Events raised when the value changes. </summary>
     public MulticastVoidInvocation<UIContainer, UINumericUpDown<T>, T> OnValueChanged { get; set; } = new();
     public MulticastVoidInvocation<T> OnValueChangedBasic { get; set; } = new();
-
-    // Internal value storage
-    private T valueBacking;
-    public T Value
-    {
-        get => valueBacking;
-        set => SetValue(value, true);
-    }
 
     // Inline text editor for typing values
     private UITextInput valueInput = new();
@@ -70,68 +60,26 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>, IMinMaxValue<T
     {
         MinValue = min;
         MaxValue = max;
-        valueBacking = initial;
         if (initial is int)
             DecimalPlaces = -1;
         SetValue(initial, false);
+        TypedValueChanged.Subscribe(Invocation.Create((T t) =>
+        {
+
+            OnValueChanged?.Invoke(owner, this, t);
+            OnValueChangedBasic?.Invoke(t);
+        }));
     }
 
     public UINumericUpDown() : this(T.MinValue, T.MaxValue, T.Zero)
     {
     }
 
-    // clamp, round and set internal value; optionally fire callbacks
-    public void SetValue(T newVal, bool invokeCallbacks = true)
-    {
-        if (ReadOnly)
-            return;
-
-        if (MinValue > MaxValue)
-        {
-            var tmp = MinValue;
-            MinValue = MaxValue;
-            MaxValue = tmp;
-        }
-
-        // clamp
-        T clamped = Clamp(newVal, MinValue, MaxValue);
-
-        // rounding according to DecimalPlaces
-        if (DecimalPlaces >= 0)
-        {
-            double d = Convert.ToDouble(clamped);
-            d = Math.Round(d, DecimalPlaces);
-            clamped = (T)Convert.ChangeType(d, typeof(T));
-        }
-
-        bool changed = !EqualityComparer<T>.Default.Equals(valueBacking, clamped);
-        valueBacking = clamped;
-
-        // if not currently editing, keep the text input in sync with formatted value
-        if (!isEditing)
-            valueInput.Text = ToStringFormatted(valueBacking);
-
-        if (changed && invokeCallbacks)
-        {
-            OnValueChanged?.Invoke(owner, this, valueBacking);
-            OnValueChangedBasic?.Invoke(valueBacking);
-        }
-    }
-
-    private static T Clamp(T v, T minValue, T maxValue)
-    {
-        if (v < minValue) return minValue;
-        if (v > maxValue) return maxValue;
-        return v;
-    }
-
-    // formatting helper
     private string ToStringFormatted(T v)
     {
         if (v is float f) return f.ToString("0." + new string('#', Math.Clamp(DecimalPlaces, 0, 10)), CultureInfo.InvariantCulture);
         if (v is double d) return d.ToString("0." + new string('#', Math.Clamp(DecimalPlaces, 0, 15)), CultureInfo.InvariantCulture);
         if (v is decimal m) return m.ToString("0." + new string('#', Math.Clamp(DecimalPlaces, 0, 28)), CultureInfo.InvariantCulture);
-        // fallback
         return v.ToString() ?? "";
     }
 
@@ -398,10 +346,8 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>, IMinMaxValue<T
         if (mx >= buttonUpRect.X && mx <= buttonUpRect.X + buttonUpRect.Width &&
             my >= buttonUpRect.Y && my <= buttonUpRect.Y + buttonUpRect.Height)
         {
-            double curr = Convert.ToDouble(valueBacking);
-            double step = Convert.ToDouble(Step);
-            double next = curr + step;
-            SetValue((T)Convert.ChangeType(next, typeof(T)), invokeCallbacks: true);
+            T next = valueBacking + Step;
+            SetValue(next, invokeCallbacks: true);
             return;
         }
 
@@ -409,10 +355,8 @@ public class UINumericUpDown<T> : UIContent where T : INumber<T>, IMinMaxValue<T
         if (mx >= buttonDownRect.X && mx <= buttonDownRect.X + buttonDownRect.Width &&
             my >= buttonDownRect.Y && my <= buttonDownRect.Y + buttonDownRect.Height)
         {
-            double curr = Convert.ToDouble(valueBacking);
-            double step = Convert.ToDouble(Step);
-            double next = curr - step;
-            SetValue((T)Convert.ChangeType(next, typeof(T)), invokeCallbacks: true);
+            T next = valueBacking - Step;
+            SetValue(next, invokeCallbacks: true);
             return;
         }
 

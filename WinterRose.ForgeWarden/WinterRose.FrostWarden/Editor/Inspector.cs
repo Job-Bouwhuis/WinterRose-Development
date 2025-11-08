@@ -13,6 +13,7 @@ using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Worlds;
 using WinterRose.Music;
+using WinterRose.Recordium;
 using WinterRose.Reflection;
 using WinterRose.WinterForgeSerializing;
 
@@ -26,18 +27,30 @@ internal class Inspector : UIWindow
     List<WeakReference<Component>> componentsLast;
 
     List<TrackedValue> trackedValues = [];
-    List<InspectorPropertyDrawer> propertyDrawerInstances = []; 
+    List<IInspectorPropertyDrawer> propertyDrawerInstances = [];
      
     internal Inspector(WeakReference<Entity> entity) : base("Inspector", 400, 600) => Entity = entity;
 
     static Inspector()
     {
-        Type[] types = TypeWorker.FindTypesWithBase(typeof(InspectorPropertyDrawer<,>));
+        Type[] types = TypeWorker.FindTypesWithBase(typeof(InspectorPropertyDrawer<>));
         foreach(Type t in types)
         {
-            Type target = t.BaseType.GetGenericArguments().FirstOrDefault();
-            if (target is null)
+            if (t == typeof(NoCustomDrawer))
                 continue;
+            Type[] baseTypes = t.BaseType.GetGenericArguments();
+            Type target;
+            if (baseTypes.Length is 1)
+                target = baseTypes[0];
+            else if (baseTypes.Length is 2)
+                target = baseTypes[1];
+            else
+            {
+                new Log("Engine Inspector").Fatal(
+                    $"Inspector drawer of type {t.FullName} not valid with generic arguments, App will close!");
+                Environment.Exit(1);
+                return;
+            }
 
             propertyDrawerCache.Add(target, t);
         }
@@ -137,7 +150,7 @@ internal class Inspector : UIWindow
         if(!propertyDrawerCache.TryGetValue(member.Type, out Type t))
             return false;
 
-        InspectorPropertyDrawer drawer = (InspectorPropertyDrawer)Activator.CreateInstance(t)!;
+        IInspectorPropertyDrawer drawer = (IInspectorPropertyDrawer)Activator.CreateInstance(t)!;
         drawer.Target = target;
         drawer.MemberData = member;
         drawer.InitInternal();
@@ -149,7 +162,7 @@ internal class Inspector : UIWindow
     private void MakeTrackedUIContent(object c, MemberData m, UITreeNode node)
     {
         TrackedValue val = new TrackedValue(c, m.Name);
-        var drawer = new NoCustomDrawer();
+        IInspectorPropertyDrawer drawer = new NoCustomDrawer();
         drawer.Target = c;
         drawer.MemberData = m;
         drawer.InitInternal();

@@ -4,7 +4,7 @@ public class PerShellReloadBehavior : ReloadBehavior
 {
     private float timer;
     public bool UsePerShellTime { get; set; } = false; // false = total reload time distributed, true = per-shell time
-    [AsProgressBar]
+    [AsSlider]
     public override float ReloadProgress => IsReloading ? (float)Magazine.CurrentLoadedAmmo / Magazine.MaxAmmo : 1f;
     public override void StartReload()
     {
