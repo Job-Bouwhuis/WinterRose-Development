@@ -39,34 +39,3 @@ public class DoublePropertyDrawer : InspectorPropertyDrawer<NumericControlBase<d
         Content.SetValue((double?)TrackedValue.Value ?? 0, false);
     }
 }
-
-public class Vector3PropertyDrawer : InspectorPropertyDrawer<Vector3>
-{
-    private UINumericUpDown<float> x;
-    private UINumericUpDown<float> y;
-    private UINumericUpDown<float> z;
-
-    protected override UIContent CreateContent()
-    {
-        UIColumns cols = new();
-        x =  new UINumericUpDown<float>();
-        x.Label = "x";
-
-        y =  new UINumericUpDown<float>();
-        y.Label = "y";
-
-        z =  new UINumericUpDown<float>();
-        z.Label = "z";
-        return cols;
-    }
-
-    protected internal override void Init()
-    {
-        ref Vector3 val = ref TrackedValue.GetValueRef<Vector3>();
-    }
-
-    protected internal override void ValueUpdated()
-    {
-
-    }
-}

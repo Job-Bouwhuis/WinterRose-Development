@@ -19,6 +19,11 @@ public class TrackedValue
 
     public object? Value => val;
 
+    /// <summary>
+    /// Returns the value by ref, do not use for tracked values backed by properties!
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
     public ref T GetValueRef<T>()
     {
         return ref memberData.GetValueRef<object, T>(ref owner);

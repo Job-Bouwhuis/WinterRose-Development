@@ -1,5 +1,6 @@
 ﻿using Raylib_cs;
 using WinterRose.ForgeWarden.UserInterface;
+using WinterRose.Recordium;
 using WinterRose.Reflection;
 
 namespace WinterRose.ForgeWarden.Editor;
@@ -23,6 +24,7 @@ public interface IInspectorPropertyDrawer
 /// </remarks>
 public abstract class InspectorPropertyDrawer<TFor> : IInspectorPropertyDrawer
 {
+    protected Log log { get; } = new Log($"PropertyDrawer for {typeof(TFor).Name}");
     public UIContent Content { get; set; }
     public MemberData MemberData { get; set; }
     public object Target { get; set; }
