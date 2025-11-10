@@ -21,6 +21,8 @@ public class UITextInput : UIContent
     public MulticastVoidInvocation<UITextInput, string> OnSubmit = new();
     public MulticastVoidInvocation<UITextInput, string> OnInputChanged = new();
 
+
+
     private class InlineHandler
     {
         // Render: draws whatever the token represents, can modify ctx.x and ctx.color.
@@ -103,6 +105,13 @@ public class UITextInput : UIContent
     /// back to single-line automatically.
     /// </summary>
     public bool AllowMultiline { get; set; } = true;
+
+    /// <summary>
+    /// When true, the control is read-only and user input cannot change its text.
+    /// Selection and copy still work.
+    /// </summary>
+    public bool ReadOnly { get; set; } = false;
+
 
     private int selStart = 0; // inclusive
     private int selEnd = 0;   // exclusive
@@ -245,16 +254,19 @@ public class UITextInput : UIContent
             {
                 if (OperatingSystem.IsWindows())
                 {
-                    string fromClipboard = Windows.Clipboard.ReadString();
+                    if (!ReadOnly)
+                    {
+                        string fromClipboard = Windows.Clipboard.ReadString();
 
-                    if (HasSelection())
-                        DeleteSelection();
+                        if (HasSelection())
+                            DeleteSelection();
 
-                    text = text.Insert(caretIndex, fromClipboard);
-                    caretIndex += fromClipboard.Length;
-                    ClearSelection();
-                    UpdateMultilineState();
-                    OnInputChanged?.Invoke(this, text);
+                        text = text.Insert(caretIndex, fromClipboard);
+                        caretIndex += fromClipboard.Length;
+                        ClearSelection();
+                        UpdateMultilineState();
+                        OnInputChanged?.Invoke(this, text);
+                    }
                 }
                 else
                 {
@@ -263,20 +275,29 @@ public class UITextInput : UIContent
             }
 
             // navigation & editing keys
-            if (Input.IsPressed(KeyboardKey.Backspace, TimeSpan.FromSeconds(0.4), TimeSpan.FromSeconds(0.05)))
+            if (Input.IsPressed(
+                KeyboardKey.Backspace, 
+                repeatAfter: TimeSpan.FromSeconds(0.4), 
+                repeatTimeout: TimeSpan.FromSeconds(0.05)))
             {
                 if (HasSelection())
                 {
-                    DeleteSelection();
-                    OnInputChanged?.Invoke(this, text);
+                    if (!ReadOnly)
+                    {
+                        DeleteSelection();
+                        OnInputChanged?.Invoke(this, text);
+                    }
                 }
                 else if (caretIndex > 0 && text.Length > 0)
                 {
-                    text = text.Remove(caretIndex - 1, 1);
-                    caretIndex = Math.Max(0, caretIndex - 1);
-                    ClearSelection();
-                    UpdateMultilineState();
-                    OnInputChanged?.Invoke(this, text);
+                    if (!ReadOnly)
+                    {
+                        text = text.Remove(caretIndex - 1, 1);
+                        caretIndex = Math.Max(0, caretIndex - 1);
+                        ClearSelection();
+                        UpdateMultilineState();
+                        OnInputChanged?.Invoke(this, text);
+                    }
                 }
                 caretVisible = true;
                 caretTimer = 0f;
@@ -286,14 +307,20 @@ public class UITextInput : UIContent
             {
                 if (HasSelection())
                 {
-                    DeleteSelection();
-                    OnInputChanged?.Invoke(this, text);
+                    if (!ReadOnly)
+                    {
+                        DeleteSelection();
+                        OnInputChanged?.Invoke(this, text);
+                    }
                 }
                 else if (caretIndex < text.Length)
                 {
-                    text = text.Remove(caretIndex, 1);
-                    UpdateMultilineState();
-                    OnInputChanged?.Invoke(this, text);
+                    if (!ReadOnly)
+                    {
+                        text = text.Remove(caretIndex, 1);
+                        UpdateMultilineState();
+                        OnInputChanged?.Invoke(this, text);
+                    }
                 }
                 caretVisible = true;
                 caretTimer = 0f;
@@ -349,12 +376,15 @@ public class UITextInput : UIContent
                     if (AllowMultiline && shift)
                     {
                         // Activate multiline and insert newline
-                        text = text.Insert(caretIndex, "\n");
-                        caretIndex++;
-                        IsMultiline = true;
-                        ClearSelection();
-                        UpdateMultilineState();
-                        OnInputChanged?.Invoke(this, text);
+                        if (!ReadOnly)
+                        {
+                            text = text.Insert(caretIndex, "\n");
+                            caretIndex++;
+                            IsMultiline = true;
+                            ClearSelection();
+                            UpdateMultilineState();
+                            OnInputChanged?.Invoke(this, text);
+                        }
                     }
                     else
                     {
@@ -373,11 +403,14 @@ public class UITextInput : UIContent
                     }
                     else
                     {
-                        text = text.Insert(caretIndex, "\n");
-                        caretIndex++;
-                        ClearSelection();
-                        UpdateMultilineState();
-                        OnInputChanged?.Invoke(this, text);
+                        if (!ReadOnly)
+                        {
+                            text = text.Insert(caretIndex, "\n");
+                            caretIndex++;
+                            ClearSelection();
+                            UpdateMultilineState();
+                            OnInputChanged?.Invoke(this, text);
+                        }
                     }
                 }
 
@@ -392,6 +425,9 @@ public class UITextInput : UIContent
                 // ignore control characters
                 if (c >= 32)
                 {
+                    // respect readonly: ignore typing
+                    if (ReadOnly) continue;
+
                     char ch = (char)c;
                     if (HasSelection())
                     {

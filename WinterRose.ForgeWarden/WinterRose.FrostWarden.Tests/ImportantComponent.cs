@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeWarden.DamageSystem.WeaponSystem;
 using WinterRose.ForgeWarden.Entities;
 
 namespace WinterRose.ForgeWarden.Tests
@@ -23,5 +24,9 @@ namespace WinterRose.ForgeWarden.Tests
 
         [InjectAsset("bigimg")]
         public Sprite sprite;
+
+        [AsSlider]
+        public float testFloat = 5;
+
     }
 }

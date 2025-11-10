@@ -10,7 +10,7 @@ using WinterRose.ForgeWarden.UserInterface.Content;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
-public class UIValueSlider<T> : NumericControlBase<T> where T : INumber<T>, IMinMaxValue<T>
+public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IMinMaxValue<T>
 {
     // Layout constants
     private const float SLIDER_HEIGHT = 28f;
@@ -21,6 +21,12 @@ public class UIValueSlider<T> : NumericControlBase<T> where T : INumber<T>, IMin
     private const double ANIMATION_RATE = 14.0;
 
     private float labelWidthReserved;
+
+    private const float LABEL_PADDING = 8f;
+    private Rectangle labelRect;
+    private Rectangle sliderRect;
+
+    public string Label { get; set; } = "";
 
     /// <summary>
     /// If true, the slider will snap to steps. Holding shift will override snap when HoldShiftToDisableSnap == true.
@@ -43,7 +49,6 @@ public class UIValueSlider<T> : NumericControlBase<T> where T : INumber<T>, IMin
         set
         {
             ClampAndSet(value, true);
-            animatedValueD = Convert.ToDouble(base.Value);
         }
     }
 
@@ -82,7 +87,7 @@ public class UIValueSlider<T> : NumericControlBase<T> where T : INumber<T>, IMin
     }
 
     // clamp and set internal value from a T; optionally invoke callbacks if changed
-    private void ClampAndSet(T newVal, bool invokeCallbacks)
+    private void ClampAndSet(T newVal, bool invokeCallbacks, bool snapAnimated = false)
     {
         if (MinValue > MaxValue)
         {
@@ -117,7 +122,9 @@ public class UIValueSlider<T> : NumericControlBase<T> where T : INumber<T>, IMin
         bool changed = !Equals(valueBacking, newT);
         base.Value = newT;
 
-        animatedValueD = Convert.ToDouble(base.Value);
+        // only force the visual position when explicitly requested; otherwise let Update() smooth it
+        if (snapAnimated)
+            animatedValueD = Convert.ToDouble(base.Value);
 
         if (changed && invokeCallbacks)
         {
@@ -209,18 +216,18 @@ public class UIValueSlider<T> : NumericControlBase<T> where T : INumber<T>, IMin
             {
                 double newVal = MouseXToValue(sliderBounds, Input.Provider.MousePosition.X);
                 if (SnapToStep && Step > T.Zero && HoldShiftToDisableSnap &&
-                    (Input.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)KeyboardKey.LeftShift))
-                    || Input.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)KeyboardKey.RightShift))))
+                   (Input.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)KeyboardKey.LeftShift))
+                   || Input.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)KeyboardKey.RightShift))))
                 {
                     // temporarily disable snap while calling clamp
                     bool oldSnap = SnapToStep;
                     SnapToStep = false;
-                    ClampAndSet((T)Convert.ChangeType(newVal, typeof(T)), invokeCallbacks: true);
+                    ClampAndSet((T)Convert.ChangeType(newVal, typeof(T)), invokeCallbacks: true, snapAnimated: false);
                     SnapToStep = oldSnap;
                 }
                 else
                 {
-                    ClampAndSet((T)Convert.ChangeType(newVal, typeof(T)), invokeCallbacks: true);
+                    ClampAndSet((T)Convert.ChangeType(newVal, typeof(T)), invokeCallbacks: true, snapAnimated: false);
                 }
             }
         }
@@ -327,7 +334,7 @@ public class UIValueSlider<T> : NumericControlBase<T> where T : INumber<T>, IMin
         if (mx >= sliderBounds.X && mx <= sliderBounds.X + sliderBounds.Width && my >= sliderBounds.Y && my <= sliderBounds.Y + sliderBounds.Height)
         {
             double newVal = MouseXToValue(sliderBounds, mx);
-            ClampAndSet((T)Convert.ChangeType(newVal, typeof(T)), invokeCallbacks: true);
+            ClampAndSet((T)Convert.ChangeType(newVal, typeof(T)), invokeCallbacks: true, snapAnimated: false);
             // start dragging so user can continue adjusting
             isDragging = true;
             dragStartMouseX = mx;
@@ -339,21 +346,6 @@ public class UIValueSlider<T> : NumericControlBase<T> where T : INumber<T>, IMin
     {
         // clicking outside cancels dragging
         isDragging = false;
-    }
-
-    protected internal override void OnHover()
-    {
-        // intentionally left blank — hover state tracked in Update()
-    }
-
-    protected internal override void OnHoverEnd()
-    {
-        // intentionally left blank — hover state tracked in Update()
-    }
-
-    protected internal override void OnOwnerClosing()
-    {
-        // nothing special to clean up
     }
 
     // helper to format numeric display

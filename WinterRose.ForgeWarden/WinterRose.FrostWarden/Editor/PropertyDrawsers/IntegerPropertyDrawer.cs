@@ -1,10 +1,9 @@
-using WinterRose.ForgeWarden.DamageSystem.WeaponSystem;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.Content;
 
 namespace WinterRose.ForgeWarden.Editor;
 
-public class IntegerPropertyDrawer : InspectorPropertyDrawer<NumericControlBase<int>, int>
+public class IntegerPropertyDrawer : InspectorPropertyDrawer<UINumericControlBase<int>, int>
 {
     protected override UIContent CreateContent()
     {

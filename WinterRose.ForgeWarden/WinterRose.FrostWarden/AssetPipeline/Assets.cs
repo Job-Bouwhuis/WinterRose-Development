@@ -32,6 +32,13 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 
         internal static void BuildAssetIndexes()
         {
+            if (!System.IO.Directory.Exists(ASSET_ROOT))
+            {
+                log.Warning("Asset folder does not exist. No assets will be loaded");
+                return;
+                //System.IO.Directory.CreateDirectory(ASSET_ROOT);
+            }
+
             log.Info("Registering asset handlers");
 
             Type[] types = TypeWorker.FindTypesWithInterface(typeof(IAssetHandler<>));
@@ -90,10 +97,6 @@ namespace WinterRose.ForgeWarden.AssetPipeline
                         );
                 }
             }
-
-            // Ensure the asset root directory exists
-            if (!System.IO.Directory.Exists(ASSET_ROOT))
-                System.IO.Directory.CreateDirectory(ASSET_ROOT);
 
             FileInfo[] headerFiles = new DirectoryInfo(ASSET_ROOT).GetFiles($"*{ASSET_HEADER_EXTENSION}");
 

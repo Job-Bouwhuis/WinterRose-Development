@@ -18,7 +18,7 @@ public static class ForgeThreadExtensions
             bool done = true;
             foreach (CoroutineHandle handle in couroutines)
             {
-                if (!handle.IsStopped)
+                if (!handle.IsComplete)
                     done = false;
             }
             if (done)

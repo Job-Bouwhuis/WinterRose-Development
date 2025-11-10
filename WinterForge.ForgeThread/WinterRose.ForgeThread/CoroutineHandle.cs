@@ -10,7 +10,7 @@ public sealed class CoroutineHandle : IDisposable
 
     internal string Name { get; }
     internal IEnumerator<object?> Routine { get; }
-    internal bool IsStopped { get; private set; }
+    public bool IsComplete { get; private set; }
 
     /// <summary>
     /// The Task completes when the coroutine finishes (result = last yielded value or null).
@@ -26,7 +26,7 @@ public sealed class CoroutineHandle : IDisposable
     {
         Name = name;
         Routine = routine;
-        IsStopped = false;
+        IsComplete = false;
         LastYield = null;
     }
 
@@ -37,7 +37,7 @@ public sealed class CoroutineHandle : IDisposable
 
     internal void MarkCompleted()
     {
-        if (!IsStopped)
+        if (!IsComplete)
         {
             completionSource.TrySetResult(LastYield);
             Dispose();
@@ -46,7 +46,7 @@ public sealed class CoroutineHandle : IDisposable
 
     internal void MarkFaulted(Exception ex)
     {
-        if (!IsStopped)
+        if (!IsComplete)
         {
             completionSource.TrySetException(ex);
             Dispose();
@@ -58,8 +58,8 @@ public sealed class CoroutineHandle : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (IsStopped) return;
-        IsStopped = true;
+        if (IsComplete) return;
+        IsComplete = true;
         resumeTimer?.Dispose();
         resumeTimer = null;
     }

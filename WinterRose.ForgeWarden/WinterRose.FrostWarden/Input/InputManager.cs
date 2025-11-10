@@ -14,8 +14,8 @@ public static class InputManager
     private static readonly Dictionary<InputContext, int> contextPriorities = new();
 
     internal static bool EnablePassThrough { get; private set; } = false;
-    static bool focusOwnedByOverlay;
-    static nint prevHWind;
+    //static bool focusOwnedByOverlay;
+    //static nint prevHWind;
 
     public static InputContext RegisterContext(InputContext context)
     {
@@ -170,22 +170,22 @@ public static class InputManager
                 EnablePassThrough = false;
             }
 
-            if (mouseFocusGiven && !focusOwnedByOverlay)
-            {
-                prevHWind = GetForegroundWindow();
-                Windows.MyHandle.Focus();
-                focusOwnedByOverlay = true;
-            }
-            else if (!mouseFocusGiven && focusOwnedByOverlay)
-            {
-                if (prevHWind != IntPtr.Zero && prevHWind != Windows.MyHandle.Handle)
-                {
-                    SetForegroundWindow(prevHWind);
-                    prevHWind = nint.Zero;
-                }
+            //if (mouseFocusGiven && !focusOwnedByOverlay)
+            //{
+            //    prevHWind = GetForegroundWindow();
+            //    Windows.MyHandle.Focus();
+            //    focusOwnedByOverlay = true;
+            //}
+            //else if (!mouseFocusGiven && focusOwnedByOverlay)
+            //{
+            //    if (prevHWind != IntPtr.Zero && prevHWind != Windows.MyHandle.Handle)
+            //    {
+            //        SetForegroundWindow(prevHWind);
+            //        prevHWind = nint.Zero;
+            //    }
 
-                focusOwnedByOverlay = false;
-            }
+            //    focusOwnedByOverlay = false;
+            //}
         }
     }
 

@@ -9,7 +9,7 @@ using WinterRose.ForgeSignal;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
-public class UINumericUpDown<T> : NumericControlBase<T>
+public class UINumericUpDown<T> : UINumericControlBase<T>
     where T : INumber<T>, IMinMaxValue<T>
 {
     // Layout constants

@@ -3,7 +3,7 @@ using WinterRose.ForgeWarden.TextRendering;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
-public abstract class NumericControlBase<T> : UIContent, INumericControl<T>
+public abstract class UINumericControlBase<T> : UIContent, INumericControl<T>
     where T : INumber<T>, IMinMaxValue<T>
 {
     public String Label { get; set; }

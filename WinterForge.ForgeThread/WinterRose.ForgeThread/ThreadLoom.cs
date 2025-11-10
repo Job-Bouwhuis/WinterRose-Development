@@ -491,7 +491,7 @@ namespace WinterRose.ForgeThread
 
         internal void ResumeCoroutine(CoroutineHandle handle)
         {
-            if (handle.IsStopped) return;
+            if (handle.IsComplete) return;
 
             try
             {

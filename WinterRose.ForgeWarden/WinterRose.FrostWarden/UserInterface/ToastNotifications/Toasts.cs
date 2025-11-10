@@ -71,6 +71,11 @@ public static class Toasts
         requestReorder = true;
     }
 
+    public static int GetNumberOfToastsActive()
+    {
+        return regions.Values.Select(r => r.NumberOfToasts).Sum();
+    }
+
     private static int hoveredRegionIndex = -1; // -1 means no region hovered
     private static int lastHoveredRegionIndex = -1;
     private static float regionHeight = 300f; // adjustable height for all regions

@@ -31,6 +31,8 @@ public abstract class ToastRegionManager
     protected Queue<Toast> pendingToasts = new Queue<Toast>();
     protected List<Toast> activeToasts = new List<Toast>();
 
+    public int NumberOfToasts => pendingToasts.Count + activeToasts.Count;
+
     public ToastRegion Region { get; }
 
     protected abstract float GetToastXPosition(Toast toast);

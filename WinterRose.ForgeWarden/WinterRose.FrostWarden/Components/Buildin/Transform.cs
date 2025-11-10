@@ -38,6 +38,7 @@ namespace WinterRose.ForgeWarden.Components
             }
         }
 
+        [Hide]
         public ref Quaternion rotationRef => ref _rotation;
 
         // Optional helper property for Euler degrees (for ease of use or editor)
@@ -67,6 +68,7 @@ namespace WinterRose.ForgeWarden.Components
             }
         }
 
+        [Hide]
         public ref Vector3 scaleRef => ref _scale;
 
         [WFInclude]
@@ -75,8 +77,10 @@ namespace WinterRose.ForgeWarden.Components
             get => _parent; set => SetParent(value);
         }
 
+        [Hide]
         public IReadOnlyList<Transform> Children => children;
 
+        [Hide]
         public Matrix4x4 localMatrix
         {
             get
@@ -90,6 +94,8 @@ namespace WinterRose.ForgeWarden.Components
             }
         }
 
+
+        [Hide]
         public Matrix4x4 worldMatrix
         {
             get
@@ -107,18 +113,23 @@ namespace WinterRose.ForgeWarden.Components
             }
         }
 
+        [Hide]
         public Vector3 right => new Vector3(worldMatrix.M11, worldMatrix.M21, worldMatrix.M31);
 
+        [Hide]
         public Vector3 left => -right;
 
+        [Hide]
         public Vector3 up => new Vector3(worldMatrix.M12, worldMatrix.M22, worldMatrix.M32);
 
+        [Hide]
         public Vector3 down => -up;
 
+        [Hide]
         public Vector3 forward => new Vector3(worldMatrix.M13, worldMatrix.M23, worldMatrix.M33);
 
+        [Hide]
         public Vector3 back => -forward;
-
 
         public void SetParent(Transform? newParent)
         {

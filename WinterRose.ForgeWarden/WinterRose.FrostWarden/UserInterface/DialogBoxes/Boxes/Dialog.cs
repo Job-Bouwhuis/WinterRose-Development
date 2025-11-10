@@ -19,7 +19,10 @@ public class Dialog : UIContainer
     public Rectangle DialogPlacementBounds => Dialogs.GetDialogBounds(Placement);
 
     public Action<Dialog, object>? OnResult { get; set; }
-    private object? dialogResult;
+    /// <summary>
+    /// If the dialog has not yet closed, this value may still change!
+    /// </summary>
+    public object? DialogResult { get; set; }
 
     public float YAnimateTime { get; internal set; }
     internal bool WasBumped { get; set; }
@@ -62,11 +65,6 @@ public class Dialog : UIContainer
         SetupTitle(title);
     }
 
-    public void SetResult(object result)
-    {
-        dialogResult = result;
-    }
-
     protected virtual void SetupTitle(string title)
     {
         Rectangle bounds = Dialogs.GetDialogBounds(Placement);
@@ -102,7 +100,7 @@ public class Dialog : UIContainer
 
         if (OnResult != null)
         {
-            OnResult.Invoke(this, dialogResult ?? new object());
+            OnResult.Invoke(this, DialogResult ?? new object());
         }
     }
 
