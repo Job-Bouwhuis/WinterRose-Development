@@ -165,11 +165,16 @@ namespace WinterRose.ForgeWarden.AssetPipeline
         private static AssetHeader CreateHeader(string name, string? path)
         {
             path ??= ASSET_ROOT + $"{name}{ASSET_HEADER_EXTENSION}";
+            if (!System.IO.Directory.Exists(ASSET_ROOT))
+                System.IO.Directory.CreateDirectory(ASSET_ROOT);
             return new AssetHeader(name, path, [], new Anonymous());
         }
 
         public static AssetHeader CreateAsset<T>(T asset, string name)
         {
+            if (!System.IO.Directory.Exists(ASSET_ROOT))
+                System.IO.Directory.CreateDirectory(ASSET_ROOT);
+
             AssetHeader assetHeader = CreateHeader(name, null);
             assetHeaders.Add(assetHeader.Name, assetHeader);
 
