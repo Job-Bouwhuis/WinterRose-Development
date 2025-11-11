@@ -14,6 +14,7 @@ namespace WinterRose.ForgeWarden
         public int Height => (int)Size.Y;
 
         protected internal bool OwnsTexture { get; protected set; } = false;
+        public Rectangle SourceRect { get; set; }
 
         public Sprite(string filePath)
         {
@@ -39,13 +40,9 @@ namespace WinterRose.ForgeWarden
         // Factory method for a filled rectangle sprite
         public static Sprite CreateRectangle(int width, int height, Color fillColor)
         {
-            Image img = Raylib.GenImageColor(width, height, fillColor);
-            Texture2D tex = Raylib.LoadTextureFromImage(img);
-            Raylib.UnloadImage(img);
-            var sprite = new Sprite(tex, false);
-            sprite.Source = $"Generated_{width}_{height}_{fillColor.R}{fillColor.G}{fillColor.B}{fillColor.A}";
-            SpriteCache.RegisterSprite(sprite);
-            return sprite;
+            return SpriteCache.GetGenerated(width, height, fillColor);
+
+            
         }
 
         // Factory method for a filled circle sprite

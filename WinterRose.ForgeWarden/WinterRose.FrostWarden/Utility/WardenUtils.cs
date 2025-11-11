@@ -19,6 +19,8 @@ public static class WardenUtils
         return 2f * MathF.Acos(dot);
     }
 
+    public static Vector2 Vec2(this Vector3 vec) => new(vec.X, vec.Y);
+
     /// <summary>
     /// 
     /// </summary>

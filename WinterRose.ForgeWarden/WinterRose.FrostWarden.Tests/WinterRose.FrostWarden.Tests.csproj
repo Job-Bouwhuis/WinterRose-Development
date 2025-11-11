@@ -17,7 +17,7 @@
       <Alias>ray</Alias>
     </Using>
     <Using Include="System.Numerics" />
-    <Using Include="WinterRose.ForgeWarden.Components.Transform">
+    <Using Include="WinterRose.ForgeWarden.Transform">
       <Alias>Transform</Alias>
     </Using>
   </ItemGroup>
@@ -33,6 +33,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Assets\Rositta.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\spritesheet.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\Talking_final_%282%29.gif">

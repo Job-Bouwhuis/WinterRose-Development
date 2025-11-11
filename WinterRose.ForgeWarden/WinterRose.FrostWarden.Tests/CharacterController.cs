@@ -4,7 +4,7 @@ using WinterRose.ForgeWarden;
 namespace WinterRose.FrostWarden.Tests;
 internal class CharacterController : Component, IUpdatable
 {
-    float MoveSpeed = 500;
+    float MoveSpeed = 6000;
 
     public void Update()
     {

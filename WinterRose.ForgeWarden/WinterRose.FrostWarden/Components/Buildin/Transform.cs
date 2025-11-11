@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Physics;
 
-namespace WinterRose.ForgeWarden.Components
+namespace WinterRose.ForgeWarden
 {
     public class Transform : Component
     {

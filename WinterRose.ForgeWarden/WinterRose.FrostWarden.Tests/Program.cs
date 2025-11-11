@@ -16,6 +16,7 @@ using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Shaders;
 using WinterRose.ForgeWarden.StatusSystem;
 using WinterRose.ForgeWarden.TextRendering;
+using WinterRose.ForgeWarden.TileMaps;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.Content;
@@ -38,12 +39,12 @@ internal class Program : Application
     //const int SCREEN_HEIGHT = 1440;
 
     // for on PC
-    //const int SCREEN_WIDTH = 1920;
-    //const int SCREEN_HEIGHT = 1080;
+    const int SCREEN_WIDTH = 1920;
+    const int SCREEN_HEIGHT = 1080;
 
     // for on laptop
-    const int SCREEN_WIDTH = 1280;
-    const int SCREEN_HEIGHT = 720;
+    //const int SCREEN_WIDTH = 1280;
+    //const int SCREEN_HEIGHT = 720;
 
     //static Windows.SystemTrayIcon icon;
 
@@ -65,8 +66,6 @@ internal class Program : Application
 
         new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
         //new Program().RunAsOverlay();
-
-        //icon.DeleteIcon();
     }
 
     public override void Draw()
@@ -76,30 +75,40 @@ internal class Program : Application
 
     public override World CreateFirstWorld()
     {
-        //icon = new(Window.Handle, 0, "test", "AppLogo.ico");
-        //icon.ShowInTray();
-        //icon.RightClick.Subscribe(Invocation.Create(Close));
+        World world = new World("testworld");
+
+        // Generate region and fill with tiles using noise
+        Entity tilemap = world.CreateEntity("TileMap");
+        TileMap map = tilemap.AddComponent<TileMap>();
+
+
+        SpriteSheet sheet = SpriteSheet.Load("Assets/spritesheet.png", 256, 256);
+        Biome plains = new(sheet);
+        BiomeRegistry.AddBiome(plains, 0.2f);
+
+        Biome idk = new(Sprite.CreateRectangle(256, 256, Color.Beige));
+        BiomeRegistry.AddBiome(idk, 0.8f);
 
         ray.SetTargetFPS(144);
         //ClearColor = Color.Beige;
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
         RichSpriteRegistry.RegisterSprite("wf", new Sprite("tex"));
 
-        World world = new World("testworld");
-
         var cam = world.CreateEntity<Camera>("cam");
-
+        cam.transform.position = cam.transform.position with
+        {
+            Z = 0.6f
+        };
         var entity = world.CreateEntity("entity");
-        entity.transform.parent = cam.transform;
-        entity.transform.scale = new(0.4f);
+        entity.transform.scale = new(0.6f);
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Assets.Load<Sprite>("Rositta"));
         entity.AddComponent<CharacterController>();
         var vitals = entity.AddComponent<Vitality>();
         vitals.Health.MaxHealth = 100;
-
-        // Add a StatusEffector so we can test status effects
         var statusEffector = entity.AddComponent<StatusEffector>();
+        
+        cam.AddComponent<SmoothCamera2DMode>().Target = entity.transform;
 
         Universe.Hirarchy.Show();
 

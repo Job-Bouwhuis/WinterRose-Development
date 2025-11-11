@@ -38,34 +38,45 @@ namespace WinterRose.ForgeWarden
             cache[source] = newSprite;
             return newSprite;
         }
+        public static void RegisterSprite(Sprite sprite) => cache[sprite.Source] = sprite;
 
         public static Sprite GetGenerated(int width, int height, Color fillColor)
         {
-            string key = $"Generated_{width}_{height}_{fillColor.R}{fillColor.G}{fillColor.B}{fillColor.A}";
-            return Get(key); // will go through CreateGeneratedSpriteFromKey internally
-        }
+            uint packedColor =
+                ((uint)fillColor.R << 24) |
+                ((uint)fillColor.G << 16) |
+                ((uint)fillColor.B << 8) |
+                fillColor.A;
 
-        public static void RegisterSprite(Sprite sprite) => cache[sprite.Source] = sprite;
+            string key = $"Generated_{width}_{height}_{packedColor:X8}";
+            return Get(key);
+        }
 
         private static Sprite CreateGeneratedSpriteFromKey(string key)
         {
-            // Format: "Generated_width_height_RGBA"
+            // Expected format: "Generated_width_height_COLORHEX"
             var parts = key.Split('_');
-            if (parts.Length != 3 || !parts[0].Equals("Generated", StringComparison.OrdinalIgnoreCase))
+            if (parts.Length != 4 || !parts[0].Equals("Generated", StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException($"Invalid generated sprite key: {key}");
 
-            var size = parts[1].Split('x'); // support format like "64x32" if needed
-            int width = int.Parse(size[0]);
-            int height = int.Parse(size[1]);
+            int width = int.Parse(parts[1]);
+            int height = int.Parse(parts[2]);
 
-            string rgba = parts[2];
-            byte r = byte.Parse(rgba[..1]);
-            byte g = byte.Parse(rgba[1..1]);
-            byte b = byte.Parse(rgba[2..1]);
-            byte a = byte.Parse(rgba[3..1]);
-            Color fillColor = new Color(r, g, b, a);
+            uint packedColor = Convert.ToUInt32(parts[3], 16);
 
-            return Sprite.CreateRectangle(width, height, fillColor);
+            byte r = (byte)((packedColor >> 24) & 0xFF);
+            byte g = (byte)((packedColor >> 16) & 0xFF);
+            byte b = (byte)((packedColor >> 8) & 0xFF);
+            byte a = (byte)(packedColor & 0xFF);
+
+            var fillColor = new Color(r, g, b, a);
+            Image img = Raylib.GenImageColor(width, height, fillColor);
+            Texture2D tex = Raylib.LoadTextureFromImage(img);
+            Raylib.UnloadImage(img);
+            var sprite = new Sprite(tex, false);
+            sprite.Source = key;
+            SpriteCache.RegisterSprite(sprite);
+            return sprite;
         }
 
         public static void DisposeAll()

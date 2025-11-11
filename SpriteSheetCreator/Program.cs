@@ -20,7 +20,6 @@ internal class Program : Application
     UIProgress progressBar;
     UIText currentFileName;
     ThreadLoom loom;
-    // processing state (started after RunAsOverlay finishes)
     bool processingStarted = false;
     CoroutineHandle processingEnumerator;
     private bool calledClose;
@@ -29,8 +28,6 @@ internal class Program : Application
     private bool cancelled;
     private bool cancelToastShown;
 
-
-    // Allowed image extensions (uppercase style for constants)
     static readonly string[] ALLOWED_EXTENSIONS = new[] { ".png", ".jpg", ".jpeg", ".bmp" };
 
     public Program() : base(false, true)

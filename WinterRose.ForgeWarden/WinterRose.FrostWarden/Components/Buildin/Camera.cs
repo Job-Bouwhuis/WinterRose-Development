@@ -20,7 +20,7 @@ public class Camera : Component
         Offset = Resolution / 2,
         Target = new Vector2(owner.transform.position.X, owner.transform.position.Y),
         Rotation = owner.transform.rotation.Z,
-        Zoom = owner.transform.scale.Z
+        Zoom = owner.transform.position.Z
     };
 
     public Camera3D Camera3D => new Camera3D
