@@ -67,7 +67,7 @@ public abstract class NetworkConnection
     {
         using MemoryStream mem = new();
         var instr = ByteToOpcodeParser.Parse(stream);
-        return new WinterForgeVM().Execute(instr);
+        return new WinterForgeVM().Execute(instr, true);
     }
 
     /// <summary>

@@ -6,12 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.Networking;
 using WinterRose.NetworkServer;
+using WinterRose.NetworkServer.Connections;
 
 namespace WinterRoseServerService;
 public class WinterRoseServer : BackgroundService
 {
     private readonly ILogger<Worker> logger;
-    private ServerConnection? server;
+    private WinterRose.NetworkServer.Connections.ServerConnection? server;
 
     public WinterRoseServer(ILogger<Worker> logger)
     {
