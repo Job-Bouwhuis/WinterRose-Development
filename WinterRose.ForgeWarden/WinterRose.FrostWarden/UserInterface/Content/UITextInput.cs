@@ -719,7 +719,7 @@ public class UITextInput : UIContent
             float x = textPos.X;
             Color curColor = Style.TextBoxText; // start color for this line
 
-            int localIdx = 0; // index within renderLine (this walks raw characters including tokens)
+            int localIdx = 0; 
             int measurePos = 0; // count of visible characters seen so far on this line (for mapping)
                                 // maintain a quick pointer into injectedSegments
             int segPointer = 0;

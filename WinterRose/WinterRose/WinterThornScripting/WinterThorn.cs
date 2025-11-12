@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -88,7 +89,7 @@ public class WinterThorn
         var files = scriptsSource.GetFiles("*.thn");
         foreach (var file in files)
         {
-            var ns = ThornFactory.ParseScript(file.Read(), GlobalBlock);
+            var ns = ThornFactory.ParseScript(File.ReadAllText(file.FullName), GlobalBlock);
             ns?.Foreach(GlobalBlock.DefineNamespace);
         }
     }

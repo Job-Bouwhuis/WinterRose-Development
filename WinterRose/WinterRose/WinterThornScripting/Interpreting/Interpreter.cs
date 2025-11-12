@@ -86,7 +86,7 @@ public class Interpreter(Block block)
                     return gotoBreak;
                 }
             }
-           
+
             switch (token.Type)
             {
                 case TokenType.AccessControl:
@@ -101,10 +101,10 @@ public class Interpreter(Block block)
                         continue;
                     }
                     break;
-                case TokenType.Loop: 
+                case TokenType.Loop:
                     break;
                 case TokenType.Operator:
-                    if (options.FromFunction) 
+                    if (options.FromFunction)
                         break;
                     bool b = HandleOperator();
                     if (b)
@@ -332,7 +332,8 @@ EndOfLoop:
 
         // construct arguments to pass to the constructor
         List<Token> tokens = GetTokensUntil(token => token.Type == TokenType.CloseParenthesis, true);
-        2.Repeat(x => tokens.RemoveAt(0));
+        tokens.RemoveAt(0);
+        tokens.RemoveAt(0);
 
         List<Variable> args = [];
 
@@ -377,7 +378,8 @@ EndOfLoop:
 
         // fetch the arguments to pass to the function
         List<Token> tokens = GetTokensUntil(token => token.Type == TokenType.CloseParenthesis, true);
-        2.Repeat(x => tokens.RemoveAt(0));
+        tokens.RemoveAt(0);
+        tokens.RemoveAt(0);
         for (int i = 0; i < tokens.Count; i++)
         {
             if (tokens[i].Type == TokenType.Comma)

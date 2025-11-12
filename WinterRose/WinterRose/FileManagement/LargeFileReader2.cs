@@ -54,7 +54,7 @@ namespace WinterRose.FileManagement
             Decoder decoder = Encoding.UTF8.GetDecoder();
             int charCount = decoder.GetCharCount(buffer, 0, chunkSize);
 
-            char[] charBuffer = memory.Span.Slice(0, charCount).ToArray();
+            char[] charBuffer = memory.Span[..charCount].ToArray();
             decoder.GetChars(buffer, 0, chunkSize, charBuffer, 0);
             return memory;
         }
@@ -100,7 +100,7 @@ namespace WinterRose.FileManagement
             }
             finally
             {
-                6.Repeat(x => GC.Collect());
+                GC.Collect();
             }
         }
 

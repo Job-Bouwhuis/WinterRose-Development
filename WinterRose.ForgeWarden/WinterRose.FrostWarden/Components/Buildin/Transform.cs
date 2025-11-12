@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Physics;
+using WinterRose.WinterThornScripting.Interpreting;
 
 namespace WinterRose.ForgeWarden
 {
@@ -90,10 +91,10 @@ namespace WinterRose.ForgeWarden
                     RecalculateLocalMatrix();
                     _dirty = false;
                 }
-                return _localMatrix;
+                return field;
             }
+            private set => field = value;
         }
-
 
         [Hide]
         public Matrix4x4 worldMatrix
@@ -102,14 +103,14 @@ namespace WinterRose.ForgeWarden
             {
                 if (_dirty)
                 {
-                    _worldMatrix = parent != null
+                    field = parent != null
                         ? localMatrix * parent.worldMatrix
                         : localMatrix;
 
                     _dirty = false;
                 }
 
-                return _worldMatrix;
+                return field;
             }
         }
 
@@ -146,9 +147,6 @@ namespace WinterRose.ForgeWarden
         private Quaternion _rotation = Quaternion.Identity;
         private Vector3 _scale = Vector3.One;
 
-        private Matrix4x4 _localMatrix = Matrix4x4.Identity;
-        private Matrix4x4 _worldMatrix = Matrix4x4.Identity;
-
         private bool _dirty = true;
 
         private Transform? _parent;
@@ -167,7 +165,7 @@ namespace WinterRose.ForgeWarden
             }
         }
 
-        private void RecalculateLocalMatrix() => _localMatrix = Matrix4x4.CreateScale(_scale)
+        private void RecalculateLocalMatrix() => localMatrix = Matrix4x4.CreateScale(_scale)
              * Matrix4x4.CreateFromQuaternion(_rotation)
              * Matrix4x4.CreateTranslation(_position);
 

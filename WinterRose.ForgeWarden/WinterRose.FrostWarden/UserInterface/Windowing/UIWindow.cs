@@ -817,7 +817,6 @@ public class UIWindow : UIContainer
                 // re-evaluate NoAutoMove: keep it true when fully maximized, otherwise restore movement
                 NoAutoMove = isMaximized;
 
-                // if a toggle was  queued while animating, apply it now (this will start a new animation)
                 if (maximizeRequested)
                 {
                     bool queued = maximizeRequestedValue;
