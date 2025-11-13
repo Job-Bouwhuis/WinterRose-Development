@@ -1,6 +1,6 @@
 namespace WinterRose.Recordium;
 
-public class ConsoleDestination : ILogDestination
+public class ConsoleLogDestination : ILogDestination
 {
     public bool Invalidated { get; set; }
 

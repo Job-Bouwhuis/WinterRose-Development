@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -60,9 +59,9 @@ public class RelayConnection : NetworkConnection
 
     internal void SetSource(ConnectionSource source) => Source = source;
 
-    public override void Send(Packet packet) => sendPoint.Send(packet, RelayIdentifier);
+    public override void Send(Packet packet, bool overridePacketName = true) => sendPoint.Send(packet, RelayIdentifier, overridePacketName);
 
-    public override bool Send(Packet packet, Guid destination) => sendPoint.Send(packet, destination);
+    public override bool Send(Packet packet, Guid destination, bool overridePacketName = true) => sendPoint.Send(packet, destination, overridePacketName);
 
     public override bool Disconnect() => sendPoint.Disconnect();
 

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -18,8 +17,8 @@ public class ClusterClient : NetworkConnection
     public override bool IsConnected => server.IsConnected && client.IsConnected;
     public override Guid Identifier { get => client.Identifier; internal set => client.Identifier = value; }
 
-    public ClusterClient(ServerConnection server, ClientConnection serverSideClient, ILogger? logger = null)
-        : base(logger ?? new ConsoleLogger(nameof(ClusterClient), true))
+    public ClusterClient(ServerConnection server, ClientConnection serverSideClient)
+        : base(new Recordium.Log("Cluster"))
     {
         this.server = server;
         client = serverSideClient;
@@ -32,8 +31,8 @@ public class ClusterClient : NetworkConnection
         return true;
     }
     public override NetworkStream GetStream() => server.GetStream();
-    public override void Send(Packet packet) => server.Send(packet);
-    public override bool Send(Packet packet, Guid destination) => server.Send(packet, destination);
+    public override void Send(Packet packet, bool overridePacketName = true) => server.Send(packet, overridePacketName);
+    public override bool Send(Packet packet, Guid destination, bool overridePacketName = true) => server.Send(packet, destination, overridePacketName);
     public override void TunnelRequestAccepted(Guid a, Guid b) { }
     public override bool TunnelRequestReceived(TunnelRequestPacket packet, NetworkConnection sender) => false;
 
@@ -69,7 +68,7 @@ public class ClusterClient : NetworkConnection
                 {
                     if (((ReplyPacket.ReplyContent)rp.Content).OriginalPacket is DisconnectClientPacket)
                     {
-                        logger.LogInformation("Cluster client {id} closed and thereby left the cluster", Identifier);
+                        logger.Info($"Cluster client {Identifier} closed and thereby left the cluster");
                         Disconnect();
                         break;
                     }
@@ -77,7 +76,7 @@ public class ClusterClient : NetworkConnection
 
                 if (packet is DisconnectClientPacket)
                 {
-                    logger.LogInformation("Cluster client {id} closed and thereby left the cluster", Identifier);
+                    logger.Info($"Cluster client {Identifier} closed and thereby left the cluster");
                     Disconnect();
                     break;
                 }
@@ -87,7 +86,7 @@ public class ClusterClient : NetworkConnection
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "Error while listening for messages: " + ex.Message);
+            logger.Critical(ex, "Error while listening for messages: " + ex.Message);
         }
     }
 
@@ -102,7 +101,7 @@ public class ClusterClient : NetworkConnection
             }
             if (data is not Packet packet)
             {
-                logger.LogError("Error: Data was not a valid packet.");
+                logger.Error("Error: Data was not a valid packet.");
                 continue;
             }
             return packet;

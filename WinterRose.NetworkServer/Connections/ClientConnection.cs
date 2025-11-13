@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -44,8 +43,8 @@ public class ClientConnection : NetworkConnection
         return true;
     }
 
-    internal ClientConnection(TcpClient client, bool isOnServerSide, ILogger? logger, string? username)
-        : base(logger is null ? new ConsoleLogger(nameof(ClientConnection), true) : logger)
+    internal ClientConnection(TcpClient client, bool isOnServerSide, string? username)
+        : base(new Recordium.Log("Client" + $" {username}" ?? ""))
     {
         Username = username ?? "UNSET";
         IsServer = false;
@@ -55,35 +54,36 @@ public class ClientConnection : NetworkConnection
             Setup();
     }
 
-    public static ClientConnection Connect(IPAddress ip, int port, string? username = null, ILogger? logger = null)
+    public static ClientConnection Connect(IPAddress ip, int port, string? username = null)
     {
         var client = new TcpClient();
         client.Connect(ip, port);
 
-        var con = new ClientConnection(client, false, logger, username);
+        var con = new ClientConnection(client, false, username);
+        con.ipAddressUsed = ip;
+        while (!con.initialized)
+            Task.Delay(100).Wait();
+
+        return con;
+    }
+
+    public static ClientConnection Connect(IPAddress ip, int port, bool server, string? username = null)
+    {
+        var client = new TcpClient();
+        client.Connect(ip, port);
+
+        var con = new ClientConnection(client, server, username);
         con.ipAddressUsed = ip;
         while (!con.initialized) ;
 
         return con;
     }
 
-    public static ClientConnection Connect(IPAddress ip, int port, bool server, string? username = null, ILogger? logger = null)
-    {
-        var client = new TcpClient();
-        client.Connect(ip, port);
-
-        var con = new ClientConnection(client, server, logger, username);
-        con.ipAddressUsed = ip;
-        while (!con.initialized) ;
-
-        return con;
-    }
-
-    public static ClientConnection Connect(string hostname, int port, string? username = null, ILogger? logger = null)
+    public static ClientConnection Connect(string hostname, int port, string? username = null)
     {
         IPAddress[] addresses = Dns.GetHostAddresses(hostname);
 
-        var client = Connect(addresses.FirstOrDefault(), port, username, logger);
+        var client = Connect(addresses.FirstOrDefault(), port, username);
         client.domainUsed = hostname;
         return client;
     }
@@ -93,15 +93,16 @@ public class ClientConnection : NetworkConnection
         listenerThread = StartListeningForMessages();
     }
 
-    public override void Send(Packet packet)
+    public override void Send(Packet packet, bool overridePacketName = true)
     {
         packet.SenderID = Identifier;
-        packet.SenderUsername = Username;
+        if(overridePacketName)
+            packet.SenderUsername = Username;
         WinterForge.SerializeToStream(packet, stream/*, TargetFormat.IntermediateRepresentation*/);
         stream.Flush();
     }
 
-    public override bool Send(Packet packet, Guid destination)
+    public override bool Send(Packet packet, Guid destination, bool overridePacketName = true)
     {
         if (packet is RelayPacket relay)
         {
@@ -120,7 +121,7 @@ public class ClientConnection : NetworkConnection
             packet = new RelayPacket(packet, Identifier, destination);
         }
 
-        Send(packet);
+        Send(packet, overridePacketName);
         return true;
     }
 
@@ -198,7 +199,7 @@ public class ClientConnection : NetworkConnection
             }
             else
             {
-                logger.LogCritical("No handshake packet received before another");
+                logger.Critical("No handshake packet received before another");
                 HandleReceivedPacket(packet, this, serverSourceConnection);
             }
         }
@@ -232,7 +233,7 @@ public class ClientConnection : NetworkConnection
 
                 if (packet is ServerStoppedPacket)
                 {
-                    logger.LogWarning("Server stopped");
+                    logger.Warning("Server stopped");
                     break;
                 }
 
@@ -252,7 +253,7 @@ public class ClientConnection : NetworkConnection
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "Error while listening for messages: " + ex.Message);
+            logger.Critical(ex, "Error while listening for messages: " + ex.Message);
         }
     }
 
@@ -267,7 +268,7 @@ public class ClientConnection : NetworkConnection
             }
             if (data is not Packet packet)
             {
-                logger.LogError("Error: Data was not a valid packet.");
+                logger.Error("Error: Data was not a valid packet.");
                 continue;
             }
             return packet;
@@ -275,6 +276,8 @@ public class ClientConnection : NetworkConnection
     }
 
     internal TcpClient GetTcp() => client;
+    public EndPoint? ClientEndpoint => client.Client.RemoteEndPoint;
+
     internal void SetIdentifier(Guid identifier)
     {
         Identifier = identifier;

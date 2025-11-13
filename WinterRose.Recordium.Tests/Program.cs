@@ -7,8 +7,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        LogDestinations.AddDestination(new ConsoleDestination());
-        LogDestinations.AddDestination(new FileDestination("Logs"));
+        LogDestinations.AddDestination(new ConsoleLogDestination());
+        LogDestinations.AddDestination(new FileLogDestination("Logs"));
 
         Log logger = new Log("Tests");
 

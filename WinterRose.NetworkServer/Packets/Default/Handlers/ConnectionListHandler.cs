@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,17 +14,17 @@ internal class ConnectionListHandler : PacketHandler
     {
         if (self is not ServerConnection server)
         {
-            logger.LogWarning($"Client '{sender.Identifier}' tried to get connection list (reply), but only server may handle this.");
+            logger.Warning($"Client '{sender.Identifier}' tried to get connection list (reply), but only server may handle this.");
             return;
         }
-        logger.LogWarning($"ConnectionList request sent without the sender expecting a reply.");
+        logger.Warning($"ConnectionList request sent without the sender expecting a reply.");
     }
 
     public override void HandleResponsePacket(ReplyPacket replyPacket, Packet packet, NetworkConnection self, NetworkConnection sender)
     {
         if (self is not ServerConnection server)
         {
-            logger.LogWarning($"Client '{sender.Identifier}' tried to get connection list (reply), but only server may handle this.");
+            logger.Warning($"Client '{sender.Identifier}' tried to get connection list (reply), but only server may handle this.");
             return;
         }
 

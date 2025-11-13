@@ -68,6 +68,12 @@ public static partial class Windows
     static Windows()
     {
         AppDomain.CurrentDomain.ProcessExit += (sender, e) => ApplicationExit();
+        AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+        {
+            if (e.IsTerminating)
+                ApplicationExit();
+        };
+        AppDomain.CurrentDomain.DomainUnload += (sender, e) => ApplicationExit();
     }
 
     public static void AbortPCShutdown() => AbortSystemShutdown(Environment.MachineName);

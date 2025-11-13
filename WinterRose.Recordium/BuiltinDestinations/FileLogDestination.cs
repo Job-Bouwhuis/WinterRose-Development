@@ -3,7 +3,7 @@ using System.Text;
 
 namespace WinterRose.Recordium;
 
-public class FileDestination : ILogDestination
+public class FileLogDestination : ILogDestination
 {
     private Stream fileStream;
 
@@ -35,7 +35,7 @@ public class FileDestination : ILogDestination
         return false;
     }
 
-    public FileDestination(string fileDirectory)
+    public FileLogDestination(string fileDirectory)
     {
         string date = DateTime.UtcNow.ToString("yyyy.MM.dd_HH.mm.ss");
 

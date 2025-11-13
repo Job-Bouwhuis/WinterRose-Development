@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.Recordium;
 
 namespace WinterRose.NetworkServer.Packets
 {
@@ -11,7 +11,7 @@ namespace WinterRose.NetworkServer.Packets
     {
         public abstract string Type { get; }
 
-        internal protected ILogger logger = null!;
+        internal protected Log logger = null!;
 
         public abstract void Handle(Packet packet, NetworkConnection self, NetworkConnection sender);
 

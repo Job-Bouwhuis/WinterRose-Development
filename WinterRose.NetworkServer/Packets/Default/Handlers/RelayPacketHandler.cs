@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,14 +14,14 @@ internal class RelayPacketHandler : PacketHandler
     public override void Handle(Packet packet, NetworkConnection self, NetworkConnection sender)
     {
         RelayPacket.RelayContent content = packet.Content as RelayPacket.RelayContent;
-        logger.LogInformation($"Relaying packet {content.relayedPacket.GetType().Name} " +
+        logger.Info($"Relaying packet {content.relayedPacket.GetType().Name} " +
             $"from {content.sender} to {content.destination}");
         sender.Send(packet, content.destination);
     }
     public override void HandleResponsePacket(ReplyPacket replyPacket, Packet packet, NetworkConnection self, NetworkConnection sender)
     {
         RelayPacket.RelayContent content = packet.Content as RelayPacket.RelayContent;
-        logger.LogInformation($"Relaying packet {content.relayedPacket.GetType().Name} " +
+        logger.Info($"Relaying packet {content.relayedPacket.GetType().Name} " +
             $"from {content.sender} to {content.destination}");
         sender.Send(packet, content.destination);
     }

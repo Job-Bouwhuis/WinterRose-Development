@@ -80,8 +80,8 @@ public abstract class Application
 
     static Application()
     {
-        LogDestinations.AddDestination(new ConsoleDestination());
-        LogDestinations.AddDestination(new FileDestination("logs"));
+        LogDestinations.AddDestination(new ConsoleLogDestination());
+        LogDestinations.AddDestination(new FileLogDestination("logs"));
         RaylibLog.Setup();
 
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>

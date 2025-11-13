@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -33,10 +32,8 @@ public class ServerConnection : NetworkConnection
 
     public event Action<ClientConnection> OnClientConnected = delegate { };
 
-    public string LogPrefix { get; set; } = "WinterRoseServer: ";
-
-    public ServerConnection(IPAddress ip, int port, ILogger? logger = null, string? clusterID = null)
-        : base(logger is null ? new ConsoleLogger(nameof(ServerConnection), true) : logger)
+    public ServerConnection(IPAddress ip, int port, string? clusterID = null)
+        : base(new Recordium.Log("Server"))
     {
         serverListener = new TcpListener(ip, port);
         tunnelConnectionHandler = new();
@@ -49,14 +46,14 @@ public class ServerConnection : NetworkConnection
 
         if (clusterID is not null)
         {
-            base.logger?.LogInformation("Cluster broadcasting on port 55620");
-            clusterMapper = new(this, clusterID, "1", 55620, port, base.logger);
+            base.logger?.Info("Cluster broadcasting on port 55620");
+            clusterMapper = new(this, clusterID, "1", 55620, port);
             clusterMapper.Start();
         }
     }
 
-    public ServerConnection(string ip, int port, ILogger? logger = null, string? clusterID = null) 
-        : this(IPAddress.Parse(ip), port, logger, clusterID)
+    public ServerConnection(string ip, int port, string? clusterID = null)
+        : this(IPAddress.Parse(ip), port, clusterID)
     {
     }
 
@@ -78,7 +75,7 @@ public class ServerConnection : NetworkConnection
         {
             TcpClient client = await serverListener.AcceptTcpClientAsync(cancellationToken);
             Guid clientID = Guid.CreateVersion7();
-            ClientConnection cc = new(client, true, new ConsoleLogger($"CLIENT ({clientID})"), null);
+            ClientConnection cc = new(client, true, null);
             cc.SetIdentifier(clientID);
             clients.Add(cc);
 
@@ -93,7 +90,7 @@ public class ServerConnection : NetworkConnection
         public ClusterClient ClusterNode => (Connection as ClusterClient)!;
 
         public bool IsClusterNode => Connection is ClusterClient;
-        
+
         public static implicit operator ClientConnection(ClientContext context) => context.Client;
         public static implicit operator ClusterClient(ClientContext context) => context.ClusterNode;
 
@@ -111,13 +108,13 @@ public class ServerConnection : NetworkConnection
 
         OnClientConnected(client);
 
-        logger.LogInformation("New client connected on UUID: " + client.Identifier.ToString());
+        logger.Info("New client connected on UUID: " + client.Identifier.ToString());
 
         ClientContext context = client;
 
         try
         {
-            
+
             using (NetworkStream stream = tcp.GetStream())
             {
                 client.Send(ccp);
@@ -125,7 +122,7 @@ public class ServerConnection : NetworkConnection
                 if (first is ClientHelloPacket clientHello)
                 {
                     var helloData = (ClientHelloPacket.ClientHelloContent)clientHello.Content;
-                    logger.LogInformation($"Connected: {helloData.Username}");
+                    logger.Info($"Connected: {helloData.Username}");
                     client.Send(new OkPacket());
                 }
 
@@ -144,7 +141,7 @@ public class ServerConnection : NetworkConnection
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, LogPrefix + $"Error with client {client.Identifier}: {ex.Message}", client);
+            logger.Error(ex, $"Error with client {client.Identifier}");
         }
         finally
         {
@@ -159,24 +156,24 @@ public class ServerConnection : NetworkConnection
         if (data is Nothing)
         {
             if (client.Username != "UNSET")
-                logger.LogWarning(LogPrefix + $"Client '{client.Identifier}' ({client.Username}) disconnected abruptly");
+                logger.Warning($"Client '{client.Identifier}' ({client.Username}) disconnected abruptly");
             else
-                logger.LogWarning(LogPrefix + $"Client '{client.Identifier}' disconnected abruptly");
+                logger.Warning($"Client '{client.Identifier}' disconnected abruptly");
             return true;
         }
 
         if (data is not Packet packet)
         {
-            logger.LogError("Error: Data was not a valid packet.");
+            logger.Error("Error: Data was not a valid packet.");
             return true;
         }
 
         if (packet is DisconnectClientPacket disconnect)
         {
             if (client.Username != "UNSET")
-                logger.LogInformation(LogPrefix + $"Client '{client.Identifier}' ({client.Username}) disconnected gracefully");
+                logger.Info($"Client '{client.Identifier}' ({client.Username}) disconnected gracefully");
             else
-                logger.LogInformation(LogPrefix + $"Client '{client.Identifier}' disconnected gracefully");
+                logger.Info($"Client '{client.Identifier}' disconnected gracefully");
             return false;
         }
 
@@ -187,27 +184,27 @@ public class ServerConnection : NetworkConnection
                 client.Send(((ReplyPacket)packet).Reply(new OkPacket(), this));
 
                 if (client.Username != "UNSET")
-                    logger.LogInformation(LogPrefix + $"Client '{client.Identifier}' ({client.Username}) disconnected gracefully");
+                    logger.Info($"Client '{client.Identifier}' ({client.Username}) disconnected gracefully");
                 else
-                    logger.LogInformation(LogPrefix + $"Client '{client.Identifier}' disconnected gracefully");
+                    logger.Info($"Client '{client.Identifier}' disconnected gracefully");
                 return false;
             }
 
             if (reply.OriginalPacket is ClusterHelloPacket hello)
             {
                 var helloData = (ClusterHelloPacket.ClusterHelloContent)hello.Content;
-                logger.LogInformation(
+                logger.Info(
                     $"[ClusterNode] Node connected: ID={helloData.NodeId}, Cluster={helloData.ClusterId}, Version={helloData.Version}");
                 clients.Remove(client);
                 client.IsServer = true;
-                context.Connection = new ClusterClient(this, client, logger);
+                context.Connection = new ClusterClient(this, client);
                 clusterClients.Add(context.ClusterNode);
                 client.Identifier = helloData.NodeId;
 
                 client.Send(((ReplyPacket)packet).Reply(
                     new ClusterHelloPacket(Identifier, clusterMapper.ClusterId, clusterMapper.Version), this));
 
-                logger.LogInformation("Connected to cluster member {id}", helloData.NodeId);
+                logger.Info($"Connected to cluster member {helloData.NodeId}");
 
                 return true;
             }
@@ -224,10 +221,11 @@ public class ServerConnection : NetworkConnection
         return null;
     }
 
-    public override void Send(Packet packet)
+    public override void Send(Packet packet, bool overrideSenderName = true)
     {
         packet.SenderID = Identifier;
-        packet.SenderUsername = Username;
+        if (overrideSenderName)
+            packet.SenderUsername = Username;
 
         foreach (var client in clients)
         {
@@ -237,12 +235,12 @@ public class ServerConnection : NetworkConnection
         }
     }
 
-    public override bool Send(Packet packet, Guid destination)
+    public override bool Send(Packet packet, Guid destination, bool overridePacketName = true)
     {
         foreach (var client in clients)
             if (client.Identifier == destination)
             {
-                client.Send(packet);
+                client.Send(packet, overridePacketName);
                 return true;
             }
 
@@ -328,13 +326,13 @@ public class ServerConnection : NetworkConnection
         Forge.Expect(clusterMapper).Not.Null();
         ClusterHelloPacket hello = new(Identifier, clusterMapper.ClusterId, clusterMapper.Version);
         var client = ClientConnection.Connect(nodeAddress, tcpPort, true);
-        clusterClients.Add(new ClusterClient(this, client, logger));
+        clusterClients.Add(new ClusterClient(this, client));
 
         ClusterHelloPacket resp = client.SendAndWaitForResponse(hello) as ClusterHelloPacket;
         var helloData = (ClusterHelloPacket.ClusterHelloContent)resp.Content;
         client.Identifier = helloData.NodeId;
 
-        logger.LogInformation("Connected to cluster member {id}", helloData.NodeId);
+        logger.Info($"Connected to cluster member {helloData.NodeId}");
     }
 
     internal void RemoveClusterClient(ClusterClient clusterClient)

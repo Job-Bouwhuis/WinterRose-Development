@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,7 +10,7 @@ using System.Threading.Tasks;
 using WinterRose.ConsoleExtentions;
 using WinterRose.Expressions;
 using WinterRose.NetworkServer.Packets;
-using WinterRose.NetworkServer.Packets;
+using WinterRose.Recordium;
 using WinterRose.WinterForgeSerializing.Compiling;
 using WinterRose.WinterForgeSerializing.Workers;
 
@@ -25,15 +24,51 @@ public abstract class NetworkConnection
 
     public abstract bool IsConnected { get; }
 
-    static NetworkConnection() =>
-        TypeWorker.FindTypesWithBase<PacketHandler>().Where(handler => handler != typeof(PacketHandler))
-            .Foreach(handler => packetHandlers.Add(
-                ((PacketHandler)ActivatorExtra.CreateInstance(handler)).Type, handler));
-
-    public NetworkConnection(ILogger logger)
+    static NetworkConnection()
     {
+        // Expand the static initializer so duplicate keys or other registration problems
+        // produce a clear, debuggable error message identifying the offending types/keys.
+        var handlerTypes = TypeWorker
+            .FindTypesWithBase<PacketHandler>()
+            .Where(handler => handler != typeof(PacketHandler))
+            .ToList();
+
+        foreach (var handlerType in handlerTypes)
+        {
+            try
+            {
+                var instance = (PacketHandler?)ActivatorExtra.CreateInstance(handlerType);
+                if (instance == null)
+                    continue; // skip if we couldn't create it for some reason
+
+                string key = instance.Type ?? throw new InvalidOperationException($"PacketHandler '{handlerType.FullName}' returned a null/empty Type.");
+
+                if (packetHandlers.ContainsKey(key))
+                {
+                    var existingType = packetHandlers[key];
+                    string message = $"Duplicate packet handler key detected: '{key}'. Existing handler type: '{existingType.FullName}'. New handler type: '{handlerType.FullName}'.";
+                    Debug.WriteLine(message);
+                    Console.Error.WriteLine(message);
+                    throw new InvalidOperationException(message);
+                }
+
+                packetHandlers[key] = handlerType;
+            }
+            catch (Exception ex)
+            {
+                string message = $"Error registering packet handler type '{handlerType.FullName}': {ex.GetType().Name} - {ex.Message}";
+                Debug.WriteLine(message);
+                Console.Error.WriteLine(message);
+                // Re-throw to fail fast so you can debug the initialization issue.
+                throw;
+            }
+        }
+    }
+
+    public NetworkConnection(Log log)
+    {
+        logger = log;
         ByteToOpcodeParser.WaitIndefinitelyForData = true;
-        this.logger = logger;
         pendingResponses = [];
 
         Windows.ApplicationExit += () =>
@@ -54,7 +89,7 @@ public abstract class NetworkConnection
     /// </summary>
     public bool IsServer { get; internal protected set; }
 
-    public readonly ILogger logger;
+    public readonly Log logger;
 
     /// <summary>
     /// The identifier for this connection.
@@ -74,9 +109,9 @@ public abstract class NetworkConnection
     /// Sends the given packet to this connection
     /// </summary>
     /// <param name="packet"></param>
-    public abstract void Send(Packet packet);
+    public abstract void Send(Packet packet, bool overrideSenderName = true);
 
-    public abstract bool Send(Packet packet, Guid destination);
+    public abstract bool Send(Packet packet, Guid destination, bool overrideSenderName = true);
 
     public abstract bool TunnelRequestReceived(TunnelRequestPacket packet, NetworkConnection sender);
     public abstract void TunnelRequestAccepted(Guid a, Guid b);
@@ -149,7 +184,7 @@ public abstract class NetworkConnection
             PacketHandler? h = GetHandler(p);
             if (h is null)
             {
-                self.logger.LogCritical("ReplyHandler - No handler for packet type found in the application: " + p.Header.GetPacketType());
+                self.logger.Critical("ReplyHandler - No handler for packet type found in the application: " + p.Header.GetPacketType());
                 return;
             }
 
@@ -166,7 +201,7 @@ public abstract class NetworkConnection
         PacketHandler? handler = GetHandler(packet);
         if (handler is null)
         {
-            logger.LogCritical("No handler for packet type found in the application: " + packet.Header.GetPacketType());
+            logger.Critical("No handler for packet type found in the application: " + packet.Header.GetPacketType());
             return;
         }
 
@@ -201,7 +236,7 @@ public abstract class NetworkConnection
     private void HandleRelayPacket(Packet packet, NetworkConnection self)
     {
         RelayPacket.RelayContent content = packet.Content as RelayPacket.RelayContent;
-        logger.LogInformation($"Relaying packet {content.relayedPacket.GetType().Name} " +
+        logger.Info($"Relaying packet {content.relayedPacket.GetType().Name} " +
             $"from {content.sender} to {content.destination}");
 
         if(!self.Send(packet, content.destination))

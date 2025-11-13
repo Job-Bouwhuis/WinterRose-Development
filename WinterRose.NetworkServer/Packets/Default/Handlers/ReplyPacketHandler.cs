@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,7 +24,7 @@ namespace WinterRose.NetworkServer.Packets.Default.Responses
             PacketHandler? handler = GetHandler(packet);
             if (handler is null)
             {
-                logger.LogCritical("ReplyHandler - No handler for packet type found in the application: " + packet.Header.GetPacketType());
+                logger.Critical("ReplyHandler - No handler for packet type found in the application: " + packet.Header.GetPacketType());
                 return;
             }
 

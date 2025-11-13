@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using WinterRose.Recordium;
 using WinterRose.WinterForgeSerializing;
 using WinterRose.WinterForgeSerializing.Instructions;
 
@@ -24,10 +24,10 @@ public class ClusterDiscovery
     public int TcpPort { get; }
     public UdpClient UdpClient { get; }
     public IPEndPoint BroadcastEndpoint { get; }
-    public ILogger? Logger { get; }
+    public Log? Logger { get; }
     private CancellationTokenSource cts = new CancellationTokenSource();
 
-    public ClusterDiscovery(ServerConnection server, string clusterId, string version, int udpPort, int tcpPort, ILogger? logger)
+    public ClusterDiscovery(ServerConnection server, string clusterId, string version, int udpPort, int tcpPort)
     {
         this.Server = server;
         this.ClusterId = clusterId;
@@ -35,7 +35,7 @@ public class ClusterDiscovery
         this.UdpPort = udpPort;
         this.TcpPort = tcpPort;
         this.NodeId = server.Identifier;
-        this.Logger = logger;
+        Logger = new Log($"{server.logger.Category}_ClusterDC");
 
         // Setup UdpClient socket options before binding
         var udpClientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -87,7 +87,7 @@ public class ClusterDiscovery
                 }
                 catch (Exception ex)
                 {
-                    Logger?.LogCritical(ex, "[Broadcast Sender Error]");
+                    Logger?.Critical(ex, "[Broadcast Sender Error]");
                 }
 
                 await Task.Delay(5000, token);
@@ -95,7 +95,7 @@ public class ClusterDiscovery
         }
         catch (Exception ex)
         {
-            Logger?.LogCritical(ex, "[Broadcast Sender Error]");
+            Logger?.Critical(ex, "[Broadcast Sender Error]");
         }
     }
 
@@ -128,7 +128,7 @@ public class ClusterDiscovery
                         int compare = NodeId.CompareTo(invitation.NodeId);
 
                         if(compare is not 0)
-                            Logger?.LogInformation($"[Discovered Node] {invitation.NodeAddress}:{invitation.TcpPort} (NodeId: {invitation.NodeId})");
+                            Logger?.Info($"[Discovered Node] {invitation.NodeAddress}:{invitation.TcpPort} (NodeId: {invitation.NodeId})");
 
                         if (compare < 0)
                         {
@@ -146,13 +146,13 @@ public class ClusterDiscovery
                 catch (EndOfStreamException) { }
                 catch (Exception ex)
                 {
-                    Logger?.LogCritical(ex, "[Broadcast Listener Error: {type}]", ex.GetType());
+                    Logger?.Critical(ex, "[Broadcast Listener Error]");
                 }
             }
         }
         catch (Exception ex)
         {
-            Logger?.LogCritical(ex, "[Broadcast Listener Error: {type}]", ex.GetType());
+            Logger?.Critical(ex, "[Broadcast Listener Error]");
         }
     }
 
@@ -164,7 +164,7 @@ public class ClusterDiscovery
         }
         catch (Exception ex)
         {
-            Logger.LogCritical(ex, "Joining cluster failed");
+            Logger.Critical(ex, "Joining cluster failed");
         }
 
         pendingConnections.Remove(nodeId, out _);

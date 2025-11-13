@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Linq;
 using WinterRose.NetworkServer.Connections;
 using WinterRose.NetworkServer.Packets;
@@ -12,7 +11,7 @@ internal class GetUsernameResponse : PacketHandler
 
     public override void Handle(Packet packet, NetworkConnection self, NetworkConnection sender)
     {
-        logger.LogWarning("Username requested but sender does not expect a reply!");
+        logger.Warning("Username requested but sender does not expect a reply!");
     }
 
     public override void HandleResponsePacket(ReplyPacket replyPacket, Packet packet, NetworkConnection self, NetworkConnection sender)
@@ -22,20 +21,20 @@ internal class GetUsernameResponse : PacketHandler
             if (self is ClientConnection c)
                 sender.Send(replyPacket.Reply(new GetUsernamePacket(c.Username), self));
             else
-                logger.LogError("Unknown self to handle GETUSERNAME");
+                logger.Error("Unknown self to handle GETUSERNAME");
             return;
         }
 
         if (packet.Content is not GuidContent guidContent)
         {
-            logger.LogError("Invalid content for GetUsernamePacket (expected GuidContent).");
+            logger.Error("Invalid content for GetUsernamePacket (expected GuidContent).");
             return;
         }
 
         var client = server.GetClients().FirstOrDefault(c => c.Identifier == guidContent.guid);
         if (client == null)
         {
-            logger.LogWarning($"Client with identifier {guidContent} not found.");
+            logger.Warning($"Client with identifier {guidContent} not found.");
             sender.Send(replyPacket.Reply(new NoPacket(), self));
             return;
         }
