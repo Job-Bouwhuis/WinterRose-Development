@@ -68,7 +68,7 @@ public abstract class NetworkConnection
     public NetworkConnection(Log log)
     {
         logger = log;
-        ByteToOpcodeParser.WaitIndefinitelyForData = true;
+        ByteToOpcodeDecompiler.WaitIndefinitelyForData = true;
         pendingResponses = [];
 
         Windows.ApplicationExit += () =>
@@ -101,7 +101,7 @@ public abstract class NetworkConnection
     internal object ReadFromNetworkStream(NetworkStream stream)
     {
         using MemoryStream mem = new();
-        var instr = ByteToOpcodeParser.Parse(stream);
+        var instr = ByteToOpcodeDecompiler.Parse(stream);
         return new WinterForgeVM().Execute(instr, true);
     }
 

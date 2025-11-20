@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using WinterRose.Threading;
@@ -175,6 +176,26 @@ namespace WinterRose.ForgeThread
             thread.Start();
         }
 
+        public void CreatePool(string poolName, int workerCount)
+        {
+            if (workerCount <= 0) throw new ArgumentOutOfRangeException(nameof(workerCount));
+
+            RegisterWorkerThread(poolName);
+
+            List<string> workerNames = [poolName];
+            for (int i = 1; i < workerCount; i++)
+            {
+                var name = $"{poolName}-{i}";
+                RegisterWorkerThread(name);
+                workerNames.Add(name);
+            }
+
+            CreateQueueGroup(poolName);
+
+            foreach (var worker in workerNames)
+                JoinSharedQueue(worker, poolName);
+        }
+
         private static TaskCompletionSource<T> CreateTcs<T>() =>
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -241,7 +262,7 @@ namespace WinterRose.ForgeThread
         }
 
 
-        public Task<T> InvokeOn<T>(string threadName, Func<T> func, JobPriority priority = JobPriority.Normal)
+        public Task<T> InvokeOn<T>(string threadName, Func<T> func, bool bypassTick = false, JobPriority priority = JobPriority.Normal)
         {
             var tcs = CreateTcs<T>();
 
@@ -250,6 +271,17 @@ namespace WinterRose.ForgeThread
                 try
                 {
                     T res = func();
+                    Type resType = res.GetType();
+                    if(resType.FullName.StartsWith("System.Threading.Tasks.Task"))
+                    {
+                        Task t = Unsafe.As<Task>(res);
+                        if(t.Status == TaskStatus.Faulted)
+                        {
+                            tcs.SetException(t.Exception ?? new Exception("Task faulted"));
+                            return;
+                        }
+                        return;
+                    }
                     tcs.SetResult(res);
                 }
                 catch (Exception ex)
@@ -258,11 +290,11 @@ namespace WinterRose.ForgeThread
                 }
             }
 
-            EnqueueItem(threadName, wrapper, priority, CancellationToken.None);
+            EnqueueItem(threadName, wrapper, priority, CancellationToken.None, bypassTick);
             return tcs.Task;
         }
 
-        public Task InvokeOn(string threadName, Action func, JobPriority priority = JobPriority.Normal)
+        public Task InvokeOn(string threadName, Action func, bool bypassTick = false, JobPriority priority = JobPriority.Normal)
         {
             var tcs = CreateTcs<object>();
 
@@ -279,7 +311,7 @@ namespace WinterRose.ForgeThread
                 }
             }
 
-            EnqueueItem(threadName, wrapper, priority, CancellationToken.None);
+            EnqueueItem(threadName, wrapper, priority, CancellationToken.None, bypassTick);
             return tcs.Task;
         }
 
@@ -354,6 +386,54 @@ namespace WinterRose.ForgeThread
 
             EnqueueItem(threadName, wrapper, JobPriority.Normal, CancellationToken.None, bypassTick);
             return tcs.Task;
+        }
+
+        /// <summary>
+        /// Used to compute a value on a specific worker thread, blocking the caller until complete.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="threadName"></param>
+        /// <param name="externalTask"></param>
+        /// <param name="bypassTick"></param>
+        /// <returns></returns>
+        public T ComputeOn<T>(string threadName, Task<T> externalTask, bool bypassTick = false)
+        {
+            return InvokeOn(threadName, externalTask, bypassTick).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Used to compute a value on a specific worker thread, blocking the caller until complete.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="threadName"></param>
+        /// <param name="externalTask"></param>
+        /// <param name="bypassTick"></param>
+        /// <returns></returns>
+        public T ComputeOn<T>(string threadName, Func<T> externalTask, bool bypassTick = false)
+        {
+            return InvokeOn(threadName, externalTask, bypassTick).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Used to execute a task on a specific worker thread, blocking the caller until complete.
+        /// </summary>
+        /// <param name="threadName"></param>
+        /// <param name="externalTask"></param>
+        /// <param name="bypassTick"></param>
+        public void ComputeOn(string threadName, Task externalTask, bool bypassTick = false)
+        {
+            InvokeOn(threadName, externalTask, bypassTick).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Used to execute a task on a specific worker thread, blocking the caller until complete.
+        /// </summary>
+        /// <param name="threadName"></param>
+        /// <param name="externalTask"></param>
+        /// <param name="bypassTick"></param>
+        public void ComputeOn(string threadName, Action externalTask, bool bypassTick = false)
+        {
+            InvokeOn(threadName, externalTask, bypassTick).GetAwaiter().GetResult();
         }
 
         public Task InvokeOn(string threadName, Task externalTask, bool bypassTick = false)

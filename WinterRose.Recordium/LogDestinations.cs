@@ -19,6 +19,10 @@ public static class LogDestinations
         var r = new List<ILogDestination>();
         r.AddRange(logDestinations);
         r.AddRange(extenders);
+#if DEBUG
+        if(r.Count == 0)
+            r.Add(new ConsoleLogDestination());
+#endif
         return r;
     }
 }

@@ -187,7 +187,7 @@ public class Game1 : Application
         sb.AppendLine($"Deserialization: Best = {bestDeserializationTime} ms, Worst = {worstDeserializationTime} ms");
 
         FileStream compiledFile = File.OpenRead("Level 1");
-        var instructions = ByteToOpcodeParser.Parse(compiledFile).ToList();
+        var instructions = ByteToOpcodeDecompiler.Parse(compiledFile).ToList();
         compiledFile.Close();
         sb.AppendLine("Total instructions: " + instructions.Count);
         sb.AppendLine("file size (bytes): " + new FileInfo("Level 1").Length);

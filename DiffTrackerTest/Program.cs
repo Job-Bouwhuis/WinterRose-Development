@@ -1,5 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using WinterRose.Diff;
+using WinterRose.ForgeThread;
 
 namespace DiffTrackerTest;
 
@@ -8,34 +10,24 @@ internal class Program
     static void Main(string[] args)
     {
         File.Copy("every-wound-becomes-a-star.wav", "every-wound-becomes-a-star DIFFED.wav", true);
-
-        using var orig = File.Open("every-wound-becomes-a-star.wav", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-        using var mod = File.Open("every-wound-becomes-a-star EDIT.wav", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-
-        using var orig2 = File.Open("every-wound-becomes-a-star DIFFED.wav", FileMode.OpenOrCreate, FileAccess.ReadWrite);
-        orig2.Position = 0;
-
-        var diffs = DiffTracker.GetSmartByteDiff(orig, mod);
-        orig2.Position = 0;
-        mod.Position = 0;
-        DiffApplier.ApplyDiffs(orig2, diffs);
-        orig2.Position = 0;
-        mod.Position = 0;
+        test().GetAwaiter().GetResult();
     }
 
-    public static void DumpStreamBytes(Stream stream)
+    static async Task test()
     {
-        long startPos = stream.Position;
+        //using var orig = File.Open("every-wound-becomes-a-star.wav", FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        //using var mod = File.Open("every-wound-becomes-a-star EDIT.wav", FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
-        int b;
-        while ((b = stream.ReadByte()) != -1)
-        {
-            Console.Write($"{b:X2} ");
-        }
+        //using var orig2 = File.Open("every-wound-becomes-a-star DIFFED.wav", FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
-        Console.WriteLine();
+        var rops = DirectoryDiff.Load("testOps.wfbin");
 
-        stream.Position = startPos; // reset position if needed
+        ThreadLoom loom = new();
+        loom.CreatePool("DiffPool", 10);
+
+        DirectoryDiff ops = loom.ComputeOn("DiffPool", new DiffEngine().DirectoryDiffAsync(
+            @"D:\GitRepositories\Personal\WinterRose-Development\DiffTrackerTest\bin\Debug\net10.0 - old",
+            @"D:\GitRepositories\Personal\WinterRose-Development\DiffTrackerTest\bin\Debug\net10.0"));
+        ops.Save("testOps.wfbin");
     }
-
 }

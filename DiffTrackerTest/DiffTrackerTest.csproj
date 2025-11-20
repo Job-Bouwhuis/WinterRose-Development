@@ -8,7 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WinterForge.ForgeThread\WinterRose.ForgeThread\WinterRose.ForgeThread.csproj" />
     <ProjectReference Include="..\WinterRose.Diff\WinterRose.Diff.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="every-wound-becomes-a-star EDIT.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="every-wound-becomes-a-star.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
