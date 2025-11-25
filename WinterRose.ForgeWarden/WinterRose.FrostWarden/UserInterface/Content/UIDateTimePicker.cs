@@ -850,19 +850,4 @@ public class UIDateTimePicker : UIContent
         // clicking outside should end any in-progress clock drag
         isDraggingClock = false;
     }
-
-    protected internal override void OnHover()
-    {
-        // no-op; used to match other UI patterns
-    }
-
-    protected internal override void OnHoverEnd()
-    {
-        // no-op
-    }
-
-    protected internal override void OnOwnerClosing()
-    {
-        // nothing special
-    }
 }

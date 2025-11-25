@@ -79,35 +79,6 @@ internal class Program : Application
         ray.SetTargetFPS(144);
         World world = new World("testworld");
 
-        Entity cube1 = world.CreateEntity("cube1");
-        var mesh1 = cube1.AddComponent<MeshRenderer>();
-        mesh1.mesh = PrimitiveMeshFactory.CreateCube(1);
-        cube1.transform.position = new Vector3(0, 0, 0);
-
-        Entity cube2 = world.CreateEntity("cube2");
-        var mesh2 = cube2.AddComponent<MeshRenderer>();
-        mesh2.mesh = PrimitiveMeshFactory.CreateCube(1);
-        cube2.transform.position = new Vector3(1.5f, 0, 0);
-
-        Entity cube3 = world.CreateEntity("cube3");
-        var mesh3 = cube3.AddComponent<MeshRenderer>();
-        mesh3.mesh = PrimitiveMeshFactory.CreateCube(1);
-        cube3.transform.position = new Vector3(3.0f, 0, 0);
-
-        Entity cube4 = world.CreateEntity("cube4");
-        var mesh4 = cube4.AddComponent<MeshRenderer>();
-        mesh4.mesh = PrimitiveMeshFactory.CreateTorus(1);
-        cube4.transform.position = new Vector3(4.5f, 0, 0);
-
-
-        Camera c = world.CreateEntity<Camera>("cam");
-        c.AddComponent<CameraFreeFly>();
-        c.is3D = true;
-        c.transform.positionRef.Z -= 5;
-
-        c.transform.LookAt(cube1.transform);
-        return world;
-
         // Generate region and fill with tiles using noise
         Entity tilemap = world.CreateEntity("TileMap");
         TileMap map = tilemap.AddComponent<TileMap>();
@@ -142,6 +113,10 @@ internal class Program : Application
         cam.AddComponent<SmoothCamera2DMode>().Target = entity.transform;
 
         Universe.Hirarchy.Show();
+
+        UIWindow dd = new UIWindow("a", 600, 500);
+        dd.AddContent(new UIDateTimePicker());
+        dd.Show();
 
         #region weapon stuff
 
