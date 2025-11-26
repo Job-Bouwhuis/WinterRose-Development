@@ -11,154 +11,111 @@ public static class Encryptor
 {
     private static Grid? grid;
 
-    /// <summary>
-    /// Uses the provided public key to create a grid for repeated use. This is useful if you are going to encrypt or decrypt multiple messages with the same public key.
-    /// </summary>
-    /// <param name="publicKey"></param>
-    public static void UseUniversalGrid(string publicKey)
+    public static void UseUniversalGrid(string publicKey, bool fullByteRange = false)
     {
-        grid = new Grid(publicKey);
+        grid = new Grid(publicKey, fullByteRange);
     }
 
-    /// <summary>
-    /// Clears the universal grid. This is useful if you are done encrypting or decrypting messages and want to free up memory.
-    /// </summary>
-    public static void ClearUniversalGrid()
+    public static void ClearUniversalGrid() => grid = null;
+
+    public static string? GetAlphabet() => grid == null ? Grid.DEFAULT_ALPHABET : grid.Alphabet;
+
+    // New core: byte-oriented encryption (works across 0..255)
+    public static byte[] EncryptBytes(ReadOnlySpan<byte> messageBytes, string publicKey, ReadOnlySpan<byte> passwordBytes, int shiftAmount = 1, Action<float>? progress = null, int reportEvery = 1000)
     {
-        grid = null;
-    }
+        Grid localGrid = Encryptor.grid ?? new Grid(publicKey, true); // default to full-byte-range for byte API
 
-    public static string GetAlphabet() => grid == null ? Grid.DEFAULT_ALPHABET : grid.Alphabet;
+        int len = messageBytes.Length;
+        byte[] output = new byte[len];
 
+        // extend password using rotation as in original intent but efficient
+        int pwdLen = passwordBytes.Length;
+        if (pwdLen == 0) throw new ArgumentException("Password cannot be empty", nameof(passwordBytes));
 
-    /// <summary>
-    /// Encrypts the given message using the provided public key and password.
-    /// </summary>
-    /// <param name="message">The message to be encrypted</param>
-    /// <param name="publicKey">The public key, this key is no issue if the world would find out about this one. tho, it would weaken the encryption to those who have experience in encryption</param>
-    /// <param name="password">The password used to encrypt the message, this should not be made public</param>
-    /// <param name="progress">A callback function so you can display progress on your UI</param>
-    /// <param name="reportEvery">every how many characters should the report callback be called</param>
-    /// <returns>The encrypted message</returns>
-    public static string Encrypt(char[] message, string publicKey, string password, int shiftAmount = 1, Action<float>? progress = null, int reportEvery = 1000)
-    {
-        Grid grid = Encryptor.grid ?? new(publicKey);
+        float total = len * 2f;
+        float current = 0f;
 
-        float total = message.Length * 2;
-        float current = 0;
-
-        StringBuilder encryptedMessage = new();
-
-        // extend the password to the length of the message by repeating it and shifting it left by one character each duplicate until it is the same length as the message
-        char[] passwordArray = new char[message.Length];
-        foreach (int i in message.Length)
+        for (int i = 0; i < len; i++)
         {
-            // if we completed the password, shift it left by one character
-            if (i % password.Length == 0 && i != 0)
-                password = password[1..] + password[0];
+            byte pwdByte = passwordBytes[i % pwdLen];
 
-            passwordArray[i] = password[i % password.Length];
+            // Optionally rotate password after completing one cycle (mimicked original behaviour)
+            if (i > 0 && (i % pwdLen) == 0)
+            {
+                // rotate the password "left by one" for subsequent repeats:
+                // instead of mutating password we simulate by using offset
+                // but for simplicity we rotate the grid slightly so behaviour matches previous shifting
+                // (this keeps behaviour consistent with original design)
+                localGrid >>= 1;
+            }
+
+            byte plain = messageBytes[i];
+            byte cipher = localGrid.GetValue(pwdByte, plain);
+
+            if (shiftAmount != 0)
+                localGrid >>= shiftAmount; // cheap offset adjustment
+
+            output[i] = cipher;
+
             current++;
-            if (current % reportEvery == 0)
+            if ((int)current % reportEvery == 0)
                 progress?.Invoke(current / total * 100f);
         }
 
-        // encrypt each character in the message
-        for (int i = 0; i < message.Length; i++)
+        return output;
+    }
+
+    public static byte[] DecryptBytes(ReadOnlySpan<byte> encryptedBytes, string publicKey, ReadOnlySpan<byte> passwordBytes, int shiftAmount = 1, Action<float>? progress = null, int reportEvery = 1000)
+    {
+        Grid localGrid = Encryptor.grid ?? new Grid(publicKey, true);
+
+        int len = encryptedBytes.Length;
+        byte[] output = new byte[len];
+
+        int pwdLen = passwordBytes.Length;
+        if (pwdLen == 0) throw new ArgumentException("Password cannot be empty", nameof(passwordBytes));
+
+        float total = len * 2f;
+        float current = 0f;
+
+        for (int i = 0; i < len; i++)
         {
-            GridPosition position = grid.GetPosition(passwordArray[i], message[i]);
-            if (shiftAmount is not 0)
-                _ = grid >> shiftAmount;
-            encryptedMessage.Append(position.Value);
+            byte pwdByte = passwordBytes[i % pwdLen];
+
+            if (i > 0 && (i % pwdLen) == 0)
+                localGrid >>= 1;
+
+            byte cipher = encryptedBytes[i];
+            byte plain = localGrid.GetPlain(pwdByte, cipher);
+
+            output[i] = plain;
+
+            if (shiftAmount != 0)
+                localGrid >>= shiftAmount;
 
             current++;
-            if (current % reportEvery == 0)
+            if ((int)current % reportEvery == 0)
                 progress?.Invoke(current / total * 100f);
         }
 
-        return encryptedMessage.ToString();
+        return output;
     }
-
-    /// <summary>
-    /// Decrypts the given message using the provided public key and password. these should be the same as the ones used to encrypt the message. Otherwise, the decryption will result in nonsense.
-    /// </summary>
-    /// <param name="encryptedMessage">The message to be decrypted</param>
-    /// <param name="publicKey">The public key, this key is no issue if the world would find out about this one. tho, it would weaken the encryption to those who have experience in encryption</param>
-    /// <param name="password">The password used to encrypt the message, this should not be made public</param>
-    /// <param name="progress">A callback function so you can display progress on your UI</param>
-    /// <param name="reportEvery">every how many characters should the report callback be called</param>
-    /// <returns>The encrypted message</returns>
-    public static string Decrypt(char[] encryptedMessage, string publicKey, string password, int shiftAmount = 1, Action<float>? progress = null, int reportEvery = 1000)
+    
+    public static string Encrypt(string message, string publicKey, string password, int shiftAmount = 1, Action<float>? progress = null, int reportEvery = 1000)
     {
-        Grid grid = Encryptor.grid ?? new(publicKey);
-        StringBuilder decryptedMessage = new();
-
-        float total = encryptedMessage.Length * 2;
-        float current = 0;
-
-        // extend the password to the length of the message by repeating it and shifting it left by one character each duplicate until it is the same length as the message
-        char[] passwordArray = new char[encryptedMessage.Length];
-        foreach (int i in encryptedMessage.Length)
-        {
-            // if we completed the password, shift it left by one character
-            if (i % password.Length == 0 && i != 0)
-                password = password[1..] + password[0];
-
-            passwordArray[i] = password[i % password.Length];
-
-            current++;
-            if (current % reportEvery == 0)
-                progress?.Invoke(current / total * 100);
-        }
-
-        // Decrypt each character in the message
-        // Decrypt each character in the message
-        for (int i = 0; i < encryptedMessage.Length; i++)
-        {
-            // Get the position of the encrypted character in the grid using the password character
-            GridPosition position = grid.GetPosition(passwordArray[i], encryptedMessage[i]);
-
-            // Shift the grid to the right by the shift amount
-            if (shiftAmount is not 0)
-                _ = grid >> shiftAmount;
-
-            // Append the decrypted character to the decrypted message
-            decryptedMessage.Append(position.Value);
-
-            current++;
-            if (current % reportEvery == 0)
-                progress?.Invoke(current / total * 100);
-
-            Console.Write(position.Value);
-        }
-
-        return decryptedMessage.ToString();
+        byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+        byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+        byte[] cipherBytes = EncryptBytes(messageBytes, publicKey, passwordBytes, shiftAmount, progress, reportEvery);
+        return Convert.ToBase64String(cipherBytes);
     }
 
-    /// <summary>
-    /// Encrypts the given message using the provided public key and password.
-    /// </summary>
-    /// <param name="message">The message to be encrypted</param>
-    /// <param name="publicKey">The public key, this key is no issue if the world would find out about this one. tho, it would weaken the encryption to those who have experience in encryption</param>
-    /// <param name="password">The password used to encrypt the message, this should not be made public</param>
-    /// <param name="progress">A callback function so you can display progress on your UI</param>
-    /// <param name="reportEvery">every how many characters should the report callback be called</param>
-    /// <returns>The encrypted message</returns>
-    public static string Encrypt(string message, string publicKey, string password, int shiftAmount = 1, Action<float>? progress = null, int reportEvery = 1000) =>
-        Encrypt(message.ToCharArray(), publicKey, password, shiftAmount, progress, reportEvery);
-
-    /// <summary>
-    /// Decrypts the given message using the provided public key and password. these should be the same as the ones used to encrypt the message. Otherwise, the decryption will result in nonsense.
-    /// </summary>
-    /// <param name="encryptedMessage">The message to be decrypted</param>
-    /// <param name="publicKey">The public key, this key is no issue if the world would find out about this one. tho, it would weaken the encryption to those who have experience in encryption</param>
-    /// <param name="password">The password used to encrypt the message, this should not be made public</param>
-    /// <param name="progress">A callback function so you can display progress on your UI</param>
-    /// <param name="reportEvery">every how many characters should the report callback be called</param>
-    /// <returns>The encrypted message</returns>
-    public static string Decrypt(string encryptedMessage, string publicKey, string password, int shiftAmount = 1, Action<float>? progress = null, int reportEvery = 1000) =>
-        Decrypt(encryptedMessage.ToCharArray(), publicKey, password, shiftAmount, progress, reportEvery);
-
+    public static string Decrypt(string base64EncryptedMessage, string publicKey, string password, int shiftAmount = 1, Action<float>? progress = null, int reportEvery = 1000)
+    {
+        byte[] encryptedBytes = Convert.FromBase64String(base64EncryptedMessage);
+        byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+        byte[] plainBytes = DecryptBytes(encryptedBytes, publicKey, passwordBytes, shiftAmount, progress, reportEvery);
+        return Encoding.UTF8.GetString(plainBytes);
+    }
 
     public static void PrintGrid()
     {

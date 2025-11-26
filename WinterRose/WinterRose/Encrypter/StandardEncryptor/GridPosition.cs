@@ -2,27 +2,26 @@
 
 namespace WinterRose.Encryption;
 
-internal class GridPosition(char column, char row, char value) : IEquatable<GridPosition>
+internal class GridPosition : IEquatable<GridPosition>
 {
-    public char Column { get; set; } = column;
-    public char Row { get; set; } = row;
-    public char Value { get; set; } = value;
+    public byte Column { get; set; }
+    public byte Row { get; set; }
+    public byte Value { get; set; }
 
-    public override bool Equals(object obj)
+    public GridPosition(byte column, byte row, byte value)
     {
-        return Equals(obj as GridPosition);
+        Column = column;
+        Row = row;
+        Value = value;
     }
+
+    public override bool Equals(object obj) => Equals(obj as GridPosition);
 
     public bool Equals(GridPosition other)
     {
-        if (other == null)
-            return false;
-
+        if (other == null) return false;
         return Column == other.Column && Row == other.Row;
     }
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Column, Row);
-    }
+    public override int GetHashCode() => HashCode.Combine(Column, Row);
 }
