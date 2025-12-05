@@ -73,8 +73,6 @@ internal struct NoteManager : IAssetHandler<List<Note>>
     private static readonly object SYNC_OBJECT = new();
     private static List<Note> notes = [];
 
-    //private static readonly AssetHeader header;
-
     static NoteManager()
     {
         Application.Current.GameClosing.Subscribe(

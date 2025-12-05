@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -30,7 +31,7 @@ namespace WinterRose.ForgeThread
 
         private bool disposed;
 
-        public const string DEFAULT_MAIN_NAME = "Main";
+        public const string DEFAULT_MAIN_NAME = "main";
 
         /// <summary>
         /// Create a named shared work queue. Worker threads have to be seperately registered to this group
@@ -116,7 +117,7 @@ namespace WinterRose.ForgeThread
         }
 
         /// <summary>
-        /// Registers the current thread as a pumped "main" loom. You must call <see cref="ProcessPendingActions(string,int)"/>
+        /// Registers the current thread as a pumped "main" loom. You must call <see cref="TickMainThread(string,int)"/>
         /// from the same thread to execute queued actions.
         /// </summary>
         /// <param name="name">Logical name of the thread.</param>
@@ -176,11 +177,11 @@ namespace WinterRose.ForgeThread
             thread.Start();
         }
 
-        public void CreatePool(string poolName, int workerCount)
+        public void CreatePool(string poolName, int workerCount, int ticksPerSecond = 60)
         {
             if (workerCount <= 0) throw new ArgumentOutOfRangeException(nameof(workerCount));
 
-            RegisterWorkerThread(poolName);
+            RegisterWorkerThread(poolName, ticksPerSecond: ticksPerSecond);
 
             List<string> workerNames = [poolName];
             for (int i = 1; i < workerCount; i++)
@@ -272,10 +273,10 @@ namespace WinterRose.ForgeThread
                 {
                     T res = func();
                     Type resType = res.GetType();
-                    if(resType.FullName.StartsWith("System.Threading.Tasks.Task"))
+                    if (resType.FullName.StartsWith("System.Threading.Tasks.Task"))
                     {
                         Task t = Unsafe.As<Task>(res);
-                        if(t.Status == TaskStatus.Faulted)
+                        if (t.Status == TaskStatus.Faulted)
                         {
                             tcs.SetException(t.Exception ?? new Exception("Task faulted"));
                             return;
@@ -414,6 +415,14 @@ namespace WinterRose.ForgeThread
             return InvokeOn(threadName, externalTask, bypassTick).GetAwaiter().GetResult();
         }
 
+        public T ComputeOn<T>(string threadName, Func<Task<T>> externalTask, bool bypassTick = false)
+        {
+            return InvokeOn(threadName, () =>
+            {
+                return externalTask.Invoke().GetAwaiter().GetResult();
+            }, bypassTick).GetAwaiter().GetResult();
+        }
+
         /// <summary>
         /// Used to execute a task on a specific worker thread, blocking the caller until complete.
         /// </summary>
@@ -457,6 +466,20 @@ namespace WinterRose.ForgeThread
         /// <param name="routine">Enumerator representing the coroutine.</param>
         /// <returns>Handle that can be used to stop the coroutine.</returns>
         public CoroutineHandle InvokeOn(string threadName, IEnumerator<object?> routine, bool async = true, JobPriority priority = JobPriority.Normal, bool bypassTick = false)
+        {
+            if (routine == null) throw new ArgumentNullException(nameof(routine));
+            var handle = StartCoroutine(threadName, routine);
+            return handle;
+        }
+
+        /// <summary>
+        /// Start a coroutine (simple cooperative iterator) on a named loom. The coroutine yields null to indicate "resume next tick",
+        /// or yields a TimeSpan to indicate a timed wait.
+        /// </summary>
+        /// <param name="threadName">Target loom.</param>
+        /// <param name="routine">Enumerator representing the coroutine.</param>
+        /// <returns>Handle that can be used to stop the coroutine.</returns>
+        public CoroutineHandle InvokeOn(string threadName, IEnumerator routine, bool async = true, JobPriority priority = JobPriority.Normal, bool bypassTick = false)
         {
             if (routine == null) throw new ArgumentNullException(nameof(routine));
             var handle = StartCoroutine(threadName, routine);
@@ -520,7 +543,7 @@ namespace WinterRose.ForgeThread
         /// <param name="name">Name of the registered main thread.</param>
         /// <param name="maxItems">Maximum number of items to process this call.</param>
         /// <returns>Number of executed actions.</returns>
-        public int ProcessPendingActions(string name = DEFAULT_MAIN_NAME, int maxItems = int.MaxValue)
+        public int TickMainThread(string name = DEFAULT_MAIN_NAME, int maxItems = int.MaxValue)
         {
             if (!threads.TryGetValue(name, out var loom)) throw new InvalidOperationException($"Thread '{name}' is not registered.");
             if (!loom.IsHostedMain) throw new InvalidOperationException($"Thread '{name}' is not a hosted main thread.");
@@ -556,7 +579,7 @@ namespace WinterRose.ForgeThread
             return executed;
         }
 
-        private CoroutineHandle StartCoroutine(string threadName, IEnumerator<object?> routine)
+        private CoroutineHandle StartCoroutine(string threadName, IEnumerator routine)
         {
             if (!threads.TryGetValue(threadName, out var loom)) throw new InvalidOperationException($"Thread '{threadName}' is not registered.");
             var handle = new CoroutineHandle(threadName, routine, this);
@@ -586,25 +609,34 @@ namespace WinterRose.ForgeThread
 
                 if (yielded is TimeSpan)
                 {
-                    // dont set LastYield for time waits. theyre not a genuine value
+                    // dont set LastYield for time waits.
                 }
                 else
                 {
                     handle.UpdateLastYield(yielded);
                 }
 
-                if (yielded == null)
+                switch (yielded)
                 {
-                    EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None);
-                }
-                else if (yielded is TimeSpan ts)
-                {
-                    var timer = new Timer(_ => EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None), null, ts, Timeout.InfiniteTimeSpan);
-                    handle.AttachTimer(timer);
-                }
-                else
-                {
-                    EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None);
+                    case null:
+                        EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None);
+                        break;
+                    case TimeSpan ts:
+                        var timer = new Timer(_ => EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None), null, ts, Timeout.InfiniteTimeSpan);
+                        handle.AttachTimer(timer);
+                        break;
+
+                    case Task t:
+                        t.ContinueWith(old => EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None));
+                        break;
+
+                    case CoroutineHandle otherCoroutine:
+                        otherCoroutine.Task.ContinueWith(old => EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None));
+                        break;
+
+                    default:
+                        EnqueueItem(handle.Name, () => ResumeCoroutine(handle), JobPriority.Normal, CancellationToken.None);
+                        break;
                 }
             }
             catch (Exception ex)
@@ -793,9 +825,9 @@ namespace WinterRose.ForgeThread
                 sharedQueues.TryGetValue(groupName, out var shared))
             {
                 shared.Queue.Enqueue(item);
-                try 
-                { 
-                    shared.Wake.Set(); 
+                try
+                {
+                    shared.Wake.Set();
                 }
                 catch { }
             }

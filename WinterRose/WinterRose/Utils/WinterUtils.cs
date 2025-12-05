@@ -218,7 +218,7 @@ namespace WinterRose
             }
         }
 
-        extension (List<int> list)
+        extension (List<int> values)
         {
             /// <summary>
             /// finds the first unused <see cref="int"/> from a list
@@ -226,23 +226,16 @@ namespace WinterRose
             /// <returns>the next avalible <see cref="int"/> from a list of type  <see cref="int"/></returns>
             public int NextAvalible()
             {
-                if (list is null)
-                    return -1;
-                if (list.Count == 0)
-                    return 0;
+                ArgumentNullException.ThrowIfNull(values);
 
-                var sorted = list.OrderBy(x => x).ToList();
-
-                int last = 0;
-                foreach (int i in sorted.Count)
+                var set = new HashSet<int>(values.Where(x => x > 0));
+                int i = 1;
+                while (true)
                 {
-                    if (sorted[i] != i)
-                    {
-                        return last + 1;
-                    }
-                    last = i;
+                    if (!set.Contains(i))
+                        return i;
+                    i++;
                 }
-                return last + 1;
             }
         }
 
@@ -594,18 +587,35 @@ namespace WinterRose
             {
                 ArgumentNullException.ThrowIfNull(values);
 
-                var sorted = values.OrderBy(x => x).ToList();
-
-                int last = 0;
-                foreach (int i in sorted.Count)
+                var set = new HashSet<int>(values.Where(x => x > 0));
+                int i = 1;
+                while (true)
                 {
-                    if (sorted[i] != i)
-                    {
-                        return last + 1;
-                    }
-                    last = i;
+                    if (!set.Contains(i))
+                        return i;
+                    i++;
                 }
-                return last + 1;
+            }
+        }
+
+        extension(int[] values)
+        {
+            /// <summary>
+            /// finds the first unused <see cref="int"/> from a list
+            /// </summary>
+            /// <returns>the next avalible <see cref="int"/> from a list of type  <see cref="int"/></returns>
+            public int NextAvalible()
+            {
+                ArgumentNullException.ThrowIfNull(values);
+
+                var set = new HashSet<int>(values.Where(x => x > 0));
+                int i = 1;
+                while (true)
+                {
+                    if (!set.Contains(i))
+                        return i;
+                    i++;
+                }
             }
         }
 
@@ -625,14 +635,25 @@ namespace WinterRose
             }
         }
 
-        extension<V> (Dictionary<int, V> dict)
+        extension<V> (Dictionary<int, V> values)
         {
             /// <summary>
             /// finds the first unused <see cref="int"/> from a Dictionary which has a Key value of type <see cref="int"/>
             /// </summary>
             /// <returns>the next avalible <see cref="int"/> from the Dictionary of Keys of type <see cref="int"/></returns>
             public int NextAvalible()
-                => dict.Keys.ToList().NextAvalible();
+            {
+                ArgumentNullException.ThrowIfNull(values);
+
+                var set = new HashSet<int>(values.Keys.Where(x => x > 0));
+                int i = 1;
+                while (true)
+                {
+                    if (!set.Contains(i))
+                        return i;
+                    i++;
+                }
+            }
         }
 
         /// <summary>

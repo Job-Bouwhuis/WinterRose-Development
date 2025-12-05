@@ -27,6 +27,6 @@ class Program
         {
             logger.Fatal(ex, "a manually logged exception caught using try catch.");
         }
-        throw new Exception("an uncaught exception (this is the message of the exception, not a seperate message)");
+        throw new Exception("something broki oh no!");
     }
 }

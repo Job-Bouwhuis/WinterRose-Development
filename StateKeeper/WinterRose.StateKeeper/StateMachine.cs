@@ -6,7 +6,6 @@ public class StateMachine
     private readonly List<Trigger> globalTriggers = new();
     private readonly Dictionary<State, List<Trigger>> stateTriggers = new();
 
-    // Overload 1: trigger allowed from a specific state
     public void AddTrigger(State fromState, Trigger trigger)
     {
         if (!stateTriggers.TryGetValue(fromState, out var list))
@@ -17,7 +16,6 @@ public class StateMachine
         list.Add(trigger);
     }
 
-    // Overload 2: trigger allowed from any state
     public void AddTrigger(Trigger trigger)
     {
         globalTriggers.Add(trigger);
@@ -33,7 +31,15 @@ public class StateMachine
     {
         if (CurrentState == null) return;
 
-        // First check state-specific triggers
+        foreach (var trigger in globalTriggers)
+        {
+            if (trigger.IsTriggered())
+            {
+                TransitionTo(trigger.TargetState);
+                return;
+            }
+        }
+
         if (stateTriggers.TryGetValue(CurrentState, out var allowedTriggers))
         {
             foreach (var trigger in allowedTriggers)
@@ -46,17 +52,6 @@ public class StateMachine
             }
         }
 
-        // Then check global triggers
-        foreach (var trigger in globalTriggers)
-        {
-            if (trigger.IsTriggered())
-            {
-                TransitionTo(trigger.TargetState);
-                return;
-            }
-        }
-
-        // Update current state
         CurrentState.StateUpdate(this);
     }
 

@@ -50,7 +50,7 @@ public class ExampleGuardClass
     {
         p = new()
         {
-            Age = 18,
+            Age = 14,
         };
         a = 15;
     }
@@ -64,12 +64,13 @@ public class ExampleGuardClass
     [Guard]
     public void MethodExpectation()
     {
-        Forge.Expect(p.CanDrink).WhenCalled().ThatReturnValue.Not.Null();
+        Forge.Expect(p.CanDrink).WhenCalled().ThatReturnValue.True();
     }
 
     [Guard, Fatal]
     public void FatalTest()
     {
+        throw new Exception("testtt");
         // always succeeds in this demo, just there to show the way to mark a guard as absolute fatal. if it fails,
         // ForgeGuard will close the app *immediately* after this guard has ran. with a platform dependant way to notify the user
         // of this hard crash.
