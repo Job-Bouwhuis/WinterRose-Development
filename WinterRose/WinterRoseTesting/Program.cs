@@ -1,18 +1,28 @@
-﻿using WinterRose.Vectors;
-using WinterRose.FileManagement;
+﻿using SnowLibraryTesting;
+using SnowLibraryTesting.difftest;
+using System;
 using System.Diagnostics;
-using WinterRose;
-using WinterRose.Encryption;
-using WinterRose.WIP.ReflectionTests;
 using System.Reflection;
+using WinterRose;
+using WinterRose.AnonymousTypes;
+using WinterRose.Encryption;
+using WinterRose.FileManagement;
+using WinterRose.Music;
+using WinterRose.Reflection;
+using WinterRose.Vectors;
+using WinterRose.WinterForgeSerializing;
 using WinterRose.WinterThornScripting;
 using WinterRose.WinterThornScripting.Factory;
-using SnowLibraryTesting;
-using WinterRose.Music;
-using WinterRose.WinterForgeSerializing;
-using WinterRose.Reflection;
-using WinterRose.AnonymousTypes;
-using SnowLibraryTesting.difftest;
+using WinterRose.WIP.ReflectionTests;
+
+Console.WriteLine("Running Grid test…");
+
+string encrypted = Encryptor.Encrypt("The quick brown fox jumps over the lazy dog?", "yada", "my secret key", 40);
+string decrypted = Encryptor.Decrypt(encrypted, "yaoagaonzola+ ", "my secret key", 40);
+Console.WriteLine("The quick brown fox jumps over the lazy dog?");
+Console.WriteLine(decrypted);
+return;
+
 
 const int chunkSize = 2 * 1024 * 1024; // 2 MB chunk size to force multiple chunks for 4.5 MB file
 
@@ -64,7 +74,18 @@ class typeincdludetests
     public List<ListPropertySerializeTests> s = [];
     public typeincdludetests()
     {
-        10.Repeat(i => s.Add(new()));
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
+        s.Add(new());
     }
 }
 
@@ -127,7 +148,7 @@ internal class Programm
         {
             //SerializingTest();
 
-            6.Repeat(i => GC.Collect());
+            GC.Collect();
 
             Console.WriteLine($"\n\nMemory in use after collecting...\n" +
                 $"{GC.GetTotalMemory(true)}");
@@ -143,7 +164,7 @@ internal class Programm
         {
             WinterForgeSerializingTest(i => Person.Random());
 
-            6.Repeat(i => GC.Collect());
+            GC.Collect();
 
             Console.WriteLine($"\n\nMemory in use after collecting...\n" +
                               $"{GC.GetTotalMemory(true)}");
@@ -381,7 +402,7 @@ internal class Programm
 
      void WinterForgeSerializingTest<T>(Func<int, T> provider)
     {
-        _ = "Input amount of objects to be serialized".StringAnimation(10).ForeachAsync(x => Console.Title = x);
+        "Input amount of objects to be serialized".StringAnimation(10).Foreach(x => Console.Title = x);
         Console.WriteLine("Input Number:");
         string? input = Console.ReadLine();
         List<T> list = new();
