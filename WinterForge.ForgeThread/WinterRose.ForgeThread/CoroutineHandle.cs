@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Runtime.CompilerServices;
-
-namespace WinterRose.ForgeThread;
+﻿namespace WinterRose.ForgeThread;
 
 /// <summary>
 /// Lightweight coroutine handle returned by <see cref="ThreadLoom.StartCoroutine(string,System.Collections.IEnumerator)"/>.
@@ -12,7 +9,7 @@ public sealed class CoroutineHandle : IDisposable
     private readonly TaskCompletionSource<object?> completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     internal string Name { get; }
-    internal IEnumerator Routine { get; }
+    internal IEnumerator<object?> Routine { get; }
     public bool IsComplete { get; private set; }
 
     /// <summary>
@@ -25,7 +22,7 @@ public sealed class CoroutineHandle : IDisposable
     /// </summary>
     public object? LastYield { get; private set; }
 
-    internal CoroutineHandle(string name, IEnumerator routine, ThreadLoom owner)
+    internal CoroutineHandle(string name, IEnumerator<object?> routine, ThreadLoom owner)
     {
         Name = name;
         Routine = routine;

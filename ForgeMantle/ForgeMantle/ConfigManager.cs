@@ -36,7 +36,7 @@ public class ConfigManager
 
     public void ApplyChanges()
     {
-        Undo();
+        SaveUndo();
 
         foreach (var layer in layers)
             layer.Apply();
@@ -65,7 +65,7 @@ public class ConfigManager
         return null;
     }
 
-    private void whSaveUndo()
+    private void SaveUndo()
     {
         // Enforce limit
         if (undoBuffer.Count >= undoLimit)

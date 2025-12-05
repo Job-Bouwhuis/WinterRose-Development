@@ -14,7 +14,7 @@ public static class InputManager
     private static readonly Dictionary<InputContext, int> contextPriorities = new();
 
     internal static bool EnablePassThrough { get; private set; } = false;
-    static bool focusOwnedByOverlay;
+    //static bool focusOwnedByOverlay;
     //static nint prevHWind;
 
     public static InputContext RegisterContext(InputContext context)
@@ -158,6 +158,7 @@ public static class InputManager
 
         if (Application.Current.Window.ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
         {
+            // Handle mouse pass-through state
             if (!mouseFocusGiven && !EnablePassThrough)
             {
                 EnablePassthrough(Windows.MyHandle.Handle);
@@ -169,11 +170,22 @@ public static class InputManager
                 EnablePassThrough = false;
             }
 
-            if (keyboardFocusGiven)
-            {
-                Windows.MyHandle.Focus();
-                focusOwnedByOverlay = true;
-            }
+            //if (mouseFocusGiven && !focusOwnedByOverlay)
+            //{
+            //    prevHWind = GetForegroundWindow();
+            //    Windows.MyHandle.Focus();
+            //    focusOwnedByOverlay = true;
+            //}
+            //else if (!mouseFocusGiven && focusOwnedByOverlay)
+            //{
+            //    if (prevHWind != IntPtr.Zero && prevHWind != Windows.MyHandle.Handle)
+            //    {
+            //        SetForegroundWindow(prevHWind);
+            //        prevHWind = nint.Zero;
+            //    }
+
+            //    focusOwnedByOverlay = false;
+            //}
         }
     }
 

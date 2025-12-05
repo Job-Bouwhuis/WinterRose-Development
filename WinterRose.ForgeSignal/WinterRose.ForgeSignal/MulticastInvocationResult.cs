@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace WinterRose.ForgeSignal;
 /// <summary>
-/// The result of a raised MulticastInvocation
+/// The result of a raised <see cref="MulticastInvocation"/>
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public class MulticastInvocationResult<T> : IReadOnlyList<T>
