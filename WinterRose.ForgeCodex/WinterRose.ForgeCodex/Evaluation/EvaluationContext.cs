@@ -24,5 +24,6 @@ public sealed class EvaluationContext
 
         var col = CurrentTable.GetColumn(columnName);
         return col[CurrentRow.Value].Value;
+        return null;
     }
 }

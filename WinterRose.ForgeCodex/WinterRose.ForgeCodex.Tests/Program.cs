@@ -25,11 +25,12 @@ internal class Program
         CodexDatabase database = new CodexDatabase(new CodexFileStorage("Codex", new CodexWFSerializer()));
         //ProgramHelpers.databaseAPITests(database);
 
-        create(database);
+        //create(database);
         addRow(database);
         getRow(database);
-        deleteRow(database);
-        dropTable(database);
+        //deleteRow(database);
+        //dropTable(database);
+       
     }
 
     private static void dropTable(CodexDatabase database)

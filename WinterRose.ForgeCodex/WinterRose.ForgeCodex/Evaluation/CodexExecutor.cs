@@ -35,7 +35,7 @@ internal static class CodexExecutor
         Table table = db.Traverse(root, take.Path);
 
         List<Anonymous> results = [];
-        
+
         // Iterate each row in scope
         foreach (int rowIndex in rows)
         {
@@ -47,9 +47,19 @@ internal static class CodexExecutor
             {
                 if (entry.NestedSelection == null)
                 {
-                    // Simple field selection
-                    var value = ctx.GetValue(entry.FieldName);
-                    rowObj[entry.FieldName] = value;
+                    if (entry.FieldName is "*")
+                    {
+                        foreach(var c in table.ColumnNames())
+                        {
+                            var value = ctx.GetValue(c);
+                            rowObj[c] = value;
+                        }
+                    }
+                    else
+                    {
+                        var value = ctx.GetValue(entry.FieldName);
+                        rowObj[entry.FieldName] = value;
+                    }
                 }
                 else
                 {

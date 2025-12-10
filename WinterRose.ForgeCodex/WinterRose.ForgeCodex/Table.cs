@@ -37,6 +37,8 @@ public sealed class Table
     }
     private Table() { } // for serialization
 
+    public IEnumerable<string> ColumnNames() => columns.Keys;
+
     public void AddColumn(string name, Type type, ColumnMetadata? metadata = null)
     {
         if (columns.ContainsKey(name))
