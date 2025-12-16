@@ -131,7 +131,7 @@ public class Game1 : Application
 
     private void benchmark()
     {
-        WinterForge.CompressedStreams = true;
+        WinterForge.CompressedStreams = false;
         WinterForge.AllowCustomCompilers = true;
         WinterRose.Windows.OpenConsole();
         Console.WriteLine("Creating data files");
