@@ -22,14 +22,15 @@ public class DefaultProjectileHitAction : ObjectComponent, IProjectileHitAction
         IHittable[] hittable = hitObject.FetchComponents<IHittable>();
         hittable.Foreach(hit => hit.OnHit(bullet, bullet.Damage));
 
-        if(hitObject.TryFetchComponent(out StatusEffector effector))
+        if (hitObject.TryFetchComponent(out StatusEffector effector))
         {
             int guaranteedEffects = bullet.StatusChance / 100;
-            if(bullet.StatusChance - guaranteedEffects * 100 > 0)
+            if (bullet.StatusChance - guaranteedEffects * 100 > 0)
                 if (Random.Shared.Next(0, 100) <= bullet.StatusChance)
                     guaranteedEffects++;
 
-            guaranteedEffects.Repeat(i => effector.Apply(bullet.Damage.ConnectedStatusEffect));
+            foreach (int i in guaranteedEffects)
+                effector.Apply(bullet.Damage.ConnectedStatusEffect);
         }
     }
 

@@ -59,13 +59,13 @@ namespace WinterRose.Monogame.CustomSerializers
         public override object CreateString(Sprite sprite, ObjectSerializer serializer)
         {
             if (sprite!.IsExternalTexture)
-                return sprite.TexturePath!;
+                return $"{sprite.TexturePath}"!;
 
             GeneratedTextureData data = sprite.GeneratedTextureData;
             if(data is null && sprite.BackingTexture is not null)
                 data = new GeneratedTextureData(sprite.BackingTexture);
             if (data.Pixels.All(x => x == data.Pixels[0]))
-                return $"{data.Pixels[0]}/{data.Width}/{data.Height}";
+                return $"\"{data.Pixels[0]}/{data.Width}/{data.Height}\"";
 
             StringBuilder sb = new();
             bool first = true;
@@ -77,9 +77,7 @@ namespace WinterRose.Monogame.CustomSerializers
                 sb.Append(pix);
             }
             sb.Append($"+{data.Width}_{data.Height};");
-            return sb.ToString();
-
-            throw new Exception("Not yet made this work.");
+            return $"{sb}";
         }
     }
 }

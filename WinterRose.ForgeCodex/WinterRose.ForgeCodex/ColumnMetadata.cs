@@ -5,31 +5,17 @@ namespace WinterRose.ForgeCodex;
 // Represents per-column metadata
 public sealed class ColumnMetadata
 {
-    [SkipWhen(""""
-              #template SkipIf object actual 
-              {
-                  Test : t;
-                  return t->Foo();
 
-                  #container Test 
-                  {
-                    #variables 
-                    {
-                      IsPrimaryKey;
-                    }
-
-                    #template Foo 
-                    {
-                      return IsPrimaryKey;
-                    }
-                  }
-              }
-              """")]
+    [SkipWhen(false)]
     public bool IsPrimaryKey { get; set; }
+
+    [SkipWhen(false)]
     public bool IsUnique { get; set; }
 
-    // Optional foreign key info
+    [SkipWhen(null)]
     public string? ForeignTable { get; set; }
+
+    [SkipWhen(null)]
     public string? ForeignColumn { get; set; }
 }
 

@@ -71,7 +71,7 @@ public class Game1 : Application
 
         benchmark();
 
-        World w = World.FromTemplateFile("Level 1");
+        World w = WinterForge.DeserializeFromFile<World>("Level 1");
         return w;
 
 
@@ -131,6 +131,8 @@ public class Game1 : Application
 
     private void benchmark()
     {
+        WinterForge.CompressedStreams = true;
+        WinterForge.AllowCustomCompilers = true;
         WinterRose.Windows.OpenConsole();
         Console.WriteLine("Creating data files");
         World w1 = World.FromTemplate<Level1>();
@@ -138,61 +140,86 @@ public class Game1 : Application
 
         Stopwatch serializationSW = new();
         int i1 = 0;
-        int max1 = 5;
+        int max1 = 15;
 
         long bestSerializationTime = long.MaxValue;
         long worstSerializationTime = long.MinValue;
+        long minSerializationMemory = long.MaxValue;
+        long maxSerializationMemory = long.MinValue;
 
         while (i1++ < max1)
         {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            long memBefore = GC.GetTotalMemory(true);
+
             serializationSW.Restart();
             WinterForge.SerializeToFile(w1, "Level 1");
             serializationSW.Stop();
+
+            long memAfter = GC.GetTotalMemory(true);
+            long usedMemory = memAfter - memBefore;
 
             long elapsed = serializationSW.ElapsedMilliseconds;
             if (elapsed < bestSerializationTime) bestSerializationTime = elapsed;
             if (elapsed > worstSerializationTime) worstSerializationTime = elapsed;
 
-            Console.WriteLine("pass " + i1);
+            if (usedMemory < minSerializationMemory) minSerializationMemory = usedMemory;
+            if (usedMemory > maxSerializationMemory) maxSerializationMemory = usedMemory;
+
+            Console.WriteLine($"pass {i1} - {elapsed} ms, RAM used: {usedMemory / 1024.0:N2} KB");
         }
 
         Console.WriteLine("\n\nDeserialization...");
 
         Stopwatch deserializationSW = new();
         int i2 = 0;
-        int max2 = 20;
+        int max2 = 15;
 
         long bestDeserializationTime = long.MaxValue;
         long worstDeserializationTime = long.MinValue;
+        long minDeserializationMemory = long.MaxValue;
+        long maxDeserializationMemory = long.MinValue;
 
         while (i2++ < max2)
         {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            long memBefore = GC.GetTotalMemory(true);
+
             deserializationSW.Restart();
             World d = WinterForge.DeserializeFromFile<World>("Level 1");
             deserializationSW.Stop();
+
+            long memAfter = GC.GetTotalMemory(true);
+            long usedMemory = memAfter - memBefore;
 
             long elapsed = deserializationSW.ElapsedMilliseconds;
             if (elapsed < bestDeserializationTime) bestDeserializationTime = elapsed;
             if (elapsed > worstDeserializationTime) worstDeserializationTime = elapsed;
 
+            if (usedMemory < minDeserializationMemory) minDeserializationMemory = usedMemory;
+            if (usedMemory > maxDeserializationMemory) maxDeserializationMemory = usedMemory;
+
             demo(d);
-            Console.WriteLine("pass " + i2);
+            Console.WriteLine($"pass {i2} - {elapsed} ms, RAM used: {usedMemory / 1024.0:N2} KB");
         }
 
         Console.WriteLine("\n\nDone!");
 
         Console.WriteLine("\n\nResults:");
         StringBuilder sb = new();
-        sb.AppendLine($"Serialization: Best = {bestSerializationTime} ms, Worst = {worstSerializationTime} ms");
-        sb.AppendLine($"Deserialization: Best = {bestDeserializationTime} ms, Worst = {worstDeserializationTime} ms");
+        sb.AppendLine($"Serialization: Best = {bestSerializationTime} ms, Worst = {worstSerializationTime} ms, RAM used: Min = {minSerializationMemory / 1024.0:N2} KB, Max = {maxSerializationMemory / 1024.0:N2} KB");
+        sb.AppendLine($"Deserialization: Best = {bestDeserializationTime} ms, Worst = {worstDeserializationTime} ms, RAM used: Min = {minDeserializationMemory / 1024.0:N2} KB, Max = {maxDeserializationMemory / 1024.0:N2} KB");
 
-        FileStream compiledFile = File.OpenRead("Level 1");
-        var instructions = ByteToOpcodeDecompiler.Parse(compiledFile).ToList();
-        compiledFile.Close();
-        sb.AppendLine("Total instructions: " + instructions.Count);
         sb.AppendLine("file size (bytes): " + new FileInfo("Level 1").Length);
-        sb.AppendLine($"With a total of {instructions.Count(x => x.OpCode is OpCode.DEFINE)} instances");
-        sb.AppendLine($"With a total of {instructions.Count(x => x.OpCode is OpCode.SET)} SET instructions");
+        using FileStream compiledFile = File.OpenRead("Level 1");
+        WinterForgeStreamInfo info = WinterForge.InspectStream(compiledFile);
+        sb.AppendLine(info.ToString());
 
         Console.WriteLine(sb.ToString());
 

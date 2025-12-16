@@ -56,7 +56,7 @@ public static class Universe
 
                 MonoUtils.Graphics?.SetRenderTarget(null);
 
-                3.Repeat(x => GC.Collect());
+                GC.Collect();
 
             }
             if (!firstStart)

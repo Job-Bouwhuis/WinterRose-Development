@@ -146,29 +146,30 @@ public sealed class Camera : ObjectComponent
     {
         MonoUtils.Graphics.SetRenderTarget(renderTarget);
 
-        RasterizerState raster = new()
-        {
-            ScissorTestEnable = true,
-            Name = "scissor" 
-        };
+        //RasterizerState raster = new()
+        //{
+        //    ScissorTestEnable = true,
+        //    Name = "scissor" 
+        //};
 
-        batch.GraphicsDevice.RasterizerState = raster;
+        //batch.GraphicsDevice.RasterizerState = raster;
 
         batch.Begin(
                 transformMatrix: CalculateTransformMatrix,
                 sortMode: SpriteSorting,
                 blendState: BlendState.AlphaBlend,
-                samplerState: SamplerState.PointClamp,
-                rasterizerState: raster);
+                samplerState: SamplerState.PointClamp
+                //rasterizerState: raster
+                );
 
-        Vector2I screenTopLeft = (Vector2I)Vector2.Transform(TopLeft, trMatrix);
-        Vector2I screenBottomRight = (Vector2I)Vector2.Transform(BottomRight, trMatrix);
-        MonoUtils.Graphics.ScissorRectangle =
-            new Rectangle(
-                screenTopLeft.X,
-                screenTopLeft.Y,
-                screenBottomRight.X - screenTopLeft.X,
-                screenBottomRight.Y - screenTopLeft.Y);
+        //Vector2I screenTopLeft = (Vector2I)Vector2.Transform(TopLeft, trMatrix);
+        //Vector2I screenBottomRight = (Vector2I)Vector2.Transform(BottomRight, trMatrix);
+        //MonoUtils.Graphics.ScissorRectangle =
+        //    new Rectangle(
+        //        screenTopLeft.X,
+        //        screenTopLeft.Y,
+        //        screenBottomRight.X - screenTopLeft.X,
+        //        screenBottomRight.Y - screenTopLeft.Y);
 
         var uiObjs = renderMethod(batch);
         batch.End();

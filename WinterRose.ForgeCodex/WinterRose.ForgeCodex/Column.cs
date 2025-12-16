@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using WinterRose.ForgeCodex.AutoKeys;
+using WinterRose.WinterForgeSerializing.Attributes;
 
 namespace WinterRose.ForgeCodex;
 
@@ -9,6 +10,19 @@ public sealed class Column
 {
     public string Name { get; private set; }
     public Type ColumnType { get; private set; }
+    [SkipWhen("""
+        #template SkipIf object actual
+        {
+            if actual->IsPrimaryKey == false &&
+               actual->IsUnique == false &&
+               actual->ForeignTable == null &&
+               actual->ForeignColumn == null
+            {
+                return true;
+            }
+            return false;
+        }
+        """)]
     public ColumnMetadata Metadata { get; private set; }
 
     [WFInclude]
@@ -17,7 +31,7 @@ public sealed class Column
     [WFInclude]
     internal Dictionary<object, int>? primaryKeyIndex;
 
-    private Column() { } // for serialization
+    private Column() => Metadata = new(); // for serialization
     public Column(string name, Type type, ColumnMetadata? metadata = null)
     {
         Name = name;
