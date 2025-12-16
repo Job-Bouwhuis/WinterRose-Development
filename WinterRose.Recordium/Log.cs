@@ -33,6 +33,15 @@ public class Log
         }
     }
 
+    public Log(string category)
+    {
+        Category = category;
+        Destinations = LogDestinations.GetAllDestinations();
+
+        lock (LOG_INSTANCES_LOCK)
+            LOG_INSTANCES.Add(new WeakReference<Log>(this));
+    }
+
     private static (string? file, int line) ExtractSource(Exception ex)
     {
         if (ex is AggregateException agg && agg.InnerExceptions.Count > 0)

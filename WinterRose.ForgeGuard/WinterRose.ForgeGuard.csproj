@@ -7,7 +7,7 @@
     <RootNamespace>WinterRose.ForgeGuardChecks</RootNamespace>
     <Authors>TheSnowOwl</Authors>
     <Company>WinterRose</Company>
-    <Version>25.2.1</Version>
+    <Version>25.4.0</Version>
     <PackageReleaseNotes>Features
 ForgeGuard Core Class
 Automatically discovers and executes guard tests defined across loaded assemblies.

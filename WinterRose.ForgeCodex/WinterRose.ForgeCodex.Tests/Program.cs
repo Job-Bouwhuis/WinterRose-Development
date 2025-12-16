@@ -6,18 +6,6 @@ using WinterRose.ForgeCodex.Storage.DefaultStorages;
 using WinterRose.ForgeCodex.Storage.Serialization;
 using WinterRose.ForgeGuardChecks;
 
-/*
- 
-     Batch operations with [] syntax for multiple adds
-     Upsert/add-or-update syntax
-     Conditional field updates with if/then/else
-     Wildcard * in take with except clause
-     Order by and limit for pagination
-     Change from to for for contextual operations (add/update/remove)
-     Rename auto_increment to Auto<T>
-
- */
-
 internal class Program
 {
     private static void Main(string[] args)
