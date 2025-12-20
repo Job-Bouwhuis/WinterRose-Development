@@ -79,8 +79,6 @@ public static partial class Windows
     public static void AbortPCShutdown() => AbortSystemShutdown(Environment.MachineName);
     public static void CancelPCShutdown() => CancelShutdown();
 
-
-
     /// <summary>
     /// Generates a mouse click at the current position of the mouse.
     /// </summary>
@@ -234,7 +232,13 @@ public static partial class Windows
     /// <param name="title"></param>
     /// <returns></returns>
     public static bool OpenFolder(out string folder, string title = "Open Folder")
-        => FolderBrowserDialog.SelectFolder(out folder, title, null, true);
+    {
+        var browser = OSFolderBrowser.Open();
+        browser.Title = title;
+        bool result = browser.Open();
+        folder = browser.SelectedPath;
+        return result;
+    }
 
     // Helper method to convert string to IntPtr
     private static IntPtr StringToIntPtrUni(string str)

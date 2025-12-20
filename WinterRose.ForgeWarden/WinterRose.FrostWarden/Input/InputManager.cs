@@ -170,10 +170,12 @@ public static class InputManager
                 EnablePassThrough = false;
             }
 
+            Windows.MyHandle.Focus();
+
             //if (mouseFocusGiven && !focusOwnedByOverlay)
             //{
             //    prevHWind = GetForegroundWindow();
-            //    Windows.MyHandle.Focus();
+            //    
             //    focusOwnedByOverlay = true;
             //}
             //else if (!mouseFocusGiven && focusOwnedByOverlay)

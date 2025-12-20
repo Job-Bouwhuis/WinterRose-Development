@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace WinterRose.Fun
 {
+    /// <summary>
+    /// I too like to have some fun now and then...
+    /// </summary>
     public static class EnteanTranslator
     {
         private const string enteanAlphabet = "AZYXEWVTISRLPNOMQKJHUGFDCB";

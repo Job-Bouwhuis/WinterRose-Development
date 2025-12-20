@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using WinterRose.ForgeSignal;
 
@@ -74,6 +76,11 @@ namespace WinterRose
             public MulticastVoidInvocation Click = new();
             public MulticastVoidInvocation RightClick = new();
             public MulticastVoidInvocation DoubleClick = new();
+
+            /// <summary>
+            /// for KDE
+            /// </summary>
+            private Process trayProcess;
 
             // ---------- fields for window proc hook ----------
             private IntPtr originalWndProc = IntPtr.Zero;
@@ -166,15 +173,94 @@ namespace WinterRose
             // replace your existing ShowInTray and DeleteIcon bodies with these (or add Register/Unregister calls)
             public void ShowInTray()
             {
-                RegisterWindowProcHook();
-                Shell_NotifyIcon(NIM_ADD, ref notifyIconData);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    RegisterWindowProcHook();
+                    Shell_NotifyIcon(NIM_ADD, ref notifyIconData);
+                    return;
+                }
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    ShowTrayIconKde();
+                }
             }
 
             public void DeleteIcon()
             {
-                Shell_NotifyIcon(NIM_DELETE, ref notifyIconData);
-                UnregisterWindowProcHook();
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Shell_NotifyIcon(NIM_DELETE, ref notifyIconData);
+                    UnregisterWindowProcHook();
+                    return;
+                }
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    KillTrayProcessKde();
+                }
             }
+
+            private void ShowTrayIconKde()
+            {
+                if (trayProcess != null && !trayProcess.HasExited)
+                    return;
+
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = "yad",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+
+                psi.ArgumentList.Add("--notification");
+                psi.ArgumentList.Add($"--image={GetIconPath()}");
+                psi.ArgumentList.Add($"--text={notifyIconData.szTip}");
+                psi.ArgumentList.Add("--command=echo CLICK");
+
+                trayProcess = Process.Start(psi);
+
+                Thread listener = new Thread(ListenTrayEventsKde);
+                listener.IsBackground = true;
+                listener.Start();
+            }
+
+            private void ListenTrayEventsKde()
+            {
+                try
+                {
+                    while (!trayProcess.StandardOutput.EndOfStream)
+                    {
+                        string line = trayProcess.StandardOutput.ReadLine();
+                        if (line == "CLICK")
+                            Click.Invoke();
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            private void KillTrayProcessKde()
+            {
+                try
+                {
+                    trayProcess?.Kill();
+                    trayProcess = null;
+                }
+                catch
+                {
+                }
+            }
+
+            private string GetIconPath()
+            {
+                return notifyIconData.hIcon != IntPtr.Zero
+                    ? "/tmp/trayicon.png"
+                    : "";
+            }
+
         }
     }
 }

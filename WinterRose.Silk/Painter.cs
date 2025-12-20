@@ -5,14 +5,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Drawing;
-using Shader = WinterRose.SilkEngine.Shaders.Shader;
+using ForgeShader = WinterRose.SilkEngine.Shaders.ForgeShader;
 
 namespace WinterRose.SilkEngine
 {
     public class Painter
     {
         private readonly GL gl;
-        private Shader shader;
+        private ForgeShader shader;
         private uint vao, vbo, ebo;
         private List<SpriteDrawCall> drawCalls;
         private uint _currentTextureID;
@@ -25,7 +25,7 @@ namespace WinterRose.SilkEngine
             this.gl = gl;
             drawCalls = new List<SpriteDrawCall>();
             InitializeBuffers();
-            shader = new Shader(this.gl, "Shaders/basic.vert", "Shaders/basic.frag");
+            shader = new ForgeShader(this.gl, "Shaders/basic.vert", "Shaders/basic.frag");
         }
 
         public void Begin()

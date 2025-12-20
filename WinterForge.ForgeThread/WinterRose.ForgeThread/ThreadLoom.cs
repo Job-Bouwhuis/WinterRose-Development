@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using WinterRose.Recordium;
 using WinterRose.Threading;
 
 namespace WinterRose.ForgeThread
@@ -107,7 +109,7 @@ namespace WinterRose.ForgeThread
                 var target = members[idx % members.Length];
                 if (threads.TryGetValue(target, out var loom))
                 {
-                    try { loom.EnqueueNextTick(item); } catch { }
+                    try { loom.Enqueue(item); } catch { }
                 }
                 idx++;
             }
@@ -619,7 +621,7 @@ namespace WinterRose.ForgeThread
         /// </summary>
         /// <param name="name">Name of the thread to shut down.</param>
         /// <param name="waitFor">Optional timeout to wait for the worker thread to exit.</param>
-        public void ShutdownThread(string name, TimeSpan? waitFor = null)
+        public void UnregisterWorkerThread(string name, TimeSpan? waitFor = null)
         {
             if (!threads.TryRemove(name, out var loom)) return;
 
@@ -656,7 +658,7 @@ namespace WinterRose.ForgeThread
         {
             var keys = new List<string>(threads.Keys);
             foreach (var name in keys)
-                ShutdownThread(name, waitFor);
+                UnregisterWorkerThread(name, waitFor);
         }
 
         /// <summary>
@@ -734,8 +736,9 @@ namespace WinterRose.ForgeThread
             {
                 // expected on cancellation
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                loom.Log.Critical(e, "Worker cant continue working");
                 // TODO: make genuine workerthread exception handling
             }
             finally
@@ -801,7 +804,7 @@ namespace WinterRose.ForgeThread
             }
             else
             {
-                loom.EnqueueNextTick(item);
+                loom.Enqueue(item);
 
                 if (bypassTick && wakeEvents.TryGetValue(threadName, out var evt))
                 {

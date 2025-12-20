@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using WinterRose;
 
-namespace WinterRose;
+namespace WinterRose.WIP;
 
 
 public class Array256<T>

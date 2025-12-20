@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Numerics;
-namespace WinterRose;
+namespace WinterRose.WIP;
 
 public struct Int256 : IComparable<Int256>, IEquatable<Int256>
 {

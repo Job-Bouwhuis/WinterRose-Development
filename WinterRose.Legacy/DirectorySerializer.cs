@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.Encryption;
 using System.Diagnostics;
 using WinterRose.WIP.TestClasses;
 using System.Collections.Concurrent;

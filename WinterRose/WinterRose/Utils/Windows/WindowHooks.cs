@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace WinterRose
 {
     /// <summary>
     /// When the app creates a window, you can use this class to hook onto the windows message loop.
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public static class WindowHooks
     {
         /// <summary>
@@ -197,6 +199,9 @@ namespace WinterRose
 
         static WindowHooks()
         {
+            if(!OperatingSystem.IsWindows())
+                throw new PlatformNotSupportedException("WindowHooks is only supported on Windows.");
+
             IntPtr hWnd = GetForegroundWindow();
             if (hWnd == IntPtr.Zero)
                 throw new Exception("Failed to get window handle.");

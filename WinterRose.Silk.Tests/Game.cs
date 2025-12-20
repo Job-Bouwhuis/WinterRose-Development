@@ -1,73 +1,48 @@
 ﻿using Silk.NET.OpenGL;
 using System.Drawing;
 using WinterRose.SilkEngine;
-using Shader = WinterRose.SilkEngine.Shaders.Shader;
+using WinterRose.SilkEngine.Rendering;
+using WinterRose.SilkEngine.Windowing;
+using ForgeShader = WinterRose.SilkEngine.Shaders.ForgeShader;
 
-public class Game : Application
+public class Game : WindowFunctionality
 {
-    private uint vao;
-    private uint vbo;
-    private Shader shader;
+    public EngineWindow Window { get; protected set; }
 
-    protected unsafe override void Initialize()
+    private IVertexArray vao;
+    private IShader shader;
+
+    public override void OnLoad()
     {
-        Console.WriteLine("Initializing...");
-
-        // Load the shader
-        shader = new Shader(gl, "Shaders/basic.vert", "Shaders/basic.frag");
+        shader = RenderDevice.CreateShader("Shaders/basic.vert", "Shaders/basic.frag");
 
         float[] vertices =
         [
-            // Position         // Color
-            -0.5f, -0.5f, 0.0f,  1f, 0f, 0f,
-             0.5f, -0.5f, 0.0f,  0f, 1f, 0f,
-             0.0f,  0.5f, 0.0f,  0f, 0f, 1f,
+            -0.5f, -0.5f, 0.0f, 1f, 0f, 0f,
+             0.5f, -0.5f, 0.0f, 0f, 1f, 0f,
+             0.0f,  0.5f, 0.0f, 0f, 0f, 1f,
         ];
 
-        vao = gl.GenVertexArray();
-        vbo = gl.GenBuffer();
-
-        gl.BindVertexArray(vao);
-        gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
-        unsafe
+        var vbo = RenderDevice.CreateVertexBuffer(vertices);
+        vao = RenderDevice.CreateVertexArray(vbo, new VertexAttribute[]
         {
-            fixed (float* v = &vertices[0])
-            {
-                gl.BufferData(GLEnum.ArrayBuffer, (nuint)(vertices.Length * sizeof(float)), v, GLEnum.StaticDraw);
-            }
-        }
-
-        gl.EnableVertexAttribArray(0);
-        gl.VertexAttribPointer(0, 3, GLEnum.Float, false, 6 * sizeof(float), (void*)0);
-
-        gl.EnableVertexAttribArray(1);
-        gl.VertexAttribPointer(1, 3, GLEnum.Float, false, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-
-        gl.BindBuffer(GLEnum.ArrayBuffer, 0);
-        gl.BindVertexArray(0);
+            new VertexAttribute(0, 3, 6 * sizeof(float), 0),
+            new VertexAttribute(1, 3, 6 * sizeof(float), 3 * sizeof(float)),
+        });
     }
 
-    protected override void Render(Painter painter)
+    public override void OnRender(double deltaTime)
     {
-        gl.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        gl.Clear((uint)(GLEnum.ColorBufferBit | GLEnum.DepthBufferBit));
-
+        RenderDevice.Clear(0.2f, 0.3f, 0.3f, 1.0f);
         shader.Use();
-        gl.BindVertexArray(vao);
-        gl.DrawArrays(GLEnum.Triangles, 0, 3);
+        RenderDevice.DrawTriangles(vao, 3);
     }
 
-    float time = 0;
-    float fps = 0;
-    protected override void Update()
+    public override void OnClose()
     {
-        time += Time.deltaTime;
-        fps++;
-        if(time >= 1)
-        {
-            Console.WriteLine(fps);
-            time = 0;
-            fps = 0;
-        }
     }
+
+    public override void OnUpdate(double deltaTime) { }
+    public override void OnResize(int width, int height) { }
 }
+

@@ -50,10 +50,27 @@ public class FileLogDestination : ILogDestination
         FileInfo fi = new FileInfo(fileName);
         fileStream = new FileStream(fileName, FileMode.Create);
 
-        FileInfo shortcut = new FileInfo(Path.Combine(di.FullName, "latest.log"));
+        
+        FileInfo shortcut = new FileInfo(Path.Combine(di.FullName, "latest.shortcut"));
         if (shortcut.Exists)
             shortcut.Delete();
-        shortcut.CreateAsSymbolicLink(fi.FullName);
+        File.WriteAllText(shortcut.FullName, di.FullName);
+
+        //try
+        //{
+        //    FileInfo shortcut = new FileInfo(Path.Combine(di.FullName, "latest.log"));
+        //    if (shortcut.Exists)
+        //        shortcut.Delete();
+
+        //    shortcut.CreateAsSymbolicLink(fi.FullName);
+        //}
+        //catch
+        //{
+        //    FileInfo shortcut = new FileInfo(Path.Combine(di.FullName, "latest.shortcut"));
+        //    if (shortcut.Exists)
+        //        shortcut.Delete();
+        //    File.WriteAllText(shortcut.FullName, di.FullName);
+        //}
     }
 
     public bool Invalidated { get; set; }

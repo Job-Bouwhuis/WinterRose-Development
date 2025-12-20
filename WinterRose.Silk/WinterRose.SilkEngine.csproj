@@ -14,6 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ForgeMantle\ForgeMantle\WinterRose.ForgeMantle.csproj" />
+    <ProjectReference Include="..\WinterForge.ForgeThread\WinterRose.ForgeThread\WinterRose.ForgeThread.csproj" />
+    <ProjectReference Include="..\WinterRose.ForgeSignal\WinterRose.ForgeSignal\WinterRose.ForgeSignal.csproj" />
+    <ProjectReference Include="..\WinterRose.Recordium\WinterRose.Recordium.csproj" />
     <ProjectReference Include="..\WinterRose\WinterRose\WinterRose.csproj" />
   </ItemGroup>
 

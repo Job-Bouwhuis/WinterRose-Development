@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -122,11 +123,88 @@ public static partial class Windows
 
         private void OpenDialog()
         {
-            Thread thread = new Thread(() => ShowOpenFileDialog());
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            thread.Join();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Thread thread = new Thread(() => ShowOpenFileDialog());
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+                thread.Join();
+                return;
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                ShowOpenFileDialogKde();
+                return;
+            }
+
+            Success = false;
         }
+
+        private void ShowOpenFileDialogKde()
+        {
+            Success = false;
+            Files = null;
+
+            List<string> args = new List<string>();
+
+            args.Add("--getopenfilename");
+
+            if (!string.IsNullOrWhiteSpace(InitialDirectory))
+                args.Add(InitialDirectory);
+
+            if (!string.IsNullOrWhiteSpace(Filter))
+                args.Add(ConvertFilterToKde(Filter));
+
+            if (Multiselect)
+                args.Add("--multiple");
+
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = "kdialog",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            foreach (string arg in args)
+                psi.ArgumentList.Add(arg);
+
+            using Process process = Process.Start(psi);
+            string output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+
+            if (string.IsNullOrWhiteSpace(output))
+                return;
+
+            string[] result = output
+                .Trim()
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+            Files = result;
+            Success = Files.Length > 0;
+        }
+
+        private static string ConvertFilterToKde(string filter)
+        {
+            if (string.IsNullOrWhiteSpace(filter))
+                return "*";
+
+            string[] parts = filter.Split('|');
+            List<string> entries = new List<string>();
+
+            for (int i = 0; i + 1 < parts.Length; i += 2)
+            {
+                string name = parts[i];
+                string pattern = parts[i + 1];
+                entries.Add($"{pattern}|{name}");
+            }
+
+            return string.Join("\n", entries);
+        }
+
+
 
         private void ShowOpenFileDialog()
         {

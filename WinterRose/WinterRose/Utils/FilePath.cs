@@ -43,15 +43,11 @@ public class FilePath
     public static FilePath operator /(FilePath path, string subPath)
     {
         if(path.path[^1] is '/' or '\\')
-        {
-            path.path = path.path.Remove(path.path.Length - 1);
-        }
+            path.path = path.path[..^1];
         if (subPath[0] is '/' or '\\')
-        {
-            subPath = subPath.Remove(0, 1);
-        }
-
-        return new FilePath(path.path + "\\" + subPath);
+            subPath = subPath[1..];
+        
+        return new FilePath(path.path + Path.PathSeparator + subPath);
     }
 
     /// <summary>
@@ -65,6 +61,9 @@ public class FilePath
     /// <param name="extention"></param>
     /// <returns>True if the file's extention matches <paramref name="extention"/>, otherwise false</returns>
     public bool HasExtention(string extention) => extention.StartsWith('.') ? path.EndsWith(extention) : path.EndsWith("." + extention);
+
+    public string GetExtention() => System.IO.Path.GetExtension(path);
+
     /// <summary>
     /// Checks if the path points to a directory
     /// </summary>

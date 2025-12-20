@@ -57,53 +57,5 @@ namespace WinterRose
             var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
             return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
         }
-        /// <summary>
-        /// allows easy animation of a string to be shown to the user. <br></br>combine with <see cref="WinterRose.WinterUtils.Foreach{T}(IEnumerable{T}, Action{T})"/>, <see cref="WinterUtils.ForeachAsync{T}(IEnumerable{T}, Action{T})"/>, or any other foreach loop to attchieve the desired result
-        /// </summary>
-        /// <param name="content"></param>
-        /// <param name="delay"></param>
-        /// <returns>yield returns a string with one extra character than the last until the given <paramref name="content"/> is returned in its fullest</returns>
-        public static IEnumerable<string> StringAnimation(this string content, int delay)
-        {
-            string returnable = "";
-            foreach (char c in content)
-            {
-                returnable += c;
-                yield return returnable;
-                Task.Delay(delay).Wait();
-            }
-        }
-        /// <summary>
-        /// allows easy animation of a string to be shown to the user. <br></br>combine with <see cref="WinterRose.WinterUtils.Foreach{T}(IEnumerable{T}, Action{T})"/>, <see cref="WinterUtils.ForeachAsync{T}(IEnumerable{T}, Action{T})"/>, or any other foreach loop to attchieve the desired result
-        /// </summary>
-        /// <param name="content"></param>
-        /// <param name="delay"></param>
-        /// <returns>yield returns a char taken from the given <paramref name="content"/> until the last char has been returned</returns>
-        public static IEnumerable<char> StringAnimationChar(this string content, int delay)
-        {
-            foreach (char c in content)
-            {
-                yield return c;
-                Task.Delay(delay).Wait();
-            }
-        }
-        public static string GetInterestingString(string source)
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(source);
-            StringBuilder sb = new StringBuilder();
-            bytes.Foreach(x => sb.Append(x));
-            return sb.ToString();
-        }
-        public static string FromInterestingString(string source)
-        {
-            ReadOnlySpan<char> stuff = source;
-            List<byte> bytes = new List<byte>();
-            for (int i = 0; i < source.Length - 3; i += 3)
-            {
-                string s = stuff.Slice(i, i + 3).ToString();
-                bytes.Add(TypeWorker.CastPrimitive<byte>(s));
-            }
-            return Encoding.UTF8.GetString(bytes.ToArray());
-        }
     }
 }

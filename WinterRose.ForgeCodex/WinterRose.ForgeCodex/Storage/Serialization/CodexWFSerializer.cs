@@ -9,37 +9,37 @@ namespace WinterRose.ForgeCodex.Storage.Serialization;
 
 public class CodexWFSerializer : DatabaseSerializer
 {
+    const bool DEFAULT_COMPRESS_STREAMS = false;
+    const TargetFormat DEFAULT_FORMAT = TargetFormat.ReadableIntermediateRepresentation;
     public override void Serialize(Stream destination, CodexDatabase database)
     {
-        WinterForge.SerializeToStream(database, destination, TargetFormat.FormattedHumanReadable);
+        bool compress = WinterForge.CompressedStreams;
+        WinterForge.CompressedStreams = DEFAULT_COMPRESS_STREAMS;
+        WinterForge.SerializeToStream(database, destination, DEFAULT_FORMAT);
+        WinterForge.CompressedStreams = compress;
     }
     public override void Serialize(Stream destination, Table table)
     {
-        WinterForge.SerializeToStream(table, destination, TargetFormat.FormattedHumanReadable);
+        bool compress = WinterForge.CompressedStreams;
+        WinterForge.CompressedStreams = DEFAULT_COMPRESS_STREAMS;
+        WinterForge.SerializeToStream(table, destination, DEFAULT_FORMAT);
+        WinterForge.CompressedStreams = compress;
     }
 
     public override bool Deserialize(Stream source, [NotNullWhen(true)] out CodexDatabase? database)
     {
-        try
-        {
-            database = WinterForge.DeserializeFromHumanReadableStream<CodexDatabase>(source);
-        }
-        catch
-        {
-            database = null;
-        }
+        bool compress = WinterForge.CompressedStreams;
+        WinterForge.CompressedStreams = DEFAULT_COMPRESS_STREAMS;
+        database = WinterForge.DeserializeFromHumanReadableStream<CodexDatabase>(source);
+        WinterForge.CompressedStreams = compress;
         return database is not null;
     }
     public override bool Deserialize(Stream source, [NotNullWhen(true)] out Table? table)
     {
-        //try
-        //{
-            table = WinterForge.DeserializeFromHumanReadableStream<Table>(source);
-        //}
-        //catch (Exception e)
-        //{
-        //    table = null;
-        //}
+        bool compress = WinterForge.CompressedStreams;
+        WinterForge.CompressedStreams = DEFAULT_COMPRESS_STREAMS;
+        table = WinterForge.DeserializeFromHumanReadableStream<Table>(source);
+        WinterForge.CompressedStreams = compress;
         return table is not null;
     }
 }

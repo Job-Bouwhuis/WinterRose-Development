@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using WinterRose.Recordium;
 
 namespace WinterRose.ForgeThread
 {
@@ -17,11 +18,13 @@ namespace WinterRose.ForgeThread
         public string Name { get; }
         public bool IsHostedMain { get; }
         public Thread? ThreadInstance { get; private set; }
+        public Log Log { get; }
 
         public LoomThread(string name, bool isHostedMain)
         {
             Name = name;
             IsHostedMain = isHostedMain;
+            Log = new Log("ThreadLoom.WorkerThread:" + Name);
         }
 
         public void AttachThread(Thread thread)
@@ -31,11 +34,10 @@ namespace WinterRose.ForgeThread
 
         public void BeginNextTick()
         {
-            //Console.WriteLine("Beginning next tick on thread: " + Name);
             MoveNextTickItemsToMainQueue();
         }
 
-        private bool TryEnqueue(ScheduledItem item)
+        private bool TryEnqueueThisTick(ScheduledItem item)
         {
             switch (item.Priority)
             {
@@ -49,7 +51,7 @@ namespace WinterRose.ForgeThread
             return true;
         }
 
-        public void EnqueueNextTick(ScheduledItem item)
+        public void Enqueue(ScheduledItem item)
         {
             nextTickQueue.Enqueue(item);
         }
@@ -58,12 +60,17 @@ namespace WinterRose.ForgeThread
         {
             while (nextTickQueue.TryDequeue(out var item))
             {
-                TryEnqueue(item);
+                TryEnqueueThisTick(item);
             }
         }
 
         public bool TryDequeue(out ScheduledItem? item)
         {
+            item = null;
+
+            if (Paused)
+                return false;
+
             if (highQueue.TryDequeue(out item)) return true;
             if (normalQueue.TryDequeue(out item)) return true;
             if (lowQueue.TryDequeue(out item)) return true;

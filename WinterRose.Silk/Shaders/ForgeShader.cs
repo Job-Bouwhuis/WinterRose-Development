@@ -6,31 +6,41 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.FileManagement;
+using WinterRose.SilkEngine.Rendering;
 
 namespace WinterRose.SilkEngine.Shaders;
-public class Shader
+public class ForgeShader : IShader
 {
     private readonly uint _program;
+    private readonly uint vertexShader;
+    private readonly uint fragmentShader;
     private readonly GL gl;
 
-    public Shader(GL gl, string vertexShaderFile, string fragmentShaderFile)
+    public ForgeShader(GL gl, string vertexShaderFile, string fragmentShaderFile)
     {
         this.gl = gl;
 
         string shaderSource = FileManager.Read(vertexShaderFile);
-        uint vertexShader = CompileShader(GLEnum.VertexShader, shaderSource);
+        vertexShader = CompileShader(GLEnum.VertexShader, shaderSource);
 
         shaderSource = FileManager.Read(fragmentShaderFile);
-        uint fragmentShader = CompileShader(GLEnum.FragmentShader, shaderSource);
+        fragmentShader = CompileShader(GLEnum.FragmentShader, shaderSource);
 
         _program = this.gl.CreateProgram();
         this.gl.AttachShader(_program, vertexShader);
         this.gl.AttachShader(_program, fragmentShader);
         this.gl.LinkProgram(_program);
-        this.gl.DetachShader(_program, vertexShader);
-        this.gl.DetachShader(_program, fragmentShader);
-        this.gl.DeleteShader(vertexShader);
-        this.gl.DeleteShader(fragmentShader);
+
+        string programLog = this.gl.GetProgramInfoLog(_program);
+        if (!string.IsNullOrEmpty(programLog))
+        {
+            Console.WriteLine($"Program link error: {programLog}");
+        }
+
+        //this.gl.DetachShader(_program, vertexShader);
+        //this.gl.DetachShader(_program, fragmentShader);
+        //this.gl.DeleteShader(vertexShader);
+        //this.gl.DeleteShader(fragmentShader);
     }
 
     // Use the shader program
@@ -71,6 +81,10 @@ public class Shader
     // Dispose method to delete shader program
     public void Dispose()
     {
+        this.gl.DetachShader(_program, vertexShader);
+        this.gl.DetachShader(_program, fragmentShader);
+        this.gl.DeleteShader(vertexShader);
+        this.gl.DeleteShader(fragmentShader);
         gl.DeleteProgram(_program);
     }
 }

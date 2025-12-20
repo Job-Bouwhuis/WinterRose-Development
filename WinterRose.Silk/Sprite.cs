@@ -1,7 +1,7 @@
 ﻿using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using StbImageSharp;
-using Shader = WinterRose.SilkEngine.Shaders.Shader;
+using Shader = WinterRose.SilkEngine.Shaders.ForgeShader;
 
 namespace WinterRose.SilkEngine
 {

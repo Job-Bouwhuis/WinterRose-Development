@@ -13,10 +13,7 @@ public sealed class Column
     [SkipWhen("""
         #template SkipIf object actual
         {
-            if actual->IsPrimaryKey == false &&
-               actual->IsUnique == false &&
-               actual->ForeignTable == null &&
-               actual->ForeignColumn == null
+            if actual->IsPrimaryKey == false && actual->IsUnique == false && actual->ForeignTable == null && actual->ForeignColumn == null
             {
                 return true;
             }
