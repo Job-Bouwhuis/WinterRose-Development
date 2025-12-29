@@ -77,6 +77,11 @@ public class UIProgress : UIContent
             ProgressValue = -1;
     }
 
+    public void ForceDraw(Rectangle bounds)
+    {
+        Draw(bounds);
+    }
+
     protected override void Draw(Rectangle bounds)
     {
         owner.Style.TimeUntilAutoDismiss = 0;

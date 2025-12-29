@@ -221,7 +221,7 @@ public class UIDropdown<T> : UIContent
     private void CloseDropdown()
     {
         isOpen = false;
-        filterInput.Blur();
+        filterInput.Unfocus();
 
         InputManager.UnregisterContext(dropdownInput);
     }
@@ -241,7 +241,7 @@ public class UIDropdown<T> : UIContent
         ray.DrawRectangleRec(box, Style.TextBoxBackground);
         ray.DrawRectangleLinesEx(box, 1f, Style.TextBoxBorder);
 
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fontSize = Style.TextBoxFontSize;
         float spacing = Style.TextBoxTextSpacing;
         Vector2 textPos = new Vector2(box.X + Style.TextBoxTextSpacing, box.Y + (box.Height - fontSize) / 2f - 1f);
@@ -276,7 +276,7 @@ public class UIDropdown<T> : UIContent
 
         if (isOpen)
         {
-            Application.Current.AddDebugDraw(() =>
+            ForgeWardenEngine.Current.AddDebugDraw(() =>
             {
                 float itemHeight = MathF.Max(Style.TextBoxMinHeight, Style.TextBoxFontSize + Style.TextBoxTextSpacing * 2f);
                 float totalHeight = filteredIndices.Count * itemHeight;

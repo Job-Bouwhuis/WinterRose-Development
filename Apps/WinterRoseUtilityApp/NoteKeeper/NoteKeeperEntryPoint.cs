@@ -9,6 +9,7 @@ using WinterRose.Recordium;
 using WinterRoseUtilityApp.SubSystems;
 
 namespace WinterRoseUtilityApp.NoteKeeper;
+
 internal class NoteKeeperEntryPoint : SubSystem
 {
     private const string QuickNoteHotkey = "QuickNoteHotkey";

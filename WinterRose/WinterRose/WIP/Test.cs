@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose;
 
-namespace ChatThroughWinterRoseBot
+namespace WinterRose.WIP
 {
     public class WindowOptions
     {

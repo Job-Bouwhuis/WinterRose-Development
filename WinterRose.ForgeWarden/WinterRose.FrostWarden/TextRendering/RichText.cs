@@ -5,12 +5,11 @@ using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Linq.Expressions;
 using System.Text;
-using WinterRose.WinterThornScripting.Interpreting;
 
 public class RichText
 {
-    public Font Font { get; set; } = ray.GetFontDefault();
-    public float Spacing { get; set; } = 2;
+    public Font Font { get; set; } = ForgeWardenEngine.DefaultFont;
+    public float Spacing { get; set; } = 1;
     public int FontSize { get; set; } = 12;
     public List<RichElement> Elements { get; private set; }
 
@@ -101,71 +100,14 @@ public class RichText
 
     public Rectangle CalculateBounds(float maxWidth)
     {
-        var lines = RichTextRenderer.WrapText(this, maxWidth);
-
-        List<Rectangle> lineSizes = [];
-
-        foreach (var line in lines)
-            lineSizes.Add(CalculateLineSize(line));
-        float width = lineSizes.Count > 0 ? lineSizes.Max(r => r.Width) : 0;
-        return new Rectangle(0, 0, width, lines.Count * (FontSize) + lines.Count * Spacing);
+        // delegate to renderer (reuses WrapText and cached element measurements)
+        return RichTextRenderer.MeasureRichText(this, maxWidth);
     }
 
     internal Rectangle CalculateLineSize(List<RichElement> elements)
     {
-        Rectangle r = new();
-        bool first = true;
-        foreach (RichElement element in elements)
-        {
-            if (element is RichWord rw)
-            {
-                var size = ray.MeasureTextEx(Font, rw.Text, FontSize, Spacing);
-                if (first)
-                {
-                    first = false;
-                    r.Height = size.Y;
-                }
-                if (size.X > 0)
-                    r.Width += size.X + Spacing;
-                continue;
-            }
-
-            if (element is RichGlyph rg)
-            {
-                var size = ray.MeasureTextEx(Font, rg.Character.ToString(), FontSize, Spacing);
-                if (first)
-                {
-                    first = false;
-                    r.Height = size.Y;
-                }
-                if (rg.Character == '\n')
-                {
-                    r.Height += size.Y;
-                }
-                else if (size.X > 0)
-                {
-                    r.Width += size.X + Spacing;
-                }
-                continue;
-            }
-
-            if (element is RichSprite rs && RichSpriteRegistry.GetSprite(rs.SpriteKey) is Sprite s)
-            {
-                float spriteHeight = rs.BaseSize * FontSize;
-                float scale = spriteHeight / s.Height;
-                r.Width += s.Width * scale + Spacing;
-                if (first)
-                {
-                    first = false;
-                    r.Height = Math.Max(r.Height, s.Height * scale);
-                }
-                continue;
-            }
-        }
-
-        if (r.X >= Spacing)
-            r.X -= Spacing;
-        return r;
+        // delegate to renderer to reuse its cached/specialized measurement logic
+        return RichTextRenderer.MeasureElements(this, elements);
     }
 
     public RichText(List<RichElement> elements)
@@ -303,7 +245,7 @@ public class RichText
 
     public float MeasureText(Font? font)
     {
-        font ??= ray.GetFontDefault();
+        font ??= ForgeWardenEngine.DefaultFont;
         float width = 0;
         foreach (var element in Elements)
         {

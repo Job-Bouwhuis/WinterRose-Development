@@ -38,8 +38,13 @@ public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IM
     /// </summary>
     public bool HoldShiftToDisableSnap { get; set; } = true;
 
-    // Events
+    /// <summary>
+    /// The event invoked when the value changes. the new value is passed as a parameter.
+    /// </summary>
     public MulticastVoidInvocation<UIContainer, UIValueSlider<T>, T> OnValueChanged { get; set; } = new();
+    /// <summary>
+    /// The event invoked when the value changes. the new value is passed as a parameter.
+    /// </summary>
     public MulticastVoidInvocation<T> OnValueChangedBasic { get; set; } = new();
 
     // Internal state (store value as T but compute with doubles)
@@ -101,8 +106,14 @@ public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IM
         // snapping logic
         if (SnapToStep && Step > T.Zero)
         {
-            bool shiftHeld = HoldShiftToDisableSnap &&
-                             (Input.IsDown(KeyboardKey.LeftShift) || Input.IsDown(KeyboardKey.RightShift));
+            bool shiftHeld = false;
+
+            if (HoldShiftToDisableSnap && Input != null)
+            {
+                shiftHeld =
+                    Input.IsDown(KeyboardKey.LeftShift) ||
+                    Input.IsDown(KeyboardKey.RightShift);
+            }
             if (!shiftHeld)
             {
                 // snap to nearest step
@@ -180,7 +191,7 @@ public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IM
 
     protected internal override void Setup()
     {
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fontSize = Style.TextBoxFontSize;
         float spacing = Style.TextBoxTextSpacing;
         float labelPadding = 8f;
@@ -249,7 +260,7 @@ public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IM
         lastBounds = bounds;
 
         // --- compute value label area on the left ---
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fontSize = Style.TextBoxFontSize;
         float spacing = Style.TextBoxTextSpacing;
         string valueText = ToStringFormatted(valueBacking);

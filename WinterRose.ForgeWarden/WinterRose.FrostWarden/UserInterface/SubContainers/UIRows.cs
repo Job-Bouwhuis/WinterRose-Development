@@ -1,6 +1,7 @@
-﻿using WinterRose.ForgeWarden.Tweens;
+﻿using Raylib_cs;
+using WinterRose.ForgeWarden.Lighting;
+using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.Utility;
-using Raylib_cs;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
@@ -8,7 +9,7 @@ namespace WinterRose.ForgeWarden.UserInterface;
 public class UIRows : UIContent
 {
     // configuration
-    public const int DEFAULT_ROW_COUNT = 2;
+    public const int DEFAULT_ROW_COUNT = 1;
     public const float DEFAULT_ROW_HEIGHT = 80f; // fixed row height
     public int RowCount { get; set; } = DEFAULT_ROW_COUNT;
     /// <summary>
@@ -39,6 +40,14 @@ public class UIRows : UIContent
         public bool ScrollbarHoverTarget = false;
         public bool IsScrollDragging = false;
         public float LastTotalContentWidth = 0f;
+
+        public bool AutoScrollEnabled = false;    // toggle per row
+        public float AutoScrollDirection = 1f;
+
+        public float RowHeightOverride = 0f;
+
+        public bool AutoSizeToContent = false;
+        public float CachedAutoHeight = 0f;
     }
 
     private readonly List<RowState> rowStates = new();
@@ -54,6 +63,8 @@ public class UIRows : UIContent
         public bool ScrollbarHoverTarget = false;
         public bool IsScrollDragging = false;
         public float LastTotalRowsHeight = 0f;
+
+        public float ScrollProgress { get; internal set; }
     }
 
     private readonly ContainerState containerState = new();
@@ -61,6 +72,42 @@ public class UIRows : UIContent
     public UIRows()
     {
         EnsureRows(RowCount);
+    }
+
+    public void SetRowHeight(int rowIndex, float height)
+    {
+        EnsureRows(rowIndex + 1);
+        rowStates[rowIndex].RowHeightOverride = height;
+    }
+
+    public void SetRowContentScroll(int rowIndex, bool doScroll)
+    {
+        EnsureRows(rowIndex + 1);
+        rowStates[rowIndex].AutoScrollEnabled = doScroll;
+    }
+
+    public void ClearRowHeight(int rowIndex)
+    {
+        if (rowIndex < 0 || rowIndex >= rowStates.Count) return;
+        rowStates[rowIndex].RowHeightOverride = 0f;
+    }
+
+    public void ClearRowContentScroll(int rowIndex)
+    {
+        if (rowIndex < 0 || rowIndex >= rowStates.Count) return;
+        rowStates[rowIndex].AutoScrollEnabled = false;
+    }
+
+    public void SetRowAutoSize(int rowIndex, bool enabled)
+    {
+        EnsureRows(rowIndex + 1);
+        rowStates[rowIndex].AutoSizeToContent = enabled;
+    }
+
+    public void ClearRowAutoSize(int rowIndex)
+    {
+        if (rowIndex < 0 || rowIndex >= rowStates.Count) return;
+        rowStates[rowIndex].AutoSizeToContent = false;
     }
 
     protected internal override void Setup()
@@ -76,6 +123,37 @@ public class UIRows : UIContent
                 c.Setup();
             }
         }
+    }
+
+    public void MoveRows(int byRows)
+    {
+        if (byRows == 0) return;
+
+        if (byRows > 0)
+        {
+            // prepend rows at the start
+            for (int i = 0; i < byRows; i++)
+            {
+                RowsContents.Insert(0, new List<UIContent>());
+                rowStates.Insert(0, new RowState());
+            }
+        }
+        else
+        {
+            // append rows at the end
+            for (int i = 0; i < -byRows; i++)
+            {
+                RowsContents.Add(new List<UIContent>());
+                rowStates.Add(new RowState());
+            }
+        }
+
+        // keep RowCount in sync
+        RowCount = RowsContents.Count;
+
+        // ensure minimum rows if needed
+        if (RowCount == 0)
+            EnsureRows(DEFAULT_ROW_COUNT);
     }
 
     private void EnsureRows(int count)
@@ -99,6 +177,24 @@ public class UIRows : UIContent
         if (RowCount == 0)
             EnsureRows(DEFAULT_ROW_COUNT);
     }
+
+    private float ResolveRowHeight(int rowIndex)
+    {
+        var rstate = rowStates[rowIndex];
+
+        float minimumHeight = rstate.RowHeightOverride > 0f
+            ? rstate.RowHeightOverride
+            : FixedRowHeight;
+
+        if (!rstate.AutoSizeToContent)
+            return minimumHeight;
+
+        if (rstate.CachedAutoHeight <= 0f)
+            return minimumHeight;
+
+        return Math.Max(minimumHeight, rstate.CachedAutoHeight);
+    }
+
 
     public void AddToRow(int rowIndex, UIContent content)
     {
@@ -139,8 +235,12 @@ public class UIRows : UIContent
         float width = availableArea.Width;
 
         // height is fixed per-row, so total height is rows*height + spacing
-        float rowHeight = FixedRowHeight;
-        float totalRowsHeight = RowCount * rowHeight + Math.Max(0, RowCount - 1) * RowSpacing;
+        float totalRowsHeight = 0f;
+
+        for (int i = 0; i < RowCount; i++)
+            totalRowsHeight += ResolveRowHeight(i);
+
+        totalRowsHeight += Math.Max(0, RowCount - 1) * RowSpacing;
 
         // if there are no children, give at least one row default height
         if (RowCount == 0)
@@ -190,9 +290,14 @@ public class UIRows : UIContent
         if (RowCount <= 0) return;
         EnsureRows(RowCount);
 
-        float rowHeight = FixedRowHeight;
-        float totalSpacing = RowSpacing * (RowCount - 1);
-        float totalRowsHeight = RowCount * rowHeight + totalSpacing;
+        float totalRowsHeight = 0f;
+
+        for (int i = 0; i < RowCount; i++)
+            totalRowsHeight += ResolveRowHeight(i);
+
+
+        totalRowsHeight += RowSpacing * (RowCount - 1);
+
 
         // visible area inside this container
         float visibleStartY = bounds.Y + RowPadding;
@@ -271,10 +376,37 @@ public class UIRows : UIContent
 
         // start drawing rows; apply container-level scroll
         float rowStartY = bounds.Y + RowPadding - containerState.ContentScrollY;
+        float currentRowY = rowStartY;
         for (int ri = 0; ri < RowCount; ri++)
         {
-            float rowY = rowStartY + ri * (rowHeight + RowSpacing);
-            Rectangle rowRect = new Rectangle((int)bounds.X, (int)rowY, (int)bounds.Width, (int)rowHeight);
+            var rstate2 = rowStates[ri];
+
+            // --- AUTO-SIZE MEASUREMENT (INSERT HERE) ---
+            if (rstate2.AutoSizeToContent)
+            {
+                float maxChildHeight = 0f;
+                var rowList2 = RowsContents[ri];
+
+                for (int c = 0; c < rowList2.Count; c++)
+                {
+                    float h = rowList2[c].GetHeight(bounds.Width - RowPadding * 2f);
+                    maxChildHeight = Math.Max(maxChildHeight, h);
+                }
+
+                rstate2.CachedAutoHeight = maxChildHeight + RowPadding * 2f;
+            }
+            // -----------------------------------------
+
+            float rowHeight = ResolveRowHeight(ri);
+
+            Rectangle rowRect = new Rectangle(
+                (int)bounds.X,
+                (int)currentRowY,
+                (int)bounds.Width,
+                (int)rowHeight
+            );
+
+            currentRowY += rowHeight + RowSpacing;
 
             // push scissor for this row
             ScissorStack.Push(rowRect);
@@ -420,12 +552,40 @@ public class UIRows : UIContent
 
         // clamp container scroll after layout changes
         containerState.ContentScrollY = Math.Clamp(containerState.ContentScrollY, 0f, Math.Max(0f, containerState.LastTotalRowsHeight - visibleHeight));
-        // clamp per-row scrolls too
+
+        containerState.ScrollProgress = (containerState.LastTotalRowsHeight <= visibleHeight)
+            ? 0f
+            : containerState.ContentScrollY / (containerState.LastTotalRowsHeight - visibleHeight);
+
         for (int ri = 0; ri < rowStates.Count; ri++)
         {
             var rstate = rowStates[ri];
-            rstate.ContentScrollX = Math.Clamp(rstate.ContentScrollX, 0f, Math.Max(0f, rstate.LastTotalContentWidth - (bounds.Width - RowPadding * 2f)));
+
+            float visibleRowWidth = bounds.Width - RowPadding * 2f; // or precompute per row
+            float maxScrollX = Math.Max(0f, rstate.LastTotalContentWidth - visibleRowWidth);
+
+            // Manual scroll clamp
+            rstate.ContentScrollX = Math.Clamp(rstate.ContentScrollX, 0f, maxScrollX);
+
+            // Auto-scroll
+            if (rstate.AutoScrollEnabled && maxScrollX > 0f)
+            {
+                rstate.ContentScrollX += rstate.AutoScrollDirection * Style.AutoScrollSpeed * Time.deltaTime;
+
+                // Reverse direction at edges
+                if (rstate.ContentScrollX >= maxScrollX)
+                {
+                    rstate.ContentScrollX = maxScrollX;
+                    rstate.AutoScrollDirection = -1f;
+                }
+                else if (rstate.ContentScrollX <= 0f)
+                {
+                    rstate.ContentScrollX = 0f;
+                    rstate.AutoScrollDirection = 1f;
+                }
+            }
         }
+
     }
 
     // small helper for lerp

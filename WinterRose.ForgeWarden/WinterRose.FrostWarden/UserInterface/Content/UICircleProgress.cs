@@ -10,9 +10,20 @@ using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 
 namespace WinterRose.ForgeWarden.UserInterface;
+
 public class UICircleProgress : UIContent
 {
-    public float ProgressValue { get; private set; } = 0f;
+    public float ProgressValue
+    {
+        get;
+        set
+        {
+            if (value is -1)
+                field = -1;
+            else
+                field = Math.Clamp(value, 0f, 1f);
+        }
+    } = 0f;
     public Func<UICircleProgress, float, float>? ProgressProvider { get; set; }
     public string Text { get; set; }
 
@@ -41,9 +52,23 @@ public class UICircleProgress : UIContent
     /// </summary>
     public float ThicknessRatio { get; set; } = 0.10f;
 
-    public bool AlwaysShowText { get; set; } = false; // if true, infinite text will be shown even when determinate
-    public float ProgressLerpSpeed { get; set; } = 6f;       // how fast visual progress follows ProgressValue
-    public float TextLerpSpeed { get; set; } = 12f;          // how fast displayed percent follows visualProgress
+    /// <summary>
+    /// The maximum width this control may claim, in pixels
+    /// </summary>
+    public float MaxClaimableWidth { get; set; } = 500;
+
+    /// <summary>
+    /// if true, infinite text will be shown even when determinate
+    /// </summary>
+    public bool AlwaysShowText { get; set; } = false;
+    /// <summary>
+    /// how fast visual progress follows ProgressValue
+    /// </summary>
+    public float ProgressLerpSpeed { get; set; } = 6f;
+    /// <summary>
+    /// how fast displayed percent follows visualProgress
+    /// </summary>
+    public float TextLerpSpeed { get; set; } = 12f;
     private Curve PercentCurve { get; set; } = Curves.ExtraSlowFastSlow;
 
     // Animation state for indeterminate spinner
@@ -82,13 +107,17 @@ public class UICircleProgress : UIContent
 
     public void SetProgress(float value)
     {
-        ProgressValue = Math.Clamp(value, 0f, 1f);
+        ProgressValue = value;
     }
 
     public override Vector2 GetSize(Rectangle availableArea)
     {
-        // Determine maximum square side
-        float side = Math.Min(availableArea.Width, availableArea.Height);
+        // Respect the MaxClaimableWidth
+        float availW = Math.Min(availableArea.Width, MaxClaimableWidth);
+        float availH = availableArea.Height;
+
+        // Determine maximum square side (but clipped by max-claimable width)
+        float side = Math.Min(availW, availH);
         side = Math.Max(side, 30); // enforce minimum
 
         // compute radii like in Draw
@@ -98,22 +127,27 @@ public class UICircleProgress : UIContent
         float innerRadiusLocal = outerRadiusLocal * (1f - ThicknessRatio);
         innerRadiusLocal = Math.Max(innerRadiusLocal, 3f);
 
-        // Determine text height
+        // Determine text height (use font-clamped size)
         int fontSize = Math.Clamp((int)innerRadiusLocal, 10, 28);
-        float textHeight = fontSize; // rough approximation
+        float textHeight = fontSize; // approximate
 
         // Add bottom padding for text (so it fits inside the container)
         float totalHeight = outerRadiusLocal * 2f + textHeight;
         float totalWidth = outerRadiusLocal * 2f;
+
+        // Clip final width by MaxClaimableWidth
+        totalWidth = Math.Min(totalWidth, MaxClaimableWidth);
 
         return new Vector2(totalWidth, totalHeight);
     }
 
     protected internal override float GetHeight(float maxWdith)
     {
-        maxWdith = Math.Max(maxWdith, 30);
+        // Apply max claimable width
+        float effectiveWidth = Math.Min(maxWdith, MaxClaimableWidth);
+        effectiveWidth = Math.Max(effectiveWidth, 30);
 
-        float half = maxWdith / 2f;
+        float half = effectiveWidth / 2f;
         float outerRadiusLocal = half - Padding;
         outerRadiusLocal = Math.Max(outerRadiusLocal, 8f);
 
@@ -202,7 +236,7 @@ public class UICircleProgress : UIContent
             // otherwise, force clockwise motion
             delta += 360f;
         }
-        
+
         return (fromDeg + delta * Math.Clamp(t, 0f, 1f)) % 360f;
     }
 
@@ -345,7 +379,11 @@ public class UICircleProgress : UIContent
 
     protected override void Draw(Rectangle bounds)
     {
-        float side = Math.Min(bounds.Width, bounds.Height);
+        // Respect MaxClaimableWidth so control doesn't greedily take more than configured
+        float claimedWidth = Math.Min(bounds.Width, MaxClaimableWidth);
+        float claimedHeight = bounds.Height;
+
+        float side = Math.Min(claimedWidth, claimedHeight);
         float half = side / 2f;
 
         center = new Vector2(bounds.X + bounds.Width / 2f, bounds.Y + bounds.Height / 2f);
@@ -361,7 +399,7 @@ public class UICircleProgress : UIContent
         // Draw ring arcs as before...
         DrawProgressArc();
 
-        // --- Text layout calculation (instead of drawing via Raylib) ---
+        // --- Text layout calculation (use renderer's measurement to match drawing) ---
         string? infiniteTextToShow = (ProgressValue == -1 || AlwaysShowText) && !string.IsNullOrWhiteSpace(Text)
             ? Text
             : null;
@@ -372,11 +410,11 @@ public class UICircleProgress : UIContent
         int fontSize = Math.Clamp((int)(innerRadius), 10, 28);
         float innerDiameter = innerRadius * 2f;
         float paddingInside = 8f;
+        float allowedTextWidth = Math.Max(0f, innerDiameter - paddingInside * 2f);
 
-        // Measure text widths using your measurement method
-
+        // Build RichText objects and set font size so measurement matches draw
         RichText? infText = null;
-        if(infiniteTextToShow is not null)
+        if (infiniteTextToShow is not null)
         {
             infText = infiniteTextToShow;
             infText.FontSize = fontSize;
@@ -389,41 +427,58 @@ public class UICircleProgress : UIContent
             percText.FontSize = fontSize;
         }
 
-        float infWidth = infiniteTextToShow is null ? 0 : infText.MeasureText(null);
-        float percWidth = percentText is null ? 0 : percText.MeasureText(null);
+        // Use the renderer's MeasureRichText so measurement equals drawing
+        float infWidth = 0f, infHeight = 0f;
+        float percWidth = 0f, percHeight = 0f;
 
-        bool drawInfinite = infiniteTextToShow is not null;
-        bool drawPercent = percentText is not null;
+        if (infText is not null)
+        {
+            var r = RichTextRenderer.MeasureRichText(infText, allowedTextWidth);
+            infWidth = r.Width;
+            infHeight = r.Height;
+        }
 
+        if (percText is not null)
+        {
+            var r = RichTextRenderer.MeasureRichText(percText, allowedTextWidth);
+            percWidth = r.Width;
+            percHeight = r.Height;
+        }
+
+        bool drawInfinite = infText is not null;
+        bool drawPercent = percText is not null;
+
+        // If both, hide percent if they won't fit side-by-side (keep single-line preference)
         if (drawInfinite && drawPercent)
         {
             float combinedWidth = infWidth + percWidth + 6f; // spacing between
-            if (combinedWidth + paddingInside > innerDiameter)
+            if (combinedWidth + paddingInside * 2f > innerDiameter)
                 drawPercent = false; // hide percent first
         }
 
-        // Compute positions for your own renderer
+        // Compute positions and draw using same allowedTextWidth so wrapping is consistent.
         if (drawInfinite && drawPercent)
         {
             float totalWidth = infWidth + percWidth + 6f;
             Vector2 infPos = new(center.X - totalWidth / 2f, center.Y - fontSize / 2f);
             Vector2 percPos = new(infPos.X + infWidth + 6f, center.Y - fontSize / 2f);
 
-            RichTextRenderer.DrawRichText(infText, infPos, totalWidth, null);
-            RichTextRenderer.DrawRichText(percText, percPos, totalWidth, null);
-            
+            // draw with each measured width so they layout exactly as measured
+            RichTextRenderer.DrawRichText(infText!, infPos, Math.Max(1f, infWidth), null);
+            RichTextRenderer.DrawRichText(percText!, percPos, Math.Max(1f, percWidth), null);
         }
         else if (drawInfinite)
         {
             Vector2 infPos = new(center.X - infWidth / 2f, center.Y - fontSize / 2f);
 
-            RichTextRenderer.DrawRichText(infText, infPos, bounds.Width - infPos.X, null);
+            // allow full allowedTextWidth for wrapping (centered)
+            RichTextRenderer.DrawRichText(infText!, infPos, allowedTextWidth, null);
         }
         else if (drawPercent)
         {
             Vector2 percPos = new(center.X - percWidth / 2f, center.Y - fontSize / 2f);
 
-            RichTextRenderer.DrawRichText(infText, percPos, bounds.Width - percPos.X, null);
+            RichTextRenderer.DrawRichText(percText!, percPos, allowedTextWidth, null);
         }
     }
 

@@ -10,6 +10,8 @@ internal static class TimerManager
     private const int MilestoneWindow = 2;
     private static List<RunningTimer> timers = new List<RunningTimer>();
 
+    public static IReadOnlyList<RunningTimer> Timers => timers;
+
     internal static void Add(RunningTimer timer)
     {
         timers.Add(timer);
@@ -92,5 +94,4 @@ internal static class TimerManager
             }
         }
     }
-
 }

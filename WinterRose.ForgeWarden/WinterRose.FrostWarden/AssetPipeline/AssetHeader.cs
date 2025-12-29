@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.AnonymousTypes;
@@ -14,10 +15,45 @@ namespace WinterRose.ForgeWarden.AssetPipeline
         public List<string> Tag { get; internal set; }
         public Anonymous? Metadata { get; internal set; } = null;
 
-        public bool IsValid => 
-            !string.IsNullOrWhiteSpace(Name) 
+        public bool IsValid =>
+            !string.IsNullOrWhiteSpace(Name)
             && !string.IsNullOrWhiteSpace(Path)
             && Tag != null;
+
+        public bool IsReadOnly { get; internal set; }
+
+        [WFInclude]
+        internal string AssemblyName { get; set; }
+        private Assembly assembly;
+
+        /// <summary>
+        /// Will be null if the asset is not an assembly resource asset
+        /// </summary>
+        public Assembly? SourceAssembly
+        {
+            get
+            {
+                if (assembly != null)
+                    return assembly;
+
+                return assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == AssemblyName);
+            }
+        }
+
+        public FileStream Source
+        {
+            get
+            {
+                if (SourceAssembly == null)
+                {
+                    return File.Open(Path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+                }
+
+                Stream s = SourceAssembly.GetManifestResourceStream(Path);
+                TempFile tmp = new(s, FileShare.Read, extension: System.IO.Path.GetExtension(Path));
+                return tmp;
+            }
+        }
 
         public AssetHeader(string name, string path)
         {
@@ -69,7 +105,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public T? LoadAs<T>() where T : class
+        public T? LoadAs<T>()
         {
             if (string.IsNullOrEmpty(Path))
                 throw new InvalidOperationException("Asset path is not set.");

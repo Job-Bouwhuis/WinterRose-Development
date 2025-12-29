@@ -55,7 +55,8 @@ public class UIButton : UIContent
     /// </summary>
     protected internal override void OnContentClicked(MouseButton button)
     {
-        OnClick.Invoke(owner, this);
+        if(button is MouseButton.Left)
+            OnClick.Invoke(owner, this);
     }
 
     protected internal override void Update()
@@ -78,12 +79,45 @@ public class UIButton : UIContent
         ray.DrawRectangleRec(btnRect, backgroundColor);
         ray.DrawRectangleLinesEx(btnRect, 1, Style.ButtonBorder);
 
-        RichTextRenderer.DrawRichText(
+        // compute text area inside padding
+        float textMaxWidth = Math.Max(0f, btnRect.Width - PaddingX * 2);
+        float textAreaHeight = Math.Max(0f, btnRect.Height - PaddingY * 2);
+
+        // resolve font size the same way CalculateSize does
+        int baseSize = Math.Clamp(Style.BaseButtonFontSize, 12, 28);
+        int resolvedFontSize = UITextScalar.ResolveFontSize(
             Text,
-            new(btnRect.X + 10, btnRect.Y + 7),
-            btnRect.Width,
+            baseSize,
+            new Rectangle(0, 0, textMaxWidth, float.MaxValue),
+            autoScale: true
+        );
+
+        // prepare a copy of the RichText with the resolved font size for measurement/drawing
+        var textToDraw = Text.Clone();
+        textToDraw.FontSize = resolvedFontSize;
+
+        // measure exactly using the renderer so measurement == drawn layout
+        var measured = RichTextRenderer.MeasureRichText(textToDraw, textMaxWidth);
+        float measuredWidth = measured.Width;
+        float measuredHeight = measured.Height;
+
+        // compute text origin — horizontally start at left padding, vertically center the measured text
+        float textX = btnRect.X + PaddingX;
+        float textY = btnRect.Y + (btnRect.Height - measuredHeight) / 2f;
+
+        // ensure we don't place text outside inner padding bounds
+        if (textY < btnRect.Y + PaddingY) textY = btnRect.Y + PaddingY;
+        if (textY + measuredHeight > btnRect.Y + btnRect.Height - PaddingY)
+            textY = btnRect.Y + btnRect.Height - PaddingY - measuredHeight;
+
+        // draw with exact same max width used for measurement
+        RichTextRenderer.DrawRichText(
+            textToDraw,
+            new Vector2(textX, textY),
+            textMaxWidth,
             new Color(255, 255, 255, Style.ContentAlpha),
-            Input);
+            Input
+        );
     }
 
     public override Vector2 GetSize(Rectangle availableArea) => CalculateSize(availableArea.Width, Style.BaseButtonFontSize).Size;
@@ -92,26 +126,44 @@ public class UIButton : UIContent
     /// <summary>
     /// Calculate the button size for a given width
     /// </summary>
-    public virtual Rectangle CalculateSize(float maxWidth, float baseFontScale = 1f)
+    public virtual Rectangle CalculateSize(float maxWidth, int baseFontScale = 1)
     {
-        int buttonBaseSize = 12;
-        int buttonFontSize = (int)(buttonBaseSize * baseFontScale);
-        buttonFontSize = Math.Clamp(buttonFontSize, 12, 28);
-        Text.FontSize = buttonFontSize;
+        int baseSize = Math.Clamp(baseFontScale, 12, 28);
 
-        Rectangle textSize = Text.CalculateBounds(maxWidth);
-        int btnWidth = (int)textSize.Width + PaddingX * 2;
-        int btnHeight = (int)textSize.Height + PaddingY * 2;
+        float textMaxWidth = Math.Max(0f, maxWidth - PaddingX * 2);
 
-        return new Rectangle(0, 0, btnWidth, btnHeight);
+        int resolvedFontSize = UITextScalar.ResolveFontSize(
+            Text,
+            baseSize,
+            new Rectangle(0, 0, textMaxWidth, float.MaxValue),
+            autoScale: true
+        );
+
+        var textToMeasure = Text;
+        textToMeasure.FontSize = resolvedFontSize;
+
+        Vector2 measured = RichTextRenderer.MeasureRichText(
+            textToMeasure,
+            textMaxWidth
+        ).Size;
+
+        // IMPORTANT:
+        // draw vertically centers text inside padded area,
+        // so height must fully contain the measured block
+        int requiredInnerHeight = (int)MathF.Ceiling(measured.Y);
+
+        int width = (int)MathF.Ceiling(measured.X) + PaddingX * 2;
+        int height = requiredInnerHeight + PaddingY * 2;
+
+        return new Rectangle(0, 0, width, height);
     }
 
-    protected internal virtual float GetHeight(float maxWidth, float baseFontScale = 1f)
+    protected internal virtual float GetHeight(float maxWidth, int baseFontScale = 1)
     {
         return CalculateSize(maxWidth, baseFontScale).Height;
     }
 
-    internal static List<Rectangle> LayoutButtons<T>(List<UIButton> buttons, Rectangle bounds, out List<int> rowHeights, float baseFontScale = 1f) where T : UIContainer
+    internal static List<Rectangle> LayoutButtons<T>(List<UIButton> buttons, Rectangle bounds, out List<int> rowHeights, int baseFontScale = 1) where T : UIContainer
     {
         List<Rectangle> buttonSizes = buttons.Select(b => b.CalculateSize(bounds.Width, baseFontScale)).ToList();
         List<List<Rectangle>> rows = new();

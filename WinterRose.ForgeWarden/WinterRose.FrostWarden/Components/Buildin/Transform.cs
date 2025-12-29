@@ -5,7 +5,6 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Physics;
-using WinterRose.WinterThornScripting.Interpreting;
 
 namespace WinterRose.ForgeWarden
 {

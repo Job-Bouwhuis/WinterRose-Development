@@ -341,7 +341,7 @@ namespace WinterRose.ForgeWarden.UserInterface
         /// </summary>
         public Color White => new Color(255, 255, 255, ContentAlpha);
 
-        public float BaseButtonFontSize { get; set; } = 14;
+        public int BaseButtonFontSize { get; set; } = 18;
 
         public Font Font { get; set; }
         public float BorderSize { get; set; } = 2;
@@ -363,5 +363,6 @@ namespace WinterRose.ForgeWarden.UserInterface
         public bool PauseAutoDismissTimer { get; set; }
         public int MaxAutoScaleWidth { get; set; } = 500;
         public int MaxAutoScaleHeight { get; set; } = 700;
+        public float AutoScrollSpeed { get; set; } = 50;
     }
 }

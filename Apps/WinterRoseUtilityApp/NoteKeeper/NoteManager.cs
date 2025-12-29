@@ -77,7 +77,7 @@ internal struct NoteManager : IAssetHandler<List<Note>>
 
     static NoteManager()
     {
-        Application.Current.GameClosing.Subscribe(
+        ForgeWardenEngine.Current.GameClosing.Subscribe(
             Invocation.Create(() =>
             { 
                 SaveAsset(ASSET_NAME, notes);

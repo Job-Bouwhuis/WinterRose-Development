@@ -15,6 +15,11 @@ public class Toast : UIContainer
 
     public override InputContext Input => Toasts.Input;
 
+    /// <summary>
+    /// Invoked regardless of if any toast content has click actions invoked
+    /// </summary>
+    public MulticastVoidInvocation<Toast, MouseButton> OnToastClicked { get; } = new();
+
     protected internal ToastRegionManager ToastManager { get; internal set; }
 
     public new ToastStyle Style
@@ -71,6 +76,13 @@ public class Toast : UIContainer
                 Rectangle exitTarget = ToastManager.GetExitPositionAndScale(this);
                 TargetPosition = exitTarget.Position;
                 TargetSize = exitTarget.Size;
+                Style.AutoScale = true;
+                Style.MoveAndScaleCurve = Curves.Linear;
+
+                Style.ShadowSizeBottom =
+                Style.ShadowSizeTop =
+                Style.ShadowSizeRight =
+                Style.ShadowSizeLeft = 0;
             }
             else
                 TargetSize = new();
@@ -90,6 +102,8 @@ public class Toast : UIContainer
         AddContent(new UIButton(text, onClick));
         return this;
     }
+
+    protected override void OnContainerClicked(MouseButton button) => OnToastClicked.Invoke(this, button);
 
     /// <summary>
     /// Adds a button to the toast
@@ -160,6 +174,7 @@ public class Toast : UIContainer
         this.continueWithSelector = continueWithSelector;
         continueWithOptions = options;
     }
+
 
     internal Toast? GetContinueWithToast()
     {

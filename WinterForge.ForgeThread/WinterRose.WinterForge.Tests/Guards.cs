@@ -64,11 +64,11 @@ public class ThreadLoomBasicGuards
     {
         bool mainCallbackFired = false;
 
-        var task = loom.InvokeOn("Worker1", () =>
+        var task = loom.InvokeOn("Worker1", (Action)(() =>
         {
             // enqueue a callback to main. main will have to pump to run it.
-            loom.InvokeOn("Main", () => mainCallbackFired = true);
-        });
+            loom.InvokeOn<bool>("Main", (Func<bool>)(() => mainCallbackFired = true));
+        }));
 
         // ensure worker job completed
         task.Wait(2000).TrueOrThrow("Worker job timed out");

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Graph.Drives.Item.Items.Item.Workbook.CloseSession;
+using Raylib_cs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.Recordium;
 
 namespace WinterRoseUtilityApp.TimerStopwatch;
+
 internal class ContainerCreators
 {
     internal static UIWindow AddTimer()
@@ -29,7 +31,7 @@ internal class ContainerCreators
 
         // duration input (you could replace with dropdowns or number boxes later)
         UINumericUpDown<int> durationInput = new();
-        
+
         durationCols.AddToColumn(0, durationInput);
 
         UIDropdown<string> timeUnit = new UIDropdown<string>();
@@ -92,33 +94,69 @@ internal class ContainerCreators
         Toast toast = new Toast(ToastType.Neutral, ToastRegion.Left, ToastStackSide.Top);
         toast.Style.TimeUntilAutoDismiss = autoDismissTimer;
         toast.Style.AutoScale = true;
-        UICircleProgress progress = new(0, (self, cur) =>
-        {
-            var rem = timer.Remaining.TotalSeconds;
-            var tot = timer.Duration.TotalSeconds;
-
-            self.Text = $"{timer.Remaining:h\\:mm\\:ss\\.ff}";
-
-            if (timer.IsCompleted)
-            {
-                //toast.Style.TimeUntilAutoDismiss = 8;
-                toast.Style.PauseAutoDismissTimer = true;
-                
-                self.Text = $"\\c[#50FF50]Timer '{timer.Name}' completed!";
-                self.ProgressProvider = null;
-                self.Style.ProgressBarFill = new Raylib_cs.Color(0, 255, 0);
-
-                toast.AddContent(new UIButton("Dismiss", (c, b) => c.Close()));
-                return 1;
-            }
-
-            return (float)(rem / tot);
-        });
+        UICircleProgress progress = CreateProgressBarForTimer(timer, toast);
         progress.AlwaysShowText = true;
         progress.DontShowProgressPercent = true;
         toast.AddText("timer: " + timer.Name, UIFontSizePreset.Title);
         toast.AddContent(progress);
 
         return toast;
+    }
+
+    private static UICircleProgress CreateProgressBarForTimer(RunningTimer timer, UIContainer owner)
+    {
+        UICircleProgress progress = new(0, (self, cur) =>
+        {
+            var rem = timer.Remaining.TotalSeconds;
+            var tot = timer.Duration.TotalSeconds;
+            if (rem <= 10)
+                self.owner.Style.PauseAutoDismissTimer = true;
+
+            if (timer.Remaining.Hours > 0)
+                self.Text = $"{timer.Remaining:hh\\:mm\\:ss\\.f}";
+            else
+                self.Text = $"{timer.Remaining:mm\\:ss\\.f}";
+
+            if (timer.IsCompleted)
+            {
+                if (owner is Toast)
+                    owner.Style.PauseAutoDismissTimer = true;
+
+                self.Text = $"\\c[#50FF50]Timer '{timer.Name}' completed!";
+                self.ProgressProvider = null;
+                self.Style.ProgressBarFill = new Raylib_cs.Color(0, 255, 0);
+
+                if (owner is Toast)
+                    owner.AddContent(new UIButton("Dismiss", (c, b) => c.Close()));
+                return 1;
+            }
+
+            return (float)(rem / tot);
+        });
+        return progress;
+    }
+
+    internal static UIWindow ViewTimers()
+    {
+        UIWindow window = new UIWindow("Active Timers", 400, 600);
+        Color ProgressBarDefault = window.Style.ProgressBarFill;
+
+        if (TimerManager.Timers.Count == 0)
+        {
+            window.AddContent(new UIText("No active timers.", UIFontSizePreset.Title));
+            return window;
+        }
+
+        foreach (var timer in TimerManager.Timers)
+        {
+            UITreeNode timerContainer = new UITreeNode(timer.Name);
+            window.AddContent(timerContainer);
+            UICircleProgress progress = CreateProgressBarForTimer(timer, window);
+            window.Style.ProgressBarFill = ProgressBarDefault;
+            progress.AlwaysShowText = true;
+            progress.DontShowProgressPercent = true;
+            timerContainer.AddChild(progress);
+        }
+        return window;
     }
 }

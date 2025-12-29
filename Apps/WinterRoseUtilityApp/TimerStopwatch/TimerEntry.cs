@@ -11,7 +11,10 @@ internal class TimerEntry : SubSystem
 {
     public TimerEntry() : base("TimerStopwatch", "Used for creating and viewing timers and stopwatches", new Version(1, 0, 0))
     {
-        Program.Current.AddTrayItem(new UIButton("Create Timer", (c, b) => ContainerCreators.AddTimer().Show()));
+        UIColumns cols = new UIColumns();
+        cols.AddToColumn(0, new UIButton("Create Timer", (c, b) => ContainerCreators.AddTimer().Show()));
+        cols.AddToColumn(1, new UIButton("View all timers", (c, b) => ContainerCreators.ViewTimers().Show()));
+        Program.Current.AddTrayItem(cols);
     }
 
     public override void Init() { }

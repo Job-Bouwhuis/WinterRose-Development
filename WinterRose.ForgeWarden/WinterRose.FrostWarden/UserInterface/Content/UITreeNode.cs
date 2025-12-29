@@ -206,7 +206,7 @@ public class UITreeNode : UIContent
         // Node text
         var textX = (int)(bounds.X + Style.TreeNodeIndentWidth + 4);
         var textY = (int)(bounds.Y + (Style.TreeNodeHeight - 14) / 2f);
-        Raylib_cs.Raylib.DrawText(Text ?? string.Empty, textX, textY, 14, Style.TreeNodeText);
+        Raylib_cs.Raylib.DrawTextEx(ForgeWardenEngine.DefaultFont, Text ?? string.Empty, new Vector2(textX, textY), 14, 2, Style.TreeNodeText);
 
         // Outline for the row (subtle)
         Raylib_cs.Raylib.DrawRectangleLinesEx(rowRect, 1, Style.TreeNodeBorder);

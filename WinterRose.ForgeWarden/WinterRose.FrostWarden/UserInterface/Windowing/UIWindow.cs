@@ -131,7 +131,7 @@ public class UIWindow : UIContainer
                 sizeBeforeMaximize = maximizeAnimStartSize;
 
                 maximizeAnimEndPos = new Vector2(0f, 0f);
-                maximizeAnimEndSize = new Vector2(Application.Current.Window.Width, Application.Current.Window.Height);
+                maximizeAnimEndSize = new Vector2(ForgeWardenEngine.Current.Window.Width, ForgeWardenEngine.Current.Window.Height);
 
                 NoAutoMove = true;
             }
@@ -151,7 +151,7 @@ public class UIWindow : UIContainer
                     float targetY = mouse.Y - (Style.TitleBarHeight * 0.5f);
 
                     // clamp to screen bounds
-                    var win = Application.Current.Window;
+                    var win = ForgeWardenEngine.Current.Window;
                     targetX = MathF.Max(0f, MathF.Min(targetX, win.Width - targetWidth));
                     targetY = MathF.Max(0f, MathF.Min(targetY, win.Height - targetHeight));
 
@@ -988,9 +988,9 @@ public class UIWindow : UIContainer
         }
     }
 
-    private float maximizeBarSize = 25;
-    private float maximizeBarTopMargin = 5;
-    private float maximizeBarSideMargin = 50;
+    private float maximizeBarSize = 5;
+    private float maximizeBarTopMargin = 0;
+    private float maximizeBarSideMargin = 0;
     private float maximizeBarAnimation = 0; // 0 - 1
     private Color maximizeBarColor = Color.Gray.WithAlpha(120);
 
@@ -999,7 +999,6 @@ public class UIWindow : UIContainer
     private bool maximizeBarHovered = false;
     private const float MAXIMIZE_BAR_ANIM_SPEED = 8f;
 
-    // --- added/updated members ---
     private float maximizeBarVisibility = 0f;   // 0..1
     private float maximizeBarExpansion = 0f;   // 0..1
     private const float MAXIMIZE_BAR_VIS_SPEED = 8f;
@@ -1008,7 +1007,7 @@ public class UIWindow : UIContainer
 
     private void DrawMaximizeDragBar()
     {
-        var winSize = Application.Current.Window.Size;
+        var winSize = ForgeWardenEngine.Current.Window.Size;
 
         var baseRect = new Rectangle(
             maximizeBarSideMargin,

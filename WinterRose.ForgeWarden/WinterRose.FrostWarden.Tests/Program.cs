@@ -32,7 +32,7 @@ using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.ForgeWarden.Tests;
 
-internal class Program : Application
+internal class Program : ForgeWardenEngine
 {
     // fullscreen PC
     //const int SCREEN_WIDTH = 2560;

@@ -7,6 +7,7 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using WinterRose.ForgeSignal;
+using WinterRose.ForgeThread;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Editor;
@@ -29,16 +30,21 @@ using static Raylib_cs.Raylib;
 
 namespace WinterRose.ForgeWarden;
 
-public abstract class Application
+public abstract class ForgeWardenEngine
 {
-    public static Application Current { get; private set; }
+    public static ForgeWardenEngine Current { get; private set; }
 
+    public static Font DefaultFont { get; set; }
+
+    public const string ENGINE_POOL_NAME = "EnginePool";
     Log log;
 
     /// <summary>
     /// Called when the game is about to close either gracefully or by unhandled exception
     /// </summary>
     public MulticastVoidInvocation GameClosing { get; } = new();
+
+    public ThreadLoom GlobalThreadLoom { get; } = new();
 
     public bool ShowFPS { get; set; }
     public Window Window { get; private set; }
@@ -78,7 +84,7 @@ public abstract class Application
     };
     private List<Action> debugDraws = [];
 
-    static Application()
+    static ForgeWardenEngine()
     {
         LogDestinations.AddDestination(new ConsoleLogDestination());
         LogDestinations.AddDestination(new FileLogDestination("logs"));
@@ -93,9 +99,11 @@ public abstract class Application
         {
             Current!.GameClosing.Invoke();
         };
+
+
     }
 
-    public Application(bool UseBrowser = true, bool GracefulErrorHandling =
+    public ForgeWardenEngine(bool UseBrowser = true, bool GracefulErrorHandling =
 #if RELEASE
          true) // use try catch with graceful error dialog box upon error rather than just closing without reason
 #else
@@ -108,6 +116,9 @@ public abstract class Application
         useBrowser = UseBrowser;
         gracefulErrorHandling = GracefulErrorHandling;
         log = new Log("Engine");
+
+        GlobalThreadLoom.RegisterMainThread();
+        GlobalThreadLoom.CreatePool(ENGINE_POOL_NAME, Environment.ProcessorCount / 2);
     }
 
     /// <summary>
@@ -130,12 +141,16 @@ public abstract class Application
                 browserTask = Task.CompletedTask;
             Assets.BuildAssetIndexes();
 
+            Raylib.InitAudioDevice();
+
             SetTargetFPS(0);
 
             Window = new Window(title, flags);
             Window.Create(width, height);
 
             SetExitKey(KeyboardKey.Null);
+
+            LoadDefaultFont();
 
             if (!browserTask.IsCompleted)
             {
@@ -170,6 +185,8 @@ public abstract class Application
             {
                 InputManager.Update();
                 Time.Update();
+                GlobalHotkey.Update();
+                GlobalThreadLoom.ProcessPendingActions();
 
                 if (ray.IsWindowResized())
                 {
@@ -199,6 +216,10 @@ public abstract class Application
 
             Closing();
             SpriteCache.DisposeAll();
+            Raylib.UnloadRenderTexture(worldTex);
+            Universe.CurrentWorld.Dispose();
+            Raylib.CloseAudioDevice();
+            Assets.FinalizeHeaders();
 
             log.Info("All resources released, Closing window");
         }
@@ -206,12 +227,22 @@ public abstract class Application
         {
             try
             {
+                Assets.FinalizeHeaders();
                 Window.Close();
             } 
             catch { /* ignore */ }
 
             log.Info("End of 'run', Bye bye!");
         }
+    }
+
+    private void LoadDefaultFont()
+    {
+        Font f = Assets.Load<Font>("WinterRose.ForgeWarden.CascadiaCode");
+        if (f.GlyphCount > 0)
+            DefaultFont = f;
+        else
+            DefaultFont = ray.GetFontDefault();
     }
 
     private void MainApplicationLoop(Camera? camera, ref RenderTexture2D worldTex)
@@ -390,10 +421,9 @@ public abstract class Application
     /// and <see cref="UIWindow"/>
     /// </summary>
     [SupportedOSPlatform("windows")]
-    protected void RunAsOverlay(string title = "Overlay")
+    protected void RunAsOverlay(string title = "Overlay", int monitorIndex = 0)
     {
-        var monitorsize = Windows.GetScreenSize();
-
+        var monitorsize = Windows.GetScreenSize(monitorIndex);
         Run(title, monitorsize.X, monitorsize.Y,
             ConfigFlags.TransparentWindow | 
             ConfigFlags.UndecoratedWindow | 

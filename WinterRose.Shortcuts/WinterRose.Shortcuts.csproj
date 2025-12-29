@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>WinterRose.Shortcuts</Title>
+    <Version>25.4.0</Version>
+    <Authors>WinterRose</Authors>
+    <Description>A small library to create shortcuts in windows and linux using a unified API</Description>
+    <Copyright>MPL-2.0</Copyright>
+  </PropertyGroup>
+
+</Project>

@@ -8,13 +8,14 @@ using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRoseUtilityApp.MailReader.Models;
+using WinterRoseUtilityApp.MailReader.Readers;
 
 namespace WinterRoseUtilityApp.MailReader;
 internal class ContainerCreators
 {
     public static Dialog AddEmailDialog(string reason = null)
     {
-        Dialog d = new Dialog("Add Email Account", DialogPlacement.CenterSmall, DialogPriority.Normal);
+        Dialog d = new Dialog("Add Email Account", DialogPlacement.TopSmall, DialogPriority.Normal);
         UIColumns root = new UIColumns();
         d.AddContent(root);
 
@@ -65,7 +66,7 @@ internal class ContainerCreators
         return d;
     }
 
-    public static UIWindow EmailAccountsWindow()
+    public static UIWindow EmailAccountsWindow(MailWatcher watcher)
     {
         UIWindow window = new UIWindow("Email Accounts", 600, 400);
         UIColumns rootCols = new();
@@ -104,6 +105,39 @@ internal class ContainerCreators
 
         rootCols.AddToColumn(1, addBtn);
 
+        rootCols.AddToColumn(1, new UIText("Time until next check:", UIFontSizePreset.Subtitle));
+
+        UICircleProgress checkTimer = new(0, (bar, currentVal) =>
+        {
+            if(watcher.LastCheck == DateTime.MinValue)
+            {
+                bar.Text = "A scan is busy...";
+                return -1;
+            }
+
+            TimeSpan timeSinceLastCheck = DateTime.UtcNow - watcher.LastCheck;
+            double intervalSeconds = watcher.checkInterval.TotalSeconds;
+
+            double secondsRemaining = intervalSeconds - timeSinceLastCheck.TotalSeconds;
+            if (secondsRemaining < 0) secondsRemaining = 0;
+
+            TimeSpan timeLeft = TimeSpan.FromSeconds(secondsRemaining);
+
+            // Text now shows time remaining
+            bar.Text = timeLeft.Hours > 0
+                ? string.Format("{0:D2}:{1:D2}:{2:D2}.{3}", timeLeft.Hours, timeLeft.Minutes, timeLeft.Seconds, timeLeft.Milliseconds / 100)
+                : string.Format("{0:D2}:{1:D2}.{2}", timeLeft.Minutes, timeLeft.Seconds, timeLeft.Milliseconds / 100);
+
+            return (float)(secondsRemaining / intervalSeconds); // progress counts down
+        })
+        {
+            Text = "--:--",
+            AlwaysShowText = true,
+            DontShowProgressPercent = true
+        };
+
+        rootCols.AddToColumn(1, checkTimer);
+
         return window;
     }
 
@@ -127,7 +161,7 @@ internal class ContainerCreators
         // --- Fetch folders from Graph API ---
         Task.Run(async () =>
         {
-            var folders = await MailReader.FetchFolders(account); // returns List<MailFolder>
+            var folders = await OutlookMailReader.FetchFolders(account); // returns List<MailFolder>
             foreach (var folder in folders)
             {
                 UITreeNode folderNode = new(folder.DisplayName);
@@ -135,13 +169,16 @@ internal class ContainerCreators
                 folderNode.ClickInvocation.Subscribe(async node =>
                 {
                     rightEmailsCol.Clear();
-                    List<MailMessage> emails = await MailReader.FetchEmails(account, folder.Id);
+                    List<MailMessage> emails = await OutlookMailReader.FetchEmails(account, folder);
                     foreach (var mail in emails)
                     {
                         string btnText = $"{mail.From}: {mail.Subject}";
                         UIButton emailBtn = new(btnText, (c, b) =>
                         {
-                            Toasts.Info(mail.BodyPreview[..Math.Min(300, mail.BodyPreview.Length)]);
+                            Toasts.Info(mail.Body.Content[..Math.Min(300, mail.Body.Content.Length)])
+                            .OnToastClicked.Subscribe((t, a) => {
+                                WinterRose.Windows.Clipboard.WriteString(mail.Body.Content);
+                            });
                         });
                         rightEmailsCol.AddToColumn(0, emailBtn);
                     }

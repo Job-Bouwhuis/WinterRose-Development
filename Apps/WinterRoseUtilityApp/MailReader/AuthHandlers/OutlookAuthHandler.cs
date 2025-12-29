@@ -19,7 +19,8 @@ internal static class OutlookAuthHandler
     [
         "Mail.Read",
         "User.Read",
-        "offline_access"
+        "offline_access",
+        "Mail.ReadWrite"
     ];
 
     private static readonly Log log = new Log("OutlookAuthHandler");

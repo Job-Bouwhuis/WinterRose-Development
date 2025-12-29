@@ -39,7 +39,7 @@ public abstract class ToastRegionManager
 
     protected internal virtual void RecalculatePositions(params Toast[] except)
     {
-        float screenHeight = Application.Current.Window.Height;
+        float screenHeight = ForgeWardenEngine.Current.Window.Height;
 
         // --- TOP stack ---
         float topCursor = UIConstants.TOAST_SPACING;
@@ -110,7 +110,7 @@ public abstract class ToastRegionManager
         float startY = side switch
         {
             ToastStackSide.Top => UIConstants.TOAST_SPACING,
-            ToastStackSide.Bottom => Application.Current.Window.Height - toast.Height - UIConstants.TOAST_SPACING,
+            ToastStackSide.Bottom => ForgeWardenEngine.Current.Window.Height - toast.Height - UIConstants.TOAST_SPACING,
             _ => throw new InvalidEnumArgumentException(nameof(side), (int)side, typeof(ToastStackSide))
         };
 
@@ -145,7 +145,7 @@ public abstract class ToastRegionManager
             float totalOccupied = topOccupied + bottomOccupied;
 
             // Check if the new toast fits
-            if (next.Height + totalOccupied > Application.Current.Window.Height)
+            if (next.Height + totalOccupied > ForgeWardenEngine.Current.Window.Height)
             {
                 // Not enough space, put it back in the queue
                 pendingToasts.Enqueue(next);

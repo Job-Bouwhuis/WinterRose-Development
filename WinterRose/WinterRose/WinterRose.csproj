@@ -62,6 +62,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\WinterRose.WinterForge\src\WinterRose.WinterForge\WinterRose.WinterForge.csproj" />
     <ProjectReference Include="..\..\WinterRose.ForgeSignal\WinterRose.ForgeSignal\WinterRose.ForgeSignal.csproj" />
+    <ProjectReference Include="..\..\WinterRose.Recordium\WinterRose.Recordium.csproj" />
+    <ProjectReference Include="..\..\WinterRose.Shortcuts\WinterRose.Shortcuts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

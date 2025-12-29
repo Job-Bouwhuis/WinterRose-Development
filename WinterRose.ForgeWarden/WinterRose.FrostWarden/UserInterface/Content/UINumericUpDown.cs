@@ -147,7 +147,7 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
                 valueInput.Text = ToStringFormatted(valueBacking);
             }
 
-            valueInput.Blur();
+            valueInput.Unfocus();
             isEditing = false;
         }));
 
@@ -160,7 +160,7 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
         valueInput.Setup();
 
         // reserve label width based on label text and some padding so it doesn't jitter
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fontSize = Style.TextBoxFontSize;
         float spacing = Style.TextBoxTextSpacing;
 
@@ -261,7 +261,7 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
             ray.DrawLineEx(rB, rC, stroke, chevronColor);
         }
         // draw label (left)
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fontSize = Style.TextBoxFontSize;
         float spacing = Style.TextBoxTextSpacing;
         Vector2 labelPos = new Vector2(labelRect.X + LABEL_PADDING, bounds.Y + (bounds.Height - fontSize) / 2f);
@@ -389,7 +389,7 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
                 valueInput.Text = ToStringFormatted(valueBacking);
             }
 
-            valueInput.Blur();
+            valueInput.Unfocus();
             isEditing = false;
         }
     }
@@ -397,7 +397,7 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
     protected internal override void OnOwnerClosing()
     {
         // ensure input is blurred / cleaned
-        valueInput.Blur();
+        valueInput.Unfocus();
     }
 
     public void Focus() => valueInput.Focus();

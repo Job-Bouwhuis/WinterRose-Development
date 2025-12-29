@@ -98,6 +98,8 @@ public static partial class Windows
     /// <returns></returns>
     public static Vector2I GetScreenSize() => ScreenSize.GetScreenSize();
 
+    public static Vector2I GetScreenSize(int index) => ScreenSize.GetScreenSize(index);
+
     /// <summary>
     /// Gets the number of screens connected to the system.
     /// </summary>

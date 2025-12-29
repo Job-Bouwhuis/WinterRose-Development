@@ -5,27 +5,34 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.FileManagement.Shortcuts;
+using WinterRose.ForgeWarden;
+using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
 namespace WinterRoseUtilityApp;
+
 public static class StartupManager
 {
     static readonly string APP_NAME = "WinterRoseUtilApp";
     static readonly string EXEC_PATH = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
 
-    public static void SetStartup(bool enable)
+    public static Task SetStartup(bool enable)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        return ForgeWardenEngine.Current.GlobalThreadLoom.InvokeOn(ForgeWardenEngine.ENGINE_POOL_NAME, Task.Run(() =>
         {
-            SetStartupWindows(enable);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            SetStartupLinux(enable);
-        }
-        else
-        {
-            Console.WriteLine("Startup registration not supported on this OS.");
-        }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                SetStartupWindows(enable);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                SetStartupLinux(enable);
+            }
+            else
+            {
+                Toasts.Error("Startup management is not supported on this operating system.");
+            }
+        }));
     }
 
     public static bool IsStartupEnabled()
@@ -39,21 +46,26 @@ public static class StartupManager
 
     static void SetStartupWindows(bool enable)
     {
-        using var key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+        string shortcutPath = Path.Combine(ShortcutMaker.AutoStartupPath, $"{APP_NAME}");
         if (enable)
         {
-            key.SetValue(APP_NAME, $"\"{EXEC_PATH}\"");
+            ShortcutMaker.CreateShortcut(
+                shortcutPath,
+                Environment.ProcessPath!,
+                workingDirectory: Path.GetDirectoryName(Environment.ProcessPath)
+            );
         }
         else
         {
-            key.DeleteValue(APP_NAME, false);
+            if (File.Exists(shortcutPath))
+                File.Delete(shortcutPath);
         }
     }
 
     static bool IsStartupEnabledWindows()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", false);
-        return key?.GetValue(APP_NAME) != null;
+        string shortcutPath = Path.Combine(ShortcutMaker.AutoStartupPath, $"{APP_NAME}.lnk");
+        return File.Exists(shortcutPath);
     }
 
     static void SetStartupLinux(bool enable)

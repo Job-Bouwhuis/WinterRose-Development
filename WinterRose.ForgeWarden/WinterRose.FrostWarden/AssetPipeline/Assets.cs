@@ -14,6 +14,11 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 {
     public static class Assets
     {
+        private static List<Assembly> coreAssemblies = [];
+        private static IReadOnlyList<Assembly> CoreAssemblies => coreAssemblies;
+
+        public static void AddCoreAssembly(Assembly a) => coreAssemblies.Add(a);
+
         /// <summary>
         /// 
         /// </summary>
@@ -22,7 +27,10 @@ namespace WinterRose.ForgeWarden.AssetPipeline
         /// <param name="LoadMethod"></param>
         /// <param name="InitializeNewAssetMethod"></param>
         /// <param name="interestedExtensions"></param>
-        private record HandlerEntry(MethodInfo SaveMethodH, MethodInfo SaveMethodS, MethodInfo LoadMethod, MethodInfo InitializeNewAssetMethod, string[] interestedExtensions);
+        private record HandlerEntry(MethodInfo SaveMethodH, MethodInfo SaveMethodS, MethodInfo LoadMethod, MethodInfo InitializeNewAssetMethod, string[] interestedExtensions)
+        {
+            public bool isReadonly { get; set; } = false;
+        }
         private static Log log = new Log("Assets");
         private static Dictionary<string, AssetHeader> assetHeaders = [];
         private static Dictionary<Type, HandlerEntry> handerTypeMap = [];
@@ -30,15 +38,15 @@ namespace WinterRose.ForgeWarden.AssetPipeline
         private const string ASSET_EXTENSION = ".fwasset";
         private const string ASSET_ROOT = "Assets/";
 
+        static Assets()
+        {
+            // we add the assembly that started the app
+            coreAssemblies.Add(Assembly.GetEntryAssembly());
+            coreAssemblies.Add(typeof(Assets).Assembly);
+        }
+
         internal static void BuildAssetIndexes()
         {
-            if (!System.IO.Directory.Exists(ASSET_ROOT))
-            {
-                log.Warning("Asset folder does not exist. No assets will be loaded");
-                return;
-                //System.IO.Directory.CreateDirectory(ASSET_ROOT);
-            }
-
             log.Info("Registering asset handlers");
 
             Type[] types = TypeWorker.FindTypesWithInterface(typeof(IAssetHandler<>));
@@ -98,49 +106,101 @@ namespace WinterRose.ForgeWarden.AssetPipeline
                 }
             }
 
-            FileInfo[] headerFiles = new DirectoryInfo(ASSET_ROOT).GetFiles($"*{ASSET_HEADER_EXTENSION}");
-
-            log.Info("Registering asset headers");
-
-            foreach (FileInfo file in headerFiles)
+            if (System.IO.Directory.Exists(ASSET_ROOT))
             {
-                // Deserialize the asset header from the file
-                AssetHeader header = WinterForge.DeserializeFromFile<AssetHeader>(file.FullName);
-                if (header.IsValid)
+                FileInfo[] headerFiles = new DirectoryInfo(ASSET_ROOT).GetFiles($"*{ASSET_HEADER_EXTENSION}");
+
+                log.Info("Registering asset headers");
+
+                foreach (FileInfo file in headerFiles)
                 {
-                    assetHeaders.Add(header.Name, header);
+                    // Deserialize the asset header from the file
+                    AssetHeader header = WinterForge.DeserializeFromFile<AssetHeader>(file.FullName);
+                    if (header.IsValid)
+                    {
+                        assetHeaders.Add(header.Name, header);
+                    }
+                }
+
+
+                log.Info("Indexing unknown asset files");
+
+                HashSet<string> knownHeaderPaths = new HashSet<string>(
+                    assetHeaders.Select(h => Path.Combine(ASSET_ROOT, h.Key + ASSET_HEADER_EXTENSION)),
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+                FileInfo[] allFiles = new DirectoryInfo(ASSET_ROOT).GetFiles("*", SearchOption.AllDirectories)
+                    .Where(f => !f.Extension.Equals(ASSET_HEADER_EXTENSION, StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+
+                foreach (FileInfo file in allFiles)
+                {
+                    string nameWithoutExtension = Path.GetFileNameWithoutExtension(file.Name);
+                    string expectedHeaderPath = Path.Combine(ASSET_ROOT, nameWithoutExtension + ASSET_HEADER_EXTENSION);
+                    string extension = file.Extension.ToLowerInvariant();
+
+                    if (!knownHeaderPaths.Contains(expectedHeaderPath))
+                    {
+                        string relativePath = Path.GetRelativePath(AppContext.BaseDirectory, file.FullName);
+                        AssetHeader header = CreateHeader(nameWithoutExtension, relativePath);
+                        var kvp = handerTypeMap
+                            .FirstOrDefault(
+                            handler => handler.Value.interestedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase));
+                        if (kvp.Value is not null)
+                            kvp.Value.InitializeNewAssetMethod.Invoke(null, [header]);
+                        string headerPath = ASSET_ROOT + header.Name + ASSET_HEADER_EXTENSION;
+                        WinterForge.SerializeToFile(header, headerPath);
+                        assetHeaders.Add(header.Name, header);
+                    }
                 }
             }
 
+            log.Info("Registering assembly resource assets");
 
-            log.Info("Indexing unknown asset files");
 
-            HashSet<string> knownHeaderPaths = new HashSet<string>(
-                assetHeaders.Select(h => Path.Combine(ASSET_ROOT, h.Key + ASSET_HEADER_EXTENSION)),
-                StringComparer.OrdinalIgnoreCase
-            );
-
-            FileInfo[] allFiles = new DirectoryInfo(ASSET_ROOT).GetFiles("*", SearchOption.AllDirectories)
-                .Where(f => !f.Extension.Equals(ASSET_HEADER_EXTENSION, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-
-            foreach (FileInfo file in allFiles)
+            foreach (Assembly assembly in coreAssemblies)
             {
-                string nameWithoutExtension = Path.GetFileNameWithoutExtension(file.Name);
-                string expectedHeaderPath = Path.Combine(ASSET_ROOT, nameWithoutExtension + ASSET_HEADER_EXTENSION);
-                string extension = file.Extension.ToLowerInvariant();
+                string[] resourceNames;
 
-                if (!knownHeaderPaths.Contains(expectedHeaderPath))
+                try
                 {
-                    string relativePath = Path.GetRelativePath(AppContext.BaseDirectory, file.FullName);
-                    AssetHeader header = CreateHeader(nameWithoutExtension, relativePath);
+                    resourceNames = assembly.GetManifestResourceNames();
+                }
+                catch
+                {
+                    continue;
+                }
+
+                foreach (string resourceName in resourceNames)
+                {
+                    string fileName = Path.GetFileName(resourceName);
+                    string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+                    string extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+                    if (assetHeaders.ContainsKey(nameWithoutExtension))
+                        continue;
+
                     var kvp = handerTypeMap
                         .FirstOrDefault(
-                        handler => handler.Value.interestedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase));
-                    if (kvp.Value is not null)
-                        kvp.Value.InitializeNewAssetMethod.Invoke(null, [header]);
+                            handler => handler.Value.interestedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase));
+
+                    if (kvp.Value is null)
+                        continue;
+
+                    AssetHeader header = CreateHeader(
+                        nameWithoutExtension,
+                        resourceName
+                    );
+
+                    header.AssemblyName = assembly.FullName;
+
+                    kvp.Value.isReadonly = true;
+                    kvp.Value.InitializeNewAssetMethod.Invoke(null, [header]);
+
                     string headerPath = ASSET_ROOT + header.Name + ASSET_HEADER_EXTENSION;
                     WinterForge.SerializeToFile(header, headerPath);
+
                     assetHeaders.Add(header.Name, header);
                 }
             }
@@ -150,7 +210,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 
         /// <summary>
         /// Finalizes all asset headers, ensuring they are written to disk. <br></br>
-        /// Called by <see cref="Application"/> at the end of the application lifecycle.
+        /// Called by <see cref="ForgeWardenEngine"/> at the end of the application lifecycle.
         /// </summary>
         internal static void FinalizeHeaders()
         {
@@ -162,6 +222,12 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             }
         }
 
+        internal static void FinalizeHeader(AssetHeader header)
+        {
+            string headerPath = ASSET_ROOT + header.Name + ASSET_HEADER_EXTENSION;
+            WinterForge.SerializeToFile(header, headerPath);
+        }
+
         private static AssetHeader CreateHeader(string name, string? path)
         {
             path ??= ASSET_ROOT + $"{name}{ASSET_HEADER_EXTENSION}";
@@ -170,6 +236,13 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             return new AssetHeader(name, path, [], new Anonymous());
         }
 
+        /// <summary>
+        /// Creates a new asset of the specified type with the provided object as its initial data.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="asset"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public static AssetHeader CreateAsset<T>(T asset, string name)
         {
             if (!System.IO.Directory.Exists(ASSET_ROOT))
@@ -183,7 +256,76 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 
             File.Create(assetPath).Close();
 
-            Assets.GetHandler<T>().SaveMethodH.Invoke(null, [assetHeader, asset]);
+            FinalizeHeader(assetHeader);
+
+            GetHandler<T>().SaveMethodH.Invoke(null, [assetHeader, asset]);
+            return assetHeader;
+        }
+        
+        /// <summary>
+        /// Creates a new empty asset of the specified type.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static AssetHeader CreateAsset<T>(string name)
+        {
+            if (!System.IO.Directory.Exists(ASSET_ROOT))
+                System.IO.Directory.CreateDirectory(ASSET_ROOT);
+            AssetHeader assetHeader = CreateHeader(name, null);
+
+            assetHeaders.Add(assetHeader.Name, assetHeader);
+
+            string assetPath = ASSET_ROOT + name + ASSET_EXTENSION;
+            assetHeader.Path = assetPath;
+            File.Create(assetPath).Close();
+
+            FinalizeHeader(assetHeader);
+
+            GetHandler<T>().InitializeNewAssetMethod.Invoke(null, [assetHeader]);
+
+            return assetHeader;
+        }
+
+        /// <summary>
+        /// Creates a new empty asset of the specified type.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="assetType"></param>
+        /// <returns></returns>
+        /// <exception cref="AssetException"></exception>
+        public static AssetHeader CreateAsset(string name, Type assetType)
+        {
+            if (!System.IO.Directory.Exists(ASSET_ROOT))
+                System.IO.Directory.CreateDirectory(ASSET_ROOT);
+            AssetHeader assetHeader = CreateHeader(name, null);
+            assetHeaders.Add(assetHeader.Name, assetHeader);
+            string assetPath = ASSET_ROOT + name + ASSET_EXTENSION;
+            assetHeader.Path = assetPath;
+            File.Create(assetPath).Close();
+            FinalizeHeader(assetHeader);
+            if (!handerTypeMap.TryGetValue(assetType, out HandlerEntry? handler))
+                throw new AssetException($"Handler for type {assetType.FullName} not found");
+            handler.InitializeNewAssetMethod.Invoke(null, [assetHeader]);
+            return assetHeader;
+        }
+
+        /// <summary>
+        /// Creates a new empty asset with no associated type. <br></br>
+        /// NOTE: This asset is not initialized by any handler.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static AssetHeader CreateAsset(string name)
+        {
+            if (!System.IO.Directory.Exists(ASSET_ROOT))
+                System.IO.Directory.CreateDirectory(ASSET_ROOT);
+            AssetHeader assetHeader = CreateHeader(name, null);
+            assetHeaders.Add(assetHeader.Name, assetHeader);
+            string assetPath = ASSET_ROOT + name + ASSET_EXTENSION;
+            assetHeader.Path = assetPath;
+            File.Create(assetPath).Close();
+            FinalizeHeader(assetHeader);
             return assetHeader;
         }
 
@@ -205,7 +347,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
 
         public static bool Exists(string name) => assetHeaders.ContainsKey(name);
 
-        public static T Load<T>(AssetHeader assetHeader) where T : class
+        public static T? Load<T>(AssetHeader assetHeader)
         {
             if (string.IsNullOrEmpty(assetHeader.Path))
                 throw new InvalidOperationException("Asset path is not set in the header.");
@@ -225,12 +367,12 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             }
 
             if (assetResult is null)
-                return null;
+                return default;
 
-            return Unsafe.As<T>(assetResult);
+            return (T)assetResult;
         }
 
-        public static T Load<T>(string name) where T : class => Load<T>(GetHeader(name));
+        public static T? Load<T>(string name) => Load<T>(GetHeader(name));
         public static void Save<T>(string name, T accounts)
         {
             if(!Exists(name))
@@ -240,6 +382,8 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             else
             {
                 var handler = GetHandler<T>();
+                if (handler.isReadonly)
+                    throw new InvalidOperationException("Can not save a assembly resource asset. They are readonly");
                 handler.SaveMethodS.Invoke(null, [name, accounts]);
             }
         }

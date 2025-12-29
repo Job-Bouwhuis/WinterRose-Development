@@ -12,7 +12,7 @@ using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.Worlds;
 
-internal class Program : Application
+internal class Program : ForgeWardenEngine
 {
     string[] args;
     Toast processToast;

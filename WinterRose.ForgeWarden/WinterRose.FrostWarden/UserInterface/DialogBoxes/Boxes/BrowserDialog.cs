@@ -80,6 +80,20 @@ public class BrowserDialog : Dialog, IDisposable
 
     private void PanickedAppClose(object? sender, EventArgs e) => Dispose();
 
+    UIColumns buttonColumn;
+    int currentColumn = 0;
+    public override Dialog AddButton(RichText text, Action<UIContainer, UIButton> onClick)
+    {
+        if(buttonColumn == null)
+        {
+            buttonColumn = new UIColumns();
+            AddContent(buttonColumn);
+        }
+
+        buttonColumn.AddToColumn(currentColumn++, new UIButton(text, onClick));
+        return this;
+    }
+
     private void ButtonCreation()
     {
         AddButton("Reload Page", (container, button) =>
@@ -420,7 +434,7 @@ public class BrowserDialog : Dialog, IDisposable
             string msg = $"Invalid link: {failedUrl}";
             int fontSize = 20;
             Vector2 textSize = ray.MeasureTextEx(
-                ray.GetFontDefault(),
+                ForgeWardenEngine.DefaultFont,
                 msg,
                 fontSize,
                 1
@@ -430,7 +444,7 @@ public class BrowserDialog : Dialog, IDisposable
             float drawY = bounds.Y + (bounds.Height - textSize.Y) / 3;
 
             ray.DrawTextEx(
-                ray.GetFontDefault(),
+                ForgeWardenEngine.DefaultFont,
                 msg,
                 new Vector2(drawX, drawY),
                 fontSize,

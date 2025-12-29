@@ -837,7 +837,7 @@ public class UIGraph : UIContent
             int tw = ray.MeasureText(YAxisLabel, GRAPH_TEXT_SIZE);
             float lx = plotRect.X - LABEL_MARGIN;
             float ly = plotRect.Y + plotRect.Height * 0.5f - tw * 0.5f;
-            ray.DrawTextPro(ray.GetFontDefault(), YAxisLabel, new Vector2(lx, ly), new Vector2(), 90, GRAPH_TEXT_SIZE, 2, Style.TextSmall);
+            ray.DrawTextPro(ForgeWardenEngine.DefaultFont, YAxisLabel, new Vector2(lx, ly), new Vector2(), 90, GRAPH_TEXT_SIZE, 2, Style.TextSmall);
         }
     }
 

@@ -240,7 +240,7 @@ public class UIDateTimePicker : UIContent
 
     private void DrawCalendar(Rectangle area)
     {
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fs = Style.BaseButtonFontSize;
         float spacing = Style.BaseButtonFontSize * 0.1f;
 
@@ -307,7 +307,7 @@ public class UIDateTimePicker : UIContent
 
     private void DrawMonthDayGrid(Rectangle gridArea)
     {
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fs = Style.BaseButtonFontSize;
         float spacing = Style.BaseButtonFontSize * 0.1f;
 
@@ -358,7 +358,7 @@ public class UIDateTimePicker : UIContent
 
     private void DrawYearOverview(Rectangle area)
     {
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fs = Style.BaseButtonFontSize * 0.85f;
         float spacing = Style.BaseButtonFontSize * 0.1f;
 
@@ -385,7 +385,7 @@ public class UIDateTimePicker : UIContent
 
     private void DrawDecadeOverview(Rectangle area)
     {
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fs = Style.BaseButtonFontSize * 0.8f;
         float spacing = Style.BaseButtonFontSize * 0.1f;
 
@@ -417,7 +417,7 @@ public class UIDateTimePicker : UIContent
         ray.DrawRectangleLinesEx(area, 1f, Style.TextBoxBorder);
 
         // top shows selected time text and AM/PM toggle if necessary
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fs = Style.BaseButtonFontSize;
         float spacing = Style.BaseButtonFontSize * 0.1f;
 
@@ -490,12 +490,12 @@ public class UIDateTimePicker : UIContent
                     float tx = cx + (float)Math.Cos(ang) * ringR;
                     float ty = cy + (float)Math.Sin(ang) * ringR;
                     string hs = h.ToString();
-                    Vector2 hsiz = Raylib.MeasureTextEx(Raylib.GetFontDefault(), hs, fs * 0.75f, spacing);
+                    Vector2 hsiz = Raylib.MeasureTextEx(ForgeWardenEngine.DefaultFont, hs, fs * 0.75f, spacing);
                     Vector2 hpos = new Vector2(tx - hsiz.X / 2f, ty - hsiz.Y / 2f);
 
                     bool isSelHour = selectingHours && (selected.Hour == h);
                     Color hourColor = isSelHour ? Style.ButtonHover : Style.TextBoxText;
-                    Raylib.DrawTextEx(Raylib.GetFontDefault(), hs, hpos, fs * 0.75f, spacing, hourColor);
+                    Raylib.DrawTextEx(ForgeWardenEngine.DefaultFont, hs, hpos, fs * 0.75f, spacing, hourColor);
                 }
             }
             else
@@ -507,14 +507,14 @@ public class UIDateTimePicker : UIContent
                     float tx = cx + (float)Math.Cos(ang) * (radius * 0.70f);
                     float ty = cy + (float)Math.Sin(ang) * (radius * 0.70f);
                     string hs = h.ToString();
-                    Vector2 hsiz = Raylib.MeasureTextEx(Raylib.GetFontDefault(), hs, fs * 0.9f, spacing);
+                    Vector2 hsiz = Raylib.MeasureTextEx(ForgeWardenEngine.DefaultFont, hs, fs * 0.9f, spacing);
                     Vector2 hpos = new Vector2(tx - hsiz.X / 2f, ty - hsiz.Y / 2f);
 
                     int curHour12 = ((selected.Hour % 12) == 0) ? 12 : (selected.Hour % 12);
                     bool isSelHour = (curHour12 == h) && selectingHours;
                     Color hourColor = isSelHour ? Style.ButtonHover : Style.TextBoxText;
 
-                    Raylib.DrawTextEx(Raylib.GetFontDefault(), hs, hpos, fs * 0.9f, spacing, hourColor);
+                    Raylib.DrawTextEx(ForgeWardenEngine.DefaultFont, hs, hpos, fs * 0.9f, spacing, hourColor);
                 }
             }
         }
@@ -527,12 +527,12 @@ public class UIDateTimePicker : UIContent
                 float tx = cx + (float)Math.Cos(ang) * (radius * 0.75f);
                 float ty = cy + (float)Math.Sin(ang) * (radius * 0.75f);
                 string ms = m.ToString("D2");
-                Vector2 msiz = Raylib.MeasureTextEx(Raylib.GetFontDefault(), ms, fs * 0.65f, spacing);
+                Vector2 msiz = Raylib.MeasureTextEx(ForgeWardenEngine.DefaultFont, ms, fs * 0.65f, spacing);
                 Vector2 mpos = new Vector2(tx - msiz.X / 2f, ty - msiz.Y / 2f);
 
                 bool isSelMin = !selectingHours && (selected.Minute == m);
                 Color minColor = isSelMin ? Style.ButtonHover : Style.TextBoxText;
-                Raylib.DrawTextEx(Raylib.GetFontDefault(), ms, mpos, fs * 0.65f, spacing, minColor);
+                Raylib.DrawTextEx(ForgeWardenEngine.DefaultFont, ms, mpos, fs * 0.65f, spacing, minColor);
             }
         }
 

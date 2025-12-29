@@ -13,7 +13,7 @@ public class Camera : Component
     public bool is3D { get; set; } = false;
     public static Camera main { get; internal set; }
 
-    public Vector2 Resolution { get; set; } = Application.Current.Window.Size;
+    public Vector2 Resolution { get; set; } = ForgeWardenEngine.Current.Window.Size;
 
     public Camera2D Camera2D => new Camera2D
     {

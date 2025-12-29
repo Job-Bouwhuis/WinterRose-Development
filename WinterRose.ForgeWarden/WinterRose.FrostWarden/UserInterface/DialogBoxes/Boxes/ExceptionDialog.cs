@@ -16,7 +16,7 @@ internal class ExceptionDialog : Dialog
         if (Debugger.IsAttached)
             AddButton("Throw exception", (container, button) =>
             {
-                Application.Current.AllowThrow = true;
+                ForgeWardenEngine.Current.AllowThrow = true;
                 info.Throw();
             });
 

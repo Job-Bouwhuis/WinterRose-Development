@@ -21,8 +21,8 @@ internal class MailReaderEntry : SubSystem
     public MailReaderEntry() :
         base("Mail Reader", "Reads mail and gives notifications for them", new Version(1, 0, 0))
     {
-        // Ctrl+Shift+E for accounts window (example)
-        GlobalHotkey.RegisterHotkey(EmailAccountsHotkey, true, 0x11, 0x10, 0x45); // Ctrl+Shift+E
+        GlobalHotkey.RegisterHotkey(EmailAccountsHotkey, true, 0xA4, 0x10, 0x45); // Left Alt + Shift + E
+
     }
 
     public override void Init()
@@ -76,7 +76,7 @@ internal class MailReaderEntry : SubSystem
     {
         if (GlobalHotkey.IsTriggered(EmailAccountsHotkey))
         {
-            ContainerCreators.EmailAccountsWindow().Show();
+            ContainerCreators.EmailAccountsWindow(watcher).Show();
         }
 
         if (updateTask != null)

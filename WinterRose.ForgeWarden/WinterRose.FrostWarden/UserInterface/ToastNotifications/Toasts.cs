@@ -1,5 +1,4 @@
-﻿using ChatThroughWinterRoseBot;
-using Raylib_cs;
+﻿using Raylib_cs;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -45,8 +44,8 @@ public static class Toasts
         const float REFERENCE_WIDTH = 1920f;
         const float REFERENCE_HEIGHT = 1080f;
 
-        float windowWidth = Application.Current.Window.Width;
-        float windowHeight = Application.Current.Window.Height;
+        float windowWidth = ForgeWardenEngine.Current.Window.Width;
+        float windowHeight = ForgeWardenEngine.Current.Window.Height;
 
         float scaleX = windowWidth / REFERENCE_WIDTH;
         float scaleY = windowHeight / REFERENCE_HEIGHT;

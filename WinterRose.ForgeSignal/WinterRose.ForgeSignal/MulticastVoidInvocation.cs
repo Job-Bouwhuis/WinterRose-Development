@@ -29,6 +29,8 @@ public sealed class MulticastVoidInvocation : Invocation
         return sub;
     }
 
+    public Subscription Subscribe(Action invocation) => Subscribe(Create(invocation));
+
     private void InvokeInternal()
     {
         Subscription[] snapshot;
@@ -56,7 +58,12 @@ public sealed class MulticastVoidInvocation : Invocation
         }
 
         if (exceptions.Count > 0)
-            error?.Invoke(new AggregateException(exceptions));
+        {
+            if(error is not null)
+                error?.Invoke(new AggregateException(exceptions));
+            else
+                throw new AggregateException(exceptions);
+        }
     }
 }
 public sealed class MulticastVoidInvocation<T1> : Invocation
@@ -162,6 +169,8 @@ public sealed class MulticastVoidInvocation<T1, T2> : Invocation
         }
         return sub;
     }
+
+    public Subscription Subscribe(Action<T1, T2> invocation) => Subscribe(Create(invocation));
 
     private void InvokeInternal(T1 arg1, T2 arg2)
     {

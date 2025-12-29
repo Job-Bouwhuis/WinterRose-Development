@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.Fun
+namespace WinterRose.WIP.Fun
 {
     /// <summary>
     /// I too like to have some fun now and then...

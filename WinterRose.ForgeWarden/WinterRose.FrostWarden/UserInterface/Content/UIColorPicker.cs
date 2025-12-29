@@ -95,7 +95,7 @@ public class UIColorPicker : UIContent
                 var c = SelectedColor;
                 SelectedColor = new Color((byte)vr, c.G, c.B, (byte)255);
             }
-            ti.Blur();
+            ti.Unfocus();
         };
         gInput.OnSubmit += (ti, s) =>
         {
@@ -105,7 +105,7 @@ public class UIColorPicker : UIContent
                 var c = SelectedColor;
                 SelectedColor = new Color(c.R, (byte)vg, c.B, (byte)255);
             }
-            ti.Blur();
+            ti.Unfocus();
         };
         bInput.OnSubmit += (ti, s) =>
         {
@@ -115,7 +115,7 @@ public class UIColorPicker : UIContent
                 var c = SelectedColor;
                 SelectedColor = new Color(c.R, c.G, (byte)vb, (byte)255);
             }
-            ti.Blur();
+            ti.Unfocus();
         };
         hexInput.OnSubmit += (ti, s) =>
         {
@@ -128,7 +128,7 @@ public class UIColorPicker : UIContent
                 byte bb = (byte)(hexVal & 0xFF);
                 SelectedColor = new Color(rr, gg, bb, (byte)255);
             }
-            ti.Blur();
+            ti.Unfocus();
         };
 
         // seed inputs with current color
@@ -261,22 +261,22 @@ public class UIColorPicker : UIContent
         if (Raylib.CheckCollisionPointRec(mp, rFieldRect))
             rInput.Focus();
         else
-            rInput.Blur();
+            rInput.Unfocus();
 
         if (Raylib.CheckCollisionPointRec(mp, gFieldRect))
             gInput.Focus();
         else
-            gInput.Blur();
+            gInput.Unfocus();
 
         if (Raylib.CheckCollisionPointRec(mp, bFieldRect))
             bInput.Focus();
         else
-            bInput.Blur();
+            bInput.Unfocus();
 
         if (Raylib.CheckCollisionPointRec(mp, hexFieldRect))
             hexInput.Focus();
         else
-            hexInput.Blur();
+            hexInput.Unfocus();
 
         if (Raylib.CheckCollisionPointRec(mp, wheelRect))
         {
@@ -298,10 +298,10 @@ public class UIColorPicker : UIContent
         isDraggingWheel = false;
         isDraggingSlider = false;
 
-        rInput?.Blur();
-        gInput?.Blur();
-        bInput?.Blur();
-        hexInput?.Blur();
+        rInput?.Unfocus();
+        gInput?.Unfocus();
+        bInput?.Unfocus();
+        hexInput?.Unfocus();
     }
 
     private void DrawColorWheel(Rectangle rect)

@@ -603,7 +603,7 @@ public class OLEDragDrop : IDisposable
             IntPtr hwnd = Windows.MyHandle.Handle;
             if (hwnd == IntPtr.Zero) return;
 
-            if (InputManager.EnablePassThrough || !Application.Current.Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow)) return;
+            if (InputManager.EnablePassThrough || !ForgeWardenEngine.Current.Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow)) return;
 
             SetWindowPassthrough(hwnd, true);
             passthroughTemporarilyDisabled = false;
@@ -615,7 +615,7 @@ public class OLEDragDrop : IDisposable
 
     internal void SetWindowPassthrough(IntPtr hwnd, bool enable)
     {
-        if (!Application.Current.Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow)) return;
+        if (!ForgeWardenEngine.Current.Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow)) return;
 
         try
         {

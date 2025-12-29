@@ -12,6 +12,7 @@ public static class InputManager
     private static readonly SortedList<int, List<InputContext>> contexts = new(Comparer<int>.Create((a, b) => b.CompareTo(a)));
 
     private static readonly Dictionary<InputContext, int> contextPriorities = new();
+    private static bool focusGrabbed;
 
     internal static bool EnablePassThrough { get; private set; } = false;
     //static bool focusOwnedByOverlay;
@@ -156,7 +157,7 @@ public static class InputManager
             }
         }
 
-        if (Application.Current.Window.ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
+        if (ForgeWardenEngine.Current.Window.ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
         {
             // Handle mouse pass-through state
             if (!mouseFocusGiven && !EnablePassThrough)
@@ -170,7 +171,13 @@ public static class InputManager
                 EnablePassThrough = false;
             }
 
-            Windows.MyHandle.Focus();
+            if (mouseFocusGiven)
+            {
+                focusGrabbed = true;
+                Windows.MyHandle.Focus();
+            }
+            else
+                focusGrabbed = false;
 
             //if (mouseFocusGiven && !focusOwnedByOverlay)
             //{

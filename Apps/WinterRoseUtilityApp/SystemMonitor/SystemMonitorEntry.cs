@@ -63,22 +63,7 @@ internal class SystemMonitorEntry : SubSystem
     public override void Init()
     {
         computer.Open();
-
-        foreach (var hardware in computer.Hardware)
-        {
-            Console.WriteLine($"[HW] {hardware.Name} ({hardware.HardwareType})");
-
-            foreach (var sensor in hardware.Sensors)
-                Console.WriteLine($"  [SENSOR] {sensor.SensorType} {sensor.Name} = {sensor.Value}");
-
-            foreach (var sub in hardware.SubHardware)
-            {
-                Console.WriteLine($"  [SUBHW] {sub.Name}");
-                foreach (var sensor in sub.Sensors)
-                    Console.WriteLine($"    [SENSOR] {sensor.SensorType} {sensor.Name} = {sensor.Value}");
-            }
-        }
-
+                
         // filter out integrated graphics
         HardwareList = computer.Hardware
             .Where(h =>

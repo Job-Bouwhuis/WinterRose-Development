@@ -36,6 +36,9 @@ public class UIText : UIContent
         }
     }
 
+    public bool AutoScaleText { get; set; } = true;
+
+
     // Base guideline sizes for each preset (can adjust as needed)
     private static readonly Dictionary<UIFontSizePreset, int> PresetBaseSizes = new()
     {
@@ -65,42 +68,62 @@ public class UIText : UIContent
     public override Vector2 GetSize(Rectangle availableArea)
     {
         int guideline = PresetBaseSizes[Preset];
-        Text.FontSize = guideline;
-        var size = Text.CalculateBounds(availableArea.Width).Size;
-        return new Vector2(Math.Min(size.X, availableArea.Width), Math.Min(size.Y, availableArea.Height));
+
+        int resolvedSize = UITextScalar.ResolveFontSize(
+            Text,
+            guideline,
+            availableArea,
+            AutoScaleText
+        );
+
+        Rectangle size = UITextScalar.Measure(
+            Text,
+            resolvedSize,
+            availableArea.Width
+        );
+
+        return new Vector2(
+            Math.Min(size.Width, availableArea.Width),
+            Math.Min(size.Height, availableArea.Height)
+        );
     }
+
 
     protected internal override float GetHeight(float width)
     {
         int guideline = PresetBaseSizes[Preset];
-        Text.FontSize = guideline;
-        return Text.CalculateBounds(width).Height;
+
+        int resolvedSize = UITextScalar.ResolveFontSize(
+            Text,
+            guideline,
+            new Rectangle(0, 0, width, float.MaxValue),
+            AutoScaleText
+        );
+
+        return UITextScalar.Measure(Text, resolvedSize, width).Height;
     }
+
 
     protected override void Draw(Rectangle bounds)
     {
-        // Start with guideline size
         int guideline = PresetBaseSizes[Preset];
-        Text.FontSize = guideline;
 
-        // Measure the text bounds at guideline size
-        Rectangle textSize = Text.CalculateBounds(bounds.Width);
+        Text.FontSize = UITextScalar.ResolveFontSize(
+            Text,
+            guideline,
+            bounds,
+            AutoScaleText
+        );
 
-        // Compute scaling factor
-        float scale = 1f; // default: no scaling
-        if (textSize.Width > bounds.Width || textSize.Height > bounds.Height)
-        {
-            float widthScale = bounds.Width / textSize.Width;
-            float heightScale = bounds.Height / textSize.Height;
-            scale = Math.Min(widthScale, heightScale);
-        }
-
-
-        // Apply scaling, but clamp to a reasonable range
-        Text.FontSize = (int)Math.Clamp(guideline * scale, guideline * 0.5f, guideline * 2f);
-
-        RichTextRenderer.DrawRichText(Text, bounds.Position, bounds.Width, Style.White, Input);
+        RichTextRenderer.DrawRichText(
+            Text,
+            bounds.Position,
+            bounds.Width,
+            Style.White,
+            Input
+        );
     }
+
 }
 
 

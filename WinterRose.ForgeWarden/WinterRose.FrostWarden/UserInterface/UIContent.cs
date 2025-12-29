@@ -7,7 +7,7 @@ public abstract class UIContent
 {
     public UIContainer owner { get; internal set; }
 
-    public InputContext Input => owner.Input;
+    public InputContext Input => owner?.Input ?? null;
 
     public ContainerStyle Style => owner.Style;
 

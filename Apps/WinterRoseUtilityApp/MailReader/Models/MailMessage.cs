@@ -24,4 +24,7 @@ public class MailMessage
 
     [JsonPropertyName("isRead")]
     public bool IsRead { get; set; }
+
+    [JsonPropertyName("body")]
+    public MessageBody Body { get; set; }
 }

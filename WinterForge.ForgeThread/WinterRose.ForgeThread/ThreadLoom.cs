@@ -264,7 +264,7 @@ namespace WinterRose.ForgeThread
         }
 
 
-        public Task<T> InvokeOn<T>(string threadName, Func<T> func, bool bypassTick = false, JobPriority priority = JobPriority.Normal)
+        public Task<T> InvokeOn<T>(string threadName, Func<T> func, JobPriority priority, bool bypassTick = false)
         {
             var tcs = CreateTcs<T>();
 
@@ -296,7 +296,7 @@ namespace WinterRose.ForgeThread
             return tcs.Task;
         }
 
-        public Task InvokeOn(string threadName, Action func, bool bypassTick = false, JobPriority priority = JobPriority.Normal)
+        public Task InvokeOn(string threadName, Action func, JobPriority priority, bool bypassTick = false)
         {
             var tcs = CreateTcs<object>();
 
@@ -376,7 +376,7 @@ namespace WinterRose.ForgeThread
             return InvokeOn(threadName, func, priority, bypassTick: false);
         }
 
-        public Task<T> InvokeOn<T>(string threadName, Task<T> externalTask, bool bypassTick = false)
+        public Task<T> InvokeOn<T>(string threadName, Task<T> externalTask, bool bypassTick)
         {
             if (externalTask == null) throw new ArgumentNullException(nameof(externalTask));
             var tcs = CreateTcs<T>();
@@ -411,9 +411,9 @@ namespace WinterRose.ForgeThread
         /// <param name="externalTask"></param>
         /// <param name="bypassTick"></param>
         /// <returns></returns>
-        public T ComputeOn<T>(string threadName, Func<T> externalTask, bool bypassTick = false)
+        public T InvokeOn<T>(string threadName, Func<T> externalTask, bool bypassTick)
         {
-            return InvokeOn(threadName, externalTask, bypassTick).GetAwaiter().GetResult();
+            return InvokeOn(threadName, async () => externalTask(), JobPriority.Normal, bypassTick).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -435,7 +435,7 @@ namespace WinterRose.ForgeThread
         /// <param name="bypassTick"></param>
         public void ComputeOn(string threadName, Action externalTask, bool bypassTick = false)
         {
-            InvokeOn(threadName, externalTask, bypassTick).GetAwaiter().GetResult();
+            InvokeOn(threadName, async () => externalTask(), bypassTick).GetAwaiter().GetResult();
         }
 
         public Task InvokeOn(string threadName, Task externalTask, bool bypassTick = false)
@@ -472,14 +472,14 @@ namespace WinterRose.ForgeThread
         /// <param name="action">Action to execute.</param>
         /// <param name="delay">Delay before execution.</param>
         /// <returns>IDisposable handle that can be disposed to cancel the scheduled action before it runs.</returns>
-        public IDisposable InvokeAfter(string name, Action action, TimeSpan delay)
+        public IDisposable InvokeAfter(string threadName, Action action, TimeSpan delay)
         {
-            if (!threads.ContainsKey(name)) throw new InvalidOperationException($"Thread '{name}' is not registered.");
+            if (!threads.ContainsKey(threadName)) throw new InvalidOperationException($"Thread '{threadName}' is not registered.");
             var timer = new Timer(_ =>
             {
                 try
                 {
-                    EnqueueItem(name, action, JobPriority.Normal, CancellationToken.None);
+                    EnqueueItem(threadName, action, JobPriority.Normal, CancellationToken.None);
                 }
                 catch
                 {

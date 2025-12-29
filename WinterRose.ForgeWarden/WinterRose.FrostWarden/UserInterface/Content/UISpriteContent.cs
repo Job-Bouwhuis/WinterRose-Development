@@ -36,6 +36,8 @@ public class UISpriteContent : UIContent
         return new(availableArea.Width, GetHeight(availableArea.Width));
     }
 
+    public void ForceDraw(Rectangle bounds) => Draw(bounds);
+
     protected override void Draw(Rectangle bounds)
     {
         if (Sprite == null) return;

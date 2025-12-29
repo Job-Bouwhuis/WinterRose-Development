@@ -187,7 +187,7 @@ public class UITextInput : UIContent
         caretTimer = 0f;
     }
 
-    public void Blur()
+    public void Unfocus()
     {
         hasFocus = false;
         caretVisible = false;
@@ -663,7 +663,7 @@ public class UITextInput : UIContent
         var borderCol = hasFocus ? Style.TextBoxFocusedBorder : Style.TextBoxBorder;
         ray.DrawRectangleLinesEx(bg, 1f, borderCol);
 
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fontSize = Style.TextBoxFontSize;
         float spacing = Style.TextBoxTextSpacing;
         float lineHeight = fontSize + spacing;
@@ -962,7 +962,7 @@ public class UITextInput : UIContent
 
     protected internal override float GetHeight(float maxWidth)
     {
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fontSize = Style.TextBoxFontSize;
         float spacing = Style.TextBoxTextSpacing;
         float lineHeight = fontSize + spacing;
@@ -1351,7 +1351,7 @@ public class UITextInput : UIContent
             bounds = new Rectangle((int)(mousePos.X - 10), (int)(mousePos.Y - 10), 20, 20);
         }
 
-        var font = Raylib.GetFontDefault();
+        var font = ForgeWardenEngine.DefaultFont;
         float fontSize = Style.TextBoxFontSize;
         float spacing = Style.TextBoxTextSpacing;
         float lineHeight = fontSize + spacing;

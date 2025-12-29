@@ -235,7 +235,7 @@ public class TileMap : Component, IUpdatable, IRenderable
     {
         Vector2 camWorld;
         if (Camera.main is null)
-            camWorld = Application.Current.Window.Size / 2;
+            camWorld = ForgeWardenEngine.Current.Window.Size / 2;
         else
             camWorld = Camera.main.transform.position.Vec2();
 

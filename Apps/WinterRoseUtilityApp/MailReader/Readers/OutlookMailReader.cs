@@ -1,13 +1,16 @@
 ﻿using Azure.Identity;
+using LibreHardwareMonitor.Hardware;
 using Microsoft.Graph;
 using Newtonsoft.Json;
+using System.Net;
+using System.Text.Json;
 using WinterRose.Recordium;
 using WinterRoseUtilityApp.MailReader.AuthHandlers;
 using WinterRoseUtilityApp.MailReader.Models;
 
-namespace WinterRoseUtilityApp.MailReader;
+namespace WinterRoseUtilityApp.MailReader.Readers;
 
-internal static class MailReader
+internal static class OutlookMailReader
 {
     private const string BaseUrl = "https://graph.microsoft.com/v1.0/me";
 
@@ -23,7 +26,6 @@ internal static class MailReader
 
             var response = await http.GetAsync($"{BaseUrl}/mailfolders");
             response.EnsureSuccessStatusCode();
-
             List<MailFolder> folders = [];
 
             var json = await response.Content.ReadAsStringAsync();
@@ -62,7 +64,7 @@ internal static class MailReader
         }
     }
 
-    public static async Task<List<MailMessage>> FetchEmails(EmailAccount account, string folderId, int retries = 0)
+    public static async Task<List<MailMessage>> FetchEmails(EmailAccount account, MailFolder folder, int retries = 0)
     {
         try
         {
@@ -70,16 +72,36 @@ internal static class MailReader
             http.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", account.AccessToken);
 
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
             var response = await http.GetAsync(
-    $"{BaseUrl}/mailfolders/{folderId}/messages?$top=20&$select=Subject,From,BodyPreview,ReceivedDateTime,isRead&$orderby=ReceivedDateTime desc");
+                $"{BaseUrl}/mailfolders/{folder.Id}/messages?$top=20&$select=Subject,From,Body,BodyPreview,ReceivedDateTime,isRead&$orderby=ReceivedDateTime desc");
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync();
-            var messagesResult = JsonConvert.DeserializeObject<MailMessagesResponse>(json);
+            List<MailMessage> messages = [];
 
-            return messagesResult.Value;
+            var json = await response.Content.ReadAsStringAsync();
+            var messagesResult = System.Text.Json.JsonSerializer.Deserialize<MailMessagesResponse>(json, options);
+
+            messages.AddRange(messagesResult.Value);
+
+            while (!string.IsNullOrWhiteSpace(messagesResult.ODataNextLink))
+            {
+                response = await http.GetAsync(messagesResult.ODataNextLink);
+                response.EnsureSuccessStatusCode();
+
+                json = await response.Content.ReadAsStringAsync();
+                messagesResult = System.Text.Json.JsonSerializer.Deserialize<MailMessagesResponse>(json, options);
+
+                messages.AddRange(messagesResult.Value);
+            }
+
+            return messages;
         }
-        catch (HttpRequestException ex) when (retries == 0 && ex.Message.Contains("401 (Unauthorized)"))
+        catch (HttpRequestException ex) when (retries == 0 && ex.Message.Contains("401"))
         {
             log.Warning("Access token expired, attempting silent re-login...");
             bool relogged = await OutlookAuthHandler.LoginAsync(account);
@@ -89,7 +111,7 @@ internal static class MailReader
                 return [];
             }
 
-            return await FetchEmails(account, folderId, 1);
+            return await FetchEmails(account, folder, 1);
         }
         catch (Exception ex)
         {
@@ -97,4 +119,43 @@ internal static class MailReader
             return [];
         }
     }
+
+
+    internal static async Task<bool> ToggleEmailReadStatus(EmailAccount account, MailFolder folder, MailMessage message, bool? markAsRead = null)
+    {
+        try
+        {
+            using var http = new HttpClient();
+            http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", account.AccessToken);
+
+            bool newReadState = markAsRead ?? !message.IsRead;
+
+            var patchContent = new StringContent(
+                JsonConvert.SerializeObject(new { isRead = newReadState }),
+                System.Text.Encoding.UTF8,
+                "application/json"
+            );
+
+            var patchResponse = await http.PatchAsync($"{BaseUrl}/mailfolders/{folder.Id}/messages/{message.Id}", patchContent);
+            if(patchResponse.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                log.Warning("Rate limited by Microsoft Graph API. Waiting 5 seconds before retrying...");
+                return true;
+            }
+            patchResponse.EnsureSuccessStatusCode();
+
+            message.IsRead = newReadState;
+
+            string sub = message.Subject.Length > 20 ? message.Subject[20..] + "..." : message.Subject;
+            log.Info($"Email from {message.From} ({sub}) read status set to {newReadState}");
+        }
+        catch (Exception ex)
+        {
+            log.Error(ex);
+        }
+        return false;
+    }
+
+
 }

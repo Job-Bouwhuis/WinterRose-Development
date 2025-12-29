@@ -86,30 +86,46 @@ public class UICheckBox : UIContent
     }
 
     // Size / layout
-    public override Vector2 GetSize(Rectangle availableArea) => CalculateSize(availableArea.Width).Size;
-    protected internal override float GetHeight(float maxWidth) => GetHeight(maxWidth, Style.BaseButtonFontSize);
-
-    public virtual Rectangle CalculateSize(float maxWidth, float baseFontScale = 1f)
+    public override Vector2 GetSize(Rectangle availableArea)
     {
-        int labelBaseSize = 12;
-        int labelFontSize = (int)(labelBaseSize * baseFontScale);
-        labelFontSize = Math.Clamp(labelFontSize, 12, 28);
-        Text.FontSize = labelFontSize;
+        return CalculateSize(availableArea.Width).Size;
+    }
 
-        // available width for text is maxWidth minus checkbox and paddings
+    protected internal override float GetHeight(float maxWidth)
+    {
+        return CalculateSize(maxWidth).Height;
+    }
+
+    public virtual Rectangle CalculateSize(float maxWidth)
+    {
+        int baseFontSize = Style.BaseButtonFontSize;
         float textMax = Math.Max(0f, maxWidth - (PADDING_X * 2 + CHECK_SIZE + SPACING));
-        Rectangle textSize = Text.CalculateBounds(textMax);
+
+        int resolvedFontSize = UITextScalar.ResolveFontSize(
+            Text,
+            baseFontSize,
+            new Rectangle(0, 0, textMax, float.MaxValue),
+            autoScale: true
+        );
+
+        Rectangle textSize = UITextScalar.Measure(
+            Text,
+            resolvedFontSize,
+            textMax
+        );
 
         int w = (int)(PADDING_X * 2 + CHECK_SIZE + SPACING + textSize.Width);
-        int h = Math.Max(CHECK_SIZE + PADDING_Y * 2, (int)textSize.Height + PADDING_Y * 2);
+        int h = Math.Max(
+            CHECK_SIZE + PADDING_Y * 2,
+            (int)textSize.Height + PADDING_Y * 2
+        );
 
         return new Rectangle(0, 0, w, h);
     }
-
-    protected internal virtual float GetHeight(float maxWidth, float baseFontScale = 1f)
-    {
-        return CalculateSize(maxWidth, baseFontScale).Height;
-    }
+    //protected internal virtual float GetHeight(float maxWidth, float baseFontScale = 1f)
+    //{
+    //    return CalculateSize(maxWidth, baseFontScale).Height;
+    //}
 
     // Interaction
     protected internal override void Update()
@@ -219,12 +235,29 @@ public class UICheckBox : UIContent
 
         // draw label text to the right of the checkbox
         float textX = boxX + CHECK_SIZE + SPACING;
+
+        int baseFontSize = Style.BaseButtonFontSize;
+
+        Text.FontSize = UITextScalar.ResolveFontSize(
+            Text,
+            baseFontSize,
+            new Rectangle(
+                0,
+                0,
+                bounds.Width - (textX - bounds.X) - (PADDING_X * 2 + CHECK_SIZE + SPACING),
+                bounds.Height
+            ),
+            autoScale: true
+        );
+
         float textY = bounds.Y + (bounds.Height - Text.FontSize) / 2f;
+
         RichTextRenderer.DrawRichText(
             Text,
             new Vector2(textX, textY),
             bounds.Width - (textX - bounds.X),
-            null);
+            null
+        );
     }
 
 }

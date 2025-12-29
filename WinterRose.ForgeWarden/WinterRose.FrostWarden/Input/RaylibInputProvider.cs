@@ -59,10 +59,10 @@ public class RaylibInputProvider : IInputProvider
             {
                 if (GetCursorPos(out POINT p))
                 {
-                    int winX = Application.Current.Window.Position.X;
-                    int winY = Application.Current.Window.Position.Y;
-                    int winW = Application.Current.Window.Width;
-                    int winH = Application.Current.Window.Height;
+                    int winX = ForgeWardenEngine.Current.Window.Position.X;
+                    int winY = ForgeWardenEngine.Current.Window.Position.Y;
+                    int winW = ForgeWardenEngine.Current.Window.Width;
+                    int winH = ForgeWardenEngine.Current.Window.Height;
 
                     if (p.X >= winX && p.X <= winX + winW && p.Y >= winY && p.Y <= winY + winH)
                         mouse = new Vector2(p.X - winX, p.Y - winY);
@@ -80,10 +80,10 @@ public class RaylibInputProvider : IInputProvider
                         XQueryPointer(display, root, out _, out _, out int rootX, out int rootY,
                             out _, out _, out _);
 
-                        int winPosX = Application.Current.Window.Position.X;
-                        int winPosY = Application.Current.Window.Position.Y;
-                        int winW = Application.Current.Window.Width;
-                        int winH = Application.Current.Window.Height;
+                        int winPosX = ForgeWardenEngine.Current.Window.Position.X;
+                        int winPosY = ForgeWardenEngine.Current.Window.Position.Y;
+                        int winW = ForgeWardenEngine.Current.Window.Width;
+                        int winH = ForgeWardenEngine.Current.Window.Height;
 
                         if (rootX >= winPosX && rootX <= winPosX + winW &&
                             rootY >= winPosY && rootY <= winPosY + winH)
@@ -122,8 +122,8 @@ public class RaylibInputProvider : IInputProvider
         lastMousePosition = currentMousePosition;
         currentMousePosition = OSMouseInput.GetMouseWithinWindow();
 
-        int winWidth = Application.Current.Window.Width;
-        int winHeight = Application.Current.Window.Height;
+        int winWidth = ForgeWardenEngine.Current.Window.Width;
+        int winHeight = ForgeWardenEngine.Current.Window.Height;
 
         bool mouseOutside = currentMousePosition.X < 0 || currentMousePosition.Y < 0 ||
                             currentMousePosition.X > winWidth || currentMousePosition.Y > winHeight;

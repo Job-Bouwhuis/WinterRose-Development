@@ -531,6 +531,15 @@ public abstract class UIContainer
         if (IsScrollbarVisible)
             contentWidth = Math.Max(0f, availableContentWidthCandidate - (ScrollbarCurrentWidth + UIConstants.CONTENT_PADDING));
 
+        if(IsHovered())
+        {
+            foreach (var button in Enum.GetValues<MouseButton>())
+            {
+                if (Input.IsPressed(button))
+                    OnContainerClicked(button);
+            }
+        }
+
         for (int i = 0; i < Contents.Count; i++)
         {
             UIContent? content = Contents[i];
@@ -551,7 +560,6 @@ public abstract class UIContainer
                 {
                     if (Input.IsPressed(button))
                         content.OnContentClicked(button);
-                       
                 }
             }
             else
@@ -573,9 +581,10 @@ public abstract class UIContainer
             contentOffsetY += contentHeight + UIConstants.CONTENT_PADDING;
         }
 
-        // ensure scroll is valid after layout changes
         ClampContentScroll();
     }
+
+    protected virtual void OnContainerClicked(MouseButton button) { }
 
     protected static float Lerp(float a, float b, float t)
     {
@@ -920,5 +929,11 @@ public abstract class UIContainer
     {
         element.OnOwnerClosing();
         Contents.Remove(element);
+    }
+
+    public void AddAll(List<UIContent> contents)
+    {
+        foreach(var item in contents)
+            AddContent(item);
     }
 }

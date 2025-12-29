@@ -25,24 +25,27 @@ namespace WinterRose.ForgeWarden.AssetPipeline.Handlers
 
         public static Sprite LoadAsset(AssetHeader header)
         {
+            using TempFile f = new(header.Source);
+
             if ((header.Metadata?.TryGet("type", out string? type) ?? false) && type == "gif")
-                return new SpriteGif(header.Path)
+                return new SpriteGif(f.Name)
                 {
                     Source = header.Name
                 };
-            return new Sprite(header.Path)
+            return new Sprite(f.Name)
             {
                 Source = header.Name
             };
         }
         public static bool SaveAsset(AssetHeader header, Sprite asset)
         {
+            if (string.IsNullOrWhiteSpace(header.Path))
+                throw new InvalidOperationException("This sprite can not be saved!");
+
             Image img = ray.LoadImageFromTexture(asset.Texture);
 
             if(asset is SpriteGif)
-            {
                 header.Metadata["type"] = "gif";
-            }
             else
             {
                 ray.ExportImage(img, header.Path);

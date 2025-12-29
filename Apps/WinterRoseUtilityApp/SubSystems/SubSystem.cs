@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeThread;
+using WinterRose.ForgeWarden;
 using WinterRose.Recordium;
 
 namespace WinterRoseUtilityApp.SubSystems;
 public abstract class SubSystem
 {
     protected Log log { get; }
+    protected ThreadLoom GlobalThreadLoom => ForgeWardenEngine.Current.GlobalThreadLoom;
 
     protected SubSystem(string name,  string description, Version version)
     {

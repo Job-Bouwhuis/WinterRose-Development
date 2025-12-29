@@ -16,6 +16,9 @@ public class FilePath
     /// <param name="path"></param>
     public FilePath(string path)
     {
+        path = path.Replace('/', Path.DirectorySeparatorChar)
+                   .Replace('\\', Path.DirectorySeparatorChar);
+
         this.path = path;
     }
 
@@ -42,13 +45,11 @@ public class FilePath
     /// <returns></returns>
     public static FilePath operator /(FilePath path, string subPath)
     {
-        if(path.path[^1] is '/' or '\\')
-            path.path = path.path[..^1];
-        if (subPath[0] is '/' or '\\')
-            subPath = subPath[1..];
-        
-        return new FilePath(path.path + Path.PathSeparator + subPath);
+        string basePath = path.path.TrimEnd(Path.DirectorySeparatorChar);
+        subPath = subPath.TrimStart('/', '\\').Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+        return new FilePath(basePath + Path.DirectorySeparatorChar + subPath);
     }
+
 
     /// <summary>
     /// Checks if the path points to a file
@@ -56,13 +57,13 @@ public class FilePath
     /// <returns>True when the path points to a file, false if not</returns>
     public bool IsFile() => System.IO.File.Exists(path);
     /// <summary>
-    /// Whether the file has the given <paramref name="extention"/>
+    /// Whether the file has the given <paramref name="extension"/>
     /// </summary>
-    /// <param name="extention"></param>
-    /// <returns>True if the file's extention matches <paramref name="extention"/>, otherwise false</returns>
-    public bool HasExtention(string extention) => extention.StartsWith('.') ? path.EndsWith(extention) : path.EndsWith("." + extention);
+    /// <param name="extension"></param>
+    /// <returns>True if the file's extension matches <paramref name="extension"/>, otherwise false</returns>
+    public bool HasExtension(string extension) => extension.StartsWith('.') ? path.EndsWith(extension) : path.EndsWith("." + extension);
 
-    public string GetExtention() => System.IO.Path.GetExtension(path);
+    public string GetExtension() => System.IO.Path.GetExtension(path);
 
     /// <summary>
     /// Checks if the path points to a directory

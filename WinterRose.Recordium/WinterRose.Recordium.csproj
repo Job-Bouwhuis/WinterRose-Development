@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\WinterRose.Shortcuts\WinterRose.Shortcuts.csproj" />
+    </ItemGroup>
+
 </Project>
