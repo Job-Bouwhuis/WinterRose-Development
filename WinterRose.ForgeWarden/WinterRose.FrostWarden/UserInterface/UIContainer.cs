@@ -6,6 +6,7 @@ using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
+using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.Utility;
 using Color = Raylib_cs.Color;
@@ -20,9 +21,9 @@ public abstract class UIContainer
     private const string MMBHOTKEY = "UICONTAINER_MIDDLE_MOUSE_BUTTON";
     static UIContainer()
     {
-        GlobalHotkey.RegisterHotkey(LMBHOTKEY, true, 0x01);
-        GlobalHotkey.RegisterHotkey(RMBHOTKEY, true, 0x02);
-        GlobalHotkey.RegisterHotkey(MMBHOTKEY, true, 0x04);
+        GlobalHotkey.RegisterHotkey(LMBHOTKEY, true, HotkeyScancode.MouseLeft);
+        GlobalHotkey.RegisterHotkey(RMBHOTKEY, true, HotkeyScancode.MouseRight);
+        GlobalHotkey.RegisterHotkey(MMBHOTKEY, true, HotkeyScancode.MouseMiddle);
     }
 
     private static readonly InputBinding LEFT_MOUSE_BINDING = new InputBinding(InputDeviceType.Mouse, 0);
@@ -99,7 +100,6 @@ public abstract class UIContainer
     private Vector2 ResizeStartMouse;
     private Rectangle ResizeStartRect;
 
-    internal Vector2 CurrentSize;
     internal Vector2 TargetPosition;
     internal Vector2 TargetSize;
     internal float AnimationElapsed;
@@ -151,8 +151,11 @@ public abstract class UIContainer
         if (!initialized)
         {
             initialized = true;
-            foreach (var c in Contents)
+            for (var i = 0; i < Contents.Count; i++)
+            {
+                var c = Contents[i];
                 c.Setup();
+            }
         }
         Update();
         
@@ -189,8 +192,9 @@ public abstract class UIContainer
             float contentHeight = 0;
 
             // measure content heights at the current width
-            foreach (var content in Contents)
+            for (var i = 0; i < Contents.Count; i++)
             {
+                var content = Contents[i];
                 float h = content.GetHeight(CurrentPosition.Width);
                 contentHeight += h + UIConstants.CONTENT_PADDING;
             }
@@ -357,7 +361,7 @@ public abstract class UIContainer
 
     private void ComputeSize(float tNormalized)
     {
-        if (!Style.AutoScale || CurrentSize == TargetSize)
+        if (!Style.AutoScale)
             return;
 
         var center = new Vector2(
@@ -365,10 +369,10 @@ public abstract class UIContainer
             CurrentPosition.Y + CurrentPosition.Height / 2f
         );
         
-        CurrentSize = Vector2.Lerp(
-            CurrentSize,
+        var CurrentSize = Vector2.Lerp(
+            curPos.Size,
             TargetSize,
-            Curves.EaseOutBackFar.Evaluate(tNormalized)
+            Style.MoveAndScaleCurve.Evaluate(tNormalized)
         );
 
         // recompute rect with locked center using absolute sizes
@@ -446,8 +450,9 @@ public abstract class UIContainer
         float availableContentWidthCandidate = CurrentPosition.Width - UIConstants.CONTENT_PADDING * 2;
 
         float totalContentHeight = 0f;
-        foreach (var content in Contents)
+        for (var i = 0; i < Contents.Count; i++)
         {
+            var content = Contents[i];
             totalContentHeight += content.GetHeight(availableContentWidthCandidate);
             totalContentHeight += UIConstants.CONTENT_PADDING;
         }
@@ -459,8 +464,9 @@ public abstract class UIContainer
             float availableContentWidth = Math.Max(0f, availableContentWidthCandidate - reserved);
 
             totalContentHeight = 0f;
-            foreach (var content in Contents)
+            for (var i = 0; i < Contents.Count; i++)
             {
+                var content = Contents[i];
                 totalContentHeight += content.GetHeight(availableContentWidth);
                 totalContentHeight += UIConstants.CONTENT_PADDING;
             }
@@ -746,8 +752,9 @@ public abstract class UIContainer
         ScissorStack.Push(contentArea);
 
         float offsetY = contentArea.Y - ContentScrollY;
-        foreach (var content in Contents)
+        for (var i = 0; i < Contents.Count; i++)
         {
+            var content = Contents[i];
             float contentHeight = content.GetSize(contentArea).Y;
             Rectangle bounds = new Rectangle(contentArea.X, offsetY, contentArea.Width, contentHeight);
 
@@ -852,8 +859,11 @@ public abstract class UIContainer
     {
         if (!IsClosing)
         {
-            foreach (var c in Contents)
+            for (var i = 0; i < Contents.Count; i++)
+            {
+                var c = Contents[i];
                 c.OnOwnerClosing();
+            }
 
             IsClosing = true;
             if(this is Toast)
@@ -877,6 +887,14 @@ public abstract class UIContainer
     public virtual UIContainer AddContent(UIContent content)
     {
         Contents.Add(content);
+        content.owner = this;
+        content.Setup();
+        return this;
+    }
+
+    public virtual UIContainer AddContent(UIContent content, int index)
+    {
+        Contents.Insert(index, content);
         content.owner = this;
         content.Setup();
         return this;
@@ -913,7 +931,7 @@ public abstract class UIContainer
     /// </summary>
     /// <param name="sprite"></param>
     /// <returns></returns>
-    public UIContainer AddSprite(Sprite sprite) => AddContent(new UISpriteContent(sprite));
+    public UIContainer AddSprite(Sprite sprite) => AddContent(new UISprite(sprite));
 
     public UIContainer AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
     => AddText(RichText.Parse(text, Color.White), preset);
@@ -935,5 +953,10 @@ public abstract class UIContainer
     {
         foreach(var item in contents)
             AddContent(item);
+    }
+
+    public int GetContentIndex(UIContent content)
+    {
+        return Contents.IndexOf(content);
     }
 }

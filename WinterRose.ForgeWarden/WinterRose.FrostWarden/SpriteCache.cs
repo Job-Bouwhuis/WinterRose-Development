@@ -13,12 +13,14 @@ namespace WinterRose.ForgeWarden
         private static readonly Dictionary<string, Sprite> cache = [];
         private static readonly Dictionary<string, Texture2D> rawTextureCache = [];
 
-        public static Sprite Get(string source)
+        private static readonly HashSet<string> temporaryFiles = new();
+
+        public static Sprite Get(string source, bool temporary = false)
         {
             if (cache.TryGetValue(source, out var sprite))
                 return sprite;
 
-            if(rawTextureCache.TryGetValue(source, out Texture2D tex))
+            if (rawTextureCache.TryGetValue(source, out Texture2D tex))
                 return new Sprite(tex, false);
 
             Sprite newSprite;
@@ -30,10 +32,13 @@ namespace WinterRose.ForgeWarden
             else
             {
                 if (!File.Exists(source))
-                    throw new InvalidOperationException("File doesnt exists: " + source);
-                newSprite = new Sprite(ray.LoadTexture(source), false);
-            }
+                    throw new InvalidOperationException("File doesn't exist: " + source);
 
+                newSprite = new Sprite(ray.LoadTexture(source), false);
+
+                if (temporary)
+                    temporaryFiles.Add(source);
+            }
 
             cache[source] = newSprite;
             return newSprite;
@@ -83,15 +88,27 @@ namespace WinterRose.ForgeWarden
         {
             foreach (var sprite in cache.Values)
             {
-                if(!sprite.OwnsTexture && sprite is not SpriteGif)
+                if (!sprite.OwnsTexture && sprite is not SpriteGif)
                     ray.UnloadTexture(sprite.Texture);
                 sprite.Dispose();
             }
             cache.Clear();
 
-            foreach(var tex in rawTextureCache.Values)
+            foreach (var tex in rawTextureCache.Values)
                 ray.UnloadTexture(tex);
             rawTextureCache.Clear();
+
+            
+            foreach (var file in temporaryFiles)
+            {
+                try
+                {
+                    if (File.Exists(file))
+                        File.Delete(file);
+                }
+                catch { }
+            }
+            temporaryFiles.Clear();
         }
 
         public static void RegisterTexture2D(string key, Texture2D texture) => rawTextureCache.Add(key, texture);

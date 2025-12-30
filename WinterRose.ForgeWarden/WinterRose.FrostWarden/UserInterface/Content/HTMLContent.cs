@@ -1,28 +1,19 @@
-﻿using Raylib_cs;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Raylib_cs;
 using WinterRose.ForgeWarden.Utility;
-using WinterRose.Recordium;
 
 namespace WinterRose.ForgeWarden.UserInterface.Content;
 
-public class AsyncImageContent : UIContent
+public class HTMLContent : UIContent
 {
     private UISprite sprite = null!;
     private UIProgress spinner;
     private bool loaded;
-    private readonly string url;
+    private readonly string html;
 
-    private readonly float? maxWidth;
-    private readonly float? maxHeight;
-
-    public AsyncImageContent(string imageUrl, float? maxWidth = null, float? maxHeight = null)
+    public HTMLContent(string html)
     {
-        url = imageUrl;
-        this.maxWidth = maxWidth;
-        this.maxHeight = maxHeight;
-        spinner = new UIProgress(-1, infiniteSpinText: "Fetching image...");
+        this.html = html;
+        spinner = new UIProgress(-1, infiniteSpinText: "Processing HTML...");
         _ = LoadAndSwapAsync();
     }
 
@@ -34,33 +25,29 @@ public class AsyncImageContent : UIContent
 
     private async Task LoadAndSwapAsync()
     {
-        try
+        await Task.Run(() =>
         {
-            var sprite = await HttpImageLoader.LoadSpriteFromUrlAsync(url);
-            if (sprite != null)
+            try
             {
-                if (sprite.Texture.Id == 0)
+                List<UIContent> contentes = HtmlToUiTranslator.TranslateDocument(html);
+                int myContentIndex = owner.GetContentIndex(this);
+                for (var index = contentes.Count - 1; index > 0; index--)
                 {
-                    UIText t = new("\\c[red]Image failed to load.");
-                    owner.AddContent(t, owner.GetContentIndex(this));
-                    owner.RemoveContent(this);
-                    return;
+                    var content = contentes[index];
+                    owner.AddContent(content, myContentIndex);
                 }
-                this.sprite= new UISprite(sprite);
-                this.sprite.MaxWidth = maxWidth;
-                this.sprite.MaxHeight = maxHeight;
-                owner.AddContent(this.sprite, owner.GetContentIndex(this));
+
                 owner.RemoveContent(this);
             }
-        }
-        catch (Exception e)
-        {
-            // swallow - we'll leave spinner gone and show empty spacer
-        }
-        finally
-        {
-            loaded = true;
-        }
+            catch
+            {
+                // swallow - we'll leave spinner gone and show empty spacer
+            }
+            finally
+            {
+                loaded = true;
+            }
+        });
     }
 
     protected internal override float GetHeight(float width)

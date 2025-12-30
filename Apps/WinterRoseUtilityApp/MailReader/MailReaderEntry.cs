@@ -21,7 +21,10 @@ internal class MailReaderEntry : SubSystem
     public MailReaderEntry() :
         base("Mail Reader", "Reads mail and gives notifications for them", new Version(1, 0, 0))
     {
-        GlobalHotkey.RegisterHotkey(EmailAccountsHotkey, true, 0xA4, 0x10, 0x45); // Left Alt + Shift + E
+        GlobalHotkey.RegisterHotkey(
+            EmailAccountsHotkey, 
+            true, 
+            HotkeyScancode.LeftAlt, HotkeyScancode.LeftShift, HotkeyScancode.E); // Left Alt + Shift + E
 
     }
 

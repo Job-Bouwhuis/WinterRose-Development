@@ -72,7 +72,7 @@ public class BrowserDialog : Dialog, IDisposable
             owner = this
         });
 
-        SpriteElement = new UISpriteContent();
+        SpriteElement = new UISprite();
         AddContent(SpriteElement);
 
         //AppDomain.CurrentDomain.ProcessExit += PanickedAppClose;
@@ -626,7 +626,7 @@ public class BrowserDialog : Dialog, IDisposable
         { KeyboardKey.Space, " " },
     };
 
-    public UISpriteContent SpriteElement { get; }
+    public UISprite SpriteElement { get; }
 
     public override void Close()
     {

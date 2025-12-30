@@ -271,8 +271,59 @@ public static partial class HtmlToUiTranslator
         if (string.IsNullOrWhiteSpace(src))
             return new UISpacer(4);
 
-        return new AsyncImageContent(src);
+        // try parse width/height attributes (pixels)
+        float? maxWidth = null;
+        float? maxHeight = null;
+
+        if (node.Attributes.TryGetValue("width", out var wRaw))
+            maxWidth = ParseCssSize(wRaw);
+
+        if (node.Attributes.TryGetValue("height", out var hRaw))
+            maxHeight = ParseCssSize(hRaw);
+
+        // parse style attribute for max-width / max-height
+        if (node.Attributes.TryGetValue("style", out var styleRaw) && !string.IsNullOrWhiteSpace(styleRaw))
+        {
+            var parts = styleRaw.Split(';');
+            foreach (var p in parts)
+            {
+                var kv = p.Split(':', 2);
+                if (kv.Length != 2) continue;
+                var key = kv[0].Trim().ToLowerInvariant();
+                var val = kv[1].Trim();
+                if (key == "max-width" && !maxWidth.HasValue)
+                {
+                    var parsed = ParseCssSize(val);
+                    if (parsed.HasValue) maxWidth = parsed;
+                }
+                else if (key == "max-height" && !maxHeight.HasValue)
+                {
+                    var parsed = ParseCssSize(val);
+                    if (parsed.HasValue) maxHeight = parsed;
+                }
+            }
+        }
+
+        return new AsyncImageContent(src, maxWidth, maxHeight);
     }
+
+    private static float? ParseCssSize(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        raw = raw.Trim().ToLowerInvariant();
+
+        // ignore percentage sizes for now
+        if (raw.EndsWith("%")) return null;
+
+        if (raw.EndsWith("px"))
+            raw = raw.Substring(0, raw.Length - 2).Trim();
+
+        if (float.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v))
+            return v;
+
+        return null;
+    }
+
 
     private static UIText ConvertHeader(DomNode node)
     {

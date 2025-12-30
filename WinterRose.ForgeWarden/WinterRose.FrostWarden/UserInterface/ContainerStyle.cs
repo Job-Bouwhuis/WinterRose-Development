@@ -6,6 +6,24 @@ namespace WinterRose.ForgeWarden.UserInterface
 {
     public abstract class ContainerStyle
     {
+        public virtual void ResetState()
+        {
+            // Alpha / fade state
+            ContentAlpha = 1f;
+
+            // Hover / raise animation state
+            currentRaiseAmount = 0f;
+
+            // These are durations, not progress, so we do NOT touch them:
+            // AnimateInDuration
+            // AnimateOutDuration
+            // RaiseDuration
+            // ContentMoveDuration
+            // ContentFadeDuration
+
+            // Any future runtime-only state should reset here
+        }
+        
         protected internal float ContentAlpha { get; set; } = 1f;
 
         private Color background;
@@ -345,7 +363,13 @@ namespace WinterRose.ForgeWarden.UserInterface
 
         public Font Font { get; set; }
         public float BorderSize { get; set; } = 2;
-        public bool AutoScale { get; set; }
+
+        public bool AutoScale
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// time, in seconds, until the container automatically closes
         /// </summary>

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.Recordium;
 using WinterRoseUtilityApp.MailReader.Models;
+using WinterRoseUtilityApp.MailReader.Watchers;
 
 namespace WinterRoseUtilityApp.MailReader.AuthHandlers;
 internal static class OutlookAuthHandler
@@ -56,7 +57,9 @@ internal static class OutlookAuthHandler
                 scopes: string.Join(",", result.Scopes),
                 accountId: result.Account.HomeAccountId.Identifier
             );
-
+            
+            MailWatcher.Instance.AddMonitor(new OutlookMailMonitor(account));
+            
             SaveAccount(account);
             log.Info($"Outlook account '{account.Address}' connected successfully.");
             return true;

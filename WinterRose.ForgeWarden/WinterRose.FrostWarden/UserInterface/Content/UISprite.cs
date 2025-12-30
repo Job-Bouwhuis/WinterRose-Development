@@ -7,17 +7,19 @@ using System.Threading.Tasks;
 using WinterRose.ForgeWarden.UserInterface;
 
 namespace WinterRose.ForgeWarden.UserInterface;
-public class UISpriteContent : UIContent
+public class UISprite : UIContent
 {
     public Sprite? Sprite { get; set; }
 
-    public UISpriteContent(string spriteSource) => Sprite = SpriteCache.Get(spriteSource);
+    public float? MaxWidth { get; set; }   // optional maximum width
+    public float? MaxHeight { get; set; }  // optional maximum height
 
-    public UISpriteContent(Sprite sprite) => Sprite = sprite;
+    public UISprite(string spriteSource) => Sprite = SpriteCache.Get(spriteSource);
 
-    public UISpriteContent()
+    public UISprite(Sprite sprite) => Sprite = sprite;
+
+    public UISprite()
     {
-
     }
 
     protected internal override float GetHeight(float width)
@@ -26,14 +28,33 @@ public class UISpriteContent : UIContent
 
         float aspect = (float)Sprite.Width / Sprite.Height;
         float targetWidth = width;
+
+        // apply max width if specified
+        if (MaxWidth.HasValue)
+            targetWidth = Math.Min(targetWidth, MaxWidth.Value);
+
         float targetHeight = targetWidth / aspect;
+
+        // apply max height if specified
+        if (MaxHeight.HasValue)
+            targetHeight = Math.Min(targetHeight, MaxHeight.Value);
 
         return targetHeight;
     }
 
     public override Vector2 GetSize(Rectangle availableArea)
     {
-        return new(availableArea.Width, GetHeight(availableArea.Width));
+        float width = availableArea.Width;
+
+        if (MaxWidth.HasValue)
+            width = Math.Min(width, MaxWidth.Value);
+
+        float height = GetHeight(width);
+
+        if (MaxHeight.HasValue)
+            height = Math.Min(height, MaxHeight.Value);
+
+        return new Vector2(width, height);
     }
 
     public void ForceDraw(Rectangle bounds) => Draw(bounds);
@@ -47,7 +68,15 @@ public class UISpriteContent : UIContent
         float targetWidth = bounds.Width;
         float targetHeight = targetWidth / aspect;
 
-        if (targetHeight > bounds.Height)
+        // apply max constraints if set
+        if (MaxWidth.HasValue)
+            targetWidth = Math.Min(targetWidth, MaxWidth.Value);
+        if (MaxHeight.HasValue && targetHeight > MaxHeight.Value)
+        {
+            targetHeight = MaxHeight.Value;
+            targetWidth = targetHeight * aspect;
+        }
+        else if (targetHeight > bounds.Height)
         {
             targetHeight = bounds.Height;
             targetWidth = targetHeight * aspect;
@@ -68,4 +97,5 @@ public class UISpriteContent : UIContent
         );
     }
 }
+
 

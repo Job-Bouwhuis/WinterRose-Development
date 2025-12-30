@@ -39,7 +39,20 @@ public class Toast : UIContainer
     public ToastStackSide StackSide { get; internal set; }
     public ToastRegion Region { get; internal set; }
 
-    public override float Height => Contents.Sum(c => c.GetHeight(Toasts.TOAST_WIDTH)) + base.Height;
+    public override float Height
+    {
+        get
+        {
+            float total = 0f;
+            for (int i = 0; i < Contents.Count; i++)
+            {
+                total += Contents[i].GetHeight(Toasts.TOAST_WIDTH);
+            }
+            total += base.Height;
+            return total;
+        }
+    }
+
 
     public Toast(ToastType type, ToastRegion region = ToastRegion.Right, ToastStackSide stackSide = ToastStackSide.Bottom) : this()
     {
@@ -77,8 +90,9 @@ public class Toast : UIContainer
                 TargetPosition = exitTarget.Position;
                 TargetSize = exitTarget.Size;
                 Style.AutoScale = true;
-                Style.MoveAndScaleCurve = Curves.Linear;
-
+                Style.MoveAndScaleCurve = Curves.SlowFastSlow;
+                AnimationElapsed = 0;
+                
                 Style.ShadowSizeBottom =
                 Style.ShadowSizeTop =
                 Style.ShadowSizeRight =
@@ -130,7 +144,7 @@ public class Toast : UIContainer
     /// </summary>
     /// <param name="sprite"></param>
     /// <returns></returns>
-    public new Toast AddSprite(Sprite sprite) => AddContent(new UISpriteContent(sprite));
+    public new Toast AddSprite(Sprite sprite) => AddContent(new UISprite(sprite));
 
     public new Toast AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
     => AddText(RichText.Parse(text, Color.White), preset);

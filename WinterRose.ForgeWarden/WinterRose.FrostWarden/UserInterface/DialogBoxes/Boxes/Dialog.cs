@@ -143,7 +143,7 @@ public class Dialog : UIContainer
     /// </summary>
     /// <param name="sprite"></param>
     /// <returns></returns>
-    public new Dialog AddSprite(Sprite sprite) => AddContent(new UISpriteContent(sprite));
+    public new Dialog AddSprite(Sprite sprite) => AddContent(new UISprite(sprite));
 
     public new Dialog AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
     => AddText(RichText.Parse(text, Color.White), preset);

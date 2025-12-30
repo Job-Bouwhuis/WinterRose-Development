@@ -77,7 +77,7 @@ public class SubSystemManager
             return false;
         }
 
-        Toasts.Info("Subsystems Initialized");
+        Toasts.Info("Subsystems Initialized").Style.TimeUntilAutoDismiss = 100;
         exception = null;
         return true;
     }

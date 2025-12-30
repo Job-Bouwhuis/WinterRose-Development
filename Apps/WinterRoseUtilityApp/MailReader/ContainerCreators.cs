@@ -13,7 +13,7 @@ using WinterRoseUtilityApp.MailReader.Readers;
 namespace WinterRoseUtilityApp.MailReader;
 internal class ContainerCreators
 {
-    public static Dialog AddEmailDialog(string reason = null)
+    public static Dialog AddEmailDialog(MailWatcher watcher, string reason = null)
     {
         Dialog d = new Dialog("Add Email Account", DialogPlacement.TopSmall, DialogPriority.Normal);
         UIColumns root = new UIColumns();
@@ -99,7 +99,7 @@ internal class ContainerCreators
         // Column 1: Add new account button
         UIButton addBtn = new UIButton("Add Email Account", (c, b) =>
         {
-            var dialog = AddEmailDialog();
+            var dialog = AddEmailDialog(watcher);
             dialog.Show();
         });
 
@@ -109,6 +109,12 @@ internal class ContainerCreators
 
         UICircleProgress checkTimer = new(0, (bar, currentVal) =>
         {
+            if (watcher.MonitorCount is 0)
+            {
+                bar.Text = "Add an email to start!";
+                return 0;
+            }
+            
             if(watcher.LastCheck == DateTime.MinValue)
             {
                 bar.Text = "A scan is busy...";

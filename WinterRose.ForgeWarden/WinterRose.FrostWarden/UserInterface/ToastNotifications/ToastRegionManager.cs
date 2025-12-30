@@ -5,6 +5,7 @@ using WinterRose;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface;
+using WinterRose.WinterForgeSerializing.Util;
 
 namespace WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
@@ -28,7 +29,7 @@ public abstract class ToastRegionManager
         }
     }
 
-    protected Queue<Toast> pendingToasts = new Queue<Toast>();
+    protected OverridableStack<Toast> pendingToasts = new OverridableStack<Toast>();
     protected List<Toast> activeToasts = new List<Toast>();
 
     public int NumberOfToasts => pendingToasts.Count + activeToasts.Count;
@@ -66,13 +67,13 @@ public abstract class ToastRegionManager
             if (accumulatedY is not UIConstants.TOAST_SPACING)
                 topCursor += toast.Height + UIConstants.TOAST_SPACING;
 
-            if (toast.TargetPosition.Y != accumulatedY)
-            {
-                toast.TargetPosition = new Vector2(
-                    GetToastXPosition(toast),
-                    accumulatedY);
-                toast.AnimationElapsed = 0;
-            }
+            //if (toast.TargetPosition.Y != accumulatedY)
+            //{
+            toast.TargetPosition = new Vector2(
+                GetToastXPosition(toast),
+                accumulatedY);
+            toast.AnimationElapsed = 0;
+            //}
         }
 
         // --- BOTTOM stack ---
@@ -85,19 +86,19 @@ public abstract class ToastRegionManager
                 continue;
 
             bottomCursor -= toast.Height + UIConstants.TOAST_SPACING;
-            if (/*except.Contains(toast) || */toast.IsClosing)
+            if ( /*except.Contains(toast) || */toast.IsClosing)
                 continue;
 
             if (bottomCursor < topCursor)
                 bottomCursor = topCursor;
 
-            if (bottomCursor != toast.TargetPosition.Y)
-            {
-                toast.TargetPosition = new Vector2(
-                    GetToastXPosition(toast),
-                    bottomCursor);
-                toast.AnimationElapsed = 0f;
-            }
+            //if (bottomCursor != toast.TargetPosition.Y)
+            //{
+            toast.TargetPosition = new Vector2(
+                GetToastXPosition(toast),
+                bottomCursor);
+            toast.AnimationElapsed = 0f;
+            //}
         }
     }
 
@@ -116,7 +117,7 @@ public abstract class ToastRegionManager
 
         toast.CurrentPosition = GetInitialDialogPosition(side, toast, startY);
 
-        toast.CurrentSize = toast.CurrentPosition.Size;
+        //toast.CurrentSize = toast.CurrentPosition.Size;
 
         toast.TargetPosition = GetEntryPosition(side, toast, startY);
         toast.TargetSize = new(Toasts.TOAST_WIDTH, toast.Height);
@@ -131,7 +132,7 @@ public abstract class ToastRegionManager
 
         for (int i = 0; i < queueCount; i++)
         {
-            Toast next = pendingToasts.Dequeue();
+            Toast next = pendingToasts.Pop();
 
             // Calculate occupied space for each stack
             float topOccupied = activeToasts
@@ -148,7 +149,7 @@ public abstract class ToastRegionManager
             if (next.Height + totalOccupied > ForgeWardenEngine.Current.Window.Height)
             {
                 // Not enough space, put it back in the queue
-                pendingToasts.Enqueue(next);
+                pendingToasts.PushEnd(next);
                 continue;
             }
 
@@ -162,10 +163,11 @@ public abstract class ToastRegionManager
         {
             Toast? toast = activeToasts[i];
 
-            float time = toast.IsClosing ? toast.Style.AnimateOutDuration
-                                         : toast.Style.AnimateInDuration;
+            float time = toast.IsClosing
+                ? toast.Style.AnimateOutDuration
+                : toast.Style.AnimateInDuration;
             float tNormalized = Math.Clamp(
-            toast.AnimationElapsed / time, 0f, 1f);
+                toast.AnimationElapsed / time, 0f, 1f);
 
             // Check if closing
             if (toast.IsClosing)
@@ -180,6 +182,7 @@ public abstract class ToastRegionManager
                         EnqueueToast(continuationToast);
                     RecalculatePositions();
                 }
+
                 continue;
             }
 
@@ -201,11 +204,11 @@ public abstract class ToastRegionManager
         activeToasts.Remove(toast);
         RecalculatePositions();
         toast.ToastManager = null;
-    } 
+    }
 
     internal void EnqueueToast(Toast toast)
     {
-        pendingToasts.Enqueue(toast);
+        pendingToasts.PushEnd(toast);
         toast.ToastManager = this;
     }
 
@@ -215,4 +218,73 @@ public abstract class ToastRegionManager
         newToast.ToastManager = this;
         RecalculatePositions();
     }
+
+    public void RecalculateSizes()
+    {
+        float screenHeight = ForgeWardenEngine.Current.Window.Height;
+
+        // 1) Recalculate sizes for active toasts using the static toast width
+        for (int i = 0; i < activeToasts.Count; i++)
+        {
+            Toast toast = activeToasts[i];
+            float newHeight = toast.Height;
+            toast.TargetSize = new Vector2(Toasts.TOAST_WIDTH, newHeight);
+            toast.SetSize(toast.TargetSize);
+        }
+
+        // initial reflow
+        RecalculatePositions();
+
+        // 2) Compute total occupied space (no LINQ)
+        float totalOccupied = 0f;
+        for (int i = 0; i < activeToasts.Count; i++)
+        {
+            totalOccupied += activeToasts[i].Height + UIConstants.TOAST_SPACING;
+        }
+
+        // If everything fits, we're done
+        if (totalOccupied <= screenHeight)
+            return;
+
+        // 3) Remove newest toasts (from the end) until the active set fits.
+        //    Skip toasts that are hovered or already closing. Requeue removed toasts.
+        int iIndex = activeToasts.Count - 1;
+        bool anyRequeued = false;
+
+        while (iIndex >= 0 && totalOccupied > screenHeight)
+        {
+            var candidate = activeToasts[iIndex];
+
+            // prefer not to evict hovered or already-closing toasts
+            bool isHovered;
+            try { isHovered = candidate.IsHovered(); } catch { isHovered = false; }
+
+            if (candidate.IsClosing || isHovered)
+            {
+                iIndex--;
+                continue;
+            }
+
+            // remove newest candidate and requeue it
+            activeToasts.RemoveAt(iIndex);
+            candidate.ToastManager = null;
+            pendingToasts.PushStart(candidate);
+            candidate.Style.ResetState();
+            candidate.AnimationElapsed = 0;
+            if(candidate.Style.TimeUntilAutoDismiss < 5)
+                candidate.Style.TimeUntilAutoDismiss = 5;
+            candidate.Style.AutoScale = true;
+            
+            totalOccupied -= (candidate.Height + UIConstants.TOAST_SPACING);
+            anyRequeued = true;
+
+            // move to previous item
+            iIndex--;
+        }
+
+        // final reflow if we removed any toasts
+        if (anyRequeued)
+            RecalculatePositions();
+    }
+
 }

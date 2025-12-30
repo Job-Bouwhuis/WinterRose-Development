@@ -21,10 +21,10 @@ internal class NoteKeeperEntryPoint : SubSystem
             new Version(1, 0, 0))
     {
         // Alt+V for Quick Note
-        GlobalHotkey.RegisterHotkey(QuickNoteHotkey, true, 0x12, 0x56);
+        GlobalHotkey.RegisterHotkey(QuickNoteHotkey, true, HotkeyScancode.LeftAlt, HotkeyScancode.V);
 
         // Alt+N for All Notes window
-        GlobalHotkey.RegisterHotkey(AllNotesHotkey, true, 0x12, 0x4E);
+        GlobalHotkey.RegisterHotkey(AllNotesHotkey, true, HotkeyScancode.LeftAlt, HotkeyScancode.N);
     }
 
     public override void Update()

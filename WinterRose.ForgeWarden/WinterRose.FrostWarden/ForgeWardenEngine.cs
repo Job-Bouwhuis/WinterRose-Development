@@ -82,6 +82,11 @@ public abstract class ForgeWardenEngine
         HasKeyboardFocus = true,
         HasMouseFocus = true
     };
+
+    /// <summary>
+    /// Highest priority input. use only when really necessary
+    /// </summary>
+    public InputContext GlobalInput => EngineLevelInput;
     private List<Action> debugDraws = [];
 
     static ForgeWardenEngine()
@@ -186,7 +191,7 @@ public abstract class ForgeWardenEngine
                 InputManager.Update();
                 Time.Update();
                 GlobalHotkey.Update();
-                GlobalThreadLoom.ProcessPendingActions();
+                GlobalThreadLoom.ProcessPendingActions(maxItems: 10);
 
                 if (ray.IsWindowResized())
                 {

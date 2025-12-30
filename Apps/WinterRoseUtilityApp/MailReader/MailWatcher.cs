@@ -13,8 +13,11 @@ namespace WinterRoseUtilityApp.MailReader;
 
 public class MailWatcher
 {
+    public static MailWatcher Instance { get; private set; }
+    
     private readonly List<IMailMonitor> monitors = new();
     public readonly TimeSpan checkInterval;
+    public int MonitorCount => monitors.Count;
     public DateTime LastCheck { get; private set; } = DateTime.MinValue;
     private bool firstCheckDone = false;
 
@@ -25,6 +28,7 @@ public class MailWatcher
 
     public MailWatcher()
     {
+        Instance = this;
         if (!Assets.Exists(INTERVAL_ASSET_NAME))
         {
             Assets.CreateAsset(INTERVAL_ASSET_NAME);

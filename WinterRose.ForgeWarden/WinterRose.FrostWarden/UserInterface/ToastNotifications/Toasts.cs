@@ -31,19 +31,31 @@ public static class Toasts
 {
     private static readonly Dictionary<ToastRegion, ToastRegionManager> regions = new();
 
-    internal static readonly float TOAST_WIDTH;
-    internal static readonly float TOAST_HEIGHT;
+    internal static float TOAST_WIDTH { get; private set; }
+    internal static float TOAST_HEIGHT { get; private set; }
     private static bool requestReorder;
 
     internal static InputContext Input { get; }
 
+    const float REFERENCE_WIDTH = 1920f;
+    const float REFERENCE_HEIGHT = 1080f;
+    
     static Toasts()
     {
         Input = new InputContext(new RaylibInputProvider(), 110002);
         // Baseline reference resolution
-        const float REFERENCE_WIDTH = 1920f;
-        const float REFERENCE_HEIGHT = 1080f;
 
+
+        CalculateToastSize();
+
+        // Setup default regions
+        regions[ToastRegion.Right] = new ToastRightRegionManager();
+        regions[ToastRegion.Left] = new ToastLeftRegionManager();
+        regions[ToastRegion.Center] = new ToastCenterRegionManager();
+    }
+
+    private static void CalculateToastSize()
+    {
         float windowWidth = ForgeWardenEngine.Current.Window.Width;
         float windowHeight = ForgeWardenEngine.Current.Window.Height;
 
@@ -52,11 +64,6 @@ public static class Toasts
 
         TOAST_WIDTH = 350f * scaleX;
         TOAST_HEIGHT = 170f * scaleY;
-
-        // Setup default regions
-        regions[ToastRegion.Right] = new ToastRightRegionManager();
-        regions[ToastRegion.Left] = new ToastLeftRegionManager();
-        regions[ToastRegion.Center] = new ToastCenterRegionManager();
     }
 
     public static Toast ShowToast(Toast toast)
@@ -92,8 +99,13 @@ public static class Toasts
         {
             reorderTimer = 0;
             requestReorder = false;
+            CalculateToastSize();
             foreach (var region in regions.Values)
+            {
                 region.RecalculatePositions();
+                if (ray.IsWindowResized())
+                    region.RecalculateSizes();
+            }
         }
 
         bool anyHovered = false;

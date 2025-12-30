@@ -26,6 +26,11 @@ public static class ShortcutMaker
             shortcutPath = Path.ChangeExtension(shortcutPath, ".lnk");
             shortcutMaker = new WindowsShortcutMaker();
         }
+        else if (OperatingSystem.IsLinux())
+        {
+            shortcutPath = Path.ChangeExtension(shortcutPath, ".desktop");
+            shortcutMaker = new LinuxShortcutMaker();
+        }
         else
             throw new NotSupportedException("This operating system is not supported.");
 

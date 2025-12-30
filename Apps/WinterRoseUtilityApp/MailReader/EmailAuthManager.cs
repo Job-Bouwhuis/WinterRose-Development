@@ -95,7 +95,6 @@ public class EmailAuthManager : IAssetHandler<List<EmailAccount>>
                             return false;
                         }
 
-                        // Either no saved account, or silent login failed -> fallback to interactive login
                         return await OutlookAuthHandler.LoginAsync(email);
                     }
                 case "Gmail":
@@ -109,38 +108,6 @@ public class EmailAuthManager : IAssetHandler<List<EmailAccount>>
         catch (Exception ex)
         {
             log.Error(ex, $"Login attempt for {email} failed");
-            return false;
-        }
-    }
-
-    public static void PromptLoginIfNeeded()
-    {
-        var savedAccounts = Assets.Load<List<EmailAccount>>("EmailAccounts");
-        if (savedAccounts == null || savedAccounts.Count == 0)
-        {
-            ContainerCreators.AddEmailDialog("No email accounts configured. Add one to receive notifications.");
-            return;
-        }
-
-        foreach (var acc in savedAccounts)
-        {
-            if (!TryAutoAuthenticate(acc))
-            {
-                ContainerCreators.AddEmailDialog($"Session expired for {acc.Address}. Please log in again.");
-            }
-        }
-    }
-
-    private static bool TryAutoAuthenticate(EmailAccount account)
-    {
-        try
-        {
-            // Use provider-specific refresh token logic here later
-            return account.LastAuthTime.AddDays(7) > DateTime.UtcNow;
-        }
-        catch (Exception ex)
-        {
-            log.Warning(ex, $"Auto-auth failed for {account.Address}");
             return false;
         }
     }
