@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using WinterRose.ForgeWarden.AssetPipeline;
+﻿using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.WinterForgeSerializing;
-using WinterRoseUtilityApp.DrinkReminder;
 
 namespace WinterRoseUtilityApp.MailReader.Models;
 
@@ -21,7 +17,7 @@ public class MailPreferences : IAssetHandler<MailPreferences>
         MailPreferences defaultPrefs = new();
         defaultPrefs.ImportantSenders.Add("karinbouwhuis@hotmail.com");
         defaultPrefs.ImportantSenders.Add("info@syntaxis.nl");
-
+            
         defaultPrefs.IgnoredSenders.Add("close_friend_updates@facebookmail.com");
         defaultPrefs.IgnoredSenders.Add("messages-noreply@linkedin.com");
         defaultPrefs.IgnoredSenders.Add("notifications-noreply@linkedin.com");

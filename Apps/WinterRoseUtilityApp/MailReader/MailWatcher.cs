@@ -13,7 +13,7 @@ namespace WinterRoseUtilityApp.MailReader;
 
 public class MailWatcher
 {
-    public static MailWatcher Instance { get; private set; }
+    public static MailWatcher Current { get; private set; }
     
     private readonly List<IMailMonitor> monitors = new();
     public readonly TimeSpan checkInterval;
@@ -28,7 +28,7 @@ public class MailWatcher
 
     public MailWatcher()
     {
-        Instance = this;
+        Current = this;
         if (!Assets.Exists(INTERVAL_ASSET_NAME))
         {
             Assets.CreateAsset(INTERVAL_ASSET_NAME);
@@ -117,4 +117,20 @@ public class MailWatcher
         LastCheck = DateTime.UtcNow;
         log.Info("Mail check process completed.");
     }
+
+    public void MarkAsRead(MailMessage email)
+    {
+        switch (email.OwnerAccount.Provider)
+        {
+            case "Outlook":
+                IMailMonitor outlook = monitors.FirstOrDefault(s => s.Name is "Outlook" && s.Account.Address == email.OwnerAccount.Address) 
+                    ?? throw new InvalidOperationException("Could not find mail monitor for Outlook for account " + email.OwnerAccount.Address);
+                outlook.MarkAsRead(email.MailFolder, email);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown email provider '{email.OwnerAccount.Provider}' for '{email.OwnerAccount.Address}'");
+        }
+    }
+
+    internal MailMessage FindMessageById(EmailAccount account, string messageId) => throw new NotImplementedException();
 }

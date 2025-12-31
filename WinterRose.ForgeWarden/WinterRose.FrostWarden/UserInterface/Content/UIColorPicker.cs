@@ -8,7 +8,7 @@ namespace WinterRose.ForgeWarden.UserInterface;
 
 public class UIColorPicker : UIContent
 {
-    public MulticastVoidInvocation<UIContainer, UIColorPicker, Color> OnColorChanged { get; set; } = new();
+    public MulticastVoidInvocation<IUIContainer, UIColorPicker, Color> OnColorChanged { get; set; } = new();
     public MulticastVoidInvocation<Color> OnColorChangedBasic { get; set; } = new();
 
     // Layout
@@ -82,10 +82,10 @@ public class UIColorPicker : UIContent
 
     protected internal override void Setup()
     {
-        rInput = new UITextInput() { Placeholder = "R", IsPassword = false, owner = owner };
-        gInput = new UITextInput() { Placeholder = "G", IsPassword = false, owner = owner };
-        bInput = new UITextInput() { Placeholder = "B", IsPassword = false, owner = owner };
-        hexInput = new UITextInput() { Placeholder = "#RRGGBB", IsPassword = false, owner = owner };
+        rInput = new UITextInput() { Placeholder = "R", IsPassword = false, Owner = Owner };
+        gInput = new UITextInput() { Placeholder = "G", IsPassword = false, Owner = Owner };
+        bInput = new UITextInput() { Placeholder = "B", IsPassword = false, Owner = Owner };
+        hexInput = new UITextInput() { Placeholder = "#RRGGBB", IsPassword = false, Owner = Owner };
 
         rInput.OnSubmit += (ti, s) =>
         {
@@ -416,7 +416,7 @@ public class UIColorPicker : UIContent
         bInput?.SetText(c.B.ToString());
         hexInput?.SetText($"#{c.R:X2}{c.G:X2}{c.B:X2}");
 
-        OnColorChanged?.Invoke(owner, this, c);
+        OnColorChanged?.Invoke(Owner, this, c);
         OnColorChangedBasic?.Invoke(c);
     }
 

@@ -35,12 +35,12 @@ public class UIDateTimePicker : UIContent
         {
             selected = ClampToRange(value);
             SyncInternalFromSelected();
-            OnDateTimeChanged?.Invoke(owner, this, selected);
+            OnDateTimeChanged?.Invoke(Owner, this, selected);
             OnDateTimeChangedBasic?.Invoke(selected);
         }
     }
 
-    public MulticastVoidInvocation<UIContainer, UIDateTimePicker, DateTime> OnDateTimeChanged { get; set; } = new();
+    public MulticastVoidInvocation<IUIContainer, UIDateTimePicker, DateTime> OnDateTimeChanged { get; set; } = new();
     public MulticastVoidInvocation<DateTime> OnDateTimeChangedBasic { get; set; } = new();
 
     // Layout constants

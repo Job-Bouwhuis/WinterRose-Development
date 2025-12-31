@@ -18,7 +18,7 @@ public class UIFPS : UIContent
 
     protected internal override void Setup()
     {
-        text.owner = owner;
+        text.Owner = Owner;
     }
 
     public override Vector2 GetSize(Rectangle availableArea) => text.GetSize(availableArea);

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.Recordium;
 using WinterRose.WinterForgeSerializing.Workers;
@@ -77,7 +78,8 @@ public class SubSystemManager
             return false;
         }
 
-        Toasts.Info("Subsystems Initialized").Style.TimeUntilAutoDismiss = 100;
+        Toasts.Info("Subsystems Initialized");
+        //new Dialog("test", "\\L[https://www.youtube.com/watch?v=xlBUy87c6y4|my awesome link]").Show();
         exception = null;
         return true;
     }

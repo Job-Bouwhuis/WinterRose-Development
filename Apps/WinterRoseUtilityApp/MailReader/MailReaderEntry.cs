@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden;
+using WinterRose.ForgeWarden.Utility;
 using WinterRose.Recordium;
 using WinterRoseUtilityApp.MailReader.Watchers;
 using WinterRoseUtilityApp.SubSystems;
@@ -86,10 +87,5 @@ internal class MailReaderEntry : SubSystem
             return;
         updateTask = watcher.UpdateAsync();
         updateTask.ContinueWith((t) => updateTask = null);
-    }
-
-    public override void Destroy()
-    {
-        // Clean up any timers or polling loops
     }
 }

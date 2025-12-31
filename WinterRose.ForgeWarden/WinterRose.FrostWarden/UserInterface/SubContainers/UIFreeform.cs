@@ -23,7 +23,7 @@ public class UIFreeform : UIContent
         // ensure any children already present are setup
         foreach (var c in Contents)
         {
-            c.owner = owner;
+            c.Owner = Owner;
             c.Setup();
         }
     }
@@ -38,7 +38,7 @@ public class UIFreeform : UIContent
             Contents.Add(content);
 
         contentPositions[content] = position;
-        content.owner = owner;
+        content.Owner = Owner;
         content.Setup();
     }
 

@@ -273,13 +273,17 @@ public class UITextInput : UIContent
                     Toasts.Error("Pasting on any platform that isnt windows is not yet supported");
                 }
             }
+            if(ctrl && Input.IsPressed(KeyboardKey.A))
+            {
+                SelectAll();
+            }
 
             // navigation & editing keys
             if (Input.IsPressed(
                 KeyboardKey.Backspace, 
                 repeatAfter: TimeSpan.FromSeconds(0.4), 
                 repeatTimeout: TimeSpan.FromSeconds(0.05)))
-            {
+           {
                 if (HasSelection())
                 {
                     if (!ReadOnly)

@@ -394,7 +394,7 @@ public class UICircleProgress : UIContent
 
         Color bgRing = Style.ProgressBarBackground;
         Color fill = Style.ProgressBarFill;
-        Color textColor = Style.White;
+        Color textColor = Style.StyleBase.White;
 
         // Draw ring arcs as before...
         DrawProgressArc();

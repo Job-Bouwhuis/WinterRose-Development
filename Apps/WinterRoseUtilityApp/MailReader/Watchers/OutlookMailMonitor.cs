@@ -17,6 +17,8 @@ public class OutlookMailMonitor : IMailMonitor
 {
     public EmailAccount Account { get; }
 
+    public string Name => "Outlook";
+
     private readonly Dictionary<string, HashSet<string>> seenMessageIds = new();
 
     public OutlookMailMonitor(EmailAccount account) => Account = account;

@@ -158,9 +158,13 @@ public class Log
         }
     }
 
+    /// <summary>
+    /// Writes to all log destinations asynchronously, but does not block the caller to await completion of this write
+    /// </summary>
+    /// <param name="entry"></param>
     public void Write(LogEntry entry)
     {
-        WriteAsync(entry).GetAwaiter().GetResult();
+        _ = WriteAsync(entry);
     }
 
     private LogEntry CreateEntry(LogSeverity severity, string message, string fileName, int lineNumber)

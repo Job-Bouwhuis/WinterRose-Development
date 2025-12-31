@@ -28,7 +28,7 @@ public class AsyncImageContent : UIContent
 
     protected internal override void Setup()
     {
-        spinner.owner = owner;
+        spinner.Owner = Owner;
         spinner.Setup();
     }
 
@@ -42,15 +42,18 @@ public class AsyncImageContent : UIContent
                 if (sprite.Texture.Id == 0)
                 {
                     UIText t = new("\\c[red]Image failed to load.");
-                    owner.AddContent(t, owner.GetContentIndex(this));
-                    owner.RemoveContent(this);
+                    Owner.AddContent(this, t, Owner.GetContentIndex(this));
+                    Owner.RemoveContent(this);
                     return;
                 }
                 this.sprite= new UISprite(sprite);
                 this.sprite.MaxWidth = maxWidth;
                 this.sprite.MaxHeight = maxHeight;
-                owner.AddContent(this.sprite, owner.GetContentIndex(this));
-                owner.RemoveContent(this);
+                if(Owner is null)
+                    await WinterUtils.AwaitNotNull(() => Owner);
+
+                Owner.AddContent(this, this.sprite, Owner.GetContentIndex(this));
+                Owner.RemoveContent(this);
             }
         }
         catch (Exception e)

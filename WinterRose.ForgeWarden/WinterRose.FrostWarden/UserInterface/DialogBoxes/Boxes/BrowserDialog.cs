@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using WinterRose;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
+using WinterRose.ForgeWarden.Utility;
 using WinterRose.Recordium;
 using Color = Raylib_cs.Color;
 using Image = Raylib_cs.Image;
@@ -35,7 +36,7 @@ public class BrowserDialog : Dialog, IDisposable
     private bool navigationFailed;
     private string? failedUrl;
 
-    private int favicoId = favicoNum++;
+    private readonly int favicoId = favicoNum++;
 
     private Texture2D? faviconTexture;
     private string? currentFaviconPath;
@@ -44,7 +45,6 @@ public class BrowserDialog : Dialog, IDisposable
 
     // Thread-safe buffer for pending screenshot
     private byte[]? pendingScreenshot;
-    private bool favIcoUpdateRequired;
     private Image img;
     private readonly object screenshotLock = new();
 
@@ -66,10 +66,10 @@ public class BrowserDialog : Dialog, IDisposable
         Contents.RemoveRange(0, 2);
         Contents.AddRange(titleContent, new UISpacer()
         {
-            owner = this
+            Owner = this
         }, messageContent, new UISpacer()
         {
-            owner = this
+            Owner = this
         });
 
         SpriteElement = new UISprite();
@@ -82,9 +82,11 @@ public class BrowserDialog : Dialog, IDisposable
 
     UIColumns buttonColumn;
     int currentColumn = 0;
-    public override Dialog AddButton(RichText text, Action<UIContainer, UIButton> onClick)
+    private Sprite? currentFavicon;
+
+    public Dialog AddButton(RichText text, Action<IUIContainer, UIButton> onClick)
     {
-        if(buttonColumn == null)
+        if (buttonColumn == null)
         {
             buttonColumn = new UIColumns();
             AddContent(buttonColumn);
@@ -198,8 +200,8 @@ public class BrowserDialog : Dialog, IDisposable
                 }
                 else
                 {
-                     log.Error("Clipboard copy not supported on this OS.");
-                } 
+                    log.Error("Clipboard copy not supported on this OS.");
+                }
             }
             catch (Exception ex)
             {
@@ -325,20 +327,18 @@ public class BrowserDialog : Dialog, IDisposable
                 faviconTexture = null;
             }
 
-            var client = new HttpClient();
-            byte[] data = await client.GetByteArrayAsync(faviconUrl);
-            client.Dispose();
-            try
+            Sprite? fav = await HttpImageLoader.LoadSpriteFromUrlAsync(faviconUrl);
+            if (fav is null)
             {
-                string ext = Path.GetExtension(faviconUrl) ?? ".png";
-                string path = FavIconsPath + $"\\{favicoId}{ext}";
-                await File.WriteAllBytesAsync(path, data);
-                favIcoUpdateRequired = true;
-                currentFaviconPath = path;
+                currentFaviconPath = null;
+                return;
             }
-            catch
-            {
-            }
+            currentFaviconPath = fav.Source;
+            Sprite old = currentFavicon;
+            currentFavicon = fav;
+            RichSpriteRegistry.RegisterSprite($"favicon{favicoId}", currentFavicon);
+            UpdateTitle(page.GetTitleAsync().GetAwaiter().GetResult());
+            old?.Dispose();
         }
         catch (Exception ex)
         {
@@ -346,31 +346,18 @@ public class BrowserDialog : Dialog, IDisposable
         }
     }
 
-    private void DisposeFavicon()
-    {
-        if (faviconTexture.HasValue && faviconTexture.Value.Id > 0)
-        {
-            ray.UnloadTexture(faviconTexture.Value);
-            faviconTexture = null;
-        }
-
-        if (!string.IsNullOrWhiteSpace(currentFaviconPath) && File.Exists(currentFaviconPath))
-        {
-            File.Delete(currentFaviconPath);
-            currentFaviconPath = null;
-        }
-    }
-
     protected override void Update()
     {
         if (page == null) return;
 
-        // Trigger screenshot capture every update interval
-        if ((DateTime.Now - lastUpdateTime).TotalSeconds >= updateInterval)
-        {
-            screenshottingTask ??= CaptureScreenshotAsync(); // async capture
-            lastUpdateTime = DateTime.Now;
-        }
+        if (screenshottingTask == null)
+            screenshottingTask = CaptureScreenshotAsync();
+        //if ((DateTime.Now - lastUpdateTime).TotalSeconds >= updateInterval)
+        //{
+        //    if (screenshottingTask == null)
+        //        screenshottingTask = CaptureScreenshotAsync();
+        //    lastUpdateTime = DateTime.Now;
+        //}
 
         // Apply screenshot to texture on main thread
         byte[]? bytesToLoad = null;
@@ -402,24 +389,6 @@ public class BrowserDialog : Dialog, IDisposable
                     ray.UnloadImage(img);
                 }
             }
-        }
-
-        if (favIcoUpdateRequired)
-        {
-            favIcoUpdateRequired = false;
-            var tex = ray.LoadTexture(currentFaviconPath);
-            if (tex.Id == 0)
-            {
-                log.Warning("Favico was badly or never loaded");
-                return;
-            }
-            faviconTexture = tex;
-            RichSpriteRegistry.RegisterSprite(
-                "favicon" + favicoId,
-                new(tex, false)
-            );
-
-            UpdateTitle(page.GetTitleAsync().GetAwaiter().GetResult());
         }
 
         base.Update();
@@ -644,7 +613,7 @@ public class BrowserDialog : Dialog, IDisposable
             await (page?.CloseAsync() ?? Task.CompletedTask);
             browser?.Dispose();
         });
-        DisposeFavicon();
+        currentFavicon?.Dispose();
         AppDomain.CurrentDomain.ProcessExit -= PanickedAppClose;
     }
 }

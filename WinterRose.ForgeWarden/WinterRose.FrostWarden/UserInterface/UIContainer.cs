@@ -14,7 +14,7 @@ using Rectangle = Raylib_cs.Rectangle;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
-public abstract class UIContainer
+public abstract class UIContainer : IUIContainer
 {
     private const string LMBHOTKEY = "UICONTAINER_LEFT_MOUSE_BUTTON";
     private const string RMBHOTKEY = "UICONTAINER_RIGHT_MOUSE_BUTTON";
@@ -42,7 +42,7 @@ public abstract class UIContainer
     public bool PauseDragMovement { get; set; }
     private bool prevPauseDragMovement;
     private Rectangle curPos = new Rectangle();
-    internal Rectangle CurrentPosition
+    public Rectangle CurrentPosition
     {
         get
         {
@@ -84,7 +84,7 @@ public abstract class UIContainer
         get
         {
             float newHeight = UIConstants.CONTENT_PADDING + UIConstants.CONTENT_PADDING * (Contents.Count + 1) + dragHeight;
-            if (newHeight != lastHeight && lastHeight is not 0)
+            if (newHeight != lastHeight && lastHeight is not 0 && this is Toast)
                 Toasts.RequestReorder();
             return lastHeight = newHeight;
         }
@@ -124,7 +124,7 @@ public abstract class UIContainer
     private bool PauseAutoDismissTimer { get; set; }
     internal float TimeShown;
 
-    public ContainerStyle Style { get; set; }
+    public ContentStyle Style { get; set; }
 
     internal List<UIContent> Contents { get; } = new();
 
@@ -142,6 +142,8 @@ public abstract class UIContainer
     /// </summary>
     public bool EnableDebugDraw { get; set; }
     protected bool OverrideIsHoveredState { get; set; }
+
+    public IUIContainer Owner => throw new NotImplementedException();
 
     bool initialized = false;
 
@@ -344,7 +346,7 @@ public abstract class UIContainer
                                             Style.AnimateOutDuration
                                             : Style.AnimateInDuration), 0f, 1f);
 
-            Vector2 newPos = Vector2.Lerp(CurrentPosition.Position, TargetPosition, Style.MoveAndScaleCurve.Evaluate(tNormalized));
+            Vector2 newPos = Vector2.Lerp(CurrentPosition.Position, TargetPosition, Style.MoveAndScaleCurve.Value.Evaluate(tNormalized));
             SetPosition(newPos);
             ComputeSize(tNormalized);
         }
@@ -372,7 +374,7 @@ public abstract class UIContainer
         var CurrentSize = Vector2.Lerp(
             curPos.Size,
             TargetSize,
-            Style.MoveAndScaleCurve.Evaluate(tNormalized)
+            Style.MoveAndScaleCurve.Value.Evaluate(tNormalized)
         );
 
         // recompute rect with locked center using absolute sizes
@@ -730,14 +732,14 @@ public abstract class UIContainer
             if (isHovered != isHoverTarget)
             {
                 isHoverTarget = isHovered;
-                Style.currentRaiseAmount = 0f;
+                Style.StyleBase.currentRaiseAmount = 0f;
             }
 
-            if (Style.currentRaiseAmount < Style.RaiseDuration)
-                Style.currentRaiseAmount += Time.deltaTime;
+            if (Style.StyleBase.currentRaiseAmount < Style.RaiseDuration)
+                Style.StyleBase.currentRaiseAmount += Time.deltaTime;
 
-            float tNormalized = Math.Clamp(Style.currentRaiseAmount / Style.RaiseDuration, 0f, 1f);
-            float easedProgress = Style.RaiseCurve?.Evaluate(isHoverTarget ? tNormalized : 1f - tNormalized) ?? (isHoverTarget ? 1f : 0f);
+            float tNormalized = Math.Clamp(Style.StyleBase.currentRaiseAmount / Style.RaiseDuration, 0f, 1f);
+            float easedProgress = Style.RaiseCurve.Value.Evaluate(isHoverTarget ? tNormalized : 1f - tNormalized);
 
             hoverOffsetX = -Style.HoverRaiseAmount * easedProgress;
             hoverOffsetY = -Style.HoverRaiseAmount * easedProgress;
@@ -884,65 +886,6 @@ public abstract class UIContainer
         }
     }
 
-    public virtual UIContainer AddContent(UIContent content)
-    {
-        Contents.Add(content);
-        content.owner = this;
-        content.Setup();
-        return this;
-    }
-
-    public virtual UIContainer AddContent(UIContent content, int index)
-    {
-        Contents.Insert(index, content);
-        content.owner = this;
-        content.Setup();
-        return this;
-    }
-
-    public UIContainer AddButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null)
-    {
-        AddContent(new UIButton(text, onClick));
-        return this;
-    }
-
-    /// <summary>
-    /// Adds a button to the toast
-    /// </summary>
-    /// <param name="text"></param>
-    /// <param name="onClick">Should return true when the toast should close, false if not</param>
-    /// <returns></returns>
-    public UIContainer AddButton(string text, VoidInvocation<UIContainer, UIButton>? onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
-
-    /// <summary>
-    /// Adds a progress bar to the toast
-    /// </summary>
-    /// <param name="initialProgress">The progress in a 0-1 range. set to -1 to have it do a infinite working animation</param>
-    /// <param name="ProgressProvider">The function that provides further values</param>
-    /// <param name="closesToastWhenComplete">When true, and the progress becomes 1, it requests the toast to close.</param>
-    /// <returns></returns>
-    public UIContainer AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, string infiniteSpinText = "Working...")
-    {
-        return AddContent(new UIProgress(initialProgress, ProgressProvider, infiniteSpinText));
-    }
-
-    /// <summary>
-    /// Adds the sprite to the dialog
-    /// </summary>
-    /// <param name="sprite"></param>
-    /// <returns></returns>
-    public UIContainer AddSprite(Sprite sprite) => AddContent(new UISprite(sprite));
-
-    public UIContainer AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
-    => AddText(RichText.Parse(text, Color.White), preset);
-    public UIContainer AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
-        => AddContent(new UIText(text, preset));
-    public UIContainer AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Text)
-        => AddContent(new UIText(text, preset));
-
-    public UIContainer AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Text)
-        => AddText(RichText.Parse(text, Color.White), preset);
-
     public void RemoveContent(UIContent element)
     {
         element.OnOwnerClosing();
@@ -959,4 +902,52 @@ public abstract class UIContainer
     {
         return Contents.IndexOf(content);
     }
+
+    public IUIContainer AddContent(UIContent content)
+    {
+        Contents.Add(content);
+        content.Owner = this;
+        content.Setup();
+        return this;
+    }
+
+    public virtual IUIContainer AddContent(UIContent content, int index)
+    {
+        Contents.Insert(index, content);
+        content.Owner = this;
+        content.Setup();
+        return this;
+    }
+
+    public virtual IUIContainer AddButton(RichText text, VoidInvocation<IUIContainer, UIButton>? onClick = null)
+    {
+        AddContent(new UIButton(text, (c, b) => onClick?.Invoke(this, b)));
+        return this;
+    }
+
+    public virtual IUIContainer AddButton(string text, VoidInvocation<IUIContainer, UIButton>? onClick)
+        => AddButton(RichText.Parse(text, Color.White), onClick);
+
+    public virtual IUIContainer AddProgressBar(float initialProgress, Func<float, float>? ProgressProvider = null, string infiniteSpinText = "Working...")
+    {
+        return AddContent(new UIProgress(initialProgress, ProgressProvider, infiniteSpinText));
+    }
+
+    public virtual IUIContainer AddSprite(Sprite sprite)
+        => AddContent(new UISprite(sprite));
+
+    public virtual IUIContainer AddTitle(string text, UIFontSizePreset preset = UIFontSizePreset.Title)
+        => AddText(RichText.Parse(text, Color.White), preset);
+
+    public virtual IUIContainer AddTitle(RichText text, UIFontSizePreset preset = UIFontSizePreset.Title)
+        => AddContent(new UIText(text, preset));
+
+    public virtual IUIContainer AddText(RichText text, UIFontSizePreset preset = UIFontSizePreset.Text)
+        => AddContent(new UIText(text, preset));
+
+    public virtual IUIContainer AddText(string text, UIFontSizePreset preset = UIFontSizePreset.Text)
+        => AddText(RichText.Parse(text, Color.White), preset);
+    public IUIContainer AddContent(UIContent reference, UIContent contentToAdd) => AddContent(contentToAdd);
+    public IUIContainer AddContent(UIContent reference, UIContent contentToAdd, int index) => AddContent(contentToAdd, index);
+    public void AddAll(UIContent reference, List<UIContent> contents) => AddAll(contents);
 }

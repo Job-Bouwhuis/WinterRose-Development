@@ -46,7 +46,7 @@ public class Dialog : UIContainer
 
         NoAutoMove = true;
 
-        Style = new DialogStyle();
+        Style = new DialogStyle(new StyleBase());
 
         SetupTitle(title);
         SetupMessage(message);
@@ -60,7 +60,7 @@ public class Dialog : UIContainer
         Placement = placement;
         Priority = priority;
 
-        Style = new DialogStyle();
+        Style = new DialogStyle(new StyleBase());
 
         SetupTitle(title);
     }
@@ -74,7 +74,7 @@ public class Dialog : UIContainer
         UIText titleContent = new UIText(title, UIFontSizePreset.Title);
         titleContent.Text.FontSize = (int)Math.Clamp(titleScale, 14, 36);
 
-        titleContent.owner = this;
+        titleContent.Owner = this;
         Contents.Insert(0, titleContent);
         Title = titleContent.Text;
     }
@@ -88,7 +88,7 @@ public class Dialog : UIContainer
         UIText messageContent = new UIText(message, UIFontSizePreset.Text);
         messageContent.Text.FontSize = (int)Math.Clamp(messageScale, 10, 24);
 
-        messageContent.owner = this;
+        messageContent.Owner = this;
         Contents.Insert(1, messageContent);
     }
 
@@ -109,10 +109,10 @@ public class Dialog : UIContainer
         return (Dialog)base.AddContent(content);
     }
 
-    public virtual Dialog AddButton(RichText text, Action<UIContainer, UIButton> onClick)
+    public virtual Dialog AddButton(RichText text, Action<IUIContainer, UIButton> onClick)
         => AddButton(text, Invocation.Create(onClick));
 
-    public new Dialog AddButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null)
+    public new Dialog AddButton(RichText text, VoidInvocation<IUIContainer, UIButton>? onClick = null)
     {
         AddContent(new UIButton(text, onClick));
         return this;
@@ -124,7 +124,7 @@ public class Dialog : UIContainer
     /// <param name="text"></param>
     /// <param name="onClick">Should return true when the toast should close, false if not</param>
     /// <returns></returns>
-    public new Dialog AddButton(string text, VoidInvocation<UIContainer, UIButton>? onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
+    public new Dialog AddButton(string text, VoidInvocation<IUIContainer, UIButton>? onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
 
     /// <summary>
     /// Adds a progress bar to the toast

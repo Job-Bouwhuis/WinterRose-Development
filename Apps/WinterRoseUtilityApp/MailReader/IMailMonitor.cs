@@ -6,6 +6,7 @@ namespace WinterRoseUtilityApp.MailReader;
 
 public interface IMailMonitor
 {
+    string Name { get; }
     EmailAccount Account { get; }
     Task<Dictionary<MailFolder, List<MailMessage>>> FetchNewAsync(CancellationToken ct);
     bool MarkAsRead(MailFolder folder, MailMessage message);

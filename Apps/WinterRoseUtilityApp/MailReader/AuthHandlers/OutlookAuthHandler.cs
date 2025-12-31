@@ -58,7 +58,7 @@ internal static class OutlookAuthHandler
                 accountId: result.Account.HomeAccountId.Identifier
             );
             
-            MailWatcher.Instance.AddMonitor(new OutlookMailMonitor(account));
+            MailWatcher.Current.AddMonitor(new OutlookMailMonitor(account));
             
             SaveAccount(account);
             log.Info($"Outlook account '{account.Address}' connected successfully.");

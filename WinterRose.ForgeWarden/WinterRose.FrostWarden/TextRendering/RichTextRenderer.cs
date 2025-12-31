@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Text;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
 public static class RichTextRenderer
@@ -956,4 +957,6 @@ public static class RichTextRenderer
 
         return last.HasValue && first.HasValue && char.IsLetter(last.Value) && char.IsLetter(first.Value);
     }
+
+    internal static void DrawRichText(RichText title, Vector2 textPos, float maxTextWidth, object white, object value) => throw new NotImplementedException();
 }

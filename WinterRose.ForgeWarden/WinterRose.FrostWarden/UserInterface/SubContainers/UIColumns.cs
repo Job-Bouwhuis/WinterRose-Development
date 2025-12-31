@@ -1,14 +1,18 @@
-﻿using Raylib_cs;
+﻿using EnvDTE;
+using Raylib_cs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using WinterRose.ForgeSignal;
+using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.Utility;
 
 namespace WinterRose.ForgeWarden.UserInterface;
-public class UIColumns : UIContent
+public class UIColumns : UIContent, IUIContainer
 {
     // configuration
     public const int DEFAULT_COLUMN_COUNT = 2;
@@ -30,6 +34,19 @@ public class UIColumns : UIContent
 
     // columns content storage
     public List<List<UIContent>> ColumnsContents { get; } = new();
+
+    public bool IsVisible => Owner.IsVisible;
+
+    public bool IsClosing => Owner.IsClosing;
+
+    public bool IsBeingDragged => Owner.IsBeingDragged;
+
+    public bool PauseDragMovement => Owner.PauseDragMovement;
+
+    public Rectangle CurrentPosition => Owner.CurrentPosition;
+
+    public float Height => Owner.Height;
+
     private readonly List<ColumnState> columnStates = new();
     private bool setupCalled;
 
@@ -62,7 +79,7 @@ public class UIColumns : UIContent
         {
             foreach (UIContent c in row)
             {
-                c.owner = owner;
+                c.Owner = this;
                 c.Setup();
             }
         }
@@ -93,10 +110,31 @@ public class UIColumns : UIContent
         EnsureColumns(columnIndex + 1);
         int idx = Math.Clamp(columnIndex, 0, ColumnCount - 1);
         ColumnsContents[idx].Add(content);
-        content.owner = owner;
+        content.Owner = this;
         if(setupCalled)
             content.Setup();
     }
+
+    /// <summary>
+    /// Add content to a specific column index (0-based) at a specific position in that column. 
+    /// If columnIndex or contentIndex are out of range, they will be clamped.
+    /// </summary>
+    public void AddToColumn(int columnIndex, int contentIndex, UIContent content)
+    {
+        if (content == null) return;
+        EnsureColumns(columnIndex + 1);
+
+        int colIdx = Math.Clamp(columnIndex, 0, ColumnCount - 1);
+        var column = ColumnsContents[colIdx];
+
+        int idx = Math.Clamp(contentIndex, 0, column.Count);
+        column.Insert(idx, content);
+
+        content.Owner = this;
+        if (setupCalled)
+            content.Setup();
+    }
+
 
     public void ClearColumn(int columnIndex)
     {
@@ -147,10 +185,14 @@ public class UIColumns : UIContent
 
     protected internal override void Update()
     {
-        foreach (var column in ColumnsContents)
+        for (int i = 0; i < ColumnsContents.Count; i++)
         {
-            foreach (var child in column)
+            List<UIContent>? column = ColumnsContents[i];
+            for (int i1 = 0; i1 < column.Count; i1++)
+            {
+                UIContent? child = column[i1];
                 child.Update();
+            }
         }
     }
 
@@ -373,6 +415,148 @@ public class UIColumns : UIContent
         ColumnsContents.Clear();
         columnStates.Clear();
         EnsureColumns(DEFAULT_COLUMN_COUNT);
+    }
+
+    public IUIContainer AddContent(UIContent content)
+    {
+        AddToColumn(0, content);
+        return this;
+    }
+    public IUIContainer AddContent(UIContent content, int index)
+    {
+        AddToColumn(0, index, content);
+        return this;
+    }
+    void IUIContainer.Close() => Close();
+
+    public void RemoveContent(UIContent element)
+    {
+        if (element == null) return;
+
+        for (int c = 0; c < ColumnsContents.Count; c++)
+        {
+            var column = ColumnsContents[c];
+            if (column.Remove(element))
+            {
+                element.OnOwnerClosing();
+                return; // removed, stop searching
+            }
+        }
+    }
+
+    public int GetContentIndex(UIContent content)
+    {
+        if (content == null) return -1;
+
+        for (int c = 0; c < ColumnsContents.Count; c++)
+        {
+            var column = ColumnsContents[c];
+            int idx = column.IndexOf(content);
+            if (idx >= 0)
+                return idx;
+        }
+        return -1;
+    }
+
+    public IUIContainer AddContent(UIContent reference, UIContent contentToAdd)
+    {
+        if (reference == null || contentToAdd == null) return this;
+
+        for (int c = 0; c < ColumnsContents.Count; c++)
+        {
+            var column = ColumnsContents[c];
+            int idx = column.IndexOf(reference);
+            if (idx >= 0)
+            {
+                AddToColumn(c, idx + 1, contentToAdd);
+                return this;
+            }
+        }
+
+        AddToColumn(0, contentToAdd);
+        return this;
+    }
+
+    public IUIContainer AddContent(UIContent reference, UIContent contentToAdd, int index)
+    {
+        if (reference == null || contentToAdd == null) return this;
+
+        for (int c = 0; c < ColumnsContents.Count; c++)
+        {
+            var column = ColumnsContents[c];
+            int idx = column.IndexOf(reference);
+            if (idx >= 0)
+            {
+                AddToColumn(c, index, contentToAdd);
+                return this;
+            }
+        }
+
+        // If reference not found, fallback to adding to first column
+        AddToColumn(0, index, contentToAdd);
+        return this;
+    }
+
+    public void AddAll(UIContent reference, List<UIContent> contents)
+    {
+        {
+            if (reference == null) return;
+
+            for (int c = 0; c < ColumnsContents.Count; c++)
+            {
+                var column = ColumnsContents[c];
+                int idx = column.IndexOf(reference);
+                if (idx >= 0)
+                {
+                    for (int i = contents.Count - 1; i >= 0; i--)
+                    {
+                        UIContent content = contents[i];
+                        AddToColumn(c, content);
+                    }
+                }
+            }
+
+            // If reference not found, fallback to adding to first column
+            AddAll(contents);
+            return;
+        }
+    }
+
+    public void AddAll(List<UIContent> contents)
+    {
+        for (int i = contents.Count - 1; i >= 0; i--)
+        {
+            UIContent content = contents[i];
+            AddToColumn(0, content);
+        }
+    }
+
+    public void AddAll(UIContent reference, List<UIContent> contents, int index)
+    {
+        {
+            if (reference == null) return;
+
+            for (int c = 0; c < ColumnsContents.Count; c++)
+            {
+                var column = ColumnsContents[c];
+                int idx = column.IndexOf(reference);
+                if (idx >= 0)
+                {
+                    for (int i = contents.Count - 1; i >= 0; i--)
+                    {
+                        UIContent content = contents[i];
+                        AddToColumn(c, index, content);
+                    }
+                }
+            }
+
+            for (int i = contents.Count - 1; i >= 0; i--)
+            {
+                UIContent content = contents[i];
+                AddToColumn(0, index, content);
+            }
+            return;
+        }
     }
 }
 

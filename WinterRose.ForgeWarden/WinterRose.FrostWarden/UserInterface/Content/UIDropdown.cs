@@ -7,6 +7,10 @@ namespace WinterRose.ForgeWarden.UserInterface;
 
 public class UIDropdown<T> : UIContent
 {
+    /// <summary>
+    /// Invoked when the dropdown selection changes. when <see cref="MultiSelect"/> = <see langword="false"/> the list always contains a single element, 
+    /// the selected element. when <see langword="true"/> the list contains all selected elements, even those that were already selected before
+    /// </summary>
     public MulticastVoidInvocation<UIDropdown<T>, List<T>> OnSelected { get; set; } = new();
 
     private readonly UITextInput filterInput;
@@ -43,8 +47,6 @@ public class UIDropdown<T> : UIContent
 
     // Adjusted selected items accessor
     public IReadOnlyList<T> SelectedItems => selectedIndices.Select(i => items[i]).ToList();
-
-
 
     private float scrollOffset = 0f;
     private bool isDraggingScrollbar = false;
@@ -110,7 +112,7 @@ public class UIDropdown<T> : UIContent
 
     protected internal override void Setup()
     {
-        filterInput.owner = owner;
+        filterInput.Owner = Owner;
         dropdownInput = new(new RaylibInputProvider(), Input.Priority + 1);
         base.Setup();
         filterInput.Setup();
@@ -321,7 +323,7 @@ public class UIDropdown<T> : UIContent
                     if (mouseOver)
                         ray.DrawRectangleRec(itemRect, Style.ScrollbarThumb);
                     else if (highlighted)
-                        ray.DrawRectangleRec(itemRect, new Color(100, 100, 100, 120));
+                        ray.DrawRectangleRec(itemRect, Style.ButtonHover);
 
                     // start text position; may be moved right if there's a checkbox
                     float itPosX = itemRect.X + ItemPadding;
@@ -338,7 +340,7 @@ public class UIDropdown<T> : UIContent
                         ray.DrawRectangleLinesEx(checkRect, 1f, Style.TextBoxText);
 
                         if (isSelected)
-                            ray.DrawRectangleRec(checkRect, Style.TextBoxText);
+                            ray.DrawRectangleRec(checkRect, Style.ButtonHover);
 
                         // move text start to the right of the checkbox
                         itPosX = boxX + boxSize + ItemSpacing;
@@ -417,9 +419,29 @@ public class UIDropdown<T> : UIContent
 
     protected internal override void OnClickedOutsideOfContent(MouseButton button)
     {
-        // clicking outside should close the dropdown
-        CloseDropdown();
+        if (!isOpen)
+            return;
+
+        // compute the dropdown list rectangle
+        float itemHeight = MathF.Max(Style.TextBoxMinHeight, Style.TextBoxFontSize + Style.TextBoxTextSpacing * 2f);
+        int visibleCount = Math.Min(MaxVisibleItems, Math.Max(0, filteredIndices.Count));
+        float listHeight = itemHeight * visibleCount;
+
+        Rectangle dropdownRect = new Rectangle(
+            lastBounds.X,
+            lastBounds.Y + lastBounds.Height,
+            lastBounds.Width,
+            listHeight
+        );
+
+        // only close if mouse is outside both the box and the dropdown list
+        if (!Raylib.CheckCollisionPointRec(Input.Provider.MousePosition, dropdownRect))
+        {
+            CloseDropdown();
+        }
     }
+
+
     protected internal override void OnOwnerClosing()
     {
         CloseDropdown();

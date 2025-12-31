@@ -14,6 +14,8 @@ public class UISprite : UIContent
     public float? MaxWidth { get; set; }   // optional maximum width
     public float? MaxHeight { get; set; }  // optional maximum height
 
+    public bool DisposeSpriteOnOwnerClose { get; set; } = true;
+
     public UISprite(string spriteSource) => Sprite = SpriteCache.Get(spriteSource);
 
     public UISprite(Sprite sprite) => Sprite = sprite;
@@ -58,6 +60,11 @@ public class UISprite : UIContent
     }
 
     public void ForceDraw(Rectangle bounds) => Draw(bounds);
+
+    protected internal override void OnOwnerClosing()
+    {
+        SpriteCache.DisposeOf(Sprite);
+    }
 
     protected override void Draw(Rectangle bounds)
     {

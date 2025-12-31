@@ -5,6 +5,7 @@ using WinterRose;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.Utility;
 using WinterRose.Recordium;
 using WinterRoseUtilityApp.SubSystems;
 
@@ -33,11 +34,6 @@ internal class NoteKeeperEntryPoint : SubSystem
             ContainerCreators.QuickNote().Show();
         if (GlobalHotkey.IsTriggered(AllNotesHotkey))
             ContainerCreators.AllNotes().Show();
-    }
-
-    public override void Destroy()
-    {
-        
     }
 }
 

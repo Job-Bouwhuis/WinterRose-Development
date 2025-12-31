@@ -4,6 +4,12 @@ namespace WinterRoseUtilityApp.MailReader.Models;
 
 public class MailMessage
 {
+    [JsonIgnore]
+    public EmailAccount OwnerAccount { get; set; }
+
+    [JsonIgnore]
+    public MailFolder MailFolder { get; set; }
+
     [JsonPropertyName("@odata.etag")]
     public string ODataETag { get; set; }
 

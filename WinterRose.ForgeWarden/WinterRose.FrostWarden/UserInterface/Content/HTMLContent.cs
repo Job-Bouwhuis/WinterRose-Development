@@ -19,7 +19,7 @@ public class HTMLContent : UIContent
 
     protected internal override void Setup()
     {
-        spinner.owner = owner;
+        spinner.Owner = Owner;
         spinner.Setup();
     }
 
@@ -30,14 +30,14 @@ public class HTMLContent : UIContent
             try
             {
                 List<UIContent> contentes = HtmlToUiTranslator.TranslateDocument(html);
-                int myContentIndex = owner.GetContentIndex(this);
+                int myContentIndex = Owner.GetContentIndex(this);
                 for (var index = contentes.Count - 1; index > 0; index--)
                 {
                     var content = contentes[index];
-                    owner.AddContent(content, myContentIndex);
+                    Owner.AddContent(this, content, myContentIndex);
                 }
 
-                owner.RemoveContent(this);
+                Owner.RemoveContent(this);
             }
             catch
             {

@@ -103,7 +103,7 @@ internal class Inspector : UIWindow
 
         seen.Add(c);
         UITreeNode node = new UITreeNode(fieldName);
-        node.owner = this;
+        node.Owner = this;
 
         if (c is IEnumerable e)
         {

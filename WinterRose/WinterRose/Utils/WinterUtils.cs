@@ -769,5 +769,23 @@ namespace WinterRose
             Repeat(i => nums.Add(i), count);
             return nums;
         }
+
+        /// <summary>
+        /// Returns a task that returns when <paramref name="value"/> returns a non-null value
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static async Task AwaitNotNull(Func<object?> value)
+        {
+            await Task.Run(async () =>
+            {
+                object? currentResult = value();
+                while(currentResult is null)
+                {
+                    await Task.Delay(100);
+                    currentResult = value();
+                }
+            });
+        }
     }
 }

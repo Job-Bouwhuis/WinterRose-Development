@@ -84,7 +84,7 @@ public class UIProgress : UIContent
 
     protected override void Draw(Rectangle bounds)
     {
-        owner.Style.TimeUntilAutoDismiss = 0;
+        Owner.Style.TimeUntilAutoDismiss = 0;
 
         Rectangle barBg = new(bounds.X, bounds.Y, bounds.Width, 20);
         maxWidth = barBg.Width * 0.3f;
@@ -208,7 +208,7 @@ public class UIProgress : UIContent
         float textX = barBg.X + (barBg.Width - textWidth) / 2;
         float textY = barBg.Y + (barBg.Height - fontSize) / 2;
 
-        ray.DrawText(progressText, (int)textX, (int)textY, fontSize, Style.White);
+        ray.DrawText(progressText, (int)textX, (int)textY, fontSize, Style.StyleBase.White);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

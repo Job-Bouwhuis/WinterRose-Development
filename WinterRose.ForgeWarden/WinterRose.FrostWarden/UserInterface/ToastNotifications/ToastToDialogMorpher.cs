@@ -164,14 +164,14 @@ internal static class ToastToDialogMorpher
             toastRect.Width + ctx.Toast.Style.ShadowSizeLeft + ctx.Toast.Style.ShadowSizeRight,
             toastRect.Height + ctx.Toast.Style.ShadowSizeTop + ctx.Toast.Style.ShadowSizeBottom);
         ray.DrawRectangleRec(shadow,
-            ctx.Toast.Style.Shadow.WithAlpha(ctx.Dialog.Style.ShadowRaw.A));
+            ctx.Toast.Style.Shadow.Value.WithAlpha(ctx.Dialog.Style.StyleBase.ShadowRaw.A));
 
         // Background
-        Color back = ctx.Toast.Style.Background.WithAlpha(ctx.Dialog.Style.BackgroundRaw.A);
+        Color back = ctx.Toast.Style.Background.Value.WithAlpha(ctx.Dialog.Style.StyleBase.BackgroundRaw.A);
         ray.DrawRectangleRec(toastRect, back);
 
         // Border
-        Color bord = ctx.Toast.Style.Border.WithAlpha(ctx.Dialog.Style.BorderRaw.A);
+        Color bord = ctx.Toast.Style.Border.Value.WithAlpha(ctx.Dialog.Style.StyleBase.BorderRaw.A);
         ray.DrawRectangleLinesEx(toastRect, 2, bord);
 
         // Content area with padding

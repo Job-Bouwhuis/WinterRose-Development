@@ -86,7 +86,12 @@ internal static class OutlookMailReader
             var json = await response.Content.ReadAsStringAsync();
             var messagesResult = System.Text.Json.JsonSerializer.Deserialize<MailMessagesResponse>(json, options);
 
-            messages.AddRange(messagesResult.Value);
+            foreach (var message in messagesResult.Value)
+            {
+                message.OwnerAccount = account;
+                message.MailFolder = folder;
+                messages.Add(message);
+            }
 
             while (!string.IsNullOrWhiteSpace(messagesResult.ODataNextLink))
             {

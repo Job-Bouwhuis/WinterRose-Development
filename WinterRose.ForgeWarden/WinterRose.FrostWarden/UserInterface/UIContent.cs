@@ -5,11 +5,11 @@ namespace WinterRose.ForgeWarden.UserInterface;
 
 public abstract class UIContent
 {
-    public UIContainer owner { get; internal set; }
+    public IUIContainer Owner { get; internal set; }
 
-    public InputContext Input => owner?.Input ?? null;
+    public InputContext Input => Owner?.Input ?? null;
 
-    public ContainerStyle Style => owner.Style;
+    public ContentStyle Style => field ??= new ContentStyle(Owner.Style.StyleBase);
 
     public bool IsHovered { get; internal set; }
 
@@ -43,7 +43,7 @@ public abstract class UIContent
     protected internal virtual void OnOwnerClosing() { }
     protected internal void Close()
     {
-        owner.Close();
+        Owner.Close();
     }
 
 

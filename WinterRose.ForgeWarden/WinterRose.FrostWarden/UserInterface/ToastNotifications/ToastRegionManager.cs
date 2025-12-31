@@ -269,7 +269,7 @@ public abstract class ToastRegionManager
             activeToasts.RemoveAt(iIndex);
             candidate.ToastManager = null;
             pendingToasts.PushStart(candidate);
-            candidate.Style.ResetState();
+            candidate.Style.StyleBase.ResetState();
             candidate.AnimationElapsed = 0;
             if(candidate.Style.TimeUntilAutoDismiss < 5)
                 candidate.Style.TimeUntilAutoDismiss = 5;

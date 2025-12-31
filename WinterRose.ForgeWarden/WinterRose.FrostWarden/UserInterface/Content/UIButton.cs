@@ -22,7 +22,7 @@ public class UIButton : UIContent
     protected internal const int PaddingY = 6;
     protected internal const int Spacing = 10;
 
-    private static readonly VoidInvocation<UIContainer, UIButton> alwaysTrueFunc = Invocation.Create<UIContainer, UIButton>(
+    private static readonly VoidInvocation<IUIContainer, UIButton> alwaysTrueFunc = Invocation.Create<IUIContainer, UIButton>(
         (container, button) =>
         {
             if (container is Toast)
@@ -31,20 +31,20 @@ public class UIButton : UIContent
 
     private Color backgroundColor;
 
-    public MulticastVoidInvocation<UIContainer, UIButton> OnClick { get; set; } = new();
+    public MulticastVoidInvocation<IUIContainer, UIButton> OnClick { get; set; } = new();
 
-    public UIButton(string text, VoidInvocation<UIContainer, UIButton>? onClick = null) : this(text)
+    public UIButton(string text, VoidInvocation<IUIContainer, UIButton>? onClick = null) : this(text)
     {
         OnClick.Subscribe(onClick ?? alwaysTrueFunc);
     }
 
-    public UIButton(RichText text, Action<UIContainer, UIButton> onClick = null) 
+    public UIButton(RichText text, Action<IUIContainer, UIButton> onClick = null) 
         : this(text, onClick is null ? null : Invocation.Create(onClick))
     {
 
     }
 
-    public UIButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null) : this(text)
+    public UIButton(RichText text, VoidInvocation<IUIContainer, UIButton>? onClick = null) : this(text)
     {
         OnClick.Subscribe(onClick ?? alwaysTrueFunc);
     }
@@ -56,7 +56,7 @@ public class UIButton : UIContent
     protected internal override void OnContentClicked(MouseButton button)
     {
         if(button is MouseButton.Left)
-            OnClick.Invoke(owner, this);
+            OnClick.Invoke(Owner, this);
     }
 
     protected internal override void Update()

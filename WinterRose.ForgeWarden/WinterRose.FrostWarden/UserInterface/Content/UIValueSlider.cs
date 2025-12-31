@@ -41,7 +41,7 @@ public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IM
     /// <summary>
     /// The event invoked when the value changes. the new value is passed as a parameter.
     /// </summary>
-    public MulticastVoidInvocation<UIContainer, UIValueSlider<T>, T> OnValueChanged { get; set; } = new();
+    public MulticastVoidInvocation<IUIContainer, UIValueSlider<T>, T> OnValueChanged { get; set; } = new();
     /// <summary>
     /// The event invoked when the value changes. the new value is passed as a parameter.
     /// </summary>
@@ -82,7 +82,7 @@ public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IM
 
         TypedValueChanged.Subscribe(Invocation.Create((T t) =>
         {
-            OnValueChanged?.Invoke(owner, this, t);
+            OnValueChanged?.Invoke(Owner, this, t);
             OnValueChangedBasic?.Invoke(t);
         }));
     }
@@ -139,7 +139,7 @@ public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IM
 
         if (changed && invokeCallbacks)
         {
-            OnValueChanged?.Invoke(owner, this, valueBacking);
+            OnValueChanged?.Invoke(Owner, this, valueBacking);
             OnValueChangedBasic?.Invoke(valueBacking);
         }
     }

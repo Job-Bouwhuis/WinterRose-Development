@@ -23,7 +23,7 @@ public class Vector3PropertyDrawer : InspectorPropertyDrawer<Vector3>
         z.Label = "z";
 
         var OnEditorValueUpdated = Invocation.Create(
-            (UIContainer container, UINumericUpDown<float> self,
+            (IUIContainer container, UINumericUpDown<float> self,
             float newVal) =>
             {
                 Vector3 old = (Vector3)TrackedValue.Value;

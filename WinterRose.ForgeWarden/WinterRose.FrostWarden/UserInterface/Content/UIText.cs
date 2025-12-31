@@ -119,7 +119,7 @@ public class UIText : UIContent
             Text,
             bounds.Position,
             bounds.Width,
-            Style.White,
+            Style.StyleBase.White,
             Input
         );
     }

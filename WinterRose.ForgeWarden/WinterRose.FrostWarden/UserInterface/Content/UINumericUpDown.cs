@@ -31,7 +31,7 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
     public int DecimalPlaces { get; set; } = 3;
 
     /// <summary> Events raised when the value changes. </summary>
-    public MulticastVoidInvocation<UIContainer, UINumericUpDown<T>, T> OnValueChanged { get; set; } = new();
+    public MulticastVoidInvocation<IUIContainer, UINumericUpDown<T>, T> OnValueChanged { get; set; } = new();
     public MulticastVoidInvocation<T> OnValueChangedBasic { get; set; } = new();
 
     // Inline text editor for typing values
@@ -65,8 +65,7 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
         SetValue(initial, false);
         TypedValueChanged.Subscribe(Invocation.Create((T t) =>
         {
-
-            OnValueChanged?.Invoke(owner, this, t);
+            OnValueChanged?.Invoke(Owner, this, t);
             OnValueChangedBasic?.Invoke(t);
         }));
     }
@@ -131,7 +130,7 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
     protected internal override void Setup()
     {
         // Prepare the value input
-        valueInput.owner = owner;
+        valueInput.Owner = Owner;
         valueInput.Text = ToStringFormatted(valueBacking);
 
         // subscribe to submit so typed values commit

@@ -35,6 +35,7 @@ namespace WinterRose.ForgeWarden
                     throw new InvalidOperationException("File doesn't exist: " + source);
 
                 newSprite = new Sprite(ray.LoadTexture(source), false);
+                newSprite.Source = source;
 
                 if (temporary)
                     temporaryFiles.Add(source);
@@ -84,31 +85,45 @@ namespace WinterRose.ForgeWarden
             return sprite;
         }
 
+        /// <summary>
+        /// Clears all currently loaded sprites from memory, and if they were created as temporary, their file will be deleted
+        /// </summary>
         public static void DisposeAll()
         {
             foreach (var sprite in cache.Values)
-            {
-                if (!sprite.OwnsTexture && sprite is not SpriteGif)
-                    ray.UnloadTexture(sprite.Texture);
-                sprite.Dispose();
-            }
+                DisposeOf(sprite);
+
             cache.Clear();
 
             foreach (var tex in rawTextureCache.Values)
                 ray.UnloadTexture(tex);
-            rawTextureCache.Clear();
 
-            
-            foreach (var file in temporaryFiles)
+            rawTextureCache.Clear();
+            temporaryFiles.Clear();
+
+        }
+
+        public static void DisposeOf(Sprite? sprite)
+        {
+            if (sprite == null)
+                return;
+
+            if (!sprite.OwnsTexture && sprite is not SpriteGif)
+                ray.UnloadTexture(sprite.Texture);
+
+            if (temporaryFiles.FirstOrDefault(tf => tf == sprite.Source) is string tf)
             {
                 try
                 {
-                    if (File.Exists(file))
-                        File.Delete(file);
+                    if (File.Exists(tf))
+                        File.Delete(tf);
                 }
                 catch { }
+                temporaryFiles.Remove(tf);
             }
-            temporaryFiles.Clear();
+
+            sprite.Dispose();
+            GC.Collect();
         }
 
         public static void RegisterTexture2D(string key, Texture2D texture) => rawTextureCache.Add(key, texture);

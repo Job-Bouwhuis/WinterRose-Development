@@ -64,7 +64,7 @@ public class UIRadioButtons : UIContent
     private List<List<Rectangle>> optionColumns = new();
 
     // Selection callbacks
-    public MulticastVoidInvocation<UIContainer, UIRadioButtons, List<int>> OnSelectionChanged { get; set; } = new();
+    public MulticastVoidInvocation<IUIContainer, UIRadioButtons, List<int>> OnSelectionChanged { get; set; } = new();
     public MulticastVoidInvocation<List<int>> OnSelectionChangedBasic { get; set; } = new();
 
     // Selected index storage
@@ -155,14 +155,14 @@ public class UIRadioButtons : UIContent
         if (maxSelected == 1)
         {
             // legacy single-index callbacks
-            OnSelectionChanged?.Invoke(owner, this, new List<int>(selectedIndex));
+            OnSelectionChanged?.Invoke(Owner, this, new List<int>(selectedIndex));
             OnSelectionChangedBasic?.Invoke(new List<int>(selectedIndex));
         }
         else
         {
             // multi callbacks with list of indices
             var sel = GetSelectedIndices();
-            OnSelectionChanged?.Invoke(owner, this, sel);
+            OnSelectionChanged?.Invoke(Owner, this, sel);
             OnSelectionChangedBasic?.Invoke(sel);
         }
     }
@@ -506,7 +506,8 @@ public class UIRadioButtons : UIContent
                 if (fillRadius > 0.1f)
                 {
                     byte alpha = (byte)(255 * Math.Clamp(opt.AnimationProgress, 0f, 1f));
-                    var fillColor = new Color(Style.ButtonBorder.R, Style.ButtonBorder.G, Style.ButtonBorder.B, alpha);
+                    Color bb = Style.ButtonBorder;
+                    var fillColor = new Color(bb.R, bb.G, bb.B, alpha);
                     Raylib_cs.Raylib.DrawCircle((int)(dotX + outerRadius), (int)dotY, fillRadius, fillColor);
                 }
 

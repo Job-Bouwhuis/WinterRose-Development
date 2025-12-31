@@ -134,7 +134,7 @@ public class UIGrid : UIContent
 
         GridContents[r][c] = content;
 
-        content.owner = owner;
+        content.Owner = Owner;
         content.Setup();
     }
 

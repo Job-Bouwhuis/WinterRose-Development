@@ -8,7 +8,7 @@ using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden.Worlds;
 
 namespace WinterRose.ForgeWarden.UserInterface;
-public class UITreeNode : UIContent
+public class UITreeNode : UIContent, IUIContainer
 {
     private static readonly Dictionary<UITreeNode, (UITreeNode node, double time)> GlobalLastClickByRoot = new Dictionary<UITreeNode, (UITreeNode, double)>();
     private readonly Dictionary<UIContent, Rectangle> ChildLastRowRects = new Dictionary<UIContent, Rectangle>();
@@ -23,6 +23,18 @@ public class UITreeNode : UIContent
 
     public MulticastVoidInvocation<UITreeNode> ClickInvocation { get; set; } = new();
     public MulticastVoidInvocation<UITreeNode> DoubleClickInvocation { get; set; } = new();
+
+    public bool IsVisible => Owner.IsVisible;
+
+    public bool IsClosing => Owner.IsClosing;
+
+    public bool IsBeingDragged => Owner.IsBeingDragged;
+
+    public bool PauseDragMovement => Owner.PauseDragMovement;
+
+    public Rectangle CurrentPosition => Owner.CurrentPosition;
+
+    public float Height => Owner.Height;
 
     // Internal click state (no leading underscores)
     private double lastClickTime = -1.0;
@@ -59,11 +71,8 @@ public class UITreeNode : UIContent
             treeChild.Parent = this;
 
         // adopt owner and run setup so child is ready immediately
-        if (owner != null)
-        {
-            child.owner = owner;
-            child.Setup();
-        }
+        child.Owner = this;
+        child.Setup();
     }
 
     public bool RemoveChild(UIContent child)
@@ -79,6 +88,91 @@ public class UITreeNode : UIContent
             ChildLastRowRects.Remove(child);
         }
         return removed;
+    }
+
+    public IUIContainer AddContent(UIContent content)
+    {
+        AddChild(content);
+        return this;
+    }
+
+    public IUIContainer AddContent(UIContent content, int index)
+    {
+        if (content == null) return this;
+
+        if (index < 0) index = 0;
+        if (index > Children.Count) index = Children.Count;
+
+        // detach TreeNode from previous parent
+        if (content is UITreeNode tn && tn.Parent != null)
+            tn.Parent.RemoveChild(tn);
+
+        Children.Insert(index, content);
+
+        if (content is UITreeNode treeChild)
+            treeChild.Parent = this;
+
+        if (Owner != null)
+        {
+            content.Owner = Owner;
+            content.Setup();
+        }
+
+        return this;
+    }
+
+    public IUIContainer AddContent(UIContent reference, UIContent contentToAdd)
+    {
+        if (reference == null)
+            return AddContent(contentToAdd);
+
+        int index = GetContentIndex(reference);
+        return index < 0
+            ? AddContent(contentToAdd)
+            : AddContent(contentToAdd, index + 1);
+    }
+
+    public IUIContainer AddContent(UIContent reference, UIContent contentToAdd, int index)
+    {
+        if (reference == null)
+            return AddContent(contentToAdd, index);
+
+        int refIndex = GetContentIndex(reference);
+        if (refIndex < 0)
+            return AddContent(contentToAdd, index);
+
+        return AddContent(contentToAdd, refIndex + index);
+    }
+
+    public void RemoveContent(UIContent element)
+    {
+        RemoveChild(element);
+    }
+
+    public void AddAll(List<UIContent> contents)
+    {
+        if (contents == null || contents.Count == 0) return;
+
+        foreach (var content in contents)
+            AddChild(content);
+    }
+
+    public void AddAll(UIContent reference, List<UIContent> contents)
+    {
+        if (contents == null || contents.Count == 0)
+            return;
+
+        int index = reference != null ? GetContentIndex(reference) + 1 : Children.Count;
+        if (index < 0) index = Children.Count;
+
+        for (int i = 0; i < contents.Count; i++)
+            AddContent(contents[i], index + i);
+    }
+
+    public int GetContentIndex(UIContent content)
+    {
+        if (content == null) return -1;
+        return Children.IndexOf(content);
     }
 
     public void ToggleCollapsed() => IsCollapsed = !IsCollapsed;
@@ -123,13 +217,9 @@ public class UITreeNode : UIContent
 
     protected internal override float GetHeight(float maxWidth)
     {
-        if (owner is null)
-        {
+        if (Owner is null)
             if (Parent != null)
-            {
-                owner = Parent.owner;
-            }
-        }
+                Owner = Parent.Owner;
 
         float height = Style.TreeNodeHeight;
 
@@ -137,8 +227,9 @@ public class UITreeNode : UIContent
         {
             // children are indented, so pass a reduced width to them
             float childMaxWidth = Math.Max(0f, maxWidth - Style.TreeNodeIndentWidth);
-            foreach (var child in Children)
+            for (int i = 0; i < Children.Count; i++)
             {
+                UIContent? child = Children[i];
                 height += child.GetHeight(childMaxWidth);
             }
         }
@@ -177,8 +268,8 @@ public class UITreeNode : UIContent
         float mx = Input.MousePosition.X;
         float my = Input.MousePosition.Y;
         bool mouseOverRow = mx >= rowRect.X && mx <= rowRect.X + rowRect.Width && my >= rowRect.Y && my <= rowRect.Y + rowRect.Height;
-        
-        // Background and hover highlight
+
+        // Background and hover highlight — use button palette so tree nodes follow button styling
         Raylib_cs.Raylib.DrawRectangleRec(rowRect, Style.TreeNodeBackground);
         if (mouseOverRow)
         {
@@ -191,7 +282,7 @@ public class UITreeNode : UIContent
         {
             // Simple arrow symbol (right = collapsed, down = expanded)
             string arrowSymbol = IsCollapsed ? ">" : "v";
-            Raylib_cs.Raylib.DrawText(arrowSymbol, (int)(arrowRect.X + 4), (int)(arrowRect.Y + 2), 14, Style.TreeNodeArrow);
+            Raylib_cs.Raylib.DrawText(arrowSymbol, (int)(arrowRect.X + 4), (int)(arrowRect.Y + 2), 14, Style.TreeNodeText);
 
             // Detect arrow click (single click toggles collapse)
             if (mx >= arrowRect.X && mx <= arrowRect.X + arrowRect.Width && my >= arrowRect.Y && my <= arrowRect.Y + arrowRect.Height)
@@ -206,9 +297,9 @@ public class UITreeNode : UIContent
         // Node text
         var textX = (int)(bounds.X + Style.TreeNodeIndentWidth + 4);
         var textY = (int)(bounds.Y + (Style.TreeNodeHeight - 14) / 2f);
-        Raylib_cs.Raylib.DrawTextEx(ForgeWardenEngine.DefaultFont, Text ?? string.Empty, new Vector2(textX, textY), 14, 2, Style.TreeNodeText);
+        Raylib_cs.Raylib.DrawTextEx(ForgeWardenEngine.DefaultFont, Text ?? string.Empty, new Vector2(textX, textY), 15, 2, Style.TreeNodeText);
 
-        // Outline for the row (subtle)
+        // Outline for the row (subtle) — use button border color
         Raylib_cs.Raylib.DrawRectangleLinesEx(rowRect, 1, Style.TreeNodeBorder);
 
         // Draw children below, indented
@@ -216,9 +307,9 @@ public class UITreeNode : UIContent
         if (!IsCollapsed)
         {
             float childWidth = Math.Max(0f, bounds.Width - Style.TreeNodeIndentWidth);
-            foreach (var child in Children)
+            for (int i = 0; i < Children.Count; i++)
             {
-                
+                UIContent? child = Children[i];
                 float childHeight = child.GetHeight(childWidth);
                 var childBounds = new Rectangle(bounds.X + Style.TreeNodeIndentWidth, (int)y, (int)childWidth, (int)childHeight);
 
@@ -244,11 +335,11 @@ public class UITreeNode : UIContent
 
     protected internal override void Update()
     {
-        if (owner is null)
+        if (Owner is null)
         {
             if (Parent != null)
             {
-                owner = Parent.owner;
+                Owner = Parent.Owner;
             }
         }
 
@@ -386,4 +477,6 @@ public class UITreeNode : UIContent
         Children.Clear();
         ChildLastRowRects.Clear();
     }
+
+    void IUIContainer.Close() => Close();
 }

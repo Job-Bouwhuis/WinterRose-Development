@@ -101,7 +101,7 @@ internal class DrinkReminderSubsysEntry : SubSystem
         };
         window.AddContent(currentTimerProgressBar);
 
-        window.AddButton("Simulate reminder", Invocation.Create((UIContainer c, UIButton b) => Remind()));
+        window.AddButton("Simulate reminder", Invocation.Create((IUIContainer c, UIButton b) => Remind()));
         return window;
     }
 

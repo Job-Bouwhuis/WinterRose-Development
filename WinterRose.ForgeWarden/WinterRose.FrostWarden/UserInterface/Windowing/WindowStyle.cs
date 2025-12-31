@@ -8,7 +8,7 @@ using WinterRose.ForgeWarden.Tweens;
 
 namespace WinterRose.ForgeWarden.UserInterface.Windowing;
 
-public class WindowStyle : ContainerStyle
+public class WindowStyle : ContentStyle
 {
     private Color titleBarBackground;
     private Color titleBarTextColor;
@@ -25,58 +25,56 @@ public class WindowStyle : ContainerStyle
     private Color collapseButtonHover;
     private Color collapseButtonClick;
 
-    public WindowStyle()
+    public WindowStyle(StyleBase baseStyle) : base(baseStyle)
     {
-        RaiseCurve = Curves.Linear;
         RaiseDuration = 0.1f;
-        // --- Base container defaults (slightly stronger than dialog) ---
-        Background = new Color(32, 32, 36, 220);         // dark background, a little less transparent
-        Border = new Color(255, 255, 255, 255);          // subtle border, just a touch brighter
-        Shadow = new Color(0, 0, 0, 120);                // slightly deeper shadow for window presence
-        ContentTint = new Color(240, 240, 245);          // soft near-white for text and content
+
+        // --- Base container ---
+        Background = new Color(28, 24, 32, 230);          // deep charcoal with purple undertone
+        Border = new Color(140, 90, 160, 255);            // muted purple border
+        Shadow = new Color(0, 0, 0, 140);
+        ContentTint = new Color(245, 235, 245);           // warm near-white
 
         // --- Progress bar ---
-        ProgressBarBackground = new Color(65, 65, 70);   // dark muted background
-        ProgressBarFill = new Color(0, 150, 240);        // strong blue accent
-        BarText = new Color(245, 245, 245);              // softer white for text
+        ProgressBarBackground = new Color(55, 48, 62);
+        ProgressBarFill = new Color(220, 90, 180);        // strong pink accent
+        BarText = new Color(250, 245, 250);
 
         // --- Timer bar ---
-        TimerBarBackground = new Color(55, 55, 60);      // darker gray, distinct from progress bar bg
-        TimerBarFill = new Color(200, 200, 80);          // warm amber/yellow for timing feedback
-                                                         // (stands apart from the blue fill, makes time bars immediately readable)
+        TimerBarBackground = new Color(50, 44, 58);
+        TimerBarFill = new Color(200, 120, 210);          // pink-purple blend
 
         // --- Scrollbar ---
-        ScrollbarTrack = new Color(50, 50, 55);          // muted track, blends with background
-        ScrollbarThumb = new Color(120, 120, 125);       // thumb more visible but neutral gray
-                                                         // (keeps attention on content but still clear to grab)
+        ScrollbarTrack = new Color(45, 40, 52);
+        ScrollbarThumb = new Color(120, 90, 135);
 
         // --- Buttons ---
-        ButtonTextColor = new Color(245, 245, 245);
-        ButtonBackground = new Color(75, 75, 80);        // muted but distinct from background
-        ButtonBorder = new Color(130, 130, 135);         // subtle but visible
-        ButtonHover = new Color(100, 100, 110);          // slightly lighter hover
-        ButtonClick = new Color(0, 150, 240);            // matches progress bar accent
+        ButtonTextColor = new Color(250, 245, 250);
+        ButtonBackground = new Color(70, 55, 80);         // dark purple-gray
+        ButtonBorder = new Color(150, 110, 170);
+        ButtonHover = new Color(95, 70, 115);
+        ButtonClick = new Color(220, 90, 180);             // same pink accent as progress
 
         // --- Title bar ---
-        titleBarBackground = new Color(36, 36, 42, 230); // slightly darker to frame content
-        titleBarTextColor = new Color(250, 250, 250);    // crisp white for contrast
+        titleBarBackground = new Color(34, 28, 42, 240);  // darker purple frame
+        titleBarTextColor = new Color(255, 245, 255);
 
         // --- Close button ---
-        closeButtonBackground = new Color(180, 60, 60);  // softer red (not too aggressive)
-        closeButtonHover = new Color(200, 80, 80);       // lighter on hover
-        closeButtonClick = new Color(220, 40, 40);       // sharper on click
+        closeButtonBackground = new Color(200, 70, 110);  // pink-red (less angry than pure red)
+        closeButtonHover = new Color(220, 95, 135);
+        closeButtonClick = new Color(240, 55, 95);
 
         // --- Maximize button ---
-        maximizeButtonBackground = new Color(70, 130, 210);   // blue, in line with accent
-        maximizeButtonHover = new Color(90, 150, 230);
-        maximizeButtonClick = new Color(50, 110, 190);
+        maximizeButtonBackground = new Color(170, 90, 210); // violet-magenta
+        maximizeButtonHover = new Color(190, 120, 230);
+        maximizeButtonClick = new Color(150, 70, 190);
 
         // --- Collapse button ---
-        collapseButtonBackground = new Color(70, 200, 130);   // green for minimize/collapse
-        collapseButtonHover = new Color(90, 220, 150);
-        collapseButtonClick = new Color(50, 180, 110);
+        collapseButtonBackground = new Color(180, 130, 210); // softer lavender
+        collapseButtonHover = new Color(200, 155, 230);
+        collapseButtonClick = new Color(160, 110, 190);
 
-        // --- Behavior defaults ---
+        // --- Behavior ---
         AllowUserResizing = true;
         TitleBarHeight = 30;
         RaiseOnHover = false;
@@ -175,6 +173,7 @@ public class WindowStyle : ContainerStyle
     public bool ShowCloseButton { get; set; } = true;
     public bool ShowMaximizeButton { get;set; } = true;
     public bool ShowCollapseButton { get; set; } = true;
+    public Color White => StyleBase.White;
 }
 
 

@@ -119,7 +119,7 @@ public class UIRows : UIContent
         {
             foreach(UIContent c in row)
             {
-                c.owner = owner;
+                c.Owner = Owner;
                 c.Setup();
             }
         }
@@ -202,7 +202,7 @@ public class UIRows : UIContent
         EnsureRows(rowIndex + 1);
         int idx = Math.Clamp(rowIndex, 0, RowCount - 1);
         RowsContents[idx].Add(content);
-        content.owner = owner;
+        content.Owner = Owner;
         content.Setup();
     }
 

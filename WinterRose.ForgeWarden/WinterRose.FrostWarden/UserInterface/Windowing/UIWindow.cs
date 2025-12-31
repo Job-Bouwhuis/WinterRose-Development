@@ -217,7 +217,7 @@ public class UIWindow : UIContainer
 
     public UIWindow(RichText title, float width, float height, float x, float y)
     {
-        Style = new WindowStyle();
+        Style = new WindowStyle(new StyleBase());
         Size = new Vector2(width, height);
         Position = new(x, y);
         Title = title;
@@ -898,11 +898,11 @@ public class UIWindow : UIContainer
                     Style.RaiseOnHover = true;
                     if (IsHovered())
                     {
-                        Style.currentRaiseAmount = 0f;
+                        Style.StyleBase.currentRaiseAmount = 0f;
                     }
                     else
                     {
-                        Style.currentRaiseAmount = 1;
+                        Style.StyleBase.currentRaiseAmount = 1;
                         isHoverTarget = false;
                     }
                 }
@@ -933,7 +933,7 @@ public class UIWindow : UIContainer
             {
 
                 // normal shadow behavior (use the shadow offsets produced by HandleRaiseAnimation)
-                float amount = Style.currentRaiseAmount * Style.HoverRaiseAmount;
+                float amount = Style.StyleBase.currentRaiseAmount * Style.HoverRaiseAmount;
                 var shadowRect = new Rectangle(
                     backgroundBounds.X - (Style.ShadowSizeLeft - shadowOffsetX) * amount,
                     backgroundBounds.Y - (Style.ShadowSizeTop - shadowOffsetY) * amount,

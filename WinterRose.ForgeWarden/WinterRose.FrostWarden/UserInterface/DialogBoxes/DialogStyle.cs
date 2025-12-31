@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
 {
 
-    public class DialogStyle : ContainerStyle
+    public class DialogStyle : ContentStyle
     {
         public Color TimeLabelColor { get; set; }
 
@@ -20,21 +20,24 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
         public float ContentFadeDuration { get; set; } = 0.25f;
         public float ContentMoveDuration { get; set; } = 0.2f;
 
-        public DialogStyle()
+        public DialogStyle(StyleBase styleBase) : base(styleBase)
         {
-            Background = new Color(28, 28, 32, 200);   // dark, with slight blue hint
-            Border = new Color(90, 90, 95, 255);   // subtle, not pure white border
-            Shadow = new Color(0, 0, 0, 100);      // slightly stronger shadow
-            ContentTint = new Color(235, 235, 240);     // softer white for text
-            ProgressBarBackground = new Color(60, 60, 65);        // darker background for contrast
-            ProgressBarFill = new Color(0, 140, 230);       // calmer blue accent
-            BarText = new Color(240, 240, 240);     // soft white, less harsh
-            ButtonTextColor = new Color(240, 240, 240);
-            ButtonBackground = new Color(70, 70, 75);        // softer, blends with background
-            ButtonBorder = new Color(120, 120, 130);     // subtle border, not pure white
-            ButtonHover = new Color(95, 95, 105);       // light hover contrast
-            ButtonClick = new Color(0, 140, 230);       // matches barFill accent
-            TimeLabelColor = new Color(130, 130, 135);     // muted gray for less attention
+            Background = new Color(30, 26, 36, 200);        // dark charcoal with purple undertone
+            Border = new Color(120, 100, 140, 255);         // muted purple-gray border
+            Shadow = new Color(0, 0, 0, 110);               // slightly stronger shadow
+            ContentTint = new Color(245, 235, 245, 255);    // warm soft white text
+
+            ProgressBarBackground = new Color(50, 45, 60);  // dark muted purple background
+            ProgressBarFill = new Color(215, 95, 185);      // pink accent fill
+            BarText = new Color(250, 245, 250);             // gentle white
+
+            ButtonTextColor = new Color(250, 245, 250);
+            ButtonBackground = new Color(75, 65, 90);       // soft purple-gray
+            ButtonBorder = new Color(160, 130, 190);        // pink-purple edge
+            ButtonHover = new Color(105, 90, 130);          // lifted hover state
+            ButtonClick = new Color(215, 95, 185);          // accent pink click
+
+            TimeLabelColor = new Color(150, 130, 170);      // muted lavender, low attention
         }
     }
 }

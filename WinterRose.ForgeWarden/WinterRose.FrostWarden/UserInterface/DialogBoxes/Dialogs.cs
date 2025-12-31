@@ -213,10 +213,9 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
                 if (alphaT > 1f) alphaT = 1f;
             }
 
-            width = style.MoveAndScaleCurve?.Evaluate(t) ?? t;
-            height = style.MoveAndScaleCurve?.Evaluate(t) ?? t;
-            alpha = style.AlphaCurve?.Evaluate(alphaT) ?? alphaT;
-
+            width = style.MoveAndScaleCurve.Value.Evaluate(t);
+            height = style.MoveAndScaleCurve.Value.Evaluate(t);
+            alpha = style.AlphaCurve.Value.Evaluate(alphaT);
 
             if (dialog.IsClosing)
             {
@@ -283,7 +282,7 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
                 // Content fade & Y-move driven by style durations
                 float contentFadeT = Math.Clamp((dialog.Style.AlphaSpeed += Time.deltaTime) / dialog.Style.ContentFadeDuration, 0f, 1f);
                 float contentAlpha = contentFadeT * alpha;
-                dialog.Style.ContentAlpha = contentAlpha;
+                dialog.Style.StyleBase.ContentAlpha = contentAlpha;
 
                 dialog.CurrentPosition = scaled;
 

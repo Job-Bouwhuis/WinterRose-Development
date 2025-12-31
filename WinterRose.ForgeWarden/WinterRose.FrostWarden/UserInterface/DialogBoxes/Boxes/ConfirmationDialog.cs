@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using WinterRose.ForgeSignal;
 
 using btnPair = (string, System.Action);
-using btnPair1 = (string, System.Action<WinterRose.ForgeWarden.UserInterface.UIContainer, WinterRose.ForgeWarden.UserInterface.UIButton>);
+using btnPair1 = (string, System.Action<WinterRose.ForgeWarden.UserInterface.IUIContainer, WinterRose.ForgeWarden.UserInterface.UIButton>);
 
 namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 
@@ -28,7 +28,7 @@ public class ConfirmationDialog : Dialog
     }
     public ConfirmationDialog(string message,
         string title = "Alert",
-        params (string btn, Action<UIContainer, UIButton> OnClick)[] buttons)
+        params (string btn, Action<IUIContainer, UIButton> OnClick)[] buttons)
         : base(title, message, DialogPlacement.CenterSmall, DialogPriority.Normal)
     {
         ConstructButtons(buttons);
@@ -66,7 +66,7 @@ public class ConfirmationDialog : Dialog
     public ConfirmationDialog(string message, Preset preset, Action<string>? OnConfirm = null, string title = "Alert")
         : base("Alert", message, DialogPlacement.CenterSmall, DialogPriority.Normal)
     {
-        Action<UIContainer, UIButton> action = (c, b) =>
+        Action<IUIContainer, UIButton> action = (c, b) =>
         {
             OnConfirm?.Invoke(b.Text.ToString());
             c.Close();
@@ -89,7 +89,7 @@ public class ConfirmationDialog : Dialog
     public ConfirmationDialog(string message, Preset preset, Func<string, bool>? OnConfirm = null, string title = "Alert")
     : base("Alert", message, DialogPlacement.CenterSmall, DialogPriority.Normal)
     {
-        Action<UIContainer, UIButton> action = (c, b) =>
+        Action<IUIContainer, UIButton> action = (c, b) =>
         {
             var res = OnConfirm?.Invoke(b.Text.ToString()) ?? true;
             if (res)

@@ -37,7 +37,7 @@ public class UICheckBox : UIContent
             targetProgress = checkedState ? 1f : 0f;
 
             // invoke multicast handlers
-            OnCheckedChanged?.Invoke(owner, this, checkedState);
+            OnCheckedChanged?.Invoke(Owner, this, checkedState);
             OnCheckedChangedBasic?.Invoke(checkedState);
         }
     }
@@ -54,7 +54,7 @@ public class UICheckBox : UIContent
     }
 
     // Invocation hooks
-    public MulticastVoidInvocation<UIContainer, UICheckBox, bool> OnCheckedChanged { get; set; } = new();
+    public MulticastVoidInvocation<IUIContainer, UICheckBox, bool> OnCheckedChanged { get; set; } = new();
     public MulticastVoidInvocation<bool> OnCheckedChangedBasic { get; set; } = new();
 
     // Internal animation progress 0..1 (unchecked->checked)
@@ -66,7 +66,7 @@ public class UICheckBox : UIContent
 
     // Constructors
     public UICheckBox(RichText text, VoidInvocation<bool>? onChanged, bool initial = false)
-        : this(text, (VoidInvocation<UIContainer, UICheckBox, bool>?)null, initial)
+        : this(text, (VoidInvocation<IUIContainer, UICheckBox, bool>?)null, initial)
     {
         if (onChanged != null)
             OnCheckedChangedBasic.Subscribe(onChanged);
@@ -76,7 +76,7 @@ public class UICheckBox : UIContent
     {
     }
 
-    public UICheckBox(RichText text, VoidInvocation<UIContainer, UICheckBox, bool>? onChanged = null, bool initial = false)
+    public UICheckBox(RichText text, VoidInvocation<IUIContainer, UICheckBox, bool>? onChanged = null, bool initial = false)
     {
         Text = text;
         checkedState = initial;
@@ -183,7 +183,7 @@ public class UICheckBox : UIContent
         );
 
         // fill color for the inner rect (respect content alpha)
-        var fillColor = Style.ButtonBorder;
+        Color fillColor = Style.ButtonBorder;
         byte fillAlpha = (byte)(fillColor.A * Math.Clamp(animationProgress, 0f, 1f));
         var innerFill = new Color(fillColor.R, fillColor.G, fillColor.B, fillAlpha);
         ray.DrawRectangleRec(innerRect, innerFill);

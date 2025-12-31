@@ -58,7 +58,7 @@ public class Toast : UIContainer
     {
         Type = type;
         StackSide = stackSide;
-        Style = new ToastStyle(type);
+        Style = new ToastStyle(type, new StyleBase());
         Region = region;
     }
 
@@ -111,7 +111,7 @@ public class Toast : UIContainer
         return (Toast)base.AddContent(content);
     }
 
-    public new Toast AddButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null)
+    public new Toast AddButton(RichText text, VoidInvocation<IUIContainer, UIButton>? onClick = null)
     {
         AddContent(new UIButton(text, onClick));
         return this;
@@ -125,7 +125,7 @@ public class Toast : UIContainer
     /// <param name="text"></param>
     /// <param name="onClick">Should return true when the toast should close, false if not</param>
     /// <returns></returns>
-    public new Toast AddButton(string text, VoidInvocation<UIContainer, UIButton> onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
+    public new Toast AddButton(string text, VoidInvocation<IUIContainer, UIButton> onClick) => AddButton(RichText.Parse(text, Color.White), onClick);
 
     /// <summary>
     /// Adds a progress bar to the toast

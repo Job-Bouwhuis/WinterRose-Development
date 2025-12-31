@@ -110,7 +110,7 @@ internal class ContainerCreators
             var rem = timer.Remaining.TotalSeconds;
             var tot = timer.Duration.TotalSeconds;
             if (rem <= 10)
-                self.owner.Style.PauseAutoDismissTimer = true;
+                self.Owner.Style.PauseAutoDismissTimer = true;
 
             if (timer.Remaining.Hours > 0)
                 self.Text = $"{timer.Remaining:hh\\:mm\\:ss\\.f}";

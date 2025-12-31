@@ -14,7 +14,7 @@ namespace WinterRose.ForgeWarden.UserInterface;
 [Obsolete(DiagnosticId = "WR-Use-UIRow-Instead")]
 public class UIButtonRowContent : UIContent
 {
-    private static readonly VoidInvocation<UIContainer, UIButton> alwaysTrueFunc = Invocation.Create<UIContainer, UIButton>(
+    private static readonly VoidInvocation<IUIContainer, UIButton> alwaysTrueFunc = Invocation.Create<IUIContainer, UIButton>(
         (container, button) =>
         {
             if (container is Toast)
@@ -35,21 +35,21 @@ public class UIButtonRowContent : UIContent
 
     public UIButtonRowContent(params List<UIButton> buttons) => Buttons = buttons;
 
-    public UIButton AddButton(string text, VoidInvocation<UIContainer, UIButton>? onClick = null)
+    public UIButton AddButton(string text, VoidInvocation<IUIContainer, UIButton>? onClick = null)
     {
         var n = new UIButton(text, onClick ?? alwaysTrueFunc)
         {
-            owner = owner
+            Owner = Owner
         };
         Buttons.Add(n);
         return n;
     }
 
-    public UIButton AddButton(RichText text, VoidInvocation<UIContainer, UIButton>? onClick = null)
+    public UIButton AddButton(RichText text, VoidInvocation<IUIContainer, UIButton>? onClick = null)
     {
         var n = new UIButton(text, onClick ?? alwaysTrueFunc)
         {
-            owner = owner
+            Owner = Owner
         };
         Buttons.Add(n);
         return n;
