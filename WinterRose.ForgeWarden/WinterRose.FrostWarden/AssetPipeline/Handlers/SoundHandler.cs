@@ -13,7 +13,10 @@ internal class SoundHandler : IAssetHandler<Sound>
     public static Sound LoadAsset(AssetHeader header)
     {
         using var s = header.Source;
-        return Raylib.LoadSound(s.Name);
+        Sound sou = Raylib.LoadSound(s.Name);
+        if (sou.FrameCount == 0)
+            throw new InvalidOperationException("Audio could not be loaded: " + header.Path);
+        return sou;
     }
 
     public static bool InitializeNewAsset(AssetHeader header) => true;

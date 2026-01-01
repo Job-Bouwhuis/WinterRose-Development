@@ -13,9 +13,9 @@ public class BooleanPropertyDrawer : InspectorPropertyDrawer<UICheckBox, bool>
     protected internal override void Init()
     {
         Content.Text = MemberData.Name;
-        Content.SetCheckedNoEvent((bool?)TrackedValue.Value ?? false);
+        Content.SetChecked((bool?)TrackedValue.Value ?? false);
         if (!MemberData.CanWrite)
-            Content.ReadOnly = true;
+            Content.Disabled = true;
         else
             Content.OnCheckedChangedBasic.Subscribe(OnChanged);
     }
@@ -27,6 +27,6 @@ public class BooleanPropertyDrawer : InspectorPropertyDrawer<UICheckBox, bool>
 
     protected internal override void ValueUpdated()
     {
-        Content.SetCheckedNoEvent((bool?)TrackedValue.Value ?? false);
+        Content.SetChecked((bool?)TrackedValue.Value ?? false);
     }
 }

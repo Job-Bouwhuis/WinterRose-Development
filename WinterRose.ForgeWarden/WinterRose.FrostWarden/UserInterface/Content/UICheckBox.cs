@@ -19,38 +19,67 @@ public class UICheckBox : UIContent
 
     public RichText Text { get; set; }
 
-    public bool ReadOnly { get; set; }
+    public bool Disabled { get; set; } = false;
 
-    // State
-    private bool checkedState;
+    private const float BUSY_SPEED = 2.0f;            // cycles per second (back and forth)
+    private const float BUSY_SPHERE_RATIO = 0.30f;    // fraction of inner rect used for sphere diameter
+
+    public bool IndicateBusy { get; set; } = false;
+    private float busyPhase = 0f; // advances over time; ping-ponged in Update()
+
+    // Modify Checked setter to respect Disabled
     public bool Checked
     {
         get => checkedState;
         set
         {
-            if (ReadOnly)
+            if (Disabled || IndicateBusy)   // block while disabled or busy
                 return;
             if (checkedState == value)
                 return;
             checkedState = value;
-            // set animation target
             targetProgress = checkedState ? 1f : 0f;
 
-            // invoke multicast handlers
             OnCheckedChanged?.Invoke(Owner, this, checkedState);
             OnCheckedChangedBasic?.Invoke(checkedState);
         }
     }
 
-    public void SetCheckedNoEvent(bool value)
+    private bool checkedState;
+
+    public void SetChecked(bool value, bool events = false)
     {
-        if (ReadOnly)
+        if (Disabled || IndicateBusy)
             return;
-        if (checkedState == value) 
+        if (checkedState == value)
             return;
-        checkedState = value;
         checkedState = value;
         targetProgress = checkedState ? 1f : 0f;
+
+        if (events)
+        {
+            OnCheckedChanged?.Invoke(Owner, this, checkedState);
+            OnCheckedChangedBasic?.Invoke(checkedState);
+        }
+    }
+
+    /// <summary>
+    /// Does not care whether the checkbox is disabled or not to set the checked state
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="events"></param>
+    public void ForceSetChecked(bool value, bool events = false)
+    {
+        if (checkedState == value)
+            return;
+        checkedState = value;
+        targetProgress = checkedState ? 1f : 0f;
+
+        if(events)
+        {
+            OnCheckedChanged?.Invoke(Owner, this, checkedState);
+            OnCheckedChangedBasic?.Invoke(checkedState);
+        }
     }
 
     // Invocation hooks
@@ -122,24 +151,29 @@ public class UICheckBox : UIContent
 
         return new Rectangle(0, 0, w, h);
     }
-    //protected internal virtual float GetHeight(float maxWidth, float baseFontScale = 1f)
-    //{
-    //    return CalculateSize(maxWidth, baseFontScale).Height;
-    //}
 
-    // Interaction
     protected internal override void Update()
     {
-        // hover / pressed visuals (reuse Style like UIButton)
-        if (IsHovered && Input.IsDown(MouseButton.Left))
-            backgroundColor = Style.ButtonClick;
-        else if (IsHovered)
-            backgroundColor = Style.ButtonHover;
-        else
-            backgroundColor = Style.ButtonBackground;
-
-        // animate progress toward target
         float dt = Raylib_cs.Raylib.GetFrameTime();
+
+        if (Disabled)
+        {
+            backgroundColor = Style.ButtonDisabled;
+        }
+        else if (IsHovered && Input.IsDown(MouseButton.Left))
+        {
+            backgroundColor = Style.ButtonClick;
+        }
+        else if (IsHovered)
+        {
+            backgroundColor = Style.ButtonHover;
+        }
+        else
+        {
+            backgroundColor = Style.ButtonBackground;
+        }
+
+        // animate checkbox checked progress
         if (animationProgress < targetProgress)
         {
             animationProgress = MathF.Min(targetProgress, animationProgress + ANIMATION_SPEED * dt);
@@ -148,11 +182,19 @@ public class UICheckBox : UIContent
         {
             animationProgress = MathF.Max(targetProgress, animationProgress - ANIMATION_SPEED * dt);
         }
+
+        // advance busy phase if indicating busy
+        if (IndicateBusy)
+        {
+            busyPhase += dt * BUSY_SPEED;
+            // keep busyPhase in reasonable range
+            if (busyPhase > 10000f) busyPhase %= 2f;
+        }
     }
 
     protected internal override void OnContentClicked(MouseButton button)
     {
-        // toggle state on click
+        if (Disabled || IndicateBusy) return;  // ignore clicks when disabled or busy
         Checked = !Checked;
     }
 
@@ -173,8 +215,7 @@ public class UICheckBox : UIContent
         ray.DrawRectangleLinesEx(boxRect, 1, Style.ButtonBorder);
 
         // draw the inner filled box based on animationProgress
-        // inner rect will scale slightly and fade in
-        float inset = 3f * (1f - animationProgress); // when progress=1 inset=0, when 0 inset=3
+        float inset = 3f * (1f - animationProgress);
         var innerRect = new Rectangle(
             boxRect.X + inset,
             boxRect.Y + inset,
@@ -182,54 +223,86 @@ public class UICheckBox : UIContent
             MathF.Max(0f, boxRect.Height - inset * 2f)
         );
 
-        // fill color for the inner rect (respect content alpha)
-        Color fillColor = Style.ButtonBorder;
-        byte fillAlpha = (byte)(fillColor.A * Math.Clamp(animationProgress, 0f, 1f));
-        var innerFill = new Color(fillColor.R, fillColor.G, fillColor.B, fillAlpha);
+        // fill color for the inner rect: show a visible background when indicating busy even if unchecked
+        Color fillColor = Style.ButtonBorder ?? Style.White;
+        float innerAlphaF;
+        if (IndicateBusy)
+        {
+            // keep it visible while busy (but semi-transparent)
+            innerAlphaF = MathF.Min(220f, fillColor.A * 0.65f);
+        }
+        else
+        {
+            innerAlphaF = fillColor.A * Math.Clamp(animationProgress, 0f, 1f);
+        }
+        byte innerAlpha = (byte)Math.Clamp(innerAlphaF, 0f, 255f);
+        var innerFill = new Color(fillColor.R, fillColor.G, fillColor.B, innerAlpha);
         ray.DrawRectangleRec(innerRect, innerFill);
 
-        // Draw a visible checkmark on top (white with animated alpha)
-        if (animationProgress > 0f && innerRect.Width > 2f && innerRect.Height > 2f)
+        // If IndicateBusy: draw the moving sphere instead of the checkmark
+        if (IndicateBusy && innerRect.Width > 2f && innerRect.Height > 2f)
         {
-            // Checkmark progress: first segment draws from 0..0.6, second from 0.4..1.0 (overlap for nicer look)
-            float p = animationProgress;
-            float seg1End = MathF.Min(1f, p / 0.6f);               // 0..1 for first segment
-            float seg2Start = MathF.Max(0f, (p - 0.4f) / 0.6f);    // 0..1 for second segment
+            // ping-pong t in range 0..1
+            float t = busyPhase % 2f;
+            if (t > 1f) t = 2f - t;
 
-            // Coordinates relative to innerRect
-            float left = innerRect.X;
-            float top = innerRect.Y;
-            float w = innerRect.Width;
-            float h = innerRect.Height;
+            // apply quintic ease-in-out for desired speed profile
+            float eased = EvaluateBusyEased(t);
 
-            // Points for a classic check shape (A -> B -> C)
-            var ax = left + w * 0.18f;
-            var ay = top + h * 0.53f;
-            var bx = left + w * 0.42f;
-            var by = top + h * 0.77f;
-            var cx = left + w * 0.86f;
-            var cy = top + h * 0.25f;
+            // sphere size and position (shrink travel bounds a bit so the ball doesn't touch edges)
+            float diameter = MathF.Min(innerRect.Width, innerRect.Height) * BUSY_SPHERE_RATIO;
+            float radius = diameter / 2f;
 
-            // Colors: white (or tinted by content alpha)
-            int alphaByte = (int)(255 * Math.Clamp(animationProgress, 0f, 1f));
-            var checkColor = new Color(255, 255, 255, alphaByte);
+            // margin inside innerRect to avoid touching edges
+            float margin = MathF.Max(2f, radius * 0.8f);
 
-            float thickness = MathF.Max(1.5f, 2.0f * (0.6f + 0.4f * animationProgress));
+            float travelRange = Math.Max(0f, innerRect.Width - diameter - margin * 2f);
+            float cx = innerRect.X + margin + eased * travelRange + radius;
+            float cy = innerRect.Y + innerRect.Height / 2f;
 
-            // Draw first segment (A -> interp(A,B,seg1End))
-            if (seg1End > 0f)
+            // color (dim if Disabled)
+            Color sphereColor = Style.ProgressBarFill ?? new Color(215, 95, 185, 255);
+
+            Raylib_cs.Raylib.DrawCircleV(new Vector2(cx, cy), radius, sphereColor);
+        }
+        else
+        {
+            // Draw a visible checkmark on top (white with animated alpha)
+            if (animationProgress > 0f && innerRect.Width > 2f && innerRect.Height > 2f)
             {
-                var midX = ax + (bx - ax) * seg1End;
-                var midY = ay + (by - ay) * seg1End;
-                Raylib_cs.Raylib.DrawLineEx(new Vector2(ax, ay), new Vector2(midX, midY), thickness, checkColor);
-            }
+                int alphaByte = Disabled ? 100 : (int)(255 * Math.Clamp(animationProgress, 0f, 1f));
+                var checkColor = new Color(255, 255, 255, alphaByte);
 
-            // Draw second segment (B -> interp(B,C,seg2Start))
-            if (seg2Start > 0f)
-            {
-                var endX = bx + (cx - bx) * seg2Start;
-                var endY = by + (cy - by) * seg2Start;
-                Raylib_cs.Raylib.DrawLineEx(new Vector2(bx, by), new Vector2(endX, endY), thickness, checkColor);
+                float p = animationProgress;
+                float seg1End = MathF.Min(1f, p / 0.6f);
+                float seg2Start = MathF.Max(0f, (p - 0.4f) / 0.6f);
+
+                float left = innerRect.X;
+                float top = innerRect.Y;
+                float w = innerRect.Width;
+                float h = innerRect.Height;
+
+                var ax = left + w * 0.18f;
+                var ay = top + h * 0.53f;
+                var bx = left + w * 0.42f;
+                var by = top + h * 0.77f;
+                var cx = left + w * 0.86f;
+                var cy = top + h * 0.25f;
+
+                float thickness = MathF.Max(1.5f, 2.0f * (0.6f + 0.4f * animationProgress));
+
+                if (seg1End > 0f)
+                {
+                    var midX = ax + (bx - ax) * seg1End;
+                    var midY = ay + (by - ay) * seg1End;
+                    Raylib_cs.Raylib.DrawLineEx(new Vector2(ax, ay), new Vector2(midX, midY), thickness, checkColor);
+                }
+                if (seg2Start > 0f)
+                {
+                    var endX = bx + (cx - bx) * seg2Start;
+                    var endY = by + (cy - by) * seg2Start;
+                    Raylib_cs.Raylib.DrawLineEx(new Vector2(bx, by), new Vector2(endX, endY), thickness, checkColor);
+                }
             }
         }
 
@@ -260,4 +333,19 @@ public class UICheckBox : UIContent
         );
     }
 
+    private float EvaluateBusyEased(float t)
+    {
+        // t in [0,1]
+        // use a high-order ease-in-out (quintic) to make endpoints super slow and middle very fast
+        if (t < 0.5f)
+        {
+            float x = 2f * t; // 0..1
+            return 0.5f * MathF.Pow(x, 5); // very slow near 0, accelerates to fast
+        }
+        else
+        {
+            float x = 2f * (1f - t); // 1..0
+            return 1f - 0.5f * MathF.Pow(x, 5); // symmetric decel to super slow near 1
+        }
+    }
 }

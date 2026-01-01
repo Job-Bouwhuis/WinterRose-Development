@@ -37,7 +37,7 @@ public abstract class ForgeWardenEngine
     public static Font DefaultFont { get; set; }
 
     public const string ENGINE_POOL_NAME = "EnginePool";
-    Log log;
+    protected Log log { get; private set; }
 
     /// <summary>
     /// Called when the game is about to close either gracefully or by unhandled exception

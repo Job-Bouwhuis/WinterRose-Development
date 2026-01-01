@@ -8,6 +8,7 @@ using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Utility;
 using WinterRose.ForgeWarden.Worlds;
 using WinterRose.Recordium;
+using WinterRose.WinterForgeSerializing;
 using WinterRoseUtilityApp.SubSystems;
 
 namespace WinterRoseUtilityApp;
@@ -20,14 +21,17 @@ internal class Program : ForgeWardenEngine
     private List<UIContent> trayItems = [];
     private InAppLogConsole logConsole;
     private bool faulted = false;
+
+    private const bool forceWindow = false;
+
     public Program()
     {
     }
 
     private static async Task Main(string[] args)
     {
-	    if(OperatingSystem.IsLinux())
-		    new Program().Run("WinterRose Util App", 720, 640);
+	    if(OperatingSystem.IsLinux() || forceWindow)
+		    new Program().Run("WinterRose Util App", 1280, 720);
 	    else
 			new Program().RunAsOverlay(monitorIndex: 1);
     }
@@ -37,11 +41,14 @@ internal class Program : ForgeWardenEngine
         LogDestinations.AddDestination(logConsole = new InAppLogConsole());
         Raylib_cs.Raylib.SetTargetFPS(144);
         subSystemManager = new SubSystemManager();
-        if (!subSystemManager.Initialize(out Exception? ex))
+        subSystemManager.Initialize().ContinueWith(t =>
         {
-            LogEntry tempLog = new LogEntry(LogSeverity.Fatal, ex, "Subsystem Manager");
-            throw new Exception(tempLog.ToString(LogVerbosity.Full));
-        }
+            if(t.IsFaulted)
+            {
+                log.Fatal(t.Exception, "The app can not continue running!");
+                Environment.Exit(37707);
+            }
+        });
 
         GlobalHotkey.RegisterHotkey("OpenLogConsole", true, HotkeyScancode.LeftAlt, HotkeyScancode.L);
         GlobalHotkey.RegisterHotkey("OpenTray", true, HotkeyScancode.LeftAlt, HotkeyScancode.Q);
@@ -67,16 +74,19 @@ internal class Program : ForgeWardenEngine
         UICheckBox startup = new UICheckBox("Start when the PC does?",
             Invocation.Create((IUIContainer c, UICheckBox b, bool newState) =>
             {
+                b.IndicateBusy = true;
                 newState = !StartupManager.IsStartupEnabled();
                 StartupManager.SetStartup(newState).ContinueWith(t =>
                 {
-                    b.Checked = StartupManager.IsStartupEnabled();
+                    b.ForceSetChecked(StartupManager.IsStartupEnabled(), true);
                     if (b.Checked != newState)
                         Toasts.Error("Failed marking app to start with the OS");
                     else if (b.Checked)
                         Toasts.Success("The app will now start when your OS starts!");
                     else
                         Toasts.Success("The app will no longer start when your OS starts!");
+
+                    b.IndicateBusy = false;
                 });
 
             }
@@ -94,7 +104,7 @@ internal class Program : ForgeWardenEngine
 
     public override void Update()
     {
-        if (faulted)
+        if (faulted || !subSystemManager.Initialized)
             return;
         if (GlobalHotkey.IsTriggered("OpenLogConsole"))
             logConsole.Show();

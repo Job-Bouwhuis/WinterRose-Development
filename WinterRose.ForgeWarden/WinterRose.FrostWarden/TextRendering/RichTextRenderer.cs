@@ -177,6 +177,52 @@ public static class RichTextRenderer
                     continue;
                 }
 
+                if (line[i] is RichSpinner spinner)
+                {
+                    // compute spinner pixel size relative to font
+                    float spinnerHeight = spinner.BaseSize * richText.FontSize;
+                    float diameter = spinnerHeight;
+                    float widthAllocated = diameter * spinner.HorizontalPaddingMultiplier; // give it some room to travel
+
+                    // tinted color multiplied by overall tint (same pattern as glyphs/sprites)
+                    Color tintedSpinner = new Color(
+                        (byte)(spinner.Tint.R * overallTint.R / 255),
+                        (byte)(spinner.Tint.G * overallTint.G / 255),
+                        (byte)(spinner.Tint.B * overallTint.B / 255),
+                        (byte)(spinner.Tint.A * overallTint.A / 255)
+                    );
+
+                    // compute ping-pong phase t in [0,1]
+                    double time = Time.sinceStartup;
+                    float raw = (float)((time * spinner.Speed) % 2.0);
+                    float t = raw > 1f ? 2f - raw : raw; // 0..1 ping-pong
+
+                    // quintic ease-in-out to make endpoints very slow and the middle very fast
+                    float eased = EvaluateBusyEased(t);
+
+                    // small margin so ball doesn't touch edges
+                    float margin = MathF.Max(1f, diameter * 0.25f);
+                    float travelRange = MathF.Max(0f, widthAllocated - diameter - (margin * 2f));
+
+                    // compute center position for the little ball
+                    float cx = x + margin + eased * travelRange + diameter * 0.5f;
+                    float cy = y + (richText.FontSize - spinnerHeight) / 2f + spinnerHeight * 0.5f;
+
+                    // background dot (subtle) so spinner reads on dark/light text
+                    var bgAlpha = (byte)(tintedSpinner.A * 0.20f);
+                    var bg = new Color(tintedSpinner.R, tintedSpinner.G, tintedSpinner.B, bgAlpha);
+                    Raylib.DrawCircleV(new Vector2(x + widthAllocated * 0.5f, cy), diameter * 0.45f, bg);
+
+                    // draw the moving sphere
+                    Raylib.DrawCircleV(new Vector2(cx, cy), diameter * 0.45f, tintedSpinner);
+
+                    // advance the x cursor by the allocated width + spacing
+                    x += widthAllocated + richText.Spacing;
+
+                    i++;
+                    continue;
+                }
+
                 i++;
             }
 
@@ -835,6 +881,21 @@ public static class RichTextRenderer
         return new RichGlyph('-', c);
     }
 
+    private static float EvaluateBusyEased(float t)
+    {
+        // t in [0,1]
+        if (t < 0.5f)
+        {
+            float x = 2f * t; // 0..1
+            return 0.5f * MathF.Pow(x, 5); // very slow near 0, quick in middle
+        }
+        else
+        {
+            float x = 2f * (1f - t); // 1..0
+            return 1f - 0.5f * MathF.Pow(x, 5); // symmetric
+        }
+    }
+
     private static Vector2 CalculateElementsSize(RichText text, List<RichElement> elements)
     {
         // sums width of a run of glyphs and sprites; returns combined width & max height
@@ -890,6 +951,14 @@ public static class RichTextRenderer
 
                     width += size.X;
                     if (size.Y > maxHeight) maxHeight = size.Y;
+                    break;
+
+                case RichSpinner s:
+                    // approximate width: spinner diameter * horizontal padding multiplier
+                    float spinnerH = s.BaseSize * text.FontSize;
+                    float spinnerW = spinnerH * s.HorizontalPaddingMultiplier;
+                    width += spinnerW;
+                    if (spinnerH > maxHeight) maxHeight = spinnerH;
                     break;
 
                 default:
@@ -958,5 +1027,5 @@ public static class RichTextRenderer
         return last.HasValue && first.HasValue && char.IsLetter(last.Value) && char.IsLetter(first.Value);
     }
 
-    internal static void DrawRichText(RichText title, Vector2 textPos, float maxTextWidth, object white, object value) => throw new NotImplementedException();
+    //internal static void DrawRichText(RichText title, Vector2 textPos, float maxTextWidth, object white, object value) => throw new NotImplementedException();
 }

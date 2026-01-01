@@ -57,8 +57,8 @@ public static class StartupManager
         }
         else
         {
-            if (File.Exists(shortcutPath))
-                File.Delete(shortcutPath);
+            if (File.Exists(shortcutPath + ".lnk"))
+                File.Delete(shortcutPath + ".lnk");
         }
     }
 

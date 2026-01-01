@@ -212,6 +212,55 @@ public class RichText
                             continue;
                         }
                     }
+                    else if (text[i + 1] == 'e' && i + 2 < text.Length && text[i + 2] == '[')
+                    {
+                        float currentSize = 0;
+                        float currentSpeed = 0;
+                        Color color = currentColor;
+
+                        int close = text.IndexOf(']', i + 3);
+                        if (close > 0)
+                        {
+                            FlushWord();
+                            string paramStr = text[(i + 3)..close].Trim();
+
+                            if (!string.IsNullOrEmpty(paramStr))
+                            {
+                                var parameters = paramStr.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                                foreach (var param in parameters)
+                                {
+                                    var kv = param.Split('=', 2);
+                                    if (kv.Length == 2)
+                                    {
+                                        string key = kv[0].Trim().ToLowerInvariant();
+                                        string value = kv[1].Trim();
+
+                                        switch (key)
+                                        {
+                                            case "size":
+                                                if (float.TryParse(value, out float sz)) currentSize = sz;
+                                                break;
+                                            case "speed":
+                                                if (float.TryParse(value, out float spd)) currentSpeed = spd;
+                                                break;
+                                            case "color":
+                                                color = ParseColor(value, defaultColor);
+                                                break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (currentSpeed is 0)
+                                currentSpeed = 2.5f;
+                            if(currentSize is 0)
+                                currentSize = 0.55f;
+
+                            i = close + 1;
+                            elements.Add(new RichSpinner(currentSize, color, currentSpeed));
+                            continue;
+                        }
+                    }
                 }
             }
             catch

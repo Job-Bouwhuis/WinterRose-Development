@@ -1,4 +1,6 @@
-﻿namespace WinterRose.ForgeThread;
+﻿using System.Collections;
+
+namespace WinterRose.ForgeThread;
 
 /// <summary>
 /// Lightweight coroutine handle returned by <see cref="ThreadLoom.StartCoroutine(string,System.Collections.IEnumerator)"/>.
@@ -9,7 +11,7 @@ public sealed class CoroutineHandle : IDisposable
     private readonly TaskCompletionSource<object?> completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     internal string Name { get; }
-    internal IEnumerator<object?> Routine { get; }
+    internal IEnumerator Routine { get; }
     public bool IsComplete { get; private set; }
 
     /// <summary>
@@ -22,7 +24,7 @@ public sealed class CoroutineHandle : IDisposable
     /// </summary>
     public object? LastYield { get; private set; }
 
-    internal CoroutineHandle(string name, IEnumerator<object?> routine, ThreadLoom owner)
+    internal CoroutineHandle(string name, IEnumerator routine, ThreadLoom owner)
     {
         Name = name;
         Routine = routine;
@@ -76,5 +78,10 @@ public sealed class CoroutineHandle : IDisposable
     internal void UpdateLastYield(object? value)
     {
         LastYield = value;
+    }
+
+    public void ContinueWith(Action<Task> value)
+    {
+        Task.ContinueWith(value);
     }
 }

@@ -160,7 +160,7 @@ public abstract class UIContainer : IUIContainer
             }
         }
         Update();
-        
+
     }
 
     protected virtual void OnContainerDragStart()
@@ -242,7 +242,8 @@ public abstract class UIContainer : IUIContainer
         // start resizing when clicking on an edge
         if (!IsResizing)
         {
-            if (hoverEdge != ResizeEdge.None && Input.Provider.IsPressed(lmb))
+
+            if (hoverEdge != ResizeEdge.None && Input.IsPressed(MouseButton.Left))
             {
                 Input.IsRequestingMouseFocus = true;
                 IsResizing = true;
@@ -370,7 +371,7 @@ public abstract class UIContainer : IUIContainer
             CurrentPosition.X + CurrentPosition.Width / 2f,
             CurrentPosition.Y + CurrentPosition.Height / 2f
         );
-        
+
         var CurrentSize = Vector2.Lerp(
             curPos.Size,
             TargetSize,
@@ -389,7 +390,7 @@ public abstract class UIContainer : IUIContainer
         );
     }
 
-    protected virtual void  HandleContainerDragging()
+    protected virtual void HandleContainerDragging()
     {
         if (!Style.AllowUserResizing)
         {
@@ -426,7 +427,7 @@ public abstract class UIContainer : IUIContainer
 
         IsDragTarget = true;
 
-        if(prevPauseDragMovement != PauseAutoDismissTimer && !PauseAutoDismissTimer && !Style.PauseAutoDismissTimer)
+        if (prevPauseDragMovement != PauseAutoDismissTimer && !PauseAutoDismissTimer && !Style.PauseAutoDismissTimer)
         {
             TargetPosition += Input.Provider.MousePosition;
             AnimationElapsed = 1 - AnimationElapsed;
@@ -434,7 +435,7 @@ public abstract class UIContainer : IUIContainer
 
         prevPauseDragMovement = PauseAutoDismissTimer;
 
-        if(!PauseDragMovement)
+        if (!PauseDragMovement)
         {
             TargetPosition += Input.Provider.MouseDelta;
             AnimationElapsed = 1 - AnimationElapsed;
@@ -539,7 +540,7 @@ public abstract class UIContainer : IUIContainer
         if (IsScrollbarVisible)
             contentWidth = Math.Max(0f, availableContentWidthCandidate - (ScrollbarCurrentWidth + UIConstants.CONTENT_PADDING));
 
-        if(IsHovered())
+        if (IsHovered())
         {
             foreach (var button in Enum.GetValues<MouseButton>())
             {
@@ -868,7 +869,7 @@ public abstract class UIContainer : IUIContainer
             }
 
             IsClosing = true;
-            if(this is Toast)
+            if (this is Toast)
             {
                 isHoverTarget = true;
                 AnimationElapsed = 0f;
@@ -894,7 +895,7 @@ public abstract class UIContainer : IUIContainer
 
     public void AddAll(List<UIContent> contents)
     {
-        foreach(var item in contents)
+        foreach (var item in contents)
             AddContent(item);
     }
 

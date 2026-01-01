@@ -28,7 +28,7 @@ namespace WinterRose.ForgeWarden.UserInterface
         private Color buttonClick = new Color(220, 90, 180, 255);       // strong pink accent
 
         private Color barBackground = new Color(44, 38, 52, 255);       // dark muted purple
-        private Color barFill = new Color(215, 95, 185, 255);           // vibrant pink fill
+        private Color barFill = new Color(255, 65, 225, 255);           // vibrant pink fill
         private Color barText = new Color(250, 245, 250, 255);          // high contrast text
 
         private Color timerBarBackground = new Color(48, 42, 56, 255);  // slightly lifted base
@@ -66,6 +66,10 @@ namespace WinterRose.ForgeWarden.UserInterface
 
         private Color sliderTick = new Color(200, 170, 215, 90);             // subtle lavender ticks
         private Color sliderFilled = new Color(200, 95, 185, 255);           // matches barFill accent
+
+        private Color buttonDisabled = new Color(80, 70, 95, 255);   // muted purple-gray, clearly inactive
+        private Color seperatorLineColor = new Color(60, 50, 75, 255); // subtle dark purple divider
+
 
         public Color TextBoxBackground
         {
@@ -310,8 +314,20 @@ namespace WinterRose.ForgeWarden.UserInterface
         public Color RadioGroupBorderRaw => radioGroupBorder;
 
 
-        public Color SeperatorLineColor { get; set; }
+        public Color ButtonDisabled
+        {
+            get => buttonDisabled.WithAlpha(ContentAlpha);
+            set => buttonDisabled = value;
+        }
 
+        public Color SeperatorLineColor
+        {
+            get => seperatorLineColor.WithAlpha(ContentAlpha);
+            set => seperatorLineColor = value;
+        }
+
+        public Color ButtonDisabledRaw => buttonDisabled;
+        public Color SeperatorLineColorRaw => seperatorLineColor;
         public Color ScrollbarThumbRaw => scrollbarThumb;
         public Color ScrollbarTrackRaw => scrollbarTrack;
         public Color TimerBarBackgroundRaw => timerBarBackground;
@@ -336,6 +352,7 @@ namespace WinterRose.ForgeWarden.UserInterface
         public Color TextBoxFocusedBorderRaw => textBoxFocusedBorderColor;
         public Color TextBoxTextRaw => textBoxTextColor;
         public Color CaretRaw => textBoxCaretColor;
+
 
         // Common shadow sizing
         public float ShadowSizeLeft { get; set; }
@@ -1998,8 +2015,29 @@ namespace WinterRose.ForgeWarden.UserInterface
             }
         }
 
+        public Overridable<Color> ButtonDisabled
+        {
+            get;
+            set
+            {
+                StyleBase.ButtonDisabled = value;
+                if (field is not null)
+                {
+                    var oldOverride = field.Override;
+                    var oldFallback = field.fallbackResolver;
 
+                    if (field.IsOverridden)
+                        value.Override = oldOverride;
+                    value.fallbackResolver = oldFallback;
 
+                    field = value;
+                }
+                else
+                    field = value;
+            }
+        }
+
+        public Color White => StyleBase.White;
 
         public ContentStyle(StyleBase parent)
         {

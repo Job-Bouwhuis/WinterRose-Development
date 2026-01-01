@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -6,6 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose;
+using WinterRose.ForgeThread;
+using WinterRose.ForgeWarden;
+using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.Recordium;
@@ -20,68 +24,83 @@ public class SubSystemManager
     private List<SubSystem> subSystems = new List<SubSystem>();
     public IReadOnlyList<SubSystem> SubSystems => subSystems;
 
-    public bool Initialize([NotNullWhen(false)] out Exception? exception)
+    public bool Initialized { get; private set; } = false;
+
+    public CoroutineHandle Initialize()
     {
-        try
+        return ForgeWardenEngine.Current.GlobalThreadLoom.InvokeOn("Main", initializeCoroutine());
+    }
+
+    private IEnumerator initializeCoroutine()
+    {
+        Toast progressToast = new Toast(ToastType.Info, ToastRegion.Center, ToastStackSide.Top);
+        UIText text = new UIText("Loading subsystems... \\e[]", UIFontSizePreset.Title);
+        progressToast.AddContent(text);
+        UIText currentManagerText = new UIText("\\e[] Setting up...");
+        progressToast.AddContent(currentManagerText);
+        progressToast.Show();
+        progressToast.ContinueWith(new Toast(ToastType.Success, ToastRegion.Center, ToastStackSide.Top)
+            .AddText("Subsystem initialization finished", UIFontSizePreset.Subtitle));
+
+        Type[] types = TypeWorker.FindTypesWithBase<SubSystem>();
+
+        foreach (Type t in types)
         {
-            Type[] types = TypeWorker.FindTypesWithBase<SubSystem>();
-
-            foreach (Type t in types)
+            if (t == typeof(SubSystem))
+                continue;
+            if (Attribute.IsDefined(t, typeof(SubSystemSkipAttribute)))
             {
-                if (t == typeof(SubSystem))
-                    continue;
-                if (Attribute.IsDefined(t, typeof(SubSystemSkipAttribute)))
-                {
-                    log.Info($"Skipping subsystem '{t.Name}' due to SubSystemSkip Attribute");
-                    continue;
-                }
-                log.Info($"Initializing subsystem '{t.Name}'");
-                var stopwatch = Stopwatch.StartNew();
-                SubSystem subsys;
-                try
-                {
-                    subsys = (SubSystem)DynamicObjectCreator.CreateInstance(t, []);
-                }
-                catch (Exception ex)
-                {
-                    log.Critical(ex, "Failed to start subsystem " + t.Name);
-                    continue;
-                }
-
-                stopwatch.Stop();
-                log.Info($"Took {stopwatch.Elapsed.TotalMilliseconds}ms");
-                if (subsys is null)
-                {
-                    log.Error($"Failed to start subsystem {t.Name}");
-                    continue;
-                }
-                subSystems.Add(subsys);
+                log.Info($"Skipping subsystem '{t.Name}' due to SubSystemSkip Attribute");
+                continue;
             }
 
-            foreach (SubSystem subSystem in subSystems)
+            log.Info($"Initializing subsystem '{t.Name}'");
+            currentManagerText.Text = $"Creating subsystem '{t.Name}'";
+            yield return TimeSpan.FromMilliseconds(10);
+            var stopwatch = Stopwatch.StartNew();
+            SubSystem subsys;
+            try
             {
-                try
-                {
-                    subSystem.Init();
-                }
-                catch (Exception ex)
-                {
-                    log.Critical(ex, "Failed to initialize subsystem " + subSystem.Name + $" (class {subSystem.GetType().Name})");
-                    continue;
-                }
+                subsys = (SubSystem)DynamicObjectCreator.CreateInstance(t, []);
             }
-        }
-        catch (Exception ex)
-        {
-            log.Fatal(ex, "App is unable to continue running!");
-            exception = ex;
-            return false;
+            catch (Exception ex)
+            {
+                log.Critical(ex, "Failed to start subsystem " + t.Name);
+                Toasts.Error($"Creating subsystem '{t.Name}' failed!");
+                continue;
+            }
+            stopwatch.Stop();
+
+            log.Info($"Took {stopwatch.Elapsed.TotalMilliseconds}ms");
+            if (subsys is null)
+            {
+                log.Error($"Failed to start subsystem {t.Name}");
+                Toasts.Error($"Creating subsystem '{t.Name}' failed!");
+                continue;
+            }
+            subSystems.Add(subsys);
+            yield return TimeSpan.FromMilliseconds(10);
         }
 
-        Toasts.Info("Subsystems Initialized");
-        //new Dialog("test", "\\L[https://www.youtube.com/watch?v=xlBUy87c6y4|my awesome link]").Show();
-        exception = null;
-        return true;
+        foreach (SubSystem subSystem in subSystems)
+        {
+            currentManagerText.Text = $"Initializing subsystem '{subSystem.Name}'";
+            yield return TimeSpan.FromMilliseconds(10);
+            try
+            {
+                subSystem.Init();
+            }
+            catch (Exception ex)
+            {
+                log.Critical(ex, "Failed to initialize subsystem " + subSystem.Name + $" (class {subSystem.GetType().Name})");
+                Toasts.Error($"Starting subsystem '{subSystem.Name}' failed!");
+                continue;
+            }
+            yield return TimeSpan.FromMilliseconds(10);
+        }
+
+        Initialized = true;
+        progressToast.Close();
     }
 
     internal void Tick()

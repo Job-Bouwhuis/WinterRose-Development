@@ -6,6 +6,7 @@ using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 
 namespace WinterRose.ForgeWarden.UserInterface.Windowing;
+
 public class UIWindow : UIContainer
 {
     private enum PendingAction
@@ -79,6 +80,8 @@ public class UIWindow : UIContainer
                 Maximized = false; // start unmaximize animation
                 return;
             }
+            if(value)
+                fullPosCache = CurrentPosition;
 
             if (isCollapsed == value) return;
             isCollapsed = value;
@@ -204,7 +207,7 @@ public class UIWindow : UIContainer
 
     private bool collapseAnimationFinished;
 
-    public override float Height => CurrentPosition.Size.Y + base.Height;
+    //public override float Height => CurrentPosition.Size.Y + base.Height;
 
     public RichText Title
     {
@@ -687,7 +690,7 @@ public class UIWindow : UIContainer
         if (fullPosCache.Height <= 0f) fullPosCache.Height = Size.Y;
 
         // compute collapsed height and apply immediately
-        float collapsedHeight = (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
+        float collapsedHeight = Style.TitleBarHeight;
         TargetSize = CurrentPosition.Size;
         SetSize(new Vector2(CurrentPosition.Size.X, Lerp(fullPosCache.Height, collapsedHeight, 1f)));
 
@@ -878,13 +881,11 @@ public class UIWindow : UIContainer
         float hoverOffsetX = 0f, hoverOffsetY = 0f;
         float shadowOffsetX = 0f, shadowOffsetY = 0f;
 
-
-
         if (!isCollapsed && collapseProgress <= 0f)
         {
             DrawMaximizeDragBar();
             Style.RaiseOnHover = false;
-            collapseAnimationFinished = false;
+            collapseAnimationFinished = true;
             base.Draw();
             return;
         }
@@ -913,16 +914,11 @@ public class UIWindow : UIContainer
         }
 
         {
-
-            // compute animated height (background visually shrinks)
             float eased = Curves.SlowFastSlow?.Evaluate(collapseProgress) ?? collapseProgress;
-            float collapsedHeight = /*UIConstants.CONTENT_PADDING * 2f +*/ (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
+            float collapsedHeight = Style.TitleBarHeight;
             float animatedHeight = Lerp(fullPosCache.Height, collapsedHeight, eased);
             SetSize(new(Size.X, animatedHeight));
-            // Only apply the raise visual to the titlebar when collapsed AND hovered.
-            // (Non-collapsed windows don't use raise here.)0
 
-            // background positioned at CurrentPosition (do not mutate CurrentPosition)
             var backgroundBounds = new Rectangle(
                 CurrentPosition.X + hoverOffsetX,
                 CurrentPosition.Y + hoverOffsetY,
@@ -931,8 +927,6 @@ public class UIWindow : UIContainer
 
             if (isCollapsed && collapseProgress == 1f)
             {
-
-                // normal shadow behavior (use the shadow offsets produced by HandleRaiseAnimation)
                 float amount = Style.StyleBase.currentRaiseAmount * Style.HoverRaiseAmount;
                 var shadowRect = new Rectangle(
                     backgroundBounds.X - (Style.ShadowSizeLeft - shadowOffsetX) * amount,

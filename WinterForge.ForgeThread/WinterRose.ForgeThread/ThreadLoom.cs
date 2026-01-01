@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
@@ -263,7 +264,6 @@ namespace WinterRose.ForgeThread
             }
         }
 
-
         public Task<T> InvokeOn<T>(string threadName, Func<T> func, JobPriority priority, bool bypassTick = false)
         {
             var tcs = CreateTcs<T>();
@@ -296,7 +296,7 @@ namespace WinterRose.ForgeThread
             return tcs.Task;
         }
 
-        public Task InvokeOn(string threadName, Action func, JobPriority priority, bool bypassTick = false)
+        public Task InvokeOn(string threadName, Action func, JobPriority priority = JobPriority.Normal, bool bypassTick = false)
         {
             var tcs = CreateTcs<object>();
 
@@ -466,6 +466,21 @@ namespace WinterRose.ForgeThread
         }
 
         /// <summary>
+        /// Start a coroutine (simple cooperative iterator) on a named loom. The coroutine yields null to indicate "resume next tick",
+        /// or yields a TimeSpan to indicate a timed wait.
+        /// </summary>
+        /// <param name="threadName">Target loom.</param>
+        /// <param name="routine">Enumerator representing the coroutine.</param>
+        /// <returns>Handle that can be used to stop the coroutine.</returns>
+        public CoroutineHandle InvokeOn(string threadName, IEnumerator routine, bool async = true, JobPriority priority = JobPriority.Normal, bool bypassTick = false)
+        {
+            if (routine == null) throw new ArgumentNullException(nameof(routine));
+            var handle = StartCoroutine(threadName, routine);
+            return handle;
+        }
+
+
+        /// <summary>
         /// Schedule an action to run on a specific loom after a delay.
         /// </summary>
         /// <param name="name">Target loom.</param>
@@ -558,7 +573,7 @@ namespace WinterRose.ForgeThread
             return executed;
         }
 
-        private CoroutineHandle StartCoroutine(string threadName, IEnumerator<object?> routine)
+        private CoroutineHandle StartCoroutine(string threadName, IEnumerator routine)
         {
             if (!threads.TryGetValue(threadName, out var loom)) throw new InvalidOperationException($"Thread '{threadName}' is not registered.");
             var handle = new CoroutineHandle(threadName, routine, this);
