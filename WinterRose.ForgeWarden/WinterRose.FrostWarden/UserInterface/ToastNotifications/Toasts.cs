@@ -219,4 +219,14 @@ public static class Toasts
     {
         return ShowToast(new Toast(ToastType.Highlight, region, side).AddText(message, UIFontSizePreset.Title));
     }
+
+    public static Toast Question(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
+    {
+        return ShowToast(new Toast(ToastType.Question, region, side).AddText(message, UIFontSizePreset.Title));
+    }
+
+    public static Toast CrititcalAction(string message, ToastRegion region = ToastRegion.Right, ToastStackSide side = ToastStackSide.Top)
+    {
+        return ShowToast(new Toast(ToastType.CriticalAction, region, side).AddText(message, UIFontSizePreset.Title));
+    }
 }

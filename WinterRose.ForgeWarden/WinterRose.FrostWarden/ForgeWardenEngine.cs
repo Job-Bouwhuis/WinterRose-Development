@@ -12,6 +12,7 @@ using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Editor;
 using WinterRose.ForgeWarden.Entities;
+using WinterRose.ForgeWarden.Geometry.Rendering;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Resources;
@@ -32,9 +33,22 @@ namespace WinterRose.ForgeWarden;
 
 public abstract class ForgeWardenEngine
 {
+    protected bool WindowClosedButRunning { get; private set; } = false;
+    private const int BACKGROUND_UPS = 10; // updates per second while window is closed
+    private readonly System.Diagnostics.Stopwatch backgroundTimer = new();
+    private long lastBackgroundTickMs = 0;
+
+    // store initial window params so we can recreate the window later
+    private string savedWindowTitle = "";
+    private int savedWindowWidth = 0;
+    private int savedWindowHeight = 0;
+    private ConfigFlags savedWindowConfigFlags = ConfigFlags.ResizableWindow;
+
     public static ForgeWardenEngine Current { get; private set; }
 
     public static Font DefaultFont { get; set; }
+
+    public ShapeRenderer ShapeRenderer { get; } = new(new ShapeAnimationSystem());
 
     public const string ENGINE_POOL_NAME = "EnginePool";
     protected Log log { get; private set; }
@@ -86,7 +100,7 @@ public abstract class ForgeWardenEngine
     /// <summary>
     /// Highest priority input. use only when really necessary
     /// </summary>
-    public InputContext GlobalInput => EngineLevelInput;
+    public InputContext Input => EngineLevelInput;
     private List<Action> debugDraws = [];
 
     static ForgeWardenEngine()
@@ -150,8 +164,15 @@ public abstract class ForgeWardenEngine
 
             SetTargetFPS(0);
 
+            // create window and remember params so we can recreate later
             Window = new Window(title, flags);
             Window.Create(width, height);
+
+            // save for reopen
+            savedWindowTitle = title;
+            savedWindowWidth = width;
+            savedWindowHeight = height;
+            savedWindowConfigFlags = flags;
 
             SetExitKey(KeyboardKey.Null);
 
@@ -166,15 +187,15 @@ public abstract class ForgeWardenEngine
                         .AddText("This can take a while.\nhowever the game is still playable", UIFontSizePreset.Text)
                     .AddProgressBar(-1, pref =>
                     {
-                    if (browserTask.IsCompleted)
-                        t!.Close();
-                    return browserTask.IsCompleted ? 1 : -1;
-                }, infiniteSpinText: "Waiting for browser download..."))
-                    .ContinueWith(t => browserTask.IsCompletedSuccessfully ? 0 : 1,
-                    new Toast(ToastType.Success, ToastRegion.Left, ToastStackSide.Top)
-                        .AddText("Browser Successfully Downloaded!"),
-                    new Toast(ToastType.Error, ToastRegion.Left, ToastStackSide.Top)
-                        .AddText("Browser download failed", UIFontSizePreset.Text));
+                        if (browserTask.IsCompleted)
+                            t!.Close();
+                        return browserTask.IsCompleted ? 1 : -1;
+                    }, infiniteSpinText: "Waiting for browser download..."))
+                        .ContinueWith(t => browserTask.IsCompletedSuccessfully ? 0 : 1,
+                        new Toast(ToastType.Success, ToastRegion.Left, ToastStackSide.Top)
+                            .AddText("Browser Successfully Downloaded!"),
+                        new Toast(ToastType.Error, ToastRegion.Left, ToastStackSide.Top)
+                            .AddText("Browser download failed", UIFontSizePreset.Text));
             }
 
             BeginDrawing();
@@ -186,8 +207,30 @@ public abstract class ForgeWardenEngine
             Camera.main = camera;
             RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
 
-            while (!Window.ShouldClose() && !GameIsClosing)
+            // ----- MAIN ENGINE LOOP -----
+            while (!GameIsClosing)
             {
+                // if window was closed via OS/user, enter background update mode instead of terminating the engine
+                if (Window != null && Window.ShouldClose())
+                    GameIsClosing = true;
+
+                // background mode: only keep Time.Update() and the abstract Update() running at BACKGROUND_UPS
+                if (WindowClosedButRunning)
+                {
+                    long nowMs = backgroundTimer.ElapsedMilliseconds;
+                    if (nowMs - lastBackgroundTickMs >= (1000 / BACKGROUND_UPS))
+                    {
+                        Time.Update();   // Time.deltaTime will reflect the elapsed time between these calls
+                        Update();        // only engine-level update callback runs while backgrounded
+                        lastBackgroundTickMs = nowMs;
+                    }
+
+                    // light sleep to avoid burning CPU while waiting for next tick or a call to ReopenWindowFull()
+                    Thread.Sleep(1);
+                    continue;
+                }
+
+                // Regular foreground frame (unchanged pipeline)
                 InputManager.Update();
                 Time.Update();
                 GlobalHotkey.Update();
@@ -215,8 +258,13 @@ public abstract class ForgeWardenEngine
                 {
                     MainApplicationLoop(camera, ref worldTex);
                 }
+
+                // If loop naturally exits due to GameIsClosing set elsewhere, we'll fall out and finish cleanup
+                if (GameIsClosing)
+                    break;
             }
 
+            // ... (rest of existing resource release code unchanged)
             log.Info("Releasing all resources");
 
             Closing();
@@ -234,10 +282,61 @@ public abstract class ForgeWardenEngine
             {
                 Assets.FinalizeHeaders();
                 Window.Close();
-            } 
+            }
             catch { /* ignore */ }
 
             log.Info("End of 'run', Bye bye!");
+        }
+    }
+
+    public void CloseWindowToBackground()
+    {
+        if (WindowClosedButRunning)
+            return;
+        log.Info("Closing window to background mode.");
+
+        // save current window params for later recreation
+        savedWindowTitle = Window.Title;
+        savedWindowWidth = Window.Width;
+        savedWindowHeight = Window.Height;
+        savedWindowConfigFlags = Window.ConfigFlags;
+
+        // close window but keep engine running
+        Window.Close();
+        WindowClosedButRunning = true;
+
+        // start background timer
+        backgroundTimer.Restart();
+        lastBackgroundTickMs = backgroundTimer.ElapsedMilliseconds;
+
+    }
+
+    public void ReopenWindowFull()
+    {
+        if (!WindowClosedButRunning)
+            return;
+
+        log.Info("Reopening window from background mode.");
+
+        // recreate window using saved params
+        try
+        {
+            Window = new Window(savedWindowTitle, savedWindowConfigFlags);
+            Window.Create(savedWindowWidth, savedWindowHeight);
+
+            // reset background flags and timers
+            WindowClosedButRunning = false;
+            backgroundTimer.Reset();
+            lastBackgroundTickMs = 0;
+
+            // perform an initial clear so the first frame is clean
+            BeginDrawing();
+            ClearBackground(ClearColor);
+            EndDrawing();
+        }
+        catch (Exception ex)
+        {
+            log.Error($"Failed to reopen window: {ex.Message}");
         }
     }
 
@@ -261,14 +360,15 @@ public abstract class ForgeWardenEngine
         Dialogs.Update(Time.deltaTime);
         ToastToDialogMorpher.Update();
         Toasts.Update(Time.deltaTime);
+        ShapeRenderer.Update();
         Update();
 
         BeginDrawing();
+        ShapeRenderer.Begin();
         Raylib.ClearBackground(ClearColor);
         Raylib.DrawRectangle(0, 0, Window.Width, Window.Height, new Color(0, 0, 0, 1));
 
         ray.BeginBlendMode(BlendMode.Alpha);
-
 
         if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
         {
@@ -309,6 +409,7 @@ public abstract class ForgeWardenEngine
         Dialogs.Draw();
         ToastToDialogMorpher.Draw();
         Toasts.Draw();
+        ShapeRenderer.Draw();
         Draw();
 
         for (int i = 0; i < debugDraws.Count; i++)
@@ -321,6 +422,8 @@ public abstract class ForgeWardenEngine
 
         if (ShowFPS)
             ray.DrawFPS(10, 10);
+
+        ShapeRenderer.End();
         ray.EndBlendMode();
         ray.EndDrawing();
     }

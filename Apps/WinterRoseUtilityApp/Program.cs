@@ -1,6 +1,12 @@
-﻿using WinterRose;
+﻿using BulletSharp.SoftBody;
+using PuppeteerSharp;
+using Raylib_cs;
+using System.Numerics;
+using WinterRose;
 using WinterRose.ForgeSignal;
 using WinterRose.ForgeWarden;
+using WinterRose.ForgeWarden.Geometry;
+using WinterRose.ForgeWarden.Geometry.Animation;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
@@ -10,10 +16,11 @@ using WinterRose.ForgeWarden.Worlds;
 using WinterRose.Recordium;
 using WinterRose.WinterForgeSerializing;
 using WinterRoseUtilityApp.SubSystems;
+using dialog = WinterRose.ForgeWarden.UserInterface.DialogBoxes.Dialog;
 
 namespace WinterRoseUtilityApp;
 
-internal class Program : ForgeWardenEngine
+internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
 {
     public static new Program Current => (Program)ForgeWardenEngine.Current;
     SubSystemManager subSystemManager;
@@ -21,33 +28,27 @@ internal class Program : ForgeWardenEngine
     private List<UIContent> trayItems = [];
     private InAppLogConsole logConsole;
     private bool faulted = false;
-
     private const bool forceWindow = false;
-
-    public Program()
-    {
-    }
 
     private static async Task Main(string[] args)
     {
-	    if(OperatingSystem.IsLinux() || forceWindow)
-		    new Program().Run("WinterRose Util App", 1280, 720);
-	    else
-			new Program().RunAsOverlay(monitorIndex: 1);
+        Dictionary<Dictionary<List<int>, List<string>>, List<bool>> a = [];
+
+        if (OperatingSystem.IsLinux() || forceWindow)
+            new Program().Run("WinterRose Util App", 1280, 720);
+        else
+            new Program().RunAsOverlay(monitorIndex: 1);
     }
 
     public override World CreateFirstWorld()
     {
         LogDestinations.AddDestination(logConsole = new InAppLogConsole());
-        Raylib_cs.Raylib.SetTargetFPS(144);
+        Raylib.SetTargetFPS(144);
         subSystemManager = new SubSystemManager();
         subSystemManager.Initialize().ContinueWith(t =>
         {
-            if(t.IsFaulted)
-            {
-                log.Fatal(t.Exception, "The app can not continue running!");
+            if (t.IsFaulted)
                 Environment.Exit(37707);
-            }
         });
 
         GlobalHotkey.RegisterHotkey("OpenLogConsole", true, HotkeyScancode.LeftAlt, HotkeyScancode.L);
@@ -55,9 +56,9 @@ internal class Program : ForgeWardenEngine
 
         if (OperatingSystem.IsWindows())
         {
-	        trayIcon = new Windows.SystemTrayIcon(Window.Handle, 0, "WinterRose Utils", "AppLogo.ico");
-	        trayIcon.ShowInTray();
-	        trayIcon.RightClick.Subscribe(Invocation.Create(CreateTray));
+            trayIcon = new Windows.SystemTrayIcon(Window.Handle, 0, "WinterRose Utils", "AppLogo.ico");
+            trayIcon.ShowInTray();
+            trayIcon.RightClick.Subscribe(Invocation.Create(CreateTray));
         }
         return new World("");
     }
@@ -91,6 +92,7 @@ internal class Program : ForgeWardenEngine
 
             }
         ), currentStartupState);
+
         t.AddContent(startup);
         t.AddButton("Close App",
             Invocation.Create<IUIContainer, UIButton>((c, b) => Close()));

@@ -54,11 +54,8 @@ namespace WinterRose.ForgeWarden.Windowing
             Raylib.InitWindow(width, height, Title);
 
             if (ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
-                ray.SetWindowPosition(-1, -1);
-
-
-            if (ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
             {
+                ray.SetWindowPosition(-1, -1);
                 MakeNonActivating(Handle);
                 UnfocusCurrentWindow(Handle);
                 HideFromTaskbarAndAltTab(Handle);

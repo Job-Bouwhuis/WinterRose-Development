@@ -66,9 +66,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Geometry\Animation\" />
 	  <Folder Include="Geometry\Modifiers\" />
-	  <Folder Include="Geometry\Rendering\" />
 	</ItemGroup>
 
 	<ItemGroup>

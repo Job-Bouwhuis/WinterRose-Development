@@ -114,7 +114,7 @@ public static class GlobalHotkey
                 or HotkeyScancode.Mouse4
                 or HotkeyScancode.Mouse5)
             {
-                return ForgeWardenEngine.Current.GlobalInput.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)(keyCode switch {
+                return ForgeWardenEngine.Current.Input.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)(keyCode switch {
                     HotkeyScancode.MouseLeft => MouseButton.Left,
                     HotkeyScancode.MouseRight => MouseButton.Right,
                     HotkeyScancode.MouseMiddle => MouseButton.Middle,
@@ -124,7 +124,7 @@ public static class GlobalHotkey
             }
             
             var key = KeyboardMapper.Map(keyCode);
-            bool r = ForgeWardenEngine.Current.GlobalInput.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)key));
+            bool r = ForgeWardenEngine.Current.Input.Provider.IsDown(new InputBinding(InputDeviceType.Keyboard, (int)key));
             return r;
         }
 
