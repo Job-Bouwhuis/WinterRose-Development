@@ -186,7 +186,6 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
             Input.IsRequestingMouseFocus = true;
             if (!Input.IsDown(MouseButton.Left))
             {
-                // stop dragging when mouse released
                 isLabelDragging = false;
             }
             else
@@ -199,9 +198,25 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
                 if (range == 0.0)
                     return;
 
-                // change scaled by DragPixelsForFullRange
-                double deltaValue = (dx / Math.Max(1f, DragPixelsForFullRange)) * range;
+                // --- magnitude-aware base scaling ---
+                double startMagnitude = Math.Max(1.0, Math.Abs(labelDragStartValueD));
+                double baseScale = startMagnitude / DragPixelsForFullRange;
+
+                // --- modifier keys ---
+                bool shiftHeld = Input.IsDown(KeyboardKey.LeftShift) || Input.IsDown(KeyboardKey.RightShift);
+                bool ctrlHeld = Input.IsDown(KeyboardKey.LeftControl) || Input.IsDown(KeyboardKey.RightControl);
+
+                if (shiftHeld)
+                    baseScale *= 0.1;   // fine control
+                else if (ctrlHeld)
+                    baseScale *= 5.0;   // coarse control
+
+                // compute delta and target value
+                double deltaValue = dx * baseScale;
                 double target = labelDragStartValueD + deltaValue;
+
+                // clamp to min/max
+                target = Math.Clamp(target, minD, maxD);
 
                 try
                 {

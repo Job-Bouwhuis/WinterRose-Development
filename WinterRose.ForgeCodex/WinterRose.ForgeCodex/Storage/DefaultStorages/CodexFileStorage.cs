@@ -34,7 +34,7 @@ public class CodexFileStorage : StorageProvider
         if (!databaseRoot.Exists)
             databaseRoot.Create();
         FileInfo? file = databaseRoot.GetFiles(snapshot.Name + ".table").FirstOrDefault();
-        file ??= new FileInfo(databaseRoot.FullName + "\\" + snapshot.Name + ".table");
+        file ??= new FileInfo(databaseRoot.FullName + Path.AltDirectorySeparatorChar + snapshot.Name + ".table");
         using FileStream stream = file.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite);
         Serializer.Serialize(stream, snapshot);
     }

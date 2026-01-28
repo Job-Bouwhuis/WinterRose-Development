@@ -26,12 +26,13 @@ public class Vector3PropertyDrawer : InspectorPropertyDrawer<Vector3>
             (IUIContainer container, UINumericUpDown<float> self,
             float newVal) =>
             {
+                log.Info($"{self.Label} = {newVal}");
                 Vector3 old = (Vector3)TrackedValue.Value;
                 switch (self.Label)
                 {
                     case "x":
                         {
-                            TrackedValue.Set(old with { X = newVal });
+
                         }
                         break;
                     case "y":
@@ -51,10 +52,9 @@ public class Vector3PropertyDrawer : InspectorPropertyDrawer<Vector3>
         y.OnValueChanged.Subscribe(OnEditorValueUpdated);
         z.OnValueChanged.Subscribe(OnEditorValueUpdated);
 
-        cols.AddToColumn(0, new UIText(MemberData.Name));
-        cols.AddToColumn(1, x);
-        cols.AddToColumn(2, y);
-        cols.AddToColumn(3, z);
+        cols.AddContent(x);
+        cols.AddContent(y);
+        cols.AddContent(z);
         return cols;
     }
 
@@ -65,6 +65,7 @@ public class Vector3PropertyDrawer : InspectorPropertyDrawer<Vector3>
         x.Value = val.X;
         y.Value = val.Y;
         z.Value = val.Z;
+        log.Info($"updated Value: {val}");
     }
 
     protected internal override void ValueUpdated()

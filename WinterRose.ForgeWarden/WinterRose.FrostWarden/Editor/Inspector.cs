@@ -46,10 +46,7 @@ internal class Inspector : UIWindow
                 target = baseTypes[1];
             else
             {
-                new Log("Engine Inspector").Fatal(
-                    $"Inspector drawer of type {t.FullName} not valid with generic arguments, App will close!");
-                Environment.Exit(1);
-                return;
+                throw new ForgeWardenEditorException($"Inspector drawer of type {t.FullName} not valid with generic arguments, App will close!");
             }
 
             propertyDrawerCache.Add(target, t);
@@ -174,7 +171,7 @@ internal class Inspector : UIWindow
     private bool IsInvalidMember(MemberData member)
     {
         // TODO: expand with a attribute that when applied never shows a member of said type
-        // TODO: expand with a collection of types in this class that when member type is contains, it doesnt showfdsa
+        // TODO: expand with a collection of types in this class that when member type is contains, it doesnt show
         return member.Attributes.Any(x => x is HideAttribute)
             || member.Type.IsAssignableTo(typeof(Invocation))
             || member.Name.Contains("<")
