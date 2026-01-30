@@ -3,7 +3,7 @@ using Microsoft.DiaSymReader;
 using Raylib_cs;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DamageSystem;

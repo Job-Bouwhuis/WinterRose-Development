@@ -11,7 +11,7 @@ namespace WinterRose.Vectors
     /// <summary>
     /// A vector2 with integer values
     /// </summary>
-    [DebuggerDisplay("X: {x} - Y: {y}")]
+    [DebuggerDisplay("X: {X} - Y: {Y}")]
     public struct Vector2I : INumber<Vector2I>
     {
         /// <summary>

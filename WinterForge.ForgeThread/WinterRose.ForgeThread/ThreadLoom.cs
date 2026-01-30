@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using WinterRose.Recordium;
@@ -119,7 +120,7 @@ namespace WinterRose.ForgeThread
         }
 
         /// <summary>
-        /// Registers the current thread as a pumped "main" loom. You must call <see cref="ProcessPendingActions(string,int)"/>
+        /// Registers the current thread as a pumped "main" loom. You must call <see cref="TickThread(string,int)"/>
         /// from the same thread to execute queued actions.
         /// </summary>
         /// <param name="name">Logical name of the thread.</param>
@@ -312,6 +313,7 @@ namespace WinterRose.ForgeThread
                 catch (Exception ex)
                 {
                     tcs.SetException(ex);
+                    throw;
                 }
             }
 
@@ -539,7 +541,7 @@ namespace WinterRose.ForgeThread
         /// <param name="name">Name of the registered main thread.</param>
         /// <param name="maxItems">Maximum number of items to process this call.</param>
         /// <returns>Number of executed actions.</returns>
-        public int ProcessPendingActions(string name = DEFAULT_MAIN_NAME, int maxItems = int.MaxValue)
+        public int TickThread(string name = DEFAULT_MAIN_NAME, int maxItems = int.MaxValue)
         {
             if (!threads.TryGetValue(name, out var loom)) throw new InvalidOperationException($"Thread '{name}' is not registered.");
             if (!loom.IsHostedMain) throw new InvalidOperationException($"Thread '{name}' is not a hosted main thread.");
@@ -568,6 +570,11 @@ namespace WinterRose.ForgeThread
             while (executed < maxItems && loom.TryDequeue(out var item))
             {
                 ExecuteScheduledItem(item, mainScheduler);
+                if(name == DEFAULT_MAIN_NAME)
+                {
+                    if(item.completion.Task.IsFaulted)
+                        ExceptionDispatchInfo.Capture(item.completion.Task.Exception).Throw();
+                }
                 mainScheduler?.RunTick();
                 executed++;
             }

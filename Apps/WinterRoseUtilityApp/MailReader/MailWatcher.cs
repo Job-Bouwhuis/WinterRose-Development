@@ -1,7 +1,7 @@
 ﻿using EnvDTE;
 using Microsoft.VisualStudio.OLE.Interop;
 using Raylib_cs;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.Recordium;

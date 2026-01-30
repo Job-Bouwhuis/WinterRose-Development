@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;

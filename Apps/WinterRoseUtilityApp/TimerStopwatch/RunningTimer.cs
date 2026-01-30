@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 
 namespace WinterRoseUtilityApp.TimerStopwatch;
 internal class RunningTimer

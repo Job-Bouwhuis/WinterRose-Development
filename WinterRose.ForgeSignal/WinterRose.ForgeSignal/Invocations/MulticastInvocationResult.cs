@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WinterRose.ForgeSignal;
+namespace WinterRose.EventBusses;
 /// <summary>
 /// The result of a raised <see cref="MulticastInvocation"/>
 /// </summary>

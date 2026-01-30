@@ -1,4 +1,4 @@
-﻿namespace WinterRose.ForgeSignal;
+﻿namespace WinterRose.EventBusses;
 
 public sealed class Invocation<TIn1, TOut> : Invocation
 {

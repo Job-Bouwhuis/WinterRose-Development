@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.Entities;
 
 namespace WinterRose.ForgeWarden.StatusSystem;

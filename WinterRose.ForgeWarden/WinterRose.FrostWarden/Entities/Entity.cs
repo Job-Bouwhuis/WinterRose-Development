@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using WinterRose.ForgeGuardChecks;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.DependencyInjection;
 using WinterRose.ForgeWarden.DependencyInjection.Handlers;

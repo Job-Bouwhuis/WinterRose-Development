@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using WinterRose;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeThread;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.AssetPipeline;

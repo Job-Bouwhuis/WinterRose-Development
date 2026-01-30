@@ -1,6 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.StaticValueModifiers;
 
 namespace WinterRose.ForgeWarden.HealthSystem;

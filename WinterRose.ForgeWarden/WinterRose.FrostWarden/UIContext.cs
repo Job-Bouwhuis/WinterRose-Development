@@ -46,7 +46,7 @@ namespace WinterRose.ForgeWarden
         {
             RichText t = RichText.Parse(text, MultiplyColor(Color.White, tintColor));
             t.FontSize = 20;
-            float width = t.MeasureText(null);
+            float width = t.MeasureTextWidth(null);
             Rectangle rect = new Rectangle(position.X, position.Y, width + contentWidth, lineHeight);
             bool pressed = Raylib.CheckCollisionPointRec(Raylib.GetMousePosition(), rect) &&
                            Raylib.IsMouseButtonPressed(MouseButton.Left);

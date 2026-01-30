@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 

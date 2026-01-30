@@ -1,6 +1,6 @@
 ﻿using Raylib_cs;
 using System;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
@@ -47,7 +47,7 @@ public class UIWindow : UIContainer
     /// <summary>
     /// Set by the window when the full close animation has been completed, and should be removed from the list of windows
     /// </summary>
-    internal bool IsFullyClosed { get; private set; } = false;
+    public bool IsFullyClosed { get; private set; } = false;
 
     private bool closeAfterCollapse = false;
     private bool closeAnimationActive = false;

@@ -355,16 +355,6 @@ namespace WinterRose.WIP.TestClasses
         public SomeGuy() : this("", "", 0) { }
     }
 
-    public record Settings(Vector2 Resolution, int MaxFramerate, GameModeSetting Gamemode)
-    {
-        public static Settings Random()
-        {
-            return new Settings(new(1920, 1080), 144, GameModeSetting.Normal);
-        }
-        private static Settings Empty() => new(new(), 0, GameModeSetting.None);
-        public Settings() : this(Empty()) { }
-    }
-
     public class dinges
     {
         [WFInclude]

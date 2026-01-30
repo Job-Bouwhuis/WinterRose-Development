@@ -4,7 +4,7 @@ namespace WinterRose.ForgeThread
 {
     internal class ScheduledItem
     {
-        private readonly TaskCompletionSource<object?> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public readonly TaskCompletionSource<object?> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public Action Action { get; }
         public JobPriority Priority { get; }
         public Task Task => completion.Task;

@@ -2,7 +2,7 @@
 using System;
 using System.Numerics;
 using System.Globalization;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 

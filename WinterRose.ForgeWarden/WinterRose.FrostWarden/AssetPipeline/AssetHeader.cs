@@ -13,7 +13,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
         public string Name { get; internal set; }
         public string Path { get; internal set; }
         public List<string> Tag { get; internal set; }
-        public Anonymous? Metadata { get; internal set; } = null;
+        public Anonymous? Metadata { get => field ??= new Anonymous(); internal set; }
 
         public bool IsValid =>
             !string.IsNullOrWhiteSpace(Name)

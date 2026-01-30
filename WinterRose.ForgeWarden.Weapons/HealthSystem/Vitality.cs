@@ -1,6 +1,6 @@
 ﻿using System;
 using WinterRose;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.DamageSystem;
 using WinterRose.ForgeWarden.DamageSystem.WeaponSystem;

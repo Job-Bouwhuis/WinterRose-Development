@@ -17,7 +17,6 @@ namespace WinterRose.ForgeWarden.AssetPipeline.Handlers
         {
             if(Path.GetExtension(header.Path) == ".gif")
             {
-                header.Metadata ??= new Anonymous();
                 header.Metadata["type"] = "gif";
             }
             return true;
@@ -25,14 +24,12 @@ namespace WinterRose.ForgeWarden.AssetPipeline.Handlers
 
         public static Sprite LoadAsset(AssetHeader header)
         {
-            using TempFile f = new(header.Source);
-
             if ((header.Metadata?.TryGet("type", out string? type) ?? false) && type == "gif")
-                return new SpriteGif(f.Name)
+                return new SpriteGif(header.Source.Name)
                 {
                     Source = header.Name
                 };
-            return new Sprite(f.Name)
+            return new Sprite(header.Source.Name)
             {
                 Source = header.Name
             };
@@ -45,7 +42,10 @@ namespace WinterRose.ForgeWarden.AssetPipeline.Handlers
             Image img = ray.LoadImageFromTexture(asset.Texture);
 
             if(asset is SpriteGif)
+            {
                 header.Metadata["type"] = "gif";
+                throw new NotImplementedException("Saving gifs is not implemented yet!");
+            }
             else
             {
                 ray.ExportImage(img, header.Path);

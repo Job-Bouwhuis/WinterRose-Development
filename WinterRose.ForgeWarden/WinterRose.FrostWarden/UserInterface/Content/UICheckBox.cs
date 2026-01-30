@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.TextRendering;
 
 namespace WinterRose.ForgeWarden.UserInterface.Content;
@@ -261,7 +261,7 @@ public class UICheckBox : UIContent
             float cy = innerRect.Y + innerRect.Height / 2f;
 
             // color (dim if Disabled)
-            Color sphereColor = Style.ProgressBarFill ?? new Color(215, 95, 185, 255);
+            Color sphereColor = Style.CheckBoxBusyIndicator;
 
             Raylib_cs.Raylib.DrawCircleV(new Vector2(cx, cy), radius, sphereColor);
         }

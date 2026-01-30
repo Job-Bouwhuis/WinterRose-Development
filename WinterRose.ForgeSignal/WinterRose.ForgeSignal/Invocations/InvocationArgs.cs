@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Text;
 
-namespace WinterRose.ForgeSignal;
+namespace WinterRose.EventBusses;
 
 public sealed class InvocationArgs
 {

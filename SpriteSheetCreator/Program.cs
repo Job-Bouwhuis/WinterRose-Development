@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeThread;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.UserInterface;

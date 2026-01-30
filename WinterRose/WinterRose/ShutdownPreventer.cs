@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 
 namespace WinterRose;
 

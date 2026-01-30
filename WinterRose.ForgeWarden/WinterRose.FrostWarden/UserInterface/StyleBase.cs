@@ -70,6 +70,7 @@ namespace WinterRose.ForgeWarden.UserInterface
         private Color buttonDisabled = new Color(80, 70, 95, 255);   // muted purple-gray, clearly inactive
         private Color seperatorLineColor = new Color(60, 50, 75, 255); // subtle dark purple divider
 
+        private Color checkBoxBusyIndicator = Color.White;
 
         public Color TextBoxBackground
         {
@@ -326,6 +327,13 @@ namespace WinterRose.ForgeWarden.UserInterface
             set => seperatorLineColor = value;
         }
 
+        public Color CheckBoxBusyIndicator
+        {
+            get => seperatorLineColor.WithAlpha(ContentAlpha);
+            set => seperatorLineColor = value;
+        }
+
+        public Color CheckBoxBusyIndicatorRaw => checkBoxBusyIndicator;
         public Color ButtonDisabledRaw => buttonDisabled;
         public Color SeperatorLineColorRaw => seperatorLineColor;
         public Color ScrollbarThumbRaw => scrollbarThumb;
@@ -2037,7 +2045,30 @@ namespace WinterRose.ForgeWarden.UserInterface
             }
         }
 
+        public Overridable<Color> CheckBoxBusyIndicator
+        {
+            get;
+            set
+            {
+                StyleBase.CheckBoxBusyIndicator = value;
+                if (field is not null)
+                {
+                    var oldOverride = field.Override;
+                    var oldFallback = field.fallbackResolver;
+
+                    if (field.IsOverridden)
+                        value.Override = oldOverride;
+                    value.fallbackResolver = oldFallback;
+
+                    field = value;
+                }
+                else
+                    field = value;
+            }
+        }
         public Color White => StyleBase.White;
+
+        
 
         public ContentStyle(StyleBase parent)
         {
@@ -2095,6 +2126,7 @@ namespace WinterRose.ForgeWarden.UserInterface
 
             SliderTick = new Overridable<Color>(() => FollowContainerDefaults ? parent.SliderTickRaw : Color.Gray);
             SliderFilled = new Overridable<Color>(() => FollowContainerDefaults ? parent.SliderFilledRaw : Color.Blue);
+            CheckBoxBusyIndicator = new Overridable<Color>(() => FollowContainerDefaults ? parent.CheckBoxBusyIndicatorRaw : Color.White);
 
             // Numbers, floats, ints
             ShadowSizeLeft = new Overridable<float>(() => FollowContainerDefaults ? parent.ShadowSizeLeft : 0f);

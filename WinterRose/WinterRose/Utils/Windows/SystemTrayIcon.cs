@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 
 namespace WinterRose
 {

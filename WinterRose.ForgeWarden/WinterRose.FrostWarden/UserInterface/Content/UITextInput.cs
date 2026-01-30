@@ -2,7 +2,7 @@
 using System;
 using System.Numerics;
 using System.Collections.Generic;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Utility;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;

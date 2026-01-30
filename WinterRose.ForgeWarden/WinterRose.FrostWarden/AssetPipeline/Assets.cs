@@ -340,7 +340,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
         public static AssetHeader GetHeader(string name)
         {
             assetHeaders.TryGetValue(name, out AssetHeader header);
-            if (!header.IsValid)
+            if (header is null or not null and { IsValid: false })
                 throw new AssetNotFoundException(name);
             return header;
         }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;

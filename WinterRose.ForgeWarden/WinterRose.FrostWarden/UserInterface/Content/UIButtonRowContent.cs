@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 

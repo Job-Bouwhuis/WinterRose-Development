@@ -1,4 +1,4 @@
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 

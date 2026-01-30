@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.Utility;

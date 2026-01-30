@@ -53,7 +53,7 @@ public class ThreadLoomBasicGuards
             return 42;
         });
 
-        loom.ProcessPendingActions();
+        loom.TickThread();
 
         var result = task.Result;
         Forge.Expect(result).EqualTo(42);
@@ -77,7 +77,7 @@ public class ThreadLoomBasicGuards
         Forge.Expect(mainCallbackFired).False();
 
         // pump main to run posted actions
-        loom.ProcessPendingActions();
+        loom.TickThread();
 
         Forge.Expect(mainCallbackFired).True();
     }
@@ -128,7 +128,7 @@ public class ThreadLoomCoroutineGuards
 
         // pump a few times (simulate ticks)
         for (int i = 0; i < 3; i++)
-            loom.ProcessPendingActions();
+            loom.TickThread();
 
         Forge.Expect(counter).EqualTo(3);
 
@@ -145,12 +145,12 @@ public class ThreadLoomCoroutineGuards
         Forge.Expect(completed).False();
 
         // first iteration work
-        loom.ProcessPendingActions();
+        loom.TickThread();
 
         Thread.Sleep(120);
 
         // second iteration work
-        loom.ProcessPendingActions();
+        loom.TickThread();
 
         Forge.Expect(completed).True();
 
@@ -186,7 +186,7 @@ public class ThreadLoomSchedulerGuards
         Forge.Expect(fired).False();
 
         Thread.Sleep(90);
-        loom.ProcessPendingActions();
+        loom.TickThread();
 
         Forge.Expect(fired).True();
     }
@@ -198,7 +198,7 @@ public class ThreadLoomSchedulerGuards
         using var disp = loom.ScheduleRepeating("Main", () => Interlocked.Increment(ref counter), TimeSpan.FromMilliseconds(30));
 
         Thread.Sleep(140); // allow several timer ticks to enqueue work
-        loom.ProcessPendingActions();
+        loom.TickThread();
 
         Forge.Expect(counter).GreaterThanOrEqualTo(3);
 
@@ -329,29 +329,29 @@ public class ThreadLoomCoroutineAdvancedGuards
         var handle2 = loom.InvokeOn("Main", CounterCoroutine(5, v => counterB = v));
 
         // tick 1: process main queue
-        loom.ProcessPendingActions();
+        loom.TickThread();
         Forge.Expect(counterA).EqualTo(1);
         Forge.Expect(counterB).EqualTo(1);
 
         // tick 2
         Thread.Sleep(50); // timers may fire, but they enqueue work
-        loom.ProcessPendingActions();
+        loom.TickThread();
         Forge.Expect(counterA).EqualTo(2);
         Forge.Expect(counterB).EqualTo(2);
 
         // tick 3
         Thread.Sleep(50);
-        loom.ProcessPendingActions();
+        loom.TickThread();
         Forge.Expect(counterA).EqualTo(3); // completed
         Forge.Expect(counterB).EqualTo(3);
 
         // tick 4
         Thread.Sleep(50);
-        loom.ProcessPendingActions();
+        loom.TickThread();
 
         // tick 5
         Thread.Sleep(50);
-        loom.ProcessPendingActions();
+        loom.TickThread();
 
         // cleanup
         handle1.Dispose();
@@ -691,7 +691,7 @@ public class ThreadLoomAsyncGuards
         Forge.Expect(mainCallbackFired).False();
 
         // pump main to run posted action
-        loom.ProcessPendingActions();
+        loom.TickThread();
 
         Forge.Expect(mainCallbackFired).True();
     }
@@ -713,18 +713,18 @@ public class ThreadLoomAsyncGuards
         Forge.Expect(handle.LastYield).Null();
 
         // tick 1
-        loom.ProcessPendingActions();
+        loom.TickThread();
         Forge.Expect(handle.LastYield).EqualTo(1);
 
         // tick 2
-        loom.ProcessPendingActions();
+        loom.TickThread();
         // coroutine should complete on tick 2 (last yield = 2)
         // wait for its task to complete by pumping main until done
         var sw = Stopwatch.StartNew();
         while (!handle.Task.IsCompleted)
         {
             if (sw.ElapsedMilliseconds > 1000) throw new TimeoutException("Coroutine timed out");
-            loom.ProcessPendingActions();
+            loom.TickThread();
             Thread.Sleep(1);
         }
 

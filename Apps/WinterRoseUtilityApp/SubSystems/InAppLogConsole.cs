@@ -9,7 +9,7 @@ namespace WinterRoseUtilityApp.SubSystems;
 
 using Raylib_cs;
 using System.Collections.Concurrent;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
 internal class InAppLogConsole : ILogDestination

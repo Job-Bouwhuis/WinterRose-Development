@@ -292,7 +292,7 @@ public class RichText
         };
     }
 
-    public float MeasureText(Font? font)
+    public float MeasureTextWidth(Font? font)
     {
         font ??= ForgeWardenEngine.DefaultFont;
         float width = 0;

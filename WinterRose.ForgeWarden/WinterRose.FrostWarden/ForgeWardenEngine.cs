@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using WinterRose.ForgeSignal;
+using WinterRose.EventBusses;
 using WinterRose.ForgeThread;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
@@ -234,7 +234,7 @@ public abstract class ForgeWardenEngine
                 InputManager.Update();
                 Time.Update();
                 GlobalHotkey.Update();
-                GlobalThreadLoom.ProcessPendingActions(maxItems: 10);
+                GlobalThreadLoom.TickThread(maxItems: 10);
 
                 if (ray.IsWindowResized())
                 {

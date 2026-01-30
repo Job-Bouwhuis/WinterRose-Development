@@ -8,7 +8,7 @@ using WinterRose.ForgeGuardChecks;
 using WinterRose.ForgeGuardChecks.Exceptions;
 using WinterRose.ForgeThread;
 
-namespace WinterRose.ForgeSignal.Tests;
+namespace WinterRose.EventBusses.Tests;
 [GuardClass("ForgeSignal.Basic")]
 public class ForgeSignalBasicGuards
 {
