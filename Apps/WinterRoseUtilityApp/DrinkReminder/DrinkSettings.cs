@@ -10,6 +10,7 @@ internal class DrinkSettings
     {
         ReminderIntervalMinutes = 60,
         NotificationsEnabled = true,
+        Volume = 1,
         Messages = [
             "Do not forget to drink some liquid!",
             "Drink water before you turn into a sea cucumber!",
@@ -40,6 +41,7 @@ internal class DrinkSettings
         ]
     };
 
+    public float Volume { get; set; } = 1;
     public List<string> Messages { get; set; } = new List<string>();
     
     public int ReminderIntervalMinutes { get; set; }

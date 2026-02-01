@@ -61,6 +61,7 @@ public class Hierarchy : UIWindow
     private UITreeNode ConstructTreeNode(Entity e, List<Entity> seen)
     {
         UITreeNode node = new UITreeNode(e.Name, new WeakReference<Entity>(e));
+        node.Collapse();
         foreach (Transform t in e.transform.Children)
         {
             seen.Add(t.owner);

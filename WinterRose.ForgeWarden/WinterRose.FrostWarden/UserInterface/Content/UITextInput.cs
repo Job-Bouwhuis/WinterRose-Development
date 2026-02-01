@@ -6,6 +6,7 @@ using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Utility;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.Recordium;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
@@ -21,7 +22,19 @@ public class UITextInput : UIContent
     public MulticastVoidInvocation<UITextInput, string> OnSubmit = new();
     public MulticastVoidInvocation<UITextInput, string> OnInputChanged = new();
 
+    public bool DebugVisualSpans { get; set; } = false;
+    private float DebugExtraHeight => Style.TextBoxFontSize + Style.TextBoxTextSpacing * 2f;
 
+    private class VisualSpan
+    {
+        public int GlobalIndex;    // logical index in `text` where this span sits BEFORE the char at that index
+        public float Width;        // measured width in pixels
+        public int RenderLength;   // how many characters in the render-line this span consumes (for advancing)
+        public bool IsInjected;    // true if this span represents an injected segment
+        public bool IsToken;       // true if this span represents an inline token (treated atomic)
+        public char TokenKey;      // token key for inline tokens (if IsToken)
+        public string TokenContent;// inner content for inline tokens (if IsToken)
+    }
 
     private class InlineHandler
     {
@@ -113,9 +126,18 @@ public class UITextInput : UIContent
     public bool ReadOnly { get; set; } = false;
 
 
-    private int selStart = 0; // inclusive
-    private int selEnd = 0;   // exclusive
-    private int selAnchor = 0; // where selection started
+    /// <summary>
+    /// inclusive
+    /// </summary>
+    private int selStart = 0;
+    /// <summary>
+    /// exclusive
+    /// </summary>
+    private int selEnd = 0;
+    /// <summary>
+    /// where selection started
+    /// </summary>
+    private int selAnchor = 0;
     private bool isSelectingWithMouse = false;
 
     // click counts for double/triple click
@@ -127,8 +149,15 @@ public class UITextInput : UIContent
     private int mouseDownIndex = 0;
 
     public bool IsPassword { get; set; } = false;
+    /// <summary>
+    /// The character displayed if <see cref="IsPassword"/> is <see langword="true"/>. eg: "pass" => "****"
+    /// </summary>
     public char MaskChar { get; set; } = '*';
 
+    /// <summary>
+    /// A helpful message for the user what the purpose for this textbox is<br></br>
+    /// When the textbox is empty, the placeholder is shown
+    /// </summary>
     public string Placeholder { get; set; } = "";
     private Color placeholderColor = new Color(160, 160, 160, 200);
 
@@ -149,13 +178,137 @@ public class UITextInput : UIContent
     public void InjectStringAt(int logicalIndex, string content)
     {
         if (string.IsNullOrEmpty(content)) return;
-        // Avoid multi-line injections for now (keeps mapping simple)
         content = content.Replace("\r", " ").Replace("\n", " ");
-        int idx = Math.Clamp(logicalIndex, 0, text.Length);
-        injectedSegments.Add(new InjectedSegment { Index = idx, Content = content });
+        injectedSegments.Add(new InjectedSegment { Index = logicalIndex, Content = content });
 
-        // keep list sorted by index (stable)
         injectedSegments.Sort((a, b) => a.Index.CompareTo(b.Index));
+    }
+
+    private void WalkVisualLine(int globalLineBase, string renderLine, Font font, float fontSize, float spacing, Action<VisualSpan> emit)
+    {
+        int localIdx = 0;
+
+        // find first injected segment index >= globalLineBase
+        int segPointer = 0;
+        while (segPointer < injectedSegments.Count && injectedSegments[segPointer].Index < globalLineBase)
+            segPointer++;
+
+        while (localIdx <= renderLine.Length)
+        {
+            int globalIdx = globalLineBase + localIdx;
+
+            // injected segments that appear *before* the char at localIdx
+            while (segPointer < injectedSegments.Count && injectedSegments[segPointer].Index == globalIdx)
+            {
+                var seg = injectedSegments[segPointer];
+                float w = MeasureInjectedContentWidth(font, fontSize, spacing, seg.Content);
+                emit(new VisualSpan
+                {
+                    GlobalIndex = globalIdx,
+                    Width = w,
+                    RenderLength = 0,
+                    IsInjected = true,
+                    IsToken = false
+                });
+                segPointer++;
+            }
+
+            if (localIdx == renderLine.Length)
+                break;
+
+            // inline token start (like \c[...] or \s[...])
+            if (IsInlineTokenStart(renderLine, localIdx))
+            {
+                int close = renderLine.IndexOf(']', localIdx + 3);
+                if (close == -1)
+                {
+                    // unterminated token: treat the rest of the line as a single literal run
+                    string rest = renderLine[localIdx..];
+                    float runW = Raylib.MeasureTextEx(font, rest, fontSize, spacing).X;
+                    emit(new VisualSpan
+                    {
+                        GlobalIndex = globalLineBase + localIdx,
+                        Width = runW,
+                        RenderLength = rest.Length,
+                        IsInjected = false,
+                        IsToken = false
+                    });
+                    break;
+                }
+
+                // closed token: treat atomically (single visual unit)
+                char key = renderLine[localIdx + 1];
+                int contentStart = localIdx + 3;
+                int contentLen = Math.Max(0, close - contentStart);
+                float tokenW = 0f;
+                string content = contentLen > 0 ? renderLine.Substring(contentStart, contentLen) : string.Empty;
+                if (contentLen > 0 && INLINE_HANDLERS.TryGetValue(key, out var handler))
+                {
+                    tokenW = handler.Measure(this, content, fontSize);
+                }
+                else
+                {
+                    // fallback: measure literal token text
+                    tokenW = Raylib.MeasureTextEx(font, renderLine[localIdx..(close + 1)], fontSize, spacing).X;
+                }
+
+                emit(new VisualSpan
+                {
+                    GlobalIndex = globalLineBase + localIdx,
+                    Width = tokenW,
+                    RenderLength = (close + 1 - localIdx),
+                    IsInjected = false,
+                    IsToken = true,
+                    TokenKey = key,
+                    TokenContent = content
+                });
+
+                localIdx = close + 1;
+                continue;
+            }
+
+            // plain text run: accumulate until next token/injection/EOL and emit one run span
+            int runStart = localIdx;
+            while (localIdx < renderLine.Length)
+            {
+                int gl = globalLineBase + localIdx;
+                bool injectionAtHere = segPointer < injectedSegments.Count && injectedSegments[segPointer].Index == gl;
+                if (injectionAtHere) break;
+                if (IsInlineTokenStart(renderLine, localIdx)) break;
+                localIdx++;
+            }
+
+            if (localIdx > runStart)
+            {
+                string run = renderLine[runStart..localIdx];
+                float runW = Raylib.MeasureTextEx(font, run, fontSize, spacing).X;
+                emit(new VisualSpan
+                {
+                    GlobalIndex = globalLineBase + runStart,
+                    Width = runW,
+                    RenderLength = run.Length,
+                    IsInjected = false,
+                    IsToken = false
+                });
+            }
+        }
+
+        // any injected segments after end-of-line
+        int endGlobal = globalLineBase + renderLine.Length;
+        while (segPointer < injectedSegments.Count && injectedSegments[segPointer].Index == endGlobal)
+        {
+            var seg = injectedSegments[segPointer];
+            float w = MeasureInjectedContentWidth(font, fontSize, spacing, seg.Content);
+            emit(new VisualSpan
+            {
+                GlobalIndex = endGlobal,
+                Width = w,
+                RenderLength = 0,
+                IsInjected = true,
+                IsToken = false
+            });
+            segPointer++;
+        }
     }
 
     void MoveCaretUp()
@@ -538,7 +691,6 @@ public class UITextInput : UIContent
         return sb.ToString();
     }
 
-
     private class InlineDrawContext
     {
         public Font font;
@@ -655,9 +807,11 @@ public class UITextInput : UIContent
         return true;
     }
 
+    static Log log = new Log("InputboxTemp");
     protected override void Draw(Rectangle bounds)
     {
-        // save bounds for mouse->index mapping
+        int renderTextLength = text.Length;
+
         lastDrawBounds = bounds;
 
         // draw background + border (existing)
@@ -687,6 +841,19 @@ public class UITextInput : UIContent
         string[] logicalRenderLines = renderLogical.Split('\n');    // used for visible rendering and token parsing
         string[] logicalMeasureLines = measurementText.Split('\n'); // used for measurement & caret/selection
 
+        // compute logical start index for each line in the ORIGINAL logical `text`
+        // this ensures injectedSegments (which use logical indices) align with the per-line base index
+        int totalLines = logicalRenderLines.Length;
+        var lineStarts = new int[totalLines];
+        int scanPos = 0;
+        for (int li = 0; li < totalLines; li++)
+        {
+            lineStarts[li] = scanPos;
+            if (scanPos >= logical.Length) { scanPos = logical.Length; continue; }
+            int nl = logical.IndexOf('\n', scanPos);
+            if (nl == -1) scanPos = logical.Length; else scanPos = nl + 1;
+        }
+
         Vector2 textPos;
         if (!IsMultiline || logicalRenderLines.Length == 1)
         {
@@ -712,7 +879,6 @@ public class UITextInput : UIContent
 
         // iterate lines left->right, processing tokens and injections in-stream
         float y = textPos.Y;
-        int globalLogicalBase = 0; // index into logical (renderLogical) for start of line
 
         int linesCount = Math.Min(logicalRenderLines.Length, logicalMeasureLines.Length);
         for (int li = 0; li < linesCount; li++)
@@ -723,12 +889,43 @@ public class UITextInput : UIContent
             float x = textPos.X;
             Color curColor = Style.TextBoxText; // start color for this line
 
-            int localIdx = 0; 
+            int localIdx = 0;
             int measurePos = 0; // count of visible characters seen so far on this line (for mapping)
-                                // maintain a quick pointer into injectedSegments
+
+            // IMPORTANT: base index into ORIGINAL logical `text` for this line
+            int globalLogicalBase = lineStarts[li];
+
+            // maintain a quick pointer into injectedSegments
             int segPointer = 0;
-            while (segPointer < injectedSegments.Count && injectedSegments[segPointer].Index < globalLogicalBase)
-                segPointer++;
+            while (segPointer < injectedSegments.Count && injectedSegments.Count != 0
+                    && (injectedSegments[segPointer].Index < 0
+                    || injectedSegments[segPointer].Index > renderTextLength))
+            {
+                segPointer++; // permanently ignore invalid injections
+            }
+
+
+            // local helper: map a global logical index (into `text`) to a measure-line index (visible char count)
+            int LogicalToMeasurePos(int globalIndex)
+            {
+                if (globalIndex <= globalLogicalBase) return 0;
+                int targetLocal = globalIndex - globalLogicalBase; // position in renderLine
+                int r = 0;
+                int m = 0;
+                while (r < renderLine.Length && r < targetLocal)
+                {
+                    if (IsInlineTokenStart(renderLine, r))
+                    {
+                        int close = renderLine.IndexOf(']', r + 3);
+                        r = (close == -1) ? renderLine.Length : close + 1;
+                        continue;
+                    }
+                    // normal visible char
+                    r++;
+                    m++;
+                }
+                return Math.Clamp(m, 0, measureLine.Length);
+            }
 
             // Stream through renderLine
             while (localIdx < renderLine.Length)
@@ -773,13 +970,11 @@ public class UITextInput : UIContent
                 {
                     string run = renderLine[runStart..localIdx];
 
-                    // For measurement we must draw only the visible glyphs — but run may include escape sequences? We already guarded runs to stop at token start.
-                    // Measure run and draw
                     Vector2 measure = Raylib.MeasureTextEx(font, run, fontSize, spacing);
                     Raylib.DrawTextEx(font, run, new Vector2(x, y), fontSize, spacing, curColor);
                     x += measure.X;
 
-                    // advance measurePos by number of visible chars - but run contains only visible chars so:
+                    // advance measurePos by number of visible chars in this run
                     measurePos += run.Length;
                 }
             } // end while localIdx
@@ -796,62 +991,155 @@ public class UITextInput : UIContent
             if (HasSelection())
             {
                 int logicalLineStart = globalLogicalBase;
-                int logicalLineEnd = globalLogicalBase + measureLine.Length; // exclusive
+                int logicalLineEnd = globalLogicalBase + renderLine.Length; // exclusive (in logical indices)
 
                 int s0 = Math.Clamp(selStart, logicalLineStart, logicalLineEnd);
                 int s1 = Math.Clamp(selEnd, logicalLineStart, logicalLineEnd);
 
                 if (s0 < s1)
                 {
-                    int localStart = s0 - logicalLineStart;
-                    int localEnd = s1 - logicalLineStart;
-                    string left = measureLine.Length >= localStart ? measureLine[..localStart] : "";
-                    string sel = measureLine.Substring(localStart, Math.Max(0, Math.Min(localEnd - localStart, measureLine.Length - localStart)));
+                    // collect spans so we can compute offsets exactly like Draw does
+                    var spans = new List<VisualSpan>();
+                    WalkVisualLine(globalLogicalBase, renderLine, font, fontSize, spacing, span => spans.Add(span));
 
-                    Vector2 leftMeasure = Raylib.MeasureTextEx(font, left, fontSize, spacing);
-                    Vector2 selMeasure = Raylib.MeasureTextEx(font, sel, fontSize, spacing);
+                    // whether we should include injections placed at end-of-line when target == endGlobal
+                    int endGlobal = logicalLineEnd;
+                    bool IncludeTrailingInjections(int targetIndex) => targetIndex == endGlobal;
 
-                    float selX = textPos.X + leftMeasure.X;
+                    // compute X offset (in pixels, relative to textPos.X) for a given logical index in this line
+                    float XForLogicalIndex(int targetIndex)
+                    {
+                        float xa = 0f;
+                        foreach (var span in spans)
+                        {
+                            // injected or token spans occupy visual width but are atomic
+                            if (span.IsInjected || span.IsToken)
+                            {
+                                if (span.GlobalIndex < targetIndex ||
+                                    (IncludeTrailingInjections(targetIndex) && span.GlobalIndex == targetIndex))
+                                {
+                                    xa += span.Width;
+                                }
+                                // always continue to next span (they do not consume render chars)
+                                continue;
+                            }
+
+                            // plain run span (may contain multiple visible characters)
+                            int runStartGlobal = span.GlobalIndex;
+                            int runCharCount = span.RenderLength;
+
+                            if (targetIndex <= runStartGlobal)
+                            {
+                                // target is before this run -> done
+                                break;
+                            }
+
+                            if (targetIndex >= runStartGlobal + runCharCount)
+                            {
+                                // whole run is before targetIndex -> add full width
+                                xa += span.Width;
+                                continue;
+                            }
+
+                            // targetIndex lies inside this run -> measure substring up to the needed char count
+                            int charsBefore = Math.Clamp(targetIndex - runStartGlobal, 0, runCharCount);
+                            int localRunStart = runStartGlobal - globalLogicalBase; // index into renderLine
+                            string partial = renderLine.Substring(localRunStart, charsBefore);
+                            Vector2 pm = Raylib.MeasureTextEx(font, partial, fontSize, spacing);
+                            xa += pm.X;
+                            break; // we have reached target index
+                        }
+
+                        return xa;
+                    }
+
+                    // compute full pixel positions for the selection edges
+                    float startX = textPos.X + XForLogicalIndex(s0);
+                    float endX = textPos.X + XForLogicalIndex(s1);
+
+                    // draw selection rectangle (includes injected widths)
+                    float selX = startX;
+                    float selW = Math.Max(0f, endX - startX);
                     float selY = y - 2f;
                     float selH = fontSize + 4f;
-
                     Color selBg = new Color(80, 120, 200, 160);
-                    Raylib.DrawRectangleRec(new Rectangle(selX, selY, selMeasure.X, selH), selBg);
+                    Raylib.DrawRectangleRec(new Rectangle(selX, selY, selW, selH), selBg);
 
-                    // draw selected substring on top in white
-                    Raylib.DrawTextEx(font, sel, new Vector2(selX, y), fontSize, spacing, Color.White);
+                    // draw visible selected text ONLY (skip injections/tokens). This preserves gaps.
+                    foreach (var span in spans)
+                    {
+                        if (span.IsInjected || span.IsToken) continue;
+
+                        int runGlobalStart = span.GlobalIndex;
+                        int runGlobalEnd = span.GlobalIndex + span.RenderLength; // exclusive
+
+                        int overlapStart = Math.Max(runGlobalStart, s0);
+                        int overlapEnd = Math.Min(runGlobalEnd, s1);
+                        int overlapLen = Math.Max(0, overlapEnd - overlapStart);
+                        if (overlapLen <= 0) continue;
+
+                        int localRunStart = runGlobalStart - globalLogicalBase;
+                        int localSubStart = overlapStart - runGlobalStart;
+
+                        string sub = renderLine.Substring(localRunStart + localSubStart, overlapLen);
+                        float drawX = textPos.X + XForLogicalIndex(overlapStart);
+                        Raylib.DrawTextEx(font, sub, new Vector2(drawX, y), fontSize, spacing, Color.White);
+                    }
                 }
             }
 
-            // advance to next line
-            globalLogicalBase += measureLine.Length + 1; // +1 for '\n'
+            // advance to next line (no longer using measureLine length to advance logical base)
+            // globalLogicalBase is recomputed per-line from lineStarts, so nothing to add here
             y += lineHeight;
+
+            if (DebugVisualSpans)
+            {
+                ForgeWardenEngine.Current.AddDebugDraw(() =>
+                {
+                    // small visualisation: draw span boxes and index ticks under the text
+                    float debugX = textPos.X;
+                    float debugY = y + (IsMultiline ? (logicalRenderLines.Length > 1 ? 0f : 0f) : 0f) + (Style.TextBoxFontSize + 4f);
+                    int visBase = lineStarts != null && lineStarts.Length > 0 && li < lineStarts.Length ? lineStarts[li] : 0;
+
+                    float curX = textPos.X;
+                    WalkVisualLine(globalLogicalBase, renderLine, font, fontSize, spacing, span =>
+                    {
+                        if (span.Width > 0f)
+                        {
+                            var rect = new Rectangle(curX, y + fontSize + 2f, span.Width, 6f);
+                            Raylib.DrawRectangleLinesEx(rect, 1f, new Color(255, 128, 0, 180));
+                        }
+                        curX += span.Width;
+                    });
+                });
+            }
         }
 
         // draw caret measured against the token-stripped measurement lines (injected segments ignored)
         if (hasFocus && caretVisible)
         {
-            string[] renderLines = renderLogical.Split('\n');    // contains tokens
-                                                                 // find caret line using the actual render lines lengths (logical index is into text)
+            // use the precomputed logical line starts so caret and walker share the same indices
+            string[] renderLines = logicalRenderLines; // contains tokens per-line
             int caretLine = 0;
-            int baseIdx = 0;
-            bool foundLine = false;
-            for (int cli = 0; cli < renderLines.Length; cli++)
+
+            // find the logical line that contains the caret (inclusive end allowed)
+            for (int li = 0; li < lineStarts.Length; li++)
             {
-                int len = renderLines[cli].Length;
-                if (caretIndex >= baseIdx && caretIndex <= baseIdx + len)
+                int lineStart = lineStarts[li];
+                int lineEnd = lineStart + logicalRenderLines[li].Length; // exclusive end index
+                //log.Debug($"caretIndex={caretIndex}, lineStart={lineStart}");
+                if (caretIndex >= lineStart && caretIndex <= lineEnd)
                 {
-                    caretLine = cli;
-                    foundLine = true;
+                    caretLine = li;
                     break;
                 }
-                baseIdx += len + 1;
             }
-            if (!foundLine)
-            {
-                caretLine = Math.Max(0, renderLines.Length - 1);
-                baseIdx = Enumerable.Range(0, caretLine).Select(ii => renderLines[ii].Length + 1).Sum();
-            }
+
+
+
+
+            // baseIdx is the logical start index for this line (aligns with injectedSegments & walker)
+            int baseIdx = lineStarts[Math.Clamp(caretLine, 0, lineStarts.Length - 1)];
 
             string renderLine = caretLine < renderLines.Length ? renderLines[caretLine] : "";
             int caretCharPos = Math.Clamp(caretIndex - baseIdx, 0, renderLine.Length);
@@ -863,87 +1151,51 @@ public class UITextInput : UIContent
 
             // walk the renderLine and accumulate visible width up to caretCharPos
             float xAccum = 0f;
-            int i = 0;
-            while (i < renderLine.Length && i < caretCharPos)
+            WalkVisualLine(baseIdx, renderLine, font, fontSize, spacing, span =>
             {
-                int globalIdx = baseIdx + i;
-
-                // process any injected segments that are at this global position (they occupy visual width)
-                while (segPointer < injectedSegments.Count && injectedSegments[segPointer].Index == globalIdx)
+                // atomic spans (injections, tokens) are either fully before caret or not
+                if (span.IsInjected || span.IsToken)
                 {
-                    float iw = MeasureInjectedContentWidth(font, fontSize, spacing, injectedSegments[segPointer].Content);
-                    xAccum += iw;
-                    segPointer++;
+                    if (span.GlobalIndex < caretIndex)
+                        xAccum += span.Width;
+                    return;
                 }
 
-                // if an inline token starts here, handle it
-                if (IsInlineTokenStart(renderLine, i))
+                // plain run span: may contain multiple characters. Only add width of characters
+                // that are strictly before caretIndex (so caret can sit between chars).
+                // span.GlobalIndex is the logical index at the start of this run.
+                int runStartLocal = span.GlobalIndex - baseIdx;           // index into renderLine
+                int runCharCount = span.RenderLength;                    // number of visible chars in this run
+                int charsBefore = Math.Clamp(caretIndex - span.GlobalIndex, 0, runCharCount);
+
+                if (charsBefore <= 0)
                 {
-                    int close = renderLine.IndexOf(']', i + 3);
-                    if (close == -1)
-                    {
-                        // unterminated token -> treat the remaining chars as plain until caretPos
-                        int plainEnd = Math.Min(caretCharPos, renderLine.Length);
-                        string plain = renderLine[i..plainEnd];
-                        Vector2 m = Raylib.MeasureTextEx(font, plain, fontSize, spacing);
-                        xAccum += m.X;
-                        break;
-                    }
-
-                    char key = renderLine[i + 1];
-                    int contentStart = i + 3;
-                    int contentLen = Math.Max(0, close - contentStart);
-
-                    // sequence entirely before caret -> add full measured width
-                    if (close + 1 <= caretCharPos)
-                    {
-                        if (contentLen > 0 && INLINE_HANDLERS.TryGetValue(key, out var h))
-                        {
-                            string content = renderLine.Substring(contentStart, contentLen);
-                            xAccum += h.Measure(this, content, fontSize);
-                        }
-                        // advance past token
-                        i = close + 1;
-                        continue;
-                    }
-
-                    // caret is inside this sequence -> measure only the portion before caret
-                    if (contentStart < caretCharPos && caretCharPos <= close)
-                    {
-                        int charsBefore = Math.Clamp(caretCharPos - contentStart, 0, contentLen);
-                        if (charsBefore > 0 && INLINE_HANDLERS.TryGetValue(key, out var h2))
-                        {
-                            string part = renderLine.Substring(contentStart, charsBefore);
-                            xAccum += h2.Measure(this, part, fontSize);
-                        }
-                        break; // we've reached the caret
-                    }
-
-                    // token starts at/after caret -> nothing more to add
-                    break;
+                    // caret is before this run -> add nothing
+                    return;
                 }
 
-                // plain-character run: measure up to either next token or the caretCharPos
-                int runStart = i;
-                while (i < renderLine.Length && i < caretCharPos && !IsInlineTokenStart(renderLine, i))
-                    i++;
-                if (i > runStart)
+                if (charsBefore >= runCharCount)
                 {
-                    string run = renderLine[runStart..i];
-                    Vector2 mm = Raylib.MeasureTextEx(font, run, fontSize, spacing);
-                    xAccum += mm.X;
+                    // caret is after entire run -> add full span width (fast path)
+                    xAccum += span.Width;
+                    return;
                 }
-            }
 
-            // If caret is at end-of-line, ensure we include injections that sit at that index
+                // caret is inside this run -> measure only substring up to charsBefore
+                string partial = renderLine.Substring(runStartLocal, charsBefore);
+                Vector2 partialMeasure = Raylib.MeasureTextEx(font, partial, fontSize, spacing);
+                xAccum += partialMeasure.X;
+            });
+
             int endGlobal = baseIdx + renderLine.Length;
             if (caretCharPos == renderLine.Length)
             {
-                while (segPointer < injectedSegments.Count && injectedSegments[segPointer].Index == endGlobal)
+                int segPointer2 = 0;
+                while (segPointer2 < injectedSegments.Count && injectedSegments[segPointer2].Index < baseIdx) segPointer2++;
+                while (segPointer2 < injectedSegments.Count && injectedSegments[segPointer2].Index == endGlobal)
                 {
-                    float iw = MeasureInjectedContentWidth(font, fontSize, spacing, injectedSegments[segPointer].Content);
-                    xAccum += iw;
-                    segPointer++;
+                    xAccum += MeasureInjectedContentWidth(font, fontSize, spacing, injectedSegments[segPointer2].Content);
+                    segPointer2++;
                 }
             }
 
@@ -959,7 +1211,11 @@ public class UITextInput : UIContent
             }
             float caretY2 = caretY1 + fontSize - 4f;
             ray.DrawLineEx(new Vector2(caretX, caretY1), new Vector2(caretX, caretY2), Style.CaretWidth, Style.Caret);
+
+           
         }
+
+
 
         ScissorStack.Pop();
     }
@@ -974,15 +1230,18 @@ public class UITextInput : UIContent
         if (!IsMultiline)
         {
             Vector2 measured = Raylib.MeasureTextEx(font, "Ay", fontSize, spacing);
-            return MathF.Max(Style.TextBoxMinHeight, measured.Y + Style.TextBoxTextSpacing * 2f);
+            float baseH = MathF.Max(Style.TextBoxMinHeight, measured.Y + Style.TextBoxTextSpacing * 2f);
+            if (DebugVisualSpans) baseH += DebugExtraHeight;
+            return baseH;
         }
 
-        // multiline: number of logical lines determines height, but respect MinLines
         int linesCount = string.IsNullOrEmpty(text) ? 1 : text.Split('\n').Length;
         linesCount = Math.Max(linesCount, Math.Max(1, MinLines));
         float height = MathF.Max(Style.TextBoxMinHeight, linesCount * lineHeight + Style.TextBoxTextSpacing * 2f);
+        if (DebugVisualSpans) height += DebugExtraHeight;
         return height;
     }
+
 
     protected internal override void OnClickedOutsideOfContent(MouseButton button)
     {
@@ -1080,7 +1339,6 @@ public class UITextInput : UIContent
         ClearSelection();
         UpdateMultilineState();
         OnInputChanged?.Invoke(this, text);
-
     }
 
     // ---------------------- selection helpers ----------------------------
@@ -1360,7 +1618,6 @@ public class UITextInput : UIContent
         float spacing = Style.TextBoxTextSpacing;
         float lineHeight = fontSize + spacing;
 
-        // Use the actual render stream for hit-testing (tokens included)
         string renderText;
         if (IsPassword)
         {
@@ -1386,7 +1643,6 @@ public class UITextInput : UIContent
             textPos = new Vector2(bounds.X + Style.TextBoxTextSpacing, bounds.Y + Style.TextBoxTextSpacing);
         }
 
-        // determine clicked line
         float localY = mousePos.Y - textPos.Y;
         int lineIndex = 0;
         if (IsMultiline && renderLines.Length > 1)
@@ -1402,139 +1658,97 @@ public class UITextInput : UIContent
         string line = renderLines[Math.Clamp(lineIndex, 0, renderLines.Length - 1)];
         float localX = mousePos.X - textPos.X;
 
-        // compute base index (start index of the selected line in the full text)
+        // compute base index from ORIGINAL logical text so injectedSegments align
         int baseIndex = 0;
-        for (int i = 0; i < lineIndex; i++)
-            baseIndex += renderLines[i].Length + 1; // +1 for '\n'
+        if (string.IsNullOrEmpty(text) || lineIndex == 0)
+        {
+            baseIndex = 0;
+        }
+        else
+        {
+            int pos = 0;
+            int remaining = lineIndex;
+            while (remaining > 0 && pos < text.Length)
+            {
+                int nl = text.IndexOf('\n', pos);
+                if (nl == -1)
+                {
+                    pos = text.Length;
+                    break;
+                }
+                pos = nl + 1;
+                remaining--;
+            }
+            baseIndex = pos;
+        }
 
-        // quick bounds: left edge and right of line
         if (localX <= 0f) return baseIndex;
 
-        // measure full width of this line by walking it (token-aware + injections)
+        // compute full width using walker (so identical to Draw)
         float fullW = 0f;
-        {
-            int j = 0;
-            int segPointerFull = 0;
-            while (segPointerFull < injectedSegments.Count && injectedSegments[segPointerFull].Index < baseIndex)
-                segPointerFull++;
-
-            while (j < line.Length)
-            {
-                int globalIdx = baseIndex + j;
-
-                // account for injections at this position
-                while (segPointerFull < injectedSegments.Count && injectedSegments[segPointerFull].Index == globalIdx)
-                {
-                    fullW += MeasureInjectedContentWidth(font, fontSize, spacing, injectedSegments[segPointerFull].Content);
-                    segPointerFull++;
-                }
-
-                if (IsInlineTokenStart(line, j))
-                {
-                    int close = line.IndexOf(']', j + 3);
-                    if (close == -1)
-                    {
-                        string rest = line[j..];
-                        fullW += Raylib.MeasureTextEx(font, rest, fontSize, spacing).X;
-                        break;
-                    }
-
-                    char key = line[j + 1];
-                    int contentStart = j + 3;
-                    int contentLen = Math.Max(0, close - contentStart);
-                    if (contentLen > 0 && INLINE_HANDLERS.TryGetValue(key, out var h))
-                        fullW += h.Measure(this, line.Substring(contentStart, contentLen), fontSize);
-                    j = close + 1;
-                    continue;
-                }
-
-                int runStart = j;
-                while (j < line.Length && !IsInlineTokenStart(line, j)) j++;
-                string run = line[runStart..j];
-                fullW += Raylib.MeasureTextEx(font, run, fontSize, spacing).X;
-            }
-
-            // injections after line end
-            int endGlobal = baseIndex + line.Length;
-            while (segPointerFull < injectedSegments.Count && injectedSegments[segPointerFull].Index == endGlobal)
-            {
-                fullW += MeasureInjectedContentWidth(font, fontSize, spacing, injectedSegments[segPointerFull].Content);
-                segPointerFull++;
-            }
-        }
+        WalkVisualLine(baseIndex, line, font, fontSize, spacing, span => fullW += span.Width);
 
         if (localX >= fullW) return baseIndex + line.Length;
 
-        // walk the line and return index at the point where mouse hits midpoint (token-aware + injections)
         float xAccum = 0f;
-        int localIdx = 0;
-        int segPointer = 0;
-        while (segPointer < injectedSegments.Count && injectedSegments[segPointer].Index < baseIndex)
-            segPointer++;
+        int foundIndex = baseIndex + line.Length; // fallback
 
-        while (localIdx <= line.Length)
+        WalkVisualLine(baseIndex, line, font, fontSize, spacing, span =>
         {
-            int globalIdx = baseIndex + localIdx;
-
-            // handle injected segment at this global idx: it's a visual unit we can't place caret inside.
-            while (segPointer < injectedSegments.Count && injectedSegments[segPointer].Index == globalIdx)
+            // For injected & token spans treat atomically (caret sits at span start)
+            if (span.IsInjected || span.IsToken || span.RenderLength <= 1)
             {
-                float iw = MeasureInjectedContentWidth(font, fontSize, spacing, injectedSegments[segPointer].Content);
-                float midpoint = xAccum + iw * 0.5f;
-                if (localX < midpoint)
-                    return globalIdx; // caret before/at this injected content
-                                      // else consume injected width and continue (caret considered after injection)
-                xAccum += iw;
-                segPointer++;
+                float midpoint = xAccum + span.Width * 0.5f;
+                if (localX < midpoint && foundIndex == baseIndex + line.Length)
+                {
+                    foundIndex = span.GlobalIndex;
+                }
+                xAccum += span.Width;
+                return;
             }
 
-            // if at end of line: decide whether to return this index
-            if (localIdx == line.Length)
-                return globalIdx;
+            // Plain run with multiple characters: subdivide, but use substring measures
+            // to account for kerning/ligatures (same as caret drawing).
+            int localStart = span.GlobalIndex - baseIndex;
+            int chars = span.RenderLength;
 
-            // if token starts here, compute token width and decide hit
-            if (IsInlineTokenStart(line, localIdx))
+            float lastPartialWidth = 0f;
+            bool hit = false;
+
+            for (int ci = 0; ci < chars; ci++)
             {
-                int close = line.IndexOf(']', localIdx + 3);
-                if (close == -1)
+                // measure substring up to (ci+1) characters from run start
+                string partial = line.Substring(localStart, ci + 1);
+                float partialW = Raylib.MeasureTextEx(font, partial, fontSize, spacing).X;
+
+                // midpoint between previous substring width and this substring width
+                float midpoint = xAccum + (lastPartialWidth + partialW) * 0.5f;
+
+                if (localX < midpoint && foundIndex == baseIndex + line.Length)
                 {
-                    string rest = line[localIdx..];
-                    Vector2 mrest = Raylib.MeasureTextEx(font, rest, fontSize, spacing);
-                    float nextX = xAccum + mrest.X;
-                    float midpoint = xAccum + (nextX - xAccum) * 0.5f;
-                    if (localX < midpoint) return globalIdx;
-                    return baseIndex + line.Length;
+                    // caret sits between characters -> global index = span start + ci
+                    foundIndex = span.GlobalIndex + ci;
+                    // advance xAccum to include this partial so subsequent logic stays consistent
+                    xAccum += partialW;
+                    hit = true;
+                    break;
                 }
 
-                char key = line[localIdx + 1];
-                int contentStart = localIdx + 3;
-                int contentLen = Math.Max(0, close - contentStart);
-                float tokenW = 0f;
-                if (contentLen > 0 && INLINE_HANDLERS.TryGetValue(key, out var handler))
-                    tokenW = handler.Measure(this, line.Substring(contentStart, contentLen), fontSize);
-
-                float nextXToken = xAccum + tokenW;
-                float midpointToken = xAccum + (nextXToken - xAccum) * 0.5f;
-                if (localX < midpointToken) return globalIdx;
-                xAccum = nextXToken;
-                localIdx = close + 1;
-                continue;
+                // not hit yet -> continue; keep lastPartialWidth updated
+                lastPartialWidth = partialW;
             }
 
-            // plain char: measure one char at a time (so caret can land between characters)
-            string ch = line.Substring(localIdx, 1);
-            float chW = Raylib.MeasureTextEx(font, ch, fontSize, spacing).X;
-            float midpointChar = xAccum + chW * 0.5f;
-            if (localX < midpointChar)
-                return baseIndex + localIdx;
-            // else advance past the character
-            xAccum += chW;
-            localIdx++;
-        }
+            if (!hit)
+            {
+                // caret was after whole run -> add full run width (lastPartialWidth holds it)
+                xAccum += lastPartialWidth;
+            }
+        });
 
-        // fallback
-        return baseIndex + line.Length;
+        return foundIndex;
     }
+
+
     private float MeasureInjectedContentWidth(Font font, float fontSize, float spacing, string content)
     {
         if (string.IsNullOrEmpty(content)) return 0f;

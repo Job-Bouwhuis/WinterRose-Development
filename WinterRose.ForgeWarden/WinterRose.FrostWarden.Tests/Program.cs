@@ -96,6 +96,27 @@ internal class Program : ForgeWardenEngine
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
         RichSpriteRegistry.RegisterSprite("wf", new Sprite("tex"));
 
+
+        GlobalThreadLoom.InvokeAfter(ENGINE_POOL_NAME, () =>
+        {
+            UIWindow window = new UIWindow("Test window", 500, 600);
+            window.Show();
+
+            var input = new UITextInput()
+            {
+                AllowMultiline = true,
+                DebugVisualSpans = true
+            };
+            input.InjectStringAt(5, " \\s[star] ");
+            window.AddContent(new UIButton("add insert", (c, b) =>
+            {
+                
+            }));
+
+            window.AddContent(input);
+        }, TimeSpan.FromMilliseconds(50));
+
+
         var cam = world.CreateEntity<Camera>("cam");
         cam.transform.position = cam.transform.position with
         {
@@ -113,10 +134,6 @@ internal class Program : ForgeWardenEngine
         cam.AddComponent<SmoothCamera2DMode>().Target = entity.transform;
 
         Universe.Hirarchy.Show();
-
-        UIWindow dd = new UIWindow("a", 600, 500);
-        dd.AddContent(new UIDateTimePicker());
-        dd.Show();
 
         #region weapon stuff
 

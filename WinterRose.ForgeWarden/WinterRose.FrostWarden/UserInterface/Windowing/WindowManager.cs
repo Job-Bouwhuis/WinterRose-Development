@@ -63,7 +63,11 @@ internal static class WindowManager
         {
             // TODO: Make border of window flash red
         }
-        BringToFront(uiWindow);
+
+        ForgeWardenEngine.Current.GlobalThreadLoom.InvokeAfter(
+            ForgeWardenEngine.ENGINE_POOL_NAME, 
+            () => BringToFront(uiWindow), 
+            TimeSpan.FromMilliseconds(100));
     }
 
     internal static void BringToFront(UIWindow window)

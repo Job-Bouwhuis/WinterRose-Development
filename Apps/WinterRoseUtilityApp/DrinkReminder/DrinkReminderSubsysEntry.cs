@@ -33,16 +33,16 @@ internal class DrinkReminderSubsysEntry : SubSystem
     public override void Init()
     {
         Program.Current.AddTrayItem(new UIButton("Drink Reminder", (c, b) => CreateWindow().Show()));
+        reminderSound = Assets.Load<Sound>("subnautica");
 
-        if(!Assets.Exists(INTERVAL_ASSET_NAME))
+        if (!Assets.Exists(INTERVAL_ASSET_NAME))
         {
             settings = DrinkSettings.Default;
             Assets.CreateAsset(settings, INTERVAL_ASSET_NAME);
             return;
         }
-
         settings = Assets.Load<DrinkSettings>(INTERVAL_ASSET_NAME);
-        reminderSound = Assets.Load<Sound>("subnautica");
+        reminderSound.SetVolume(settings.Volume);
     }
 
     public override void Update()
@@ -90,9 +90,22 @@ internal class DrinkReminderSubsysEntry : SubSystem
             Value = 60,
             SnapToStep = true
         };
-        window.AddContent(intervalSlider);
         intervalSlider.OnValueChangedBasic.Subscribe(Invocation.Create<int>(NewValueSelected));
         intervalSlider.SetValue(settings.ReminderIntervalMinutes, false);
+        window.AddContent(intervalSlider);
+
+        UIValueSlider<int> volumeSlider = new()
+        {
+            Label = "Volume",
+            MinValue = 0,
+            MaxValue = 100,
+            Step = 1,
+            Value = 100,
+            SnapToStep = true,
+            HoldShiftToDisableSnap = false
+        };
+        volumeSlider.OnValueChangedBasic.Subscribe(Invocation.Create<int>(NewVolumeSelected));
+        window.AddContent(volumeSlider);
 
         currentTimerProgressBar = new UICircleProgress()
         {
@@ -109,5 +122,12 @@ internal class DrinkReminderSubsysEntry : SubSystem
     {
         settings.ReminderIntervalMinutes = newValue;
         Assets.Save(INTERVAL_ASSET_NAME, settings);
+    }
+
+    private void NewVolumeSelected(int newValue)
+    {
+        settings.Volume = newValue / 100f;
+        Assets.Save(INTERVAL_ASSET_NAME, settings);
+        reminderSound.SetVolume(newValue / 100f);
     }
 }

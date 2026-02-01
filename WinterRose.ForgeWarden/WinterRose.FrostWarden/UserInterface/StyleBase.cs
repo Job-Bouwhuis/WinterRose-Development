@@ -422,7 +422,7 @@ namespace WinterRose.ForgeWarden.UserInterface
         public float CaretWidth { get; set; } = 2;
         public float TextBoxPadding { get; set; } = 6f;
         public float TextBoxFontSize { get; set; } = 16f;
-        public float TextBoxTextSpacing { get; set; } = 2f;
+        public float TextBoxTextSpacing { get; set; } = 1f;
         public float TextBoxMinHeight { get; set; } = 20f;
         public float TreeNodeHeight { get; set; } = 25;
         public float TreeNodeIndentWidth { get; set; } = 16;
