@@ -500,9 +500,9 @@ namespace WinterRose.ForgeThread
                 {
                     EnqueueItem(threadName, action, JobPriority.Normal, CancellationToken.None);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // ignore
+                    Console.WriteLine(ex.Message);
                 }
             }, null, delay, Timeout.InfiniteTimeSpan);
 

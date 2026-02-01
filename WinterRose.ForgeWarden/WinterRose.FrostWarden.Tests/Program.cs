@@ -39,8 +39,8 @@ internal class Program : ForgeWardenEngine
     //const int SCREEN_HEIGHT = 1440;
 
     // for on PC
-    const int SCREEN_WIDTH = 1920;
-    const int SCREEN_HEIGHT = 1080;
+    //const int SCREEN_WIDTH = 1920;
+    //const int SCREEN_HEIGHT = 1080;
 
     // for on laptop
     //const int SCREEN_WIDTH = 1280;
@@ -49,8 +49,8 @@ internal class Program : ForgeWardenEngine
     //static Windows.SystemTrayIcon icon;
 
     // for on steam deck
-    //const int SCREEN_WIDTH = 960;
-    //const int SCREEN_HEIGHT = 540;
+    const int SCREEN_WIDTH = 960;
+    const int SCREEN_HEIGHT = 540;
 
     [STAThread]
     static void Main(string[] args)
@@ -110,7 +110,6 @@ internal class Program : ForgeWardenEngine
             input.InjectStringAt(5, " \\s[star] ");
             window.AddContent(new UIButton("add insert", (c, b) =>
             {
-                
             }));
 
             window.AddContent(input);

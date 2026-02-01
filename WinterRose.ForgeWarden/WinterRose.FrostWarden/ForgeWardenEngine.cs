@@ -148,6 +148,7 @@ public abstract class ForgeWardenEngine
 
     public void Run(string title, int width, int height, ConfigFlags flags = ConfigFlags.ResizableWindow)
     {
+        Exception? exception = null;
         try
         {
             if (!BulletPhysicsLoader.TryLoadBulletSharp())
@@ -182,16 +183,17 @@ public abstract class ForgeWardenEngine
             {
                 Toast t = null;
                 Toasts.ShowToast(
-                    t = new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
-                        .AddText("Browser is being downloaded", UIFontSizePreset.Title)
-                        .AddText("This can take a while.\nhowever the game is still playable", UIFontSizePreset.Text)
-                    .AddProgressBar(-1, pref =>
-                    {
-                        if (browserTask.IsCompleted)
-                            t!.Close();
-                        return browserTask.IsCompleted ? 1 : -1;
-                    }, infiniteSpinText: "Waiting for browser download..."))
-                        .ContinueWith(t => browserTask.IsCompletedSuccessfully ? 0 : 1,
+                        t = new Toast(ToastType.Info, ToastRegion.Left, ToastStackSide.Top)
+                            .AddText("Browser is being downloaded", UIFontSizePreset.Title)
+                            .AddText("This can take a while.\nhowever the game is still playable",
+                                UIFontSizePreset.Text)
+                            .AddProgressBar(-1, pref =>
+                            {
+                                if (browserTask.IsCompleted)
+                                    t!.Close();
+                                return browserTask.IsCompleted ? 1 : -1;
+                            }, infiniteSpinText: "Waiting for browser download..."))
+                    .ContinueWith(t => browserTask.IsCompletedSuccessfully ? 0 : 1,
                         new Toast(ToastType.Success, ToastRegion.Left, ToastStackSide.Top)
                             .AddText("Browser Successfully Downloaded!"),
                         new Toast(ToastType.Error, ToastRegion.Left, ToastStackSide.Top)
@@ -220,8 +222,8 @@ public abstract class ForgeWardenEngine
                     long nowMs = backgroundTimer.ElapsedMilliseconds;
                     if (nowMs - lastBackgroundTickMs >= (1000 / BACKGROUND_UPS))
                     {
-                        Time.Update();   // Time.deltaTime will reflect the elapsed time between these calls
-                        Update();        // only engine-level update callback runs while backgrounded
+                        Time.Update(); // Time.deltaTime will reflect the elapsed time between these calls
+                        Update(); // only engine-level update callback runs while backgrounded
                         lastBackgroundTickMs = nowMs;
                     }
 
@@ -264,30 +266,92 @@ public abstract class ForgeWardenEngine
                     break;
             }
 
-            // ... (rest of existing resource release code unchanged)
-            log.Info("Releasing all resources");
-
-            Closing();
-            SpriteCache.DisposeAll();
             Raylib.UnloadRenderTexture(worldTex);
-            Universe.CurrentWorld.Dispose();
-            Raylib.CloseAudioDevice();
-            Assets.FinalizeHeaders();
 
-            log.Info("All resources released, Closing window");
+        }
+        catch (Exception ex)
+        {
+            exception = ex;
+            throw;
         }
         finally
         {
             try
             {
+                log.Info("Releasing all resources");
+
+                string ex = exception is null ? "" : $"Error of type {exception.GetType().Name} causing shutdown:";
+
+                DrawBlackScreenWithCenteredText("Unloading world...", ex);
+                Universe.CurrentWorld.Dispose();
+                DrawBlackScreenWithCenteredText("Clearing sprites...", ex);
+                SpriteCache.DisposeAll();
+                DrawBlackScreenWithCenteredText("Disposing hardware connections...", ex);
+
+                Raylib.CloseAudioDevice();
+                DrawBlackScreenWithCenteredText("Finalizing Asset Headers..", ex);
                 Assets.FinalizeHeaders();
+                DrawBlackScreenWithCenteredText("Bye Bye!", ex);
+                Task.Delay(exception is null ? 250 : 2000).Wait();
+
+                Closing();
+
+                log.Info("All resources released, Closing window");
+
+                if (OperatingSystem.IsWindows())
+                {
+                    WinterRose.Windows.MyHandle.Minimize();
+                    Task.Delay(250).Wait();
+                }
                 Window.Close();
             }
-            catch { /* ignore */ }
+            catch  (Exception ex)
+            {
+                log.Warning($"Exception of type {ex.GetType().Name} during unloading: {ex.Message}");
+            }
 
             log.Info("End of 'run', Bye bye!");
         }
     }
+
+    public static void DrawBlackScreenWithCenteredText(params string[] lines)
+    {
+        Raylib.BeginDrawing();
+
+        int screenWidth = Raylib.GetScreenWidth();
+        int screenHeight = Raylib.GetScreenHeight();
+
+        Raylib.ClearBackground(Color.Black);
+
+        // Measure total height
+        float lineSpacing = 1; // space between lines
+        float totalHeight = 0;
+        Vector2[] sizes = new Vector2[lines.Length];
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            sizes[i] = Raylib.MeasureTextEx(DefaultFont, lines[i], 18, lineSpacing);
+            totalHeight += sizes[i].Y;
+        }
+
+        // Add spacing between lines
+        totalHeight += lineSpacing * (lines.Length - 1);
+
+        // Start Y so the block is vertically centered
+        float startY = (screenHeight - totalHeight) / 2;
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            float posX = (screenWidth - sizes[i].X) / 2;
+            Raylib.DrawTextEx(DefaultFont, lines[i], new Vector2(posX, startY), 18, lineSpacing, Color.White);
+            startY += sizes[i].Y + lineSpacing;
+        }
+
+        Raylib.EndDrawing();
+    }
+
+
+
 
     public void CloseWindowToBackground()
     {

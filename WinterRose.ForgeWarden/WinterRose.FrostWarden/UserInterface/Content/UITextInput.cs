@@ -14,9 +14,12 @@ public class UITextInput : UIContent
 {
     private class InjectedSegment
     {
-        public int Index;    // logical index in `text` where the injected content should be drawn BEFORE the char at this index
+        public int
+            Index; // logical index in `text` where the injected content should be drawn BEFORE the char at this index
+
         public string Content;
     }
+
     private List<InjectedSegment> injectedSegments = new();
 
     public MulticastVoidInvocation<UITextInput, string> OnSubmit = new();
@@ -27,13 +30,13 @@ public class UITextInput : UIContent
 
     private class VisualSpan
     {
-        public int GlobalIndex;    // logical index in `text` where this span sits BEFORE the char at that index
-        public float Width;        // measured width in pixels
-        public int RenderLength;   // how many characters in the render-line this span consumes (for advancing)
-        public bool IsInjected;    // true if this span represents an injected segment
-        public bool IsToken;       // true if this span represents an inline token (treated atomic)
-        public char TokenKey;      // token key for inline tokens (if IsToken)
-        public string TokenContent;// inner content for inline tokens (if IsToken)
+        public int GlobalIndex; // logical index in `text` where this span sits BEFORE the char at that index
+        public float Width; // measured width in pixels
+        public int RenderLength; // how many characters in the render-line this span consumes (for advancing)
+        public bool IsInjected; // true if this span represents an injected segment
+        public bool IsToken; // true if this span represents an inline token (treated atomic)
+        public char TokenKey; // token key for inline tokens (if IsToken)
+        public string TokenContent; // inner content for inline tokens (if IsToken)
     }
 
     private class InlineHandler
@@ -46,6 +49,7 @@ public class UITextInput : UIContent
         // Called during measurement/caret math. Should not draw.
         public Func<UITextInput, string, float, float> Measure { get; set; }
     }
+
     static readonly Dictionary<char, InlineHandler> INLINE_HANDLERS = new()
     {
         ['c'] = new InlineHandler
@@ -77,6 +81,7 @@ public class UITextInput : UIContent
                         ctx.x += texture.Width * scale + self.Style.TextBoxTextSpacing;
                     }
                 }
+
                 return ctx.color;
             },
             Measure = (self, inner, fontSize) =>
@@ -130,14 +135,17 @@ public class UITextInput : UIContent
     /// inclusive
     /// </summary>
     private int selStart = 0;
+
     /// <summary>
     /// exclusive
     /// </summary>
     private int selEnd = 0;
+
     /// <summary>
     /// where selection started
     /// </summary>
     private int selAnchor = 0;
+
     private bool isSelectingWithMouse = false;
 
     // click counts for double/triple click
@@ -149,6 +157,7 @@ public class UITextInput : UIContent
     private int mouseDownIndex = 0;
 
     public bool IsPassword { get; set; } = false;
+
     /// <summary>
     /// The character displayed if <see cref="IsPassword"/> is <see langword="true"/>. eg: "pass" => "****"
     /// </summary>
@@ -159,6 +168,7 @@ public class UITextInput : UIContent
     /// When the textbox is empty, the placeholder is shown
     /// </summary>
     public string Placeholder { get; set; } = "";
+
     private Color placeholderColor = new Color(160, 160, 160, 200);
 
     public string Text
@@ -184,7 +194,8 @@ public class UITextInput : UIContent
         injectedSegments.Sort((a, b) => a.Index.CompareTo(b.Index));
     }
 
-    private void WalkVisualLine(int globalLineBase, string renderLine, Font font, float fontSize, float spacing, Action<VisualSpan> emit)
+    private void WalkVisualLine(int globalLineBase, string renderLine, Font font, float fontSize, float spacing,
+        Action<VisualSpan> emit)
     {
         int localIdx = 0;
 
@@ -384,7 +395,7 @@ public class UITextInput : UIContent
             bool shift = Input.IsDown(KeyboardKey.LeftShift) || Input.IsDown(KeyboardKey.RightShift);
             bool ctrl = Input.IsDown(KeyboardKey.LeftControl) || Input.IsDown(KeyboardKey.RightControl);
 
-            if(Input.IsDown(KeyboardKey.Escape))
+            if (Input.IsDown(KeyboardKey.Escape))
             {
                 hasFocus = false;
                 return;
@@ -403,6 +414,7 @@ public class UITextInput : UIContent
                     Toasts.Error("Copying on any platform that isnt windows is not yet supported");
                 }
             }
+
             if (ctrl && Input.IsPressed(KeyboardKey.V))
             {
                 if (OperatingSystem.IsWindows())
@@ -426,17 +438,18 @@ public class UITextInput : UIContent
                     Toasts.Error("Pasting on any platform that isnt windows is not yet supported");
                 }
             }
-            if(ctrl && Input.IsPressed(KeyboardKey.A))
+
+            if (ctrl && Input.IsPressed(KeyboardKey.A))
             {
                 SelectAll();
             }
 
             // navigation & editing keys
             if (Input.IsPressed(
-                KeyboardKey.Backspace, 
-                repeatAfter: TimeSpan.FromSeconds(0.4), 
-                repeatTimeout: TimeSpan.FromSeconds(0.05)))
-           {
+                    KeyboardKey.Backspace,
+                    repeatAfter: TimeSpan.FromSeconds(0.4),
+                    repeatTimeout: TimeSpan.FromSeconds(0.05)))
+            {
                 if (HasSelection())
                 {
                     if (!ReadOnly)
@@ -456,6 +469,7 @@ public class UITextInput : UIContent
                         OnInputChanged?.Invoke(this, text);
                     }
                 }
+
                 caretVisible = true;
                 caretTimer = 0f;
             }
@@ -479,6 +493,7 @@ public class UITextInput : UIContent
                         OnInputChanged?.Invoke(this, text);
                     }
                 }
+
                 caretVisible = true;
                 caretTimer = 0f;
             }
@@ -490,6 +505,7 @@ public class UITextInput : UIContent
                 caretVisible = true;
                 caretTimer = 0f;
             }
+
             if (Input.IsPressed(KeyboardKey.Right))
             {
                 HandleRightArrow(ctrl, shift);
@@ -527,7 +543,6 @@ public class UITextInput : UIContent
             // Enter -> submit
             if (Input.IsPressed(KeyboardKey.Enter))
             {
-
                 if (!IsMultiline)
                 {
                     if (AllowMultiline && shift)
@@ -646,17 +661,37 @@ public class UITextInput : UIContent
         // named colors (expand if you want more)
         switch (token.ToLowerInvariant())
         {
-            case "white": color = Color.White; return true;
-            case "black": color = Color.Black; return true;
-            case "red": color = Color.Red; return true;
-            case "green": color = Color.Green; return true;
-            case "blue": color = Color.Blue; return true;
-            case "yellow": color = Color.Yellow; return true;
-            case "cyan": color = new Color(0, 255, 255); return true;
-            case "magenta": color = new Color(255, 0, 255, 255); return true;
+            case "white":
+                color = Color.White;
+                return true;
+            case "black":
+                color = Color.Black;
+                return true;
+            case "red":
+                color = Color.Red;
+                return true;
+            case "green":
+                color = Color.Green;
+                return true;
+            case "blue":
+                color = Color.Blue;
+                return true;
+            case "yellow":
+                color = Color.Yellow;
+                return true;
+            case "cyan":
+                color = new Color(0, 255, 255);
+                return true;
+            case "magenta":
+                color = new Color(255, 0, 255, 255);
+                return true;
             case "gray":
-            case "grey": color = new Color(128, 128, 128, 255); return true;
-            case "orange": color = new Color(255, 165, 0, 255); return true;
+            case "grey":
+                color = new Color(128, 128, 128, 255);
+                return true;
+            case "orange":
+                color = new Color(255, 165, 0, 255);
+                return true;
             default: return false;
         }
     }
@@ -712,7 +747,8 @@ public class UITextInput : UIContent
         return INLINE_HANDLERS.ContainsKey(key);
     }
 
-    private Color ProcessInjectedContentAtZeroWidth(Font font, float fontSize, float spacing, string content, ref float x, float y, Color currentColor)
+    private Color ProcessInjectedContentAtZeroWidth(Font font, float fontSize, float spacing, string content,
+        ref float x, float y, Color currentColor)
     {
         if (string.IsNullOrEmpty(content)) return currentColor;
 
@@ -775,7 +811,7 @@ public class UITextInput : UIContent
     }
 
     private bool TryHandleInlineToken(string source, ref int i, ref float x, ref Color currentColor,
-    float y, Font font, float fontSize, float spacing)
+        float y, Font font, float fontSize, float spacing)
     {
         if (i + 2 >= source.Length) return false;
         if (source[i] != '\\' || source[i + 2] != '[') return false;
@@ -808,6 +844,7 @@ public class UITextInput : UIContent
     }
 
     static Log log = new Log("InputboxTemp");
+
     protected override void Draw(Rectangle bounds)
     {
         int renderTextLength = text.Length;
@@ -838,7 +875,7 @@ public class UITextInput : UIContent
         string measurementText = RemoveColorTokensForMeasure(renderLogical);
 
         // split per-line (tokens/injections do not introduce '\n')
-        string[] logicalRenderLines = renderLogical.Split('\n');    // used for visible rendering and token parsing
+        string[] logicalRenderLines = renderLogical.Split('\n'); // used for visible rendering and token parsing
         string[] logicalMeasureLines = measurementText.Split('\n'); // used for measurement & caret/selection
 
         // compute logical start index for each line in the ORIGINAL logical `text`
@@ -849,9 +886,15 @@ public class UITextInput : UIContent
         for (int li = 0; li < totalLines; li++)
         {
             lineStarts[li] = scanPos;
-            if (scanPos >= logical.Length) { scanPos = logical.Length; continue; }
+            if (scanPos >= logical.Length)
+            {
+                scanPos = logical.Length;
+                continue;
+            }
+
             int nl = logical.IndexOf('\n', scanPos);
-            if (nl == -1) scanPos = logical.Length; else scanPos = nl + 1;
+            if (nl == -1) scanPos = logical.Length;
+            else scanPos = nl + 1;
         }
 
         Vector2 textPos;
@@ -883,7 +926,7 @@ public class UITextInput : UIContent
         int linesCount = Math.Min(logicalRenderLines.Length, logicalMeasureLines.Length);
         for (int li = 0; li < linesCount; li++)
         {
-            string renderLine = logicalRenderLines[li];   // may contain \c[...] tokens
+            string renderLine = logicalRenderLines[li]; // may contain \c[...] tokens
             string measureLine = logicalMeasureLines[li]; // token-stripped, used for measurement
 
             float x = textPos.X;
@@ -898,8 +941,8 @@ public class UITextInput : UIContent
             // maintain a quick pointer into injectedSegments
             int segPointer = 0;
             while (segPointer < injectedSegments.Count && injectedSegments.Count != 0
-                    && (injectedSegments[segPointer].Index < 0
-                    || injectedSegments[segPointer].Index > renderTextLength))
+                                                       && (injectedSegments[segPointer].Index < 0
+                                                           || injectedSegments[segPointer].Index > renderTextLength))
             {
                 segPointer++; // permanently ignore invalid injections
             }
@@ -920,10 +963,12 @@ public class UITextInput : UIContent
                         r = (close == -1) ? renderLine.Length : close + 1;
                         continue;
                     }
+
                     // normal visible char
                     r++;
                     m++;
                 }
+
                 return Math.Clamp(m, 0, measureLine.Length);
             }
 
@@ -938,7 +983,8 @@ public class UITextInput : UIContent
                     var seg = injectedSegments[segPointer];
                     // draw injection at zero width: compute prefix-based X (x already matches)
                     // injection may contain \c[...] tokens which should update curColor for subsequent text
-                    curColor = ProcessInjectedContentAtZeroWidth(font, fontSize, spacing, seg.Content, ref x, y, curColor);
+                    curColor = ProcessInjectedContentAtZeroWidth(font, fontSize, spacing, seg.Content, ref x, y,
+                        curColor);
 
                     segPointer++;
                 }
@@ -954,7 +1000,8 @@ public class UITextInput : UIContent
                     int gl = globalLogicalBase + localIdx;
 
                     // break if an injection starts here
-                    bool injectionAtHere = segPointer < injectedSegments.Count && injectedSegments[segPointer].Index == gl;
+                    bool injectionAtHere =
+                        segPointer < injectedSegments.Count && injectedSegments[segPointer].Index == gl;
                     if (injectionAtHere)
                         break;
 
@@ -980,7 +1027,8 @@ public class UITextInput : UIContent
             } // end while localIdx
 
             // Any injections after end-of-line (index == line end) should be processed
-            while (segPointer < injectedSegments.Count && injectedSegments[segPointer].Index == globalLogicalBase + renderLine.Length)
+            while (segPointer < injectedSegments.Count &&
+                   injectedSegments[segPointer].Index == globalLogicalBase + renderLine.Length)
             {
                 var seg = injectedSegments[segPointer];
                 curColor = ProcessInjectedContentAtZeroWidth(font, fontSize, spacing, seg.Content, ref x, y, curColor);
@@ -1006,6 +1054,14 @@ public class UITextInput : UIContent
                     int endGlobal = logicalLineEnd;
                     bool IncludeTrailingInjections(int targetIndex) => targetIndex == endGlobal;
 
+                    // Prepare a lightweight view of injected segments that belong to this logical line.
+                    // These are used as a fallback if WalkVisualLine did not report injected spans.
+                    var injectedOnLine = injectedSegments
+                        .Where(seg => seg.Index >= logicalLineStart && seg.Index <= logicalLineEnd)
+                        .ToArray();
+
+                    bool spansIncludeInjected = spans.Any(s => s.IsInjected);
+
                     // compute X offset (in pixels, relative to textPos.X) for a given logical index in this line
                     float XForLogicalIndex(int targetIndex)
                     {
@@ -1015,11 +1071,12 @@ public class UITextInput : UIContent
                             // injected or token spans occupy visual width but are atomic
                             if (span.IsInjected || span.IsToken)
                             {
-                                if (span.GlobalIndex < targetIndex ||
-                                    (IncludeTrailingInjections(targetIndex) && span.GlobalIndex == targetIndex))
-                                {
+                                //if (span.GlobalIndex < targetIndex ||
+                                //    (IncludeTrailingInjections(targetIndex) && span.GlobalIndex == targetIndex))
+                                //{
                                     xa += span.Width;
-                                }
+                                //}
+
                                 // always continue to next span (they do not consume render chars)
                                 continue;
                             }
@@ -1048,6 +1105,21 @@ public class UITextInput : UIContent
                             Vector2 pm = Raylib.MeasureTextEx(font, partial, fontSize, spacing);
                             xa += pm.X;
                             break; // we have reached target index
+                        }
+
+                        // FALLBACK: if the visual spans did not include injected spans (some code paths do not),
+                        // account for injectedSegments directly so selection geometry still includes their widths.
+                        if (!spansIncludeInjected && injectedOnLine.Length > 0)
+                        {
+                            foreach (var seg in injectedOnLine)
+                            {
+                                int segIndex = seg.Index;
+                                if (segIndex < targetIndex ||
+                                    (IncludeTrailingInjections(targetIndex) && segIndex == targetIndex))
+                                {
+                                    xa += MeasureInjectedContentWidth(font, fontSize, spacing, seg.Content);
+                                }
+                            }
                         }
 
                         return xa;
@@ -1098,8 +1170,11 @@ public class UITextInput : UIContent
                 {
                     // small visualisation: draw span boxes and index ticks under the text
                     float debugX = textPos.X;
-                    float debugY = y + (IsMultiline ? (logicalRenderLines.Length > 1 ? 0f : 0f) : 0f) + (Style.TextBoxFontSize + 4f);
-                    int visBase = lineStarts != null && lineStarts.Length > 0 && li < lineStarts.Length ? lineStarts[li] : 0;
+                    float debugY = y + (IsMultiline ? (logicalRenderLines.Length > 1 ? 0f : 0f) : 0f) +
+                                   (Style.TextBoxFontSize + 4f);
+                    int visBase = lineStarts != null && lineStarts.Length > 0 && li < lineStarts.Length
+                        ? lineStarts[li]
+                        : 0;
 
                     float curX = textPos.X;
                     WalkVisualLine(globalLogicalBase, renderLine, font, fontSize, spacing, span =>
@@ -1109,6 +1184,7 @@ public class UITextInput : UIContent
                             var rect = new Rectangle(curX, y + fontSize + 2f, span.Width, 6f);
                             Raylib.DrawRectangleLinesEx(rect, 1f, new Color(255, 128, 0, 180));
                         }
+
                         curX += span.Width;
                     });
                 });
@@ -1134,8 +1210,6 @@ public class UITextInput : UIContent
                     break;
                 }
             }
-
-
 
 
             // baseIdx is the logical start index for this line (aligns with injectedSegments & walker)
@@ -1164,8 +1238,8 @@ public class UITextInput : UIContent
                 // plain run span: may contain multiple characters. Only add width of characters
                 // that are strictly before caretIndex (so caret can sit between chars).
                 // span.GlobalIndex is the logical index at the start of this run.
-                int runStartLocal = span.GlobalIndex - baseIdx;           // index into renderLine
-                int runCharCount = span.RenderLength;                    // number of visible chars in this run
+                int runStartLocal = span.GlobalIndex - baseIdx; // index into renderLine
+                int runCharCount = span.RenderLength; // number of visible chars in this run
                 int charsBefore = Math.Clamp(caretIndex - span.GlobalIndex, 0, runCharCount);
 
                 if (charsBefore <= 0)
@@ -1191,10 +1265,12 @@ public class UITextInput : UIContent
             if (caretCharPos == renderLine.Length)
             {
                 int segPointer2 = 0;
-                while (segPointer2 < injectedSegments.Count && injectedSegments[segPointer2].Index < baseIdx) segPointer2++;
+                while (segPointer2 < injectedSegments.Count && injectedSegments[segPointer2].Index < baseIdx)
+                    segPointer2++;
                 while (segPointer2 < injectedSegments.Count && injectedSegments[segPointer2].Index == endGlobal)
                 {
-                    xAccum += MeasureInjectedContentWidth(font, fontSize, spacing, injectedSegments[segPointer2].Content);
+                    xAccum += MeasureInjectedContentWidth(font, fontSize, spacing,
+                        injectedSegments[segPointer2].Content);
                     segPointer2++;
                 }
             }
@@ -1209,13 +1285,10 @@ public class UITextInput : UIContent
             {
                 caretY1 = textPos.Y + caretLine * lineHeight + 2f;
             }
+
             float caretY2 = caretY1 + fontSize - 4f;
             ray.DrawLineEx(new Vector2(caretX, caretY1), new Vector2(caretX, caretY2), Style.CaretWidth, Style.Caret);
-
-           
         }
-
-
 
         ScissorStack.Pop();
     }
@@ -1252,11 +1325,12 @@ public class UITextInput : UIContent
 
     private void UpdateMultilineState()
     {
-        if(MinLines > 1)
+        if (MinLines > 1)
         {
             IsMultiline = true;
             return;
         }
+
         if (!AllowMultiline)
         {
             IsMultiline = false;
@@ -1290,6 +1364,7 @@ public class UITextInput : UIContent
         {
             clickCount = 1;
         }
+
         lastClickTime = now;
 
         if (clickCount == 1)
@@ -1426,6 +1501,7 @@ public class UITextInput : UIContent
                 selAnchor = i;
                 return;
             }
+
             i = left;
         }
 
@@ -1448,13 +1524,15 @@ public class UITextInput : UIContent
         {
             // ctrl+shift => select/deselect any space-separated token to left
             int target = MoveLeftToPreviousSpaceToken(caretIndex);
-            if (shift) ExtendSelectionTo(target); else SetCaretAndClearSelection(target);
+            if (shift) ExtendSelectionTo(target);
+            else SetCaretAndClearSelection(target);
         }
         else if (ctrl)
         {
             // ctrl (no shift) => jump left by contiguous letters (a-zA-Z)
             int target = MoveLeftByLetterGroup(caretIndex);
-            if (shift) ExtendSelectionTo(target); else SetCaretAndClearSelection(target);
+            if (shift) ExtendSelectionTo(target);
+            else SetCaretAndClearSelection(target);
         }
         else if (shift)
         {
@@ -1472,7 +1550,6 @@ public class UITextInput : UIContent
 
             SetCaretAndClearSelection(target);
         }
-
     }
 
     private void HandleRightArrow(bool ctrl, bool shift)
@@ -1481,13 +1558,15 @@ public class UITextInput : UIContent
         {
             // ctrl+shift => select/deselect any space-separated token to right
             int target = MoveRightToNextSpaceToken(caretIndex);
-            if (shift) ExtendSelectionTo(target); else SetCaretAndClearSelection(target);
+            if (shift) ExtendSelectionTo(target);
+            else SetCaretAndClearSelection(target);
         }
         else if (ctrl)
         {
             // ctrl (no shift) => jump right by contiguous letters (a-zA-Z)
             int target = MoveRightByLetterGroup(caretIndex);
-            if (shift) ExtendSelectionTo(target); else SetCaretAndClearSelection(target);
+            if (shift) ExtendSelectionTo(target);
+            else SetCaretAndClearSelection(target);
         }
         else if (shift)
         {
@@ -1505,7 +1584,6 @@ public class UITextInput : UIContent
 
             SetCaretAndClearSelection(target);
         }
-
     }
 
     private void SkipOverInlineLeft(ref int index)
@@ -1521,6 +1599,7 @@ public class UITextInput : UIContent
                     // jump left to before the sequence
                     index = seqStart;
                 }
+
                 break;
             }
         }
@@ -1676,9 +1755,11 @@ public class UITextInput : UIContent
                     pos = text.Length;
                     break;
                 }
+
                 pos = nl + 1;
                 remaining--;
             }
+
             baseIndex = pos;
         }
 
@@ -1703,6 +1784,7 @@ public class UITextInput : UIContent
                 {
                     foundIndex = span.GlobalIndex;
                 }
+
                 xAccum += span.Width;
                 return;
             }
@@ -1774,6 +1856,7 @@ public class UITextInput : UIContent
                     x += Raylib.MeasureTextEx(font, rest, fontSize, spacing).X;
                     break;
                 }
+
                 // advance i past token (or end)
                 i = closing != -1 ? closing + 1 : content.Length;
                 continue;
@@ -1789,5 +1872,4 @@ public class UITextInput : UIContent
 
         return x;
     }
-
 }

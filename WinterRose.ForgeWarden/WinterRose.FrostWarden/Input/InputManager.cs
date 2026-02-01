@@ -101,10 +101,12 @@ public static class InputManager
 
         // iterate buckets in sorted order (highest priority buckets first),
         // and then each context in insertion order inside the bucket.
-        foreach (var bucket in contexts.Values)
+        for (var index = 0; index < contexts.Values.Count; index++)
         {
-            foreach (var ctx in bucket)
+            var bucket = contexts.Values[index];
+            for (var i = 0; i < bucket.Count; i++)
             {
+                var ctx = bucket[i];
                 ctx.Update();
 
                 // check for higher-priority keyboard requests
