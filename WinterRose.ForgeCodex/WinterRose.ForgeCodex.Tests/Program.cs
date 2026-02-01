@@ -13,12 +13,12 @@ internal class Program
         CodexDatabase database = new CodexDatabase(new CodexFileStorage("Codex", new CodexWFSerializer()));
         //ProgramHelpers.databaseAPITests(database);
 
-        create(database);
+        //create(database);
         addRow(database);
         getRow(database);
         //deleteRow(database);
         //dropTable(database);
-       
+
     }
 
     private static void dropTable(CodexDatabase database)
@@ -48,7 +48,7 @@ internal class Program
                       """;
 
         var rows = (IReadOnlyList<Anonymous>)database.Evaluate(test);
-        foreach(var row in rows)
+        foreach (var row in rows)
             Console.WriteLine(row.ToString());
     }
 

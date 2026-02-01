@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Raylib_cs;
+using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Numerics;
 
 namespace WinterRose.ForgeWarden.TileMaps;
@@ -14,12 +14,28 @@ public class TileMap : Component, IUpdatable, IRenderable
 
     public int RegionSize { get; private set; } = 32; // tiles per region default
 
+    [ReadOnly]
     public int Seed { get; set; } = 0;
     public bool GenerateBiomesOnRegionCreate { get; set; } = true;
 
     readonly Dictionary<long, TileRegion> regions = new();
 
     public PerlinNoise Noise { get; set; }
+
+    public TileMap(BiomeRegistry biomes)
+    {
+        this.Biomes = biomes;
+    }
+
+    public TileMap()
+    {
+
+    }
+
+    /// <summary>
+    /// If updated after creating, existing regions will not contain the new biome
+    /// </summary>
+    public BiomeRegistry Biomes { get; set; }
 
     public void Initialize(int tileSize = 256, int regionSize = 32, int layerCount = 8)
     {
@@ -28,9 +44,14 @@ public class TileMap : Component, IUpdatable, IRenderable
         RegionSize = Math.Max(1, regionSize);
         LayerCount = Math.Max(1, layerCount);
 
+        if(Biomes is null)
+        {
+            Biomes = new BiomeRegistry();
+            Biomes.AddBiome(new Biome(Sprite.CreateRectangle(64, 64, Color.White)), 1);
+        }
+
         regions.Clear();
 
-        // seed an origin region so immediate queries / painting don't need to create external regions first
         var origin = GetOrCreateRegion(0, 0);
         origin.State = LoadedState.Loaded;
     }
@@ -69,7 +90,6 @@ public class TileMap : Component, IUpdatable, IRenderable
         }
     }
 
-    // --- REPLACE PlaceTile: let the region notify the tile about placement ---
     public bool PlaceTile(int x, int y, Tile tile)
     {
         var cell = GetTileCell(x, y, create: true);
@@ -345,9 +365,8 @@ public class TileMap : Component, IUpdatable, IRenderable
                 if (cell == null) continue;
 
                 float noise = PatternNoise(gx, gy, Seed);
-                var biome = BiomeRegistry.Get(noise);
+                var biome = Biomes.Get(noise);
                 cell.Biome = biome;
-
                 biome.GenerateTile(gx, gy, cell, Noise);
             }
         }

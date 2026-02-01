@@ -39,8 +39,8 @@ internal class Program : ForgeWardenEngine
     //const int SCREEN_HEIGHT = 1440;
 
     // for on PC
-    //const int SCREEN_WIDTH = 1920;
-    //const int SCREEN_HEIGHT = 1080;
+    const int SCREEN_WIDTH = 1920;
+    const int SCREEN_HEIGHT = 1080; // hellocojnsadahjdasd
 
     // for on laptop
     //const int SCREEN_WIDTH = 1280;
@@ -49,8 +49,8 @@ internal class Program : ForgeWardenEngine
     //static Windows.SystemTrayIcon icon;
 
     // for on steam deck
-    const int SCREEN_WIDTH = 960;
-    const int SCREEN_HEIGHT = 540;
+    //const int SCREEN_WIDTH = 960;
+    //const int SCREEN_HEIGHT = 540;
 
     [STAThread]
     static void Main(string[] args)
@@ -81,20 +81,23 @@ internal class Program : ForgeWardenEngine
 
         // Generate region and fill with tiles using noise
         Entity tilemap = world.CreateEntity("TileMap");
-        TileMap map = tilemap.AddComponent<TileMap>();
 
-
+        BiomeRegistry biomes = new();
         SpriteSheet sheet = SpriteSheet.Load("Assets/spritesheet.png", 256, 256);
         Biome plains = new(sheet);
-        BiomeRegistry.AddBiome(plains, 0.2f);
+        biomes.AddBiome(plains, 0.2f);
 
         Biome idk = new(Sprite.CreateRectangle(256, 256, Color.Beige));
-        BiomeRegistry.AddBiome(idk, 0.8f);
+        biomes.AddBiome(idk, 0.8f);
 
-        ray.SetTargetFPS(144);
-        //ClearColor = Color.Beige;
+        Biome idk2 = new(Sprite.CreateRectangle(256, 256, Color.Pink));
+        biomes.AddBiome(idk2, 0.8f);
+        
+        TileMap map = tilemap.AddComponent<TileMap>(biomes);
+
         RichSpriteRegistry.RegisterSprite("star", new Sprite("bigimg"));
         RichSpriteRegistry.RegisterSprite("wf", new Sprite("tex"));
+        RichSpriteRegistry.RegisterSprite("crystal", new Sprite("crystalitem"));
 
 
         GlobalThreadLoom.InvokeAfter(ENGINE_POOL_NAME, () =>
@@ -104,10 +107,9 @@ internal class Program : ForgeWardenEngine
 
             var input = new UITextInput()
             {
-                AllowMultiline = true,
-                DebugVisualSpans = true
+                AllowMultiline = true
             };
-            input.InjectStringAt(5, " \\s[star] ");
+            input.InjectStringAt(5, "\\s[crystal]");
             window.AddContent(new UIButton("add insert", (c, b) =>
             {
             }));

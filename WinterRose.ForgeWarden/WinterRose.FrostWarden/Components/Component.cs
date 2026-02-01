@@ -15,16 +15,16 @@ public abstract class Component : IComponent
     [Hide]
     public InputContext Input => owner.Input;
 
-    [ReadOnly]
+    [Hide]
     public float awakeTime { get; private set; }
 
-    [ReadOnly]
+    [Hide]
     public float startTime { get; private set; }
 
-    [ReadOnly]
+    [Hide]
     public float vanishTime { get; private set; }
 
-    [ReadOnly]
+    [Hide]
     public float destroyTime { get; private set; }
 
     protected virtual void Awake() { }

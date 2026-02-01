@@ -10,7 +10,7 @@ namespace WinterRose.ForgeCodex.Storage.Serialization;
 public class CodexWFSerializer : DatabaseSerializer
 {
     const bool DEFAULT_COMPRESS_STREAMS = false;
-    const TargetFormat DEFAULT_FORMAT = TargetFormat.FormattedHumanReadable;
+    const TargetFormat DEFAULT_FORMAT = TargetFormat.Optimized;
     public override void Serialize(Stream destination, CodexDatabase database)
     {
         bool compress = WinterForge.CompressedStreams;
@@ -30,7 +30,7 @@ public class CodexWFSerializer : DatabaseSerializer
     {
         bool compress = WinterForge.CompressedStreams;
         WinterForge.CompressedStreams = DEFAULT_COMPRESS_STREAMS;
-        database = WinterForge.DeserializeFromHumanReadableStream<CodexDatabase>(source);
+        database = WinterForge.DeserializeFromStream<CodexDatabase>(source);
         WinterForge.CompressedStreams = compress;
         return database is not null;
     }
@@ -39,7 +39,7 @@ public class CodexWFSerializer : DatabaseSerializer
     {
         bool compress = WinterForge.CompressedStreams;
         WinterForge.CompressedStreams = DEFAULT_COMPRESS_STREAMS;
-        table = WinterForge.DeserializeFromHumanReadableStream<Table>(source);
+        table = WinterForge.DeserializeFromStream<Table>(source);
         WinterForge.CompressedStreams = compress;
 
         return table is not null;

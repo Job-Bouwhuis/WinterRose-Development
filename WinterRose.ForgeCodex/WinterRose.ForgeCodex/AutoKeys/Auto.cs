@@ -8,7 +8,17 @@ namespace WinterRose.ForgeCodex.AutoKeys;
 public abstract class AutoKey
 {
     internal protected abstract Type KeyType { get; }
-    public object _Key { get; set; }
+    public object _Key 
+    { 
+        get;
+        set
+        {
+            if (value?.GetType() != KeyType)
+                field = TypeConverter.Convert(value, KeyType);
+            else
+                field = value;
+        }
+    }
 }
 
 public class Auto<T> : AutoKey where T : notnull
@@ -18,6 +28,7 @@ public class Auto<T> : AutoKey where T : notnull
     public Auto() { }
     public Auto(T key) => Key = key;
 
+    [WFInclude]
     public new T Key { get => (T)_Key; set => _Key = value;  }
     public static implicit operator Auto<T>(T t) => new(t);
 

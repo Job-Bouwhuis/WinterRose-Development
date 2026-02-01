@@ -6,6 +6,7 @@ public class TileRegion
     public readonly int RegionY;
     public LoadedState State;
     public readonly int Size; // tiles per side
+    [Hide]
     public readonly TileCell[] Cells;
 
     public bool IsDirty { get; internal set; }

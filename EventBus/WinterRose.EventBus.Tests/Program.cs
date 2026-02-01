@@ -5,7 +5,6 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        
         EventBus bus = new();
 
         using var sub1 = bus.Subscribe("TestEvent", Behavior.Of("TakeDamage")

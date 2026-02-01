@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace WinterRose.ForgeWarden.TileMaps;
-public static class BiomeRegistry
+public class BiomeRegistry
 {
-    private static readonly Dictionary<Biome, float> Biomes = new();
+    private readonly Dictionary<Biome, float> Biomes = new();
 
-    public static void AddBiome(Biome biome, float weight)
+    public void AddBiome(Biome biome, float weight)
     {
         if (weight <= 0)
             throw new ArgumentException("Biome weight must be positive.", nameof(weight));
@@ -17,7 +17,7 @@ public static class BiomeRegistry
         Biomes[biome] = weight;
     }
 
-    public static Biome Get(float rng)
+    public Biome Get(float rng)
     {
         if (Biomes.Count == 0)
             throw new InvalidOperationException("No biomes registered.");
