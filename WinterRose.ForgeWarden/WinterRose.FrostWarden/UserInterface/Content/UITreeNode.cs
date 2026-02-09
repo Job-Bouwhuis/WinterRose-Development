@@ -333,7 +333,7 @@ public class UITreeNode : UIContent, IUIContainer
         }
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         if (Owner is null)
         {
@@ -357,7 +357,7 @@ public class UITreeNode : UIContent, IUIContainer
         // Update children (so they can manage their own internal state)
         foreach (var child in Children)
         {
-            child.Update();
+            child._Update();
         }
     }
 

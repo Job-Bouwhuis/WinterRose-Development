@@ -64,7 +64,7 @@ public class UIProgress : UIContent
         };
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         if (ProgressValue != 1)
             Style.PauseAutoDismissTimer = true;

@@ -379,7 +379,7 @@ public class UITextInput : UIContent
     // measure height wrapper
     public float MeasureHeight(float maxWidth) => GetHeight(maxWidth);
 
-    protected internal override void Update()
+    protected override void Update()
     {
         // caret blinking and keyboard handling when focused
         if (hasFocus)

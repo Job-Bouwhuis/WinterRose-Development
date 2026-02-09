@@ -183,7 +183,7 @@ public class UIColumns : UIContent, IUIContainer
         return GetSize(new Rectangle(0, 0, (int)maxWidth, int.MaxValue)).Y;
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         for (int i = 0; i < ColumnsContents.Count; i++)
         {
@@ -191,7 +191,7 @@ public class UIColumns : UIContent, IUIContainer
             for (int i1 = 0; i1 < column.Count; i1++)
             {
                 UIContent? child = column[i1];
-                child.Update();
+                child._Update();
             }
         }
     }

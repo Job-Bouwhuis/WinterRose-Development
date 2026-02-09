@@ -123,10 +123,10 @@ public class UIFreeform : UIContent
         return GetSize(new Rectangle(0, 0, (int)maxWidth, int.MaxValue)).Y;
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         foreach (var content in Contents)
-            content.Update();
+            content._Update();
     }
 
     protected internal override void OnOwnerClosing()

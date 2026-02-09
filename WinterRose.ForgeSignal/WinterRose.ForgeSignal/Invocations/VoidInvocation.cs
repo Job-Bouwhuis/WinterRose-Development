@@ -56,6 +56,7 @@ public sealed class VoidInvocation<TIn1> : Invocation
     }
 
     public static implicit operator VoidInvocation<TIn1>(Action<TIn1> action) => Create(action);
+    public static implicit operator VoidInvocation<TIn1>(Delegate del) => Create((Action<TIn1>) del);
 }
 
 // 2 args

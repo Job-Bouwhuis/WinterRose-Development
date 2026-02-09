@@ -173,7 +173,7 @@ public class UIRadioButtons : UIContent
         // nothing needed, but keep for symmetry
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         // animate each option's progress toward its target (Selected -> 1, else -> 0)
         float dt = Raylib_cs.Raylib.GetFrameTime();

@@ -383,7 +383,7 @@ public class UIGraph : UIContent
     {
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
 
     }

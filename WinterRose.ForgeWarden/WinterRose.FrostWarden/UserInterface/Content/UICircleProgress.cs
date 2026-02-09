@@ -240,7 +240,7 @@ public class UICircleProgress : UIContent
         return (fromDeg + delta * Math.Clamp(t, 0f, 1f)) % 360f;
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         bool prevWasIndeterminate = wasIndeterminate;
 

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Input;
 
 namespace WinterRose.ForgeWarden.UserInterface.Windowing;
-internal static class WindowManager
+internal static class UIWindowManager
 {
     private const int PRIORITY_BASE = 100000;
     private const int PRIORITY_RANGE = 10000;

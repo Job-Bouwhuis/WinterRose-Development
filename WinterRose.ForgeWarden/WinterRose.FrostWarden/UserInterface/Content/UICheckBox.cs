@@ -152,7 +152,7 @@ public class UICheckBox : UIContent
         return new Rectangle(0, 0, w, h);
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         float dt = Raylib_cs.Raylib.GetFrameTime();
 

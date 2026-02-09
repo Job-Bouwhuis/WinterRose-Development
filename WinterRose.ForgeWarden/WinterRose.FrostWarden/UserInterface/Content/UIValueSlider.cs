@@ -206,7 +206,7 @@ public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IM
         labelWidthReserved = refSize.X + labelPadding * 2f;
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         // Smooth animatedValueD toward the true backing value (exponential smoothing)
         double target = Convert.ToDouble(valueBacking);

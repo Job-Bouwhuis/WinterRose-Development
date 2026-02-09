@@ -31,7 +31,7 @@ public class UIFPS : UIContent
         return text.GetHeight(maxWidth);
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         int fps = ray.GetFPS();
 

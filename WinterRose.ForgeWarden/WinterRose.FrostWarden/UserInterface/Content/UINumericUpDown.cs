@@ -170,7 +170,7 @@ public class UINumericUpDown<T> : UINumericControlBase<T>
         base.Setup();
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         // let the inline editor run when editing
         valueInput.UpdateInline();

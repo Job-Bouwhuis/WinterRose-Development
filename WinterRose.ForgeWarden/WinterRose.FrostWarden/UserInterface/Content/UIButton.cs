@@ -59,7 +59,7 @@ public class UIButton : UIContent
             OnClick.Invoke(Owner, this);
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         if (IsHovered && Input.IsDown(MouseButton.Left))
             backgroundColor = Style.ButtonClick;

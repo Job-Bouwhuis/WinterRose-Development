@@ -9,6 +9,20 @@ namespace WinterRose.ForgeWarden.UserInterface;
 public interface IUIContainer
 {
     IUIContainer Owner { get; }
+    IUIContainer Root 
+    { 
+        get
+        {
+            IUIContainer? c = Owner;
+            while (c != null)
+                c = c.Owner;
+
+            if (c != null)
+                return c;
+
+            return this;
+        } 
+    }
     InputContext Input { get; }
     bool IsVisible { get; }
     bool IsClosing { get; }

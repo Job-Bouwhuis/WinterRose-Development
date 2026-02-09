@@ -254,13 +254,13 @@ public class UIRows : UIContent
         return GetSize(new Rectangle(0, 0, (int)maxWidth, int.MaxValue)).Y;
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         // Update children logic (non-visual updates)
         foreach (var row in RowsContents)
         {
             foreach (var child in row)
-                child.Update();
+                child._Update();
         }
     }
 

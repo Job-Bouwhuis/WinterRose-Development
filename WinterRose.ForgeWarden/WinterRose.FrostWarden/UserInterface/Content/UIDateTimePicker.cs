@@ -115,7 +115,7 @@ public class UIDateTimePicker : UIContent
         // nothing special
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         // hover detection for the overall control (used for subtle interactions)
         var mp = Input.Provider.MousePosition;

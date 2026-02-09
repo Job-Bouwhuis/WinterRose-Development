@@ -12,7 +12,6 @@ using WinterRoseUtilityApp.SubSystems;
 
 namespace WinterRoseUtilityApp.MailReader;
 
-[SubSystemSkip]
 internal class MailReaderEntry : SubSystem
 {
     private const string EmailAccountsHotkey = "EmailAccountsHotkey";

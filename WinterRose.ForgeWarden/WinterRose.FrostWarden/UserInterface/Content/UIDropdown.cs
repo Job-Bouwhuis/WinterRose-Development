@@ -119,7 +119,7 @@ public class UIDropdown<T> : UIContent
         Refilter();
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         base.Update();
 

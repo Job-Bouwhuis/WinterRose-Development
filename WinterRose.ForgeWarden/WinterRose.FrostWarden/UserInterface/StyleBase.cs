@@ -377,6 +377,8 @@ namespace WinterRose.ForgeWarden.UserInterface
 
         public bool ShowVerticalScrollBar { get; set; } = true;
 
+        public float TooltipActivateTime { get; internal set; } = 1;
+
         public bool AllowUserResizing { get; set; } = false;
         public float TitleBarHeight { get; set; } = 12;
 
@@ -2068,7 +2070,27 @@ namespace WinterRose.ForgeWarden.UserInterface
         }
         public Color White => StyleBase.White;
 
-        
+        public Overridable<float> TooltipActivateTime
+        {
+            get;
+            set
+            {
+                StyleBase.TooltipActivateTime = value;
+                if (field is not null)
+                {
+                    var oldOverride = field.Override;
+                    var oldFallback = field.fallbackResolver;
+
+                    if (field.IsOverridden)
+                        value.Override = oldOverride;
+                    value.fallbackResolver = oldFallback;
+
+                    field = value;
+                }
+                else
+                    field = value;
+            }
+        }
 
         public ContentStyle(StyleBase parent)
         {
@@ -2173,15 +2195,6 @@ namespace WinterRose.ForgeWarden.UserInterface
         }
     }
 
-
-    public static class Ext
-    {
-        extension(Overridable<Font> f)
-        {
-            public Font Default => ForgeWardenEngine.DefaultFont;
-        }
-    }
-
     [DebuggerDisplay("Value={Value}")]
     public class Overridable<T>
     {
@@ -2235,4 +2248,11 @@ namespace WinterRose.ForgeWarden.UserInterface
         }
     }
 
+    public static class Ext
+    {
+        extension(Overridable<Font> f)
+        {
+            public Font Default => ForgeWardenEngine.DefaultFont;
+        }
+    }
 }

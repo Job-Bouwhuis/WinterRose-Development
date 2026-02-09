@@ -231,14 +231,14 @@ public class UIGrid : UIContent
         return GetSize(new Rectangle(0, 0, (int)maxWidth, int.MaxValue)).Y;
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         for (int r = 0; r < RowCount; r++)
         {
             for (int c = 0; c < ColumnCount; c++)
             {
                 var child = GridContents[r][c];
-                child?.Update();
+                child?._Update();
             }
         }
     }

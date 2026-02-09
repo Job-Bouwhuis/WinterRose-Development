@@ -80,10 +80,10 @@ public class AsyncImageContent : UIContent
         return new Vector2(availableArea.Width, 0);
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         if (!loaded)
-            spinner.Update();
+            spinner._Update();
     }
 
     protected override void Draw(Rectangle bounds)

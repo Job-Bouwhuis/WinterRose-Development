@@ -241,7 +241,7 @@ public class UIWindow : UIContainer
 
     public virtual void Show()
     {
-        WindowManager.Show(this);
+        UIWindowManager.Show(this);
 
         if (!hasBeenShown)
         {
@@ -253,7 +253,7 @@ public class UIWindow : UIContainer
 
     public void ShowCollapsed()
     {
-        WindowManager.Show(this);
+        UIWindowManager.Show(this);
 
         if (!hasBeenShown)
         {
@@ -266,7 +266,7 @@ public class UIWindow : UIContainer
 
     public void ShowMaximized()
     {
-        WindowManager.Show(this);
+        UIWindowManager.Show(this);
 
         if (!hasBeenShown)
         {

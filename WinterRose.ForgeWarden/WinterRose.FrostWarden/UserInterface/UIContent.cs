@@ -1,5 +1,7 @@
 ﻿using Raylib_cs;
+using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.Input;
+using WinterRose.ForgeWarden.UserInterface.Tooltipping;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
@@ -13,6 +15,11 @@ public abstract class UIContent
 
     public bool IsHovered { get; internal set; }
 
+    private float hoverTimer;
+    private Tooltip? spawnedTooltip;
+
+    public VoidInvocation<Tooltip>? OnTooltipConfigure { get; set; }
+
     /// <summary>
     /// These bounds where used last frame to render this content
     /// </summary>
@@ -21,7 +28,7 @@ public abstract class UIContent
     internal bool IsContentHovered(Rectangle contentBounds)
     {
         Vector2 mousePos = Input.MousePosition;
-        return ray.CheckCollisionPointRec(mousePos, contentBounds);
+        return ray.CheckCollisionPointRec(mousePos, contentBounds) || Tooltips.IsHoverExtended(this);
     }
 
     internal void InternalDraw(Rectangle bounds)
@@ -34,8 +41,30 @@ public abstract class UIContent
     protected abstract void Draw(Rectangle bounds);
     internal protected abstract float GetHeight(float maxWidth);
 
+    internal void _Update()
+    {
+        if (IsHovered && OnTooltipConfigure != null)
+        {
+            hoverTimer += Time.deltaTime;
+            if (spawnedTooltip == null && hoverTimer >= Style.TooltipActivateTime)
+            {
+                spawnedTooltip = Tooltips.ForUIContent(this);
+                OnTooltipConfigure?.Invoke(spawnedTooltip);
+                Tooltips.Show(spawnedTooltip);
+            }
+        }
+        else
+        {
+            hoverTimer = 0f;
+            if (spawnedTooltip is not null)
+                Tooltips.Close(spawnedTooltip);
+            spawnedTooltip = null;
+        }
+        Update();
+    }
+
     protected internal virtual void Setup() { }
-    protected internal virtual void Update() { }
+    protected virtual void Update() { }
     protected internal virtual void OnHover() { }
     protected internal virtual void OnHoverEnd() { }
     protected internal virtual void OnContentClicked(MouseButton button) { }
@@ -45,6 +74,5 @@ public abstract class UIContent
     {
         Owner.Close();
     }
-
 
 }

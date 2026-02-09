@@ -139,7 +139,7 @@ public class UIColorPicker : UIContent
         hexInput.SetText($"#{c0.R:X2}{c0.G:X2}{c0.B:X2}");
     }
 
-    protected internal override void Update()
+    protected override void Update()
     {
         // Let the inline text inputs run their update logic (caret blinking, key handling while focused)
         rInput?.UpdateInline();

@@ -34,6 +34,9 @@ public abstract class UIContainer : IUIContainer
     public virtual bool IsClosing { get; protected internal set; }
     public bool IsVisible => !IsClosing;
 
+    private float _hoverTimer;
+    private bool _tooltipCreated;
+
     public bool IsBeingDragged { get; private set; } = false;
     private float dragHeight => Style.AllowUserResizing ? Style.TitleBarHeight : 0;
     /// <summary>
@@ -143,7 +146,15 @@ public abstract class UIContainer : IUIContainer
     public bool EnableDebugDraw { get; set; }
     protected bool OverrideIsHoveredState { get; set; }
 
-    public IUIContainer Owner => throw new NotImplementedException();
+    /// <summary>
+    /// Returns null for root parents
+    /// </summary>
+    public IUIContainer Owner => null;
+
+    /// <summary>
+    /// TODO: refactor to use WinterRose.EventBus
+    /// </summary>
+    public Action<UIContainer> OnHoverTooltip { get; private set; }
 
     bool initialized = false;
 
@@ -181,6 +192,21 @@ public abstract class UIContainer : IUIContainer
         HandleContentUpdates();
         HandleContainerDragging();
         HandleAutoClose();
+
+        if (IsHovered())
+        {
+            _hoverTimer += Time.deltaTime;
+            if (!_tooltipCreated && _hoverTimer >= Style.TooltipActivateTime)
+            {
+                _tooltipCreated = true;
+                OnHoverTooltip?.Invoke(this);
+            }
+        } 
+        else
+        { 
+            _hoverTimer = 0f; 
+            _tooltipCreated = false;
+        }
     }
 
     protected virtual void HandleResizing()
@@ -586,7 +612,7 @@ public abstract class UIContainer : IUIContainer
                 content.IsHovered = false;
             }
 
-            content.Update();
+            content._Update();
             contentOffsetY += contentHeight + UIConstants.CONTENT_PADDING;
         }
 

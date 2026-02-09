@@ -23,6 +23,7 @@ using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.Tooltipping;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Windowing;
 using WinterRose.ForgeWarden.Worlds;
@@ -78,8 +79,6 @@ public abstract class ForgeWardenEngine
         {
             if (Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow)) return new Color(0, 0, 0, 0);
             return clearColor;
-            
-
         }
         set
         {
@@ -420,10 +419,11 @@ public abstract class ForgeWardenEngine
 
         Universe.Hirarchy.UpdateHirarchy();
 
-        WindowManager.Update();
+        UIWindowManager.Update();
         Dialogs.Update(Time.deltaTime);
         ToastToDialogMorpher.Update();
         Toasts.Update(Time.deltaTime);
+        Tooltips.Update();
         ShapeRenderer.Update();
         Update();
 
@@ -469,11 +469,12 @@ public abstract class ForgeWardenEngine
                 Color.White);
         }
 
-        WindowManager.Draw();
+        ShapeRenderer.Draw();
+        UIWindowManager.Draw();
         Dialogs.Draw();
         ToastToDialogMorpher.Draw();
         Toasts.Draw();
-        ShapeRenderer.Draw();
+        Tooltips.Draw();
         Draw();
 
         for (int i = 0; i < debugDraws.Count; i++)

@@ -23,6 +23,7 @@ using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DragDrop;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.Tooltipping;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Worlds;
 using WinterRose.FrostWarden.Tests;
@@ -105,16 +106,16 @@ internal class Program : ForgeWardenEngine
             UIWindow window = new UIWindow("Test window", 500, 600);
             window.Show();
 
-            var input = new UITextInput()
-            {
-                AllowMultiline = true
-            };
-            input.InjectStringAt(5, "\\s[crystal]");
-            window.AddContent(new UIButton("add insert", (c, b) =>
-            {
-            }));
+            var btn = new UIButton("neat!");
 
-            window.AddContent(input);
+            btn.OnTooltipConfigure = Invocation.Create((Tooltip t) =>
+            {
+                t.AddText("Hello, World");
+                t.AddButton("Test button");
+            });
+
+            window.AddContent(btn);
+
         }, TimeSpan.FromMilliseconds(50));
 
 

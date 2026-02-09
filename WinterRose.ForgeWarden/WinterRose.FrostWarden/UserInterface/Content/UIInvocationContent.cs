@@ -36,5 +36,5 @@ public class UIInvocationContent : UIContent
     protected internal override void OnHoverEnd() => OnContentHoverEnd?.Invoke();
     protected internal override void OnOwnerClosing() => OnContentOwnerClosing?.Invoke(); 
     protected internal override void Setup() => OnSetup?.Invoke();
-    protected internal override void Update() => OnUpdate?.Invoke();
+    protected override void Update() => OnUpdate?.Invoke();
 }

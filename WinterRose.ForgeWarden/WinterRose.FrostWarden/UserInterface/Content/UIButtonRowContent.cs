@@ -167,11 +167,11 @@ public class UIButtonRowContent : UIContent
     protected internal override float GetHeight(float maxWidth)
         => GetSize(new Rectangle(0, 0, maxWidth, int.MaxValue)).Y;
 
-    protected internal override void Update()
+    protected override void Update()
     {
         foreach (var button in Buttons)
         {
-            button.Update();
+            button._Update();
         }
     }
 
