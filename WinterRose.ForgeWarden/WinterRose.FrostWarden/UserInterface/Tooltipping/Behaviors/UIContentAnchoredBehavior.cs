@@ -7,8 +7,6 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping.Behaviors;
 
 public class UIContentAnchoredBehavior : TooltipBehavior
 {
-    public override TooltipMode Mode => TooltipMode.FollowMouse; // informational only
-
     public float OpenDelay = 0.12f;
     public float CloseGrace = 0.08f;
 

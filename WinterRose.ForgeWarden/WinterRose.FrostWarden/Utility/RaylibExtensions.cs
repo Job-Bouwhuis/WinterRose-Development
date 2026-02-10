@@ -7,6 +7,12 @@ namespace WinterRose.ForgeWarden;
 
 public static class RaylibExtensions
 {
+    extension(Color c)
+    {
+        public string HexA => $"#{c.R:X2}{c.G:X2}{c.B:X2}{c.A:X2}";
+        public string Hex => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+    }
+
     extension(Sound s)
     {
         /// <summary>

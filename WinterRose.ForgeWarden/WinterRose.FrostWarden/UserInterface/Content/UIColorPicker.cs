@@ -11,55 +11,45 @@ public class UIColorPicker : UIContent
     public MulticastVoidInvocation<IUIContainer, UIColorPicker, Color> OnColorChanged { get; set; } = new();
     public MulticastVoidInvocation<Color> OnColorChangedBasic { get; set; } = new();
 
-    // Layout
     private const float CONTROL_HEIGHT = 240f;
     private const float PADDING = 8f;
     private const float SLIDER_WIDTH = 26f;
     private const float TOGGLE_HEIGHT = 22f;
     private const float WHEEL_PAD = 6f;
 
-    // wheel tessellation quality (tuneable)
-    private const int HUE_STEPS = 120;     // angular slices
-    private const int RADIAL_STEPS = 40;   // radial rings
+    private const int HUE_STEPS = 120; 
+    private const int RADIAL_STEPS = 40; 
 
-    // Internal state (h: 0..360, s:0..1, l/v:0..1)
     private float hue = 0f;
     private float sat = 1f;
-    private float bright = 0.5f; // L if HSL, V if RGB/HSV
+    private float bright = 0.5f;
 
-    // rects for hit testing / layout
     private Rectangle lastBounds = new Rectangle();
     private Rectangle wheelRect = new Rectangle();
     private Rectangle sliderRect = new Rectangle();
     private Rectangle previewRect = new Rectangle();
 
-    // inline text inputs (we render/update them manually)
     private UITextInput rInput;
     private UITextInput gInput;
     private UITextInput bInput;
     private UITextInput hexInput;
 
-    // rectangles for those fields (used for focus/hit testing & layout)
     private Rectangle rFieldRect = new Rectangle();
     private Rectangle gFieldRect = new Rectangle();
     private Rectangle bFieldRect = new Rectangle();
     private Rectangle hexFieldRect = new Rectangle();
 
-    // interaction state
     private bool isDraggingWheel = false;
     private bool isDraggingSlider = false;
     private bool isHoveringWheel = false;
     private bool isHoveringSlider = false;
     private bool isHoveringToggle = false;
 
-    // ctor
     public UIColorPicker()
     {
-        // default color: hue 0, sat 1, bright 0.5 (red)
         hue = 0f; sat = 1f; bright = 0.5f;
     }
 
-    // API to get/set selected color via Raylib Color
     public Color SelectedColor
     {
         get
@@ -69,14 +59,12 @@ public class UIColorPicker : UIContent
         }
         set
         {
-            // convert incoming color to hue/sat/bright (use HSV as a default mapping)
             var (h, s, v) = RgbToHsv(value.R / 255f, value.G / 255f, value.B / 255f);
             hue = h; sat = s; bright = v;
             FireColorChanged();
         }
     }
 
-    // UI lifecycle ---------------------------------------------------------
     public override Vector2 GetSize(Rectangle availableArea) => new Vector2(availableArea.Width, CONTROL_HEIGHT);
     protected internal override float GetHeight(float maxWidth) => CONTROL_HEIGHT;
 
@@ -131,7 +119,6 @@ public class UIColorPicker : UIContent
             ti.Unfocus();
         };
 
-        // seed inputs with current color
         var c0 = SelectedColor;
         rInput.SetText(c0.R.ToString());
         gInput.SetText(c0.G.ToString());
@@ -141,50 +128,35 @@ public class UIColorPicker : UIContent
 
     protected override void Update()
     {
-        // Let the inline text inputs run their update logic (caret blinking, key handling while focused)
         rInput?.UpdateInline();
         gInput?.UpdateInline();
         bInput?.UpdateInline();
         hexInput?.UpdateInline();
 
-        // handle dragging states via Input provider
         var mp = Input.Provider.MousePosition;
 
-        // update hover booleans for visual feedback
         isHoveringWheel = Raylib.CheckCollisionPointRec(mp, wheelRect);
         isHoveringSlider = Raylib.CheckCollisionPointRec(mp, sliderRect);
 
-        // handle dragging release
         if (isDraggingWheel && !Input.IsDown(MouseButton.Left))
-        {
             isDraggingWheel = false;
-        }
         if (isDraggingSlider && !Input.IsDown(MouseButton.Left))
-        {
             isDraggingSlider = false;
-        }
 
-        // if dragging, update values live
         if (isDraggingWheel)
-        {
             UpdateWheelFromPoint(mp.X, mp.Y, commit: true);
-        }
         else if (isDraggingSlider)
-        {
             UpdateSliderFromPoint(mp.X, mp.Y, commit: true);
-        }
     }
 
     protected override void Draw(Rectangle bounds)
     {
         lastBounds = bounds;
 
-        // main area beneath toggle
         float innerY = bounds.Y;
         float innerH = bounds.Y + bounds.Height - innerY - PADDING;
         float innerW = bounds.Width - PADDING * 2;
 
-        // wheel area on left (square)
         float wheelSize = Math.Min(innerH, innerW - SLIDER_WIDTH - 16);
         float wheelX = bounds.X + PADDING;
         float wheelY = innerY + (innerH - wheelSize) / 2f;
@@ -204,11 +176,11 @@ public class UIColorPicker : UIContent
         // draw slider knob
         float knobY = SliderPosForValue(bright);
         Vector2 kcenter = new Vector2(sliderRect.X + sliderRect.Width / 2f, knobY);
-        Raylib.DrawCircle((int)kcenter.X, (int)kcenter.Y, 6f, Style.ButtonBackground);
-        Raylib.DrawCircleLines((int)kcenter.X, (int)kcenter.Y, 6f, Style.ButtonBorder);
+        Raylib.DrawCircle((int)kcenter.X, (int)kcenter.Y, 6f, Style.ButtonBackground.Value.WithAlpha(Style.ContentAlpha));
+        Raylib.DrawCircleLines((int)kcenter.X, (int)kcenter.Y, 6f, Style.ButtonBorder.Value.WithAlpha(Style.ContentAlpha));
         if (isHoveringSlider || isDraggingSlider)
         {
-            Raylib.DrawCircleLines((int)kcenter.X, (int)kcenter.Y, 10f, isDraggingSlider ? Style.ButtonClick : Style.ButtonHover);
+            Raylib.DrawCircleLines((int)kcenter.X, (int)kcenter.Y, 10f, (isDraggingSlider ? Style.ButtonClick : Style.ButtonHover).Value.WithAlpha(Style.ContentAlpha));
         }
 
         // --- compute input field positions first (these remain where you had them) ---
@@ -240,7 +212,7 @@ public class UIColorPicker : UIContent
         // draw preview (now positioned above the R field)
         Color col = SelectedColor;
         ray.DrawRectangleRec(previewRect, col);
-        ray.DrawRectangleLinesEx(previewRect, 1f, Style.ButtonBorder);
+        ray.DrawRectangleLinesEx(previewRect, 1f, Style.ButtonBorder.Value.WithAlpha(Style.ContentAlpha));
 
         // RenderInline will draw the TextInput in the provided rectangle (inputs remain at their computed positions)
         rInput.RenderInline(rFieldRect);
@@ -344,11 +316,11 @@ public class UIColorPicker : UIContent
 
             float val = 1f - (t0 + t1) * 0.5f;
             Color c = HsvToRgbColor(hue, sat, val);
-            Raylib.DrawRectangleRec(new Rectangle(rect.X, y0, rect.Width, y1 - y0 + 1), c);
+            Raylib.DrawRectangleRec(new Rectangle(rect.X, y0, rect.Width, y1 - y0 + 1), c.WithAlpha(Style.ContentAlpha));
         }
 
         // slider border
-        ray.DrawRectangleLinesEx(rect, 1f, Style.TextBoxBorder);
+        ray.DrawRectangleLinesEx(rect, 1f, Style.TextBoxBorder.Value.WithAlpha(Style.ContentAlpha));
     }
 
     private void DrawWheelMarker(Rectangle rect, float h, float s)
@@ -361,7 +333,7 @@ public class UIColorPicker : UIContent
         float r = s * radius;
         Vector2 pos = new Vector2(cx + MathF.Cos(angle) * r, cy + MathF.Sin(angle) * r);
 
-        Raylib.DrawCircleLines((int)pos.X, (int)pos.Y, 8, Style.ButtonBorder);
+        Raylib.DrawCircleLines((int)pos.X, (int)pos.Y, 8, Style.ButtonBorder.Value.WithAlpha(Style.ContentAlpha));
         Raylib.DrawCircle((int)pos.X, (int)pos.Y, 4, Color.White);
     }
 

@@ -1,8 +1,14 @@
-﻿namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
+﻿using WinterRose.ForgeWarden.UserInterface.Tooltipping.Behaviors;
+
+namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 {
     public abstract class TooltipBehavior
     {
-        public abstract TooltipMode Mode { get; }
+        public TooltipMode Mode => GetType().Name switch
+        {
+            nameof(FollowMouseBehavior) => TooltipMode.FollowMouse,
+            _ => TooltipMode.Static
+        };
 
         /// <summary>
         /// Whether this tooltip should accept interaction (mouse clicks / keyboard) when open.
@@ -13,6 +19,8 @@
         /// Whether the tooltip should steal keyboard focus when opened (interactive tooltips typically do).
         /// </summary>
         public virtual bool StealsFocus => false;
+
+        public Tooltip Tooltip { get; internal set; }
 
         /// <summary>
         /// Called to decide if the tooltip should open. Return false to veto opening.

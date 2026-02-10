@@ -53,6 +53,8 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
     //const int SCREEN_WIDTH = 960;
     //const int SCREEN_HEIGHT = 540;
 
+    Color c = Color.Red;
+
     [STAThread]
     static void Main(string[] args)
     {
@@ -106,20 +108,41 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
             UIWindow window = new UIWindow("Test window", 500, 600);
             window.Show();
 
+            UIText text = new UIText("Hello, World! This is a test of the UI system. It should wrap text properly and adjust the height of the window accordingly.");
+            window.AddContent(text);
+
             var btn = new UIButton("neat!", (c, b) =>
             {
-                var ag = new AggregateException("This is a test exception", 
-                                                new Exception("Inner exception details"),
-                                                new Exception("Another inner exception"),
-                                                new Exception("Yet another inner exception"),
-                                                new Exception("Final inner exception"));
-                throw ag;
+                //var ag = new AggregateException("This is a test exception", 
+                //                                new Exception("Inner exception details"),
+                //                                new Exception("Another inner exception"),
+                //                                new Exception("Yet another inner exception"),
+                //                                new Exception("Final inner exception"));
+                //throw ag;
+
+
+                Tooltip t = Tooltips.MouseFollow(new Vector2(150, 150));
+                t.AddText("hi there cutie patootie dajuska darling <3");
+                t.Show();
+            });
+
+            text.OnTooltipConfigure = Invocation.Create((Tooltip t) =>
+            {
+                t.AddText("Hello, World");
+                t.AddButton("Test button");
             });
 
             btn.OnTooltipConfigure = Invocation.Create((Tooltip t) =>
             {
-                t.AddText("Hello, World");
-                t.AddButton("Test button");
+                string h = c.Hex;
+                t.AddText($"\\c[{h}]Watch out, it will crash the game!");
+                var picker = new UIColorPicker();
+                picker.SelectedColor = c;
+                picker.OnColorChangedBasic.Subscribe(col =>
+                {
+                    c = col;
+                });
+                t.AddContent(picker);
             });
             window.AddContent(btn);
 

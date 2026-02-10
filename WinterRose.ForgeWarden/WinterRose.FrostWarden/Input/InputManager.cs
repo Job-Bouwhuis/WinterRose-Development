@@ -26,7 +26,8 @@ public static class InputManager
             contexts.Add(context.Priority, list);
         }
 
-        list.Add(context);
+        if (!list.Contains(context))
+            list.Add(context);
         contextPriorities[context] = context.Priority;
         return context;
     }

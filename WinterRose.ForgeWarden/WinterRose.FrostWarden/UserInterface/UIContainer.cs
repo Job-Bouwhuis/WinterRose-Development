@@ -74,6 +74,10 @@ public abstract class UIContainer : IUIContainer
     private float scrollbarHoverTimer = 0f;
     private const float SCROLLBAR_HOVER_DELAY = 0.05f; // seconds
 
+    // 7 elements for each entry in the MouseButton enum
+    private UIContent?[] _pressedContent = new UIContent?[7] { null, null, null, null, null, null, null };
+    private bool[] _prevPressed = new bool[7] { false, false, false, false, false, false, false };
+
     public Rectangle AllContentArea => new(
                 CurrentPosition.X + UIConstants.CONTENT_PADDING,
                 CurrentPosition.Y + UIConstants.CONTENT_PADDING,
@@ -105,7 +109,17 @@ public abstract class UIContainer : IUIContainer
 
     internal Vector2 TargetPosition;
     internal Vector2 TargetSize;
-    internal float AnimationElapsed;
+    /// <summary>
+    /// Used for movement animations within the UIContainer
+    /// </summary>
+    protected internal float AnimationElapsed
+    {
+        get;
+        set
+        {
+            field = value;
+        }
+    }
 
     private enum ResizeEdge
     {
@@ -365,7 +379,7 @@ public abstract class UIContainer : IUIContainer
 
     protected internal virtual void HandleMovement()
     {
-        if (!NoAutoMove)
+        if (!NoAutoMove && AnimationElapsed != 1f)
         {
             AnimationElapsed += Time.deltaTime;
             float tNormalized = Math.Clamp(
@@ -468,7 +482,7 @@ public abstract class UIContainer : IUIContainer
         }
     }
 
-    private void HandleContentUpdates()
+    protected virtual void HandleContentUpdates()
     {
         float visibleStartY = CurrentPosition.Y + UIConstants.CONTENT_PADDING;
         if (Style.AllowUserResizing)
@@ -561,19 +575,16 @@ public abstract class UIContainer : IUIContainer
 
         float contentOffsetY = visibleStartY - ContentScrollY;
 
+        bool[] currentPressed = new bool[7];
+        foreach (MouseButton b in Enum.GetValues<MouseButton>())
+        {
+            currentPressed[(int)b] = Input.IsPressed(b);
+        }
+
         float contentX = CurrentPosition.X + UIConstants.CONTENT_PADDING;
         float contentWidth = availableContentWidthCandidate;
         if (IsScrollbarVisible)
             contentWidth = Math.Max(0f, availableContentWidthCandidate - (ScrollbarCurrentWidth + UIConstants.CONTENT_PADDING));
-
-        if (IsHovered())
-        {
-            foreach (var button in Enum.GetValues<MouseButton>())
-            {
-                if (Input.IsPressed(button))
-                    OnContainerClicked(button);
-            }
-        }
 
         for (int i = 0; i < Contents.Count; i++)
         {
@@ -583,22 +594,66 @@ public abstract class UIContainer : IUIContainer
                 contentX,
                 contentOffsetY,
                 contentWidth,
-                contentHeight
-            );
+                contentHeight);
 
-            if (content.IsContentHovered(contentBounds))
+            bool hovered = content.IsContentHovered(contentBounds);
+
+            if (hovered)
             {
                 content.OnHover();
                 content.IsHovered = true;
 
+                foreach (MouseButton button in Enum.GetValues<MouseButton>())
+                {
+                    int idx = (int)button;
+                    bool isPressed = currentPressed[idx];
+
+                    if (content.ClickStyle == ClickStyle.Down)
+                    {
+                        if (isPressed)
+                        {
+                            content.OnContentClicked(button);
+                            _pressedContent[idx] = null;      // no need to remember
+                        }
+                    }
+                    else // ClickStyle.Up
+                    {
+                        if (isPressed)
+                        {
+                            // mark that this content was pressed
+                            _pressedContent[idx] = content;
+                        }
+                        else if (_pressedContent[idx] == content && !isPressed)
+                        {
+                            // button released while still hovering over the same content
+                            content.OnContentClicked(button);
+                            _pressedContent[idx] = null;
+                        }
+                    }
+                }
+
                 foreach (var button in Enum.GetValues<MouseButton>())
                 {
-                    if (Input.IsPressed(button))
-                        content.OnContentClicked(button);
+                    if (GlobalHotkey.IsTriggered(LMBHOTKEY)
+                        || GlobalHotkey.IsTriggered(RMBHOTKEY)
+                        || GlobalHotkey.IsTriggered(MMBHOTKEY))
+                    {
+                        content.OnClickedOutsideOfContent(button);
+                    }
                 }
             }
             else
             {
+                foreach (MouseButton button in Enum.GetValues<MouseButton>())
+                {
+                    if (_pressedContent[(int)button] == content)
+                        _pressedContent[(int)button] = null;
+                }
+
+                if (content.IsHovered)
+                    content.OnHoverEnd();
+                content.IsHovered = false;
+
                 foreach (var button in Enum.GetValues<MouseButton>())
                     if (GlobalHotkey.IsTriggered(LMBHOTKEY)
                         || GlobalHotkey.IsTriggered(RMBHOTKEY)
@@ -606,15 +661,14 @@ public abstract class UIContainer : IUIContainer
                     {
                         content.OnClickedOutsideOfContent(button);
                     }
-
-                if (content.IsHovered)
-                    content.OnHoverEnd();
-                content.IsHovered = false;
             }
 
             content._Update();
             contentOffsetY += contentHeight + UIConstants.CONTENT_PADDING;
         }
+
+        for (int b = 0; b < 7; b++)
+            _prevPressed[b] = currentPressed[b];
 
         ClampContentScroll();
     }
@@ -777,7 +831,8 @@ public abstract class UIContainer : IUIContainer
 
     protected internal virtual void DrawContent(Rectangle contentArea)
     {
-        // Begin scissor so nothing draws outside the content area
+        if (IsClosing && Style.ContentAlpha <= 0.2f)
+            return; // skip drawing content entirely when closing and almost fully transparent.
         ScissorStack.Push(contentArea);
 
         float offsetY = contentArea.Y - ContentScrollY;
@@ -796,8 +851,8 @@ public abstract class UIContainer : IUIContainer
 
         ScissorStack.Pop();
 
-        // Draw scrollbars on top of the container but not over the titlebar
-        DrawVerticalScrollbar(contentArea, LastBorderBounds);
+        if (!IsClosing)
+            DrawVerticalScrollbar(contentArea, LastBorderBounds);
     }
 
     private void ClampContentScroll()

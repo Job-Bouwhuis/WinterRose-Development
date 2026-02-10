@@ -1,14 +1,14 @@
 ﻿namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 {
-    public readonly struct TooltipSizeConstraints
+    public class TooltipSizeConstraints
     {
-        public readonly Vector2 MinSize = new Vector2(120f, 24f);
-        public readonly Vector2 MaxSize = new Vector2(420f, 600f);
+        public Vector2 MinSize { get; set; } = new Vector2(120f, 24f);
+        public Vector2 MaxSize { get; set; } = new Vector2(420f, 600f);
 
         /// <summary>
         /// When sampling widths between min and max, step by this amount.
         /// </summary>
-        public readonly float WidthSampleStep = 32f;
+        public float WidthSampleStep { get; set; } = 32f;
 
         public TooltipSizeConstraints()
         {

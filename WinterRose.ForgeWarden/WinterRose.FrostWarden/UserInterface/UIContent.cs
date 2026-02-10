@@ -15,6 +15,8 @@ public abstract class UIContent
 
     public bool IsHovered { get; internal set; }
 
+    public ClickStyle ClickStyle { get; set; } = ClickStyle.Up;
+
     private float hoverTimer;
     private Tooltip? spawnedTooltip;
 
@@ -59,9 +61,8 @@ public abstract class UIContent
         else
         {
             hoverTimer = 0f;
-            if (spawnedTooltip is not null)
-                Tooltips.Close(spawnedTooltip);
-            spawnedTooltip = null;
+            if(spawnedTooltip != null && spawnedTooltip.IsClosing == true)
+                spawnedTooltip = null;
         }
         Update();
     }

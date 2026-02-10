@@ -39,7 +39,7 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
                 Vector2 c = candidates[i];
                 Vector2 clamped = ClampToConstraints(c, constraints);
                 float score = clamped.X * clamped.Y;
-                if (score < bestScore)
+                if (score > bestScore)
                 {
                     bestScore = score;
                     best = clamped;

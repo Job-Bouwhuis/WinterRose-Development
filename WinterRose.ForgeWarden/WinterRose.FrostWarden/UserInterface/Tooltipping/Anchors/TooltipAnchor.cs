@@ -4,7 +4,9 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping.Anchors
 {
     public abstract class TooltipAnchor
     {
+        public Tooltip Tooltip { get; internal set; }
+
         public abstract Rectangle GetAnchorBounds();
-        public abstract bool IsAnchorValid();
+        public virtual bool IsAnchorValid(bool tooltipHovered) => tooltipHovered;
     }
 }

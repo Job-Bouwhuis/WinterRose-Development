@@ -4,6 +4,7 @@ using WinterRose;
 using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
+using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.Recordium;
 using WinterRose.WIP.TestClasses;
@@ -25,7 +26,7 @@ public class UIButton : UIContent
     private static readonly VoidInvocation<IUIContainer, UIButton> alwaysTrueFunc = Invocation.Create<IUIContainer, UIButton>(
         (container, button) =>
         {
-            if (container is Toast)
+            if (container is Toast or Dialog)
                 container.Close();
         });
 
@@ -69,11 +70,6 @@ public class UIButton : UIContent
             backgroundColor = Style.ButtonBackground;
     }
 
-    /// <summary>
-    /// Draws the button
-    /// </summary>
-    /// <param name="btnRect"></param>
-    /// <returns>True when the button has been clicked</returns>
     protected override void Draw(Rectangle btnRect)
     {
         ray.DrawRectangleRec(btnRect, backgroundColor);
@@ -81,7 +77,6 @@ public class UIButton : UIContent
 
         // compute text area inside padding
         float textMaxWidth = Math.Max(0f, btnRect.Width - PaddingX * 2);
-        float textAreaHeight = Math.Max(0f, btnRect.Height - PaddingY * 2);
 
         // resolve font size the same way CalculateSize does
         int baseSize = Math.Clamp(Style.BaseButtonFontSize, 12, 28);
@@ -98,7 +93,6 @@ public class UIButton : UIContent
 
         // measure exactly using the renderer so measurement == drawn layout
         var measured = RichTextRenderer.MeasureRichText(textToDraw, textMaxWidth);
-        float measuredWidth = measured.Width;
         float measuredHeight = measured.Height;
 
         // compute text origin — horizontally start at left padding, vertically center the measured text
@@ -147,9 +141,6 @@ public class UIButton : UIContent
             textMaxWidth
         ).Size;
 
-        // IMPORTANT:
-        // draw vertically centers text inside padded area,
-        // so height must fully contain the measured block
         int requiredInnerHeight = (int)MathF.Ceiling(measured.Y);
 
         int width = (int)MathF.Ceiling(measured.X) + PaddingX * 2;

@@ -153,19 +153,25 @@ public class UIValueSlider<T> : UINumericControlBase<T> where T : INumber<T>, IM
         return v;
     }
 
-    // Map a mouse X coordinate to a value (double) using the provided slider bounds
     private double MouseXToValue(Rectangle bounds, float mouseX)
     {
         float left = bounds.X + UIConstants.CONTENT_PADDING + HANDLE_RADIUS;
         float right = bounds.X + bounds.Width - UIConstants.CONTENT_PADDING - HANDLE_RADIUS;
-        float usable = Math.Max(1f, right - left);
 
-        float clampedX = Math.Clamp(mouseX, left, right);
-        float t = (clampedX - left) / usable; // 0..1
+        // ensure clamp bounds are ordered
+        float min = Math.Min(left, right);
+        float max = Math.Max(left, right);
+
+        float usable = Math.Max(1f, max - min);
+
+        float clampedX = Math.Clamp(mouseX, min, max);
+        float t = (clampedX - min) / usable; // 0..1
+
         double minD = Convert.ToDouble(MinValue);
         double maxD = Convert.ToDouble(MaxValue);
         return minD + t * (maxD - minD);
     }
+
 
     private float ValueToPosition(Rectangle bounds, double valueD)
     {

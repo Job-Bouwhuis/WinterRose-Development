@@ -68,7 +68,8 @@ namespace WinterRose.ForgeWarden.UserInterface
         private Color sliderFilled = new Color(200, 95, 185, 255);           // matches barFill accent
 
         private Color buttonDisabled = new Color(80, 70, 95, 255);   // muted purple-gray, clearly inactive
-        private Color seperatorLineColor = new Color(60, 50, 75, 255); // subtle dark purple divider
+        private Color seperatorLineColor = new Color(75, 60, 90, 255); // dark purple divider
+
 
         private Color checkBoxBusyIndicator = Color.White;
 
@@ -108,8 +109,6 @@ namespace WinterRose.ForgeWarden.UserInterface
             get => background.WithAlpha(ContentAlpha);
             set
             {
-                if (value.A < 10)
-                    ;
                 background = value;
             }
         }
@@ -194,7 +193,6 @@ namespace WinterRose.ForgeWarden.UserInterface
             set => scrollbarThumb = value;
         }
 
-        
         public Color PanelBackground
         {
             get => panelBackground.WithAlpha(ContentAlpha);
@@ -329,8 +327,8 @@ namespace WinterRose.ForgeWarden.UserInterface
 
         public Color CheckBoxBusyIndicator
         {
-            get => seperatorLineColor.WithAlpha(ContentAlpha);
-            set => seperatorLineColor = value;
+            get => checkBoxBusyIndicator.WithAlpha(ContentAlpha);
+            set => checkBoxBusyIndicator = value;
         }
 
         public Color CheckBoxBusyIndicatorRaw => checkBoxBusyIndicator;
@@ -377,7 +375,7 @@ namespace WinterRose.ForgeWarden.UserInterface
 
         public bool ShowVerticalScrollBar { get; set; } = true;
 
-        public float TooltipActivateTime { get; internal set; } = 1;
+        public float TooltipActivateTime { get; internal set; } = 0.5f;
 
         public bool AllowUserResizing { get; set; } = false;
         public float TitleBarHeight { get; set; } = 12;
@@ -457,7 +455,7 @@ namespace WinterRose.ForgeWarden.UserInterface
                     var oldOverride = field.Override;
                     var oldFallback = field.fallbackResolver;
 
-                    if(field.IsOverridden)
+                    if (field.IsOverridden)
                         value.Override = oldOverride;
                     value.fallbackResolver = oldFallback;
 
@@ -1307,7 +1305,7 @@ namespace WinterRose.ForgeWarden.UserInterface
                     field = value;
             }
         }
-             
+
         // Numbers, floats, ints
         public Overridable<float> ShadowSizeLeft
         {
@@ -2092,63 +2090,83 @@ namespace WinterRose.ForgeWarden.UserInterface
             }
         }
 
+        public float ShadowAll
+        {
+            get
+            {
+                float tot = ShadowSizeBottom + ShadowSizeTop + ShadowSizeRight + ShadowSizeLeft;
+                float av = tot / 4;
+                return av;
+            }
+            set
+            {
+                ShadowSizeBottom = ShadowSizeTop = ShadowSizeRight = ShadowSizeLeft = value;
+            }
+        }
+
         public ContentStyle(StyleBase parent)
         {
             StyleBase = parent;
 
-            // Colors
-            Background = new Overridable<Color>(() => FollowContainerDefaults ? parent.BackgroundRaw : Color.White);
-            Border = new Overridable<Color>(() => FollowContainerDefaults ? parent.BorderRaw : Color.Black);
-            Shadow = new Overridable<Color>(() => FollowContainerDefaults ? parent.ShadowRaw : Color.Black);
-            ContentTint = new Overridable<Color>(() => FollowContainerDefaults ? parent.ContentColorRaw : Color.White);
+            SeperatorLineColor = new Overridable<Color>(() => FollowContainerDefaults ? parent.SeperatorLineColorRaw : new Color(60, 50, 75, 255));
 
-            ButtonTextColor = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonTextColorRaw : Color.White);
-            ButtonBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonBackgroundRaw : Color.Gray);
-            ButtonBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonBorderRaw : Color.DarkGray);
-            ButtonHover = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonHoverRaw : Color.LightGray);
-            ButtonClick = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonClickRaw : Color.Gray);
+            Background = new Overridable<Color>(() => FollowContainerDefaults ? parent.BackgroundRaw : new Color(28, 24, 32, 255));
+            Border = new Overridable<Color>(() => FollowContainerDefaults ? parent.BorderRaw : new Color(120, 90, 140, 255));
+            Shadow = new Overridable<Color>(() => FollowContainerDefaults ? parent.ShadowRaw : new Color(0, 0, 0, 170));
+            ContentTint = new Overridable<Color>(() => FollowContainerDefaults ? parent.ContentColorRaw : new Color(245, 235, 245, 255));
 
-            TextSmall = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextSmallRaw : Color.White);
+            ButtonTextColor = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonTextColorRaw : new Color(255, 245, 255, 255));
+            ButtonBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonBackgroundRaw : new Color(60, 48, 72, 255));
+            ButtonBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonBorderRaw : new Color(150, 110, 170, 255));
+            ButtonHover = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonHoverRaw : new Color(85, 65, 105, 255));
+            ButtonClick = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonClickRaw : new Color(220, 90, 180, 255));
+            ButtonDisabled = new Overridable<Color>(() => FollowContainerDefaults ? parent.ButtonDisabledRaw : new Color(80, 70, 95, 255));
+
+            TextSmall = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextSmallRaw : new Color(210, 200, 215, 255));
             Font = new Overridable<Font>(() => FollowContainerDefaults ? parent.Font : Font.Default);
             BaseButtonFontSize = new Overridable<int>(() => FollowContainerDefaults ? parent.BaseButtonFontSize : 14);
 
-            TextBoxBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextBoxBackgroundRaw : Color.White);
-            TextBoxBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextBoxBorderRaw : Color.Black);
-            TextBoxFocusedBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextBoxFocusedBorderRaw : Color.Gray);
-            TextBoxText = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextBoxTextRaw : Color.White);
-            Caret = new Overridable<Color>(() => FollowContainerDefaults ? parent.CaretRaw : Color.Yellow);
+            TextBoxBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextBoxBackgroundRaw : new Color(22, 18, 28, 235));
+            TextBoxBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextBoxBorderRaw : new Color(100, 80, 120, 255));
+            TextBoxFocusedBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextBoxFocusedBorderRaw : new Color(210, 120, 190, 255));
+            TextBoxText = new Overridable<Color>(() => FollowContainerDefaults ? parent.TextBoxTextRaw : new Color(250, 240, 250, 255));
+            Caret = new Overridable<Color>(() => FollowContainerDefaults ? parent.CaretRaw : new Color(230, 110, 200, 255));
 
-            ProgressBarBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.BarBackgroundRaw : Color.Black);
-            ProgressBarFill = new Overridable<Color>(() => FollowContainerDefaults ? parent.BarFillRaw : Color.White);
-            BarText = new Overridable<Color>(() => FollowContainerDefaults ? parent.BarTextRaw : Color.White);
+            ProgressBarBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.BarBackgroundRaw : new Color(44, 38, 52, 255));
+            ProgressBarFill = new Overridable<Color>(() => FollowContainerDefaults ? parent.BarFillRaw : new Color(255, 65, 225, 255));
+            BarText = new Overridable<Color>(() => FollowContainerDefaults ? parent.BarTextRaw : new Color(250, 245, 250, 255));
 
-            TimerBarBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.TimerBarBackgroundRaw : Color.Black);
-            TimerBarFill = new Overridable<Color>(() => FollowContainerDefaults ? parent.TimerBarFillRaw : Color.White);
+            TimerBarBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.TimerBarBackgroundRaw : new Color(48, 42, 56, 255));
+            TimerBarFill = new Overridable<Color>(() => FollowContainerDefaults ? parent.TimerBarFillRaw : new Color(200, 120, 210, 255));
 
-            ScrollbarThumb = new Overridable<Color>(() => FollowContainerDefaults ? parent.ScrollbarThumbRaw : Color.Gray);
-            ScrollbarTrack = new Overridable<Color>(() => FollowContainerDefaults ? parent.ScrollbarTrackRaw : Color.DarkGray);
+            ScrollbarThumb = new Overridable<Color>(() => FollowContainerDefaults ? parent.ScrollbarThumbRaw : new Color(120, 90, 140, 255));
+            ScrollbarTrack = new Overridable<Color>(() => FollowContainerDefaults ? parent.ScrollbarTrackRaw : new Color(40, 35, 48, 255));
 
-            PanelBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.PanelBackgroundRaw : Color.Black);
-            PanelBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.PanelBorderRaw : Color.Gray);
-            PanelBackgroundDarker = new Overridable<Color>(() => FollowContainerDefaults ? parent.PanelBackgroundDarkerRaw : Color.DarkGray);
+            PanelBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.PanelBackgroundRaw : new Color(30, 26, 36, 255));
+            PanelBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.PanelBorderRaw : new Color(110, 85, 130, 255));
+            PanelBackgroundDarker = new Overridable<Color>(() => FollowContainerDefaults ? parent.PanelBackgroundDarkerRaw : new Color(20, 18, 26, 255));
 
-            TooltipBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.TooltipBackgroundRaw : Color.Black);
-            GridLine = new Overridable<Color>(() => FollowContainerDefaults ? parent.GridLineRaw : Color.Gray);
-            AxisLine = new Overridable<Color>(() => FollowContainerDefaults ? parent.AxisLineRaw : Color.Gray);
+            TooltipBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.TooltipBackgroundRaw : new Color(36, 30, 44, 240));
+            GridLine = new Overridable<Color>(() => FollowContainerDefaults ? parent.GridLineRaw : new Color(70, 60, 85, 255));
+            AxisLine = new Overridable<Color>(() => FollowContainerDefaults ? parent.AxisLineRaw : new Color(120, 95, 145, 255));
 
-            TreeNodeBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeBorderRaw : Color.Gray);
-            TreeNodeText = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeTextRaw : Color.White);
-            TreeNodeArrow = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeArrowRaw : Color.LightGray);
-            TreeNodeHover = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeHoverRaw : Color.LightGray);
-            TreeNodeBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeBackgroundRaw : Color.DarkGray);
+            TreeNodeBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeBorderRaw : new Color(135, 105, 165, 255));
+            TreeNodeText = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeTextRaw : new Color(245, 235, 245, 255));
+            TreeNodeArrow = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeArrowRaw : new Color(190, 150, 215, 255));
+            TreeNodeHover = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeHoverRaw : new Color(170, 130, 200, 255));
+            TreeNodeBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.TreeNodeBackgroundRaw : new Color(26, 22, 32, 255));
 
-            RadioGroupAccent = new Overridable<Color>(() => FollowContainerDefaults ? parent.RadioGroupAccentRaw : Color.Blue);
-            RadioGroupBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.RadioGroupBackgroundRaw : Color.DarkBlue);
-            RadioGroupBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.RadioGroupBorderRaw : Color.Gray);
+            RadioGroupAccent = new Overridable<Color>(() => FollowContainerDefaults ? parent.RadioGroupAccentRaw : new Color(160, 110, 190, 255));
+            RadioGroupBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.RadioGroupBackgroundRaw : new Color(32, 26, 44, 220));
+            RadioGroupBorder = new Overridable<Color>(() => FollowContainerDefaults ? parent.RadioGroupBorderRaw : new Color(110, 85, 140, 255));
 
-            SliderTick = new Overridable<Color>(() => FollowContainerDefaults ? parent.SliderTickRaw : Color.Gray);
-            SliderFilled = new Overridable<Color>(() => FollowContainerDefaults ? parent.SliderFilledRaw : Color.Blue);
+            SliderTick = new Overridable<Color>(() => FollowContainerDefaults ? parent.SliderTickRaw : new Color(200, 170, 215, 90));
+            SliderFilled = new Overridable<Color>(() => FollowContainerDefaults ? parent.SliderFilledRaw : new Color(200, 95, 185, 255));
+
             CheckBoxBusyIndicator = new Overridable<Color>(() => FollowContainerDefaults ? parent.CheckBoxBusyIndicatorRaw : Color.White);
+
+            SeperatorLineColor = new Overridable<Color>(() => FollowContainerDefaults ? parent.SeperatorLineColorRaw : new Color(75, 60, 90, 255));
+
 
             // Numbers, floats, ints
             ShadowSizeLeft = new Overridable<float>(() => FollowContainerDefaults ? parent.ShadowSizeLeft : 0f);
@@ -2192,6 +2210,7 @@ namespace WinterRose.ForgeWarden.UserInterface
             AutoScrollSpeed = new Overridable<float>(() => FollowContainerDefaults ? parent.AutoScrollSpeed : 50f);
             AutoScale = new Overridable<bool>(() => FollowContainerDefaults && parent.AutoScale);
             BorderSize = new Overridable<float>(() => FollowContainerDefaults ? parent.BorderSize : 2f);
+            TooltipActivateTime = new Overridable<float>(() => FollowContainerDefaults ? parent.TooltipActivateTime : 0.5f);
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿using Raylib_cs;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,9 +25,39 @@ public static class WardenUtils
         }
     }
 
+    extension(Math)
+    {
+        public static string ToStringFixedDecimals(double value, int decimals)
+        {
+            double rounded = Math.Round(value, decimals, MidpointRounding.AwayFromZero);
+            return rounded.ToString($"F{decimals}");
+        }
+    }
+
     extension(Vector3 vec)
     {
         public Vector2 Vec2() => new(vec.X, vec.Y);
+
+        public Vector3 Round(int decimals = 0)
+        {
+            return new Vector3(vec.X.Round(decimals), vec.Y.Round(decimals), vec.Z.Round(decimals));
+        }
+        public Vector3 RoundFixed(int decimals = 0)
+        {
+            float factor = (float)Math.Pow(10, decimals);
+            return new Vector3(
+                (float)Math.Round(vec.X * factor, MidpointRounding.AwayFromZero) / factor,
+                (float)Math.Round(vec.Y * factor, MidpointRounding.AwayFromZero) / factor,
+                (float)Math.Round(vec.Z * factor, MidpointRounding.AwayFromZero) / factor
+            );
+        }
+
+        public string ToStringFixed(int decimals = 0)
+        {
+            return $"<{vec.X.ToString($"F{decimals}", CultureInfo.InvariantCulture)}, " +
+                   $"{vec.Y.ToString($"F{decimals}", CultureInfo.InvariantCulture)}, " +
+                   $"{vec.Z.ToString($"F{decimals}", CultureInfo.InvariantCulture)}>";
+        }
     }
 
     
@@ -49,5 +80,12 @@ public static class WardenUtils
             Forge.Expect(alpha).LessThan(256);
             return WithAlpha(c, (byte)alpha);
         }
+
+        public static bool operator ==(Color a, Color b)
+        {
+            return a.R == b.R && a.G == b.G && a.B == b.B && a.A == b.A;
+        }
+
+        public static bool operator !=(Color a, Color b) => !(a == b);
     }
 }

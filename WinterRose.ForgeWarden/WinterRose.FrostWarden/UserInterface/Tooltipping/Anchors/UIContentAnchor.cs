@@ -20,9 +20,13 @@ public class UIContentAnchor : TooltipAnchor
 
     public override Rectangle GetAnchorBounds()
     {
-        return Content.LastRenderBounds;
+        return Content.LastRenderBounds with 
+        { 
+            X = Content.LastRenderBounds.X - 5,
+            Y = Content.LastRenderBounds.Y - Content.LastRenderBounds.Height
+        };
     }
-    public override bool IsAnchorValid()
+    public override bool IsAnchorValid(bool tooltipHovered)
     {
         return !Content.Owner.IsClosing || !Content.IsHovered;
     }

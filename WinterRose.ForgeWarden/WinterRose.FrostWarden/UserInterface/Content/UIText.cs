@@ -38,6 +38,14 @@ public class UIText : UIContent
 
     public bool AutoScaleText { get; set; } = true;
 
+    /// <summary>
+    /// Sometimes, the text content may be generated dynamically or require special handling. 
+    /// This delegate allows you to provide a function that returns the current RichText to be displayed. 
+    /// If set, this function will be called during drawing and override the Text property,
+    /// allowing for dynamic text content that can change each frame or based on specific 
+    /// conditions without needing to manually update the Text property.
+    /// </summary>
+    public Func<RichText>? TextProvider { get; set; }
 
     // Base guideline sizes for each preset (can adjust as needed)
     private static readonly Dictionary<UIFontSizePreset, int> PresetBaseSizes = new()
@@ -106,6 +114,9 @@ public class UIText : UIContent
 
     protected override void Draw(Rectangle bounds)
     {
+        if(TextProvider != null)
+            Text = TextProvider();
+
         int guideline = PresetBaseSizes[Preset];
 
         Text.FontSize = UITextScalar.ResolveFontSize(

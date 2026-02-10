@@ -2,6 +2,7 @@
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping.Anchors;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping.Behaviors;
+using WinterRose.Recordium;
 
 namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 {
@@ -9,6 +10,8 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
     {
         private const int PRIORITY_BASE = 200000;
         private const int PRIORITY_RANGE = 5000;
+
+        private static Log log = new Log("Tooltips");
 
         private static readonly Dictionary<UIContent, HashSet<Tooltip>> hoverExtenders = new();
 
@@ -22,6 +25,19 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             var behavior = new UIContentAnchoredBehavior();
 
             return new Tooltip(behavior, anchor);
+        }
+        public static Tooltip Static(Vector2 position, Vector2 size)
+        {
+            var anchor = new StaticPositionAnchor(position, size);
+            var behavior = new StaticPositionBehavior();
+            return new Tooltip(behavior, anchor);
+        }
+
+        public static Tooltip MouseFollow(Vector2 size, float followSpeed = 400)
+        {
+            var anchor = new FollowMouseAnchor(size, followSpeed);
+            var behavior = new FollowMouseBehavior();
+            return new Tooltip(behavior, anchor) { SizeConstraints = { MinSize = size, MaxSize = size } };
         }
 
         public static Tooltip Show(Tooltip tooltip) => Show(tooltip, tooltip.Anchor, tooltip.Behavior);
@@ -45,16 +61,48 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 
             if (!activeTooltips.Contains(tooltip))
             {
-                InputManager.RegisterContext(tooltip.Input);
                 activeTooltips.Add(tooltip);
                 ReassignPriorities();
 
                 // measure size and position first time
                 ComputeSizeAndPositionForTooltip(tooltip);
                 tooltip.IsOpen = true;
+
+                Vector2 targetPos = tooltip.TargetPosition;
+                Vector2 targetSize = tooltip.TargetSize;
+
+                tooltip.CurrentPosition = new Rectangle(
+                    x: targetPos.X + targetSize.X / 2,
+                    y: targetPos.Y + targetSize.Y / 2,
+                    width: 0,
+                    height: 0);
+
+
+                ForgeWardenEngine.Current.GlobalThreadLoom.InvokeAfter(
+                    ForgeWardenEngine.ENGINE_POOL_NAME,
+                    () => BringToFront(tooltip),
+                    TimeSpan.FromMilliseconds(50));
+            }
+            else
+            {
+                BringToFront(tooltip);
             }
 
+
             return tooltip;
+        }
+
+        private static void BringToFront(Tooltip tooltip)
+        {
+            int idx = activeTooltips.IndexOf(tooltip);
+            if (idx < 0) return;
+
+            if (idx != activeTooltips.Count - 1)
+            {
+                activeTooltips.RemoveAt(idx);
+                activeTooltips.Add(tooltip);
+                ReassignPriorities();
+            }
         }
 
         public static void Close(Tooltip tooltip) => Close(tooltip, TooltipCloseReason.Explicit);
@@ -72,8 +120,18 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 
             UnregisterAllHoverExtendersForTooltip(tooltip);
 
+            tooltip.Close();
+        }
+
+        internal static void ForceRemoveTooltip(Tooltip tooltip)
+        {
+            if (tooltip == null) return;
+
             if (activeTooltips.Remove(tooltip))
+            {
                 InputManager.UnregisterContext(tooltip.Input);
+                ReassignPriorities();
+            }
         }
 
         internal static void Update()
@@ -82,16 +140,15 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             {
                 Tooltip t = activeTooltips[i];
 
-                if (!t.Anchor.IsAnchorValid())
+                if (!t.Anchor.IsAnchorValid(t.IsHovered()) && !t.IsClosing)
                 {
                     Close(t, TooltipCloseReason.TargetHoverLost);
                     continue;
                 }
 
-                // reposition or update layout if needed
-                ComputeSizeAndPositionForTooltip(t);
+                if (!t.IsClosing)
+                    ComputeSizeAndPositionForTooltip(t);
 
-                // always update even when closing so that animation can run
                 t.UpdateContainer();
             }
         }
@@ -102,44 +159,16 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
                 activeTooltips[i].Draw();
         }
 
-        internal static void RequestReposition(Tooltip tooltip)
-        {
-            ComputeSizeAndPositionForTooltip(tooltip);
-        }
-
         private static void ComputeSizeAndPositionForTooltip(Tooltip tooltip)
         {
-            // resolve size using layout resolver
             Vector2 chosenSize = TooltipLayoutResolver.ResolveBestSize(tooltip, tooltip.SizeConstraints);
+            Rectangle anchorRect = tooltip.Anchor.GetAnchorBounds();
+            Vector2 pos = new Vector2(anchorRect.X + anchorRect.Width, anchorRect.Y + anchorRect.Height);
+            pos = ClampPositionToViewport(pos, chosenSize);
 
+            tooltip.TargetPosition = pos;
             tooltip.TargetSize = chosenSize;
             tooltip.AnimationElapsed = 0f;
-
-            // compute placement
-            Rectangle anchorRect = tooltip.Anchor.GetAnchorBounds();
-
-            if (tooltip.Behavior.Mode == TooltipMode.FollowMouse && tooltip.Anchor is UIContainerTooltipAnchor)
-            {
-                var fb = tooltip.Behavior as FollowMouseTooltipBehavior;
-                Vector2 mp = tooltip.Input.MousePosition;
-                Vector2 offset = fb?.MouseOffset ?? new Vector2(12f, 18f);
-
-                Vector2 pos = new Vector2(mp.X + offset.X, mp.Y + offset.Y);
-
-                // clamp to viewport (assumes a global ScreenWidth/ScreenHeight)
-                pos = ClampPositionToViewport(pos, chosenSize);
-
-                tooltip.TargetPosition = pos;
-            }
-            else
-            {
-                // static placement: prefer bottom‑right of anchor
-                Vector2 pos = new Vector2(anchorRect.X + anchorRect.Width, anchorRect.Y + anchorRect.Height);
-
-                pos = ClampPositionToViewport(pos, chosenSize);
-
-                tooltip.TargetPosition = pos;
-            }
         }
 
         private static Vector2 ClampPositionToViewport(Vector2 position, Vector2 size)
@@ -160,12 +189,39 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
         {
             int count = activeTooltips.Count;
 
+            List<Tooltip> mouseAnchors = new(count);
+            List<Tooltip> nonInteractable = new(count);
+            List<Tooltip> normal = new(count);
+
             for (int i = 0; i < count; i++)
             {
-                int priority = PRIORITY_BASE + (i % PRIORITY_RANGE);
-                activeTooltips[i].Input.Priority = priority;
+                Tooltip t = activeTooltips[i];
+                if (t.Anchor is FollowMouseAnchor)
+                    mouseAnchors.Add(t);
+                else if (!t.Behavior.AllowsInteraction)
+                    nonInteractable.Add(t);
+                else
+                    normal.Add(t);
+            }
+
+            // clear original list
+            activeTooltips.Clear();
+
+            // lower in list = higher priority, so we add normal first, then non-interactable, then mouse-anchored
+            activeTooltips.AddRange(normal);
+            activeTooltips.AddRange(nonInteractable);
+            activeTooltips.AddRange(mouseAnchors);
+
+            // assign priorities
+            int currentPriority = PRIORITY_BASE;
+            for (int i = 0; i < activeTooltips.Count; i++)
+            {
+                // lower index = higher priority, so the last elements (mouseAnchors) get highest
+                activeTooltips[i].Input.Priority = currentPriority + (i % PRIORITY_RANGE);
             }
         }
+
+
 
         public static void RegisterHoverExtender(UIContent content, Tooltip tooltip)
         {

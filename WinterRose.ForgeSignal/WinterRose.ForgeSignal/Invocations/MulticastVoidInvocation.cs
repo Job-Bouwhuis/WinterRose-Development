@@ -194,7 +194,10 @@ public sealed class MulticastVoidInvocation<T1, T2> : Invocation
             }
             catch (Exception ex)
             {
-                exceptions.Add(ex);
+                if(ex is AggregateException aggEx)
+                    exceptions.AddRange(aggEx.InnerExceptions);
+                else
+                    exceptions.Add(ex);
             }
         }
 

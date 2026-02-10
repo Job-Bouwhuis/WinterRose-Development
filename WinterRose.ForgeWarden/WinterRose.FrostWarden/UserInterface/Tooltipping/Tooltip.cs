@@ -13,18 +13,29 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 {
     public sealed class Tooltip : UIContainer
     {
-        private const int DEFAULT_ANIMATION_DURATION_MS = 180;
-
         public override InputContext Input { get; }
 
-        public TooltipBehavior Behavior { get; internal set; }
-        public TooltipAnchor Anchor { get; internal set; }
+        public TooltipBehavior Behavior
+        {
+            get; internal set
+            {
+                field = value;
+                field.Tooltip = this;
+            }
+        }
+        public TooltipAnchor Anchor
+        {
+            get; internal set
+            {
+                field = value;
+                field.Tooltip = this;
+            }
+        }
 
-        public TooltipSizeConstraints SizeConstraints { get; } = new TooltipSizeConstraints();
-
+        public TooltipSizeConstraints SizeConstraints { get; set; } = new TooltipSizeConstraints();
         public bool IsOpen { get; internal set; }
-
         public bool LockOpen { get; set; }
+
 
         public Func<Tooltip, bool>? OpenOverride;
         public Func<Tooltip, TooltipCloseReason, bool>? CloseOverride;
@@ -38,45 +49,82 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 
         public Tooltip(TooltipBehavior behavior, TooltipAnchor anchor)
         {
-            // Create a proper InputContext with a RaylibInputProvider so we can read mouse position.
-            // The priority is set to 0 (will be overridden by TooltipManager when registering).
-            Input = new InputContext(new RaylibInputProvider(), 0, false);
+            Input = new InputContext(new RaylibInputProvider(), 0, true);
 
             Behavior = behavior ?? throw new ArgumentNullException(nameof(behavior));
             Anchor = anchor ?? throw new ArgumentNullException(nameof(anchor));
 
-            // sensible defaults
             Style = new ContentStyle(new StyleBase());
             Style.AutoScale = true;
             Style.AllowUserResizing = false;
             Style.PauseAutoDismissTimer = true;
-            Style.ContentMoveDuration = DEFAULT_ANIMATION_DURATION_MS;
-            Style.MoveAndScaleCurve = Curves.ExtraSlowFastSlow;
+            Style.AnimateInDuration = 0.06f;
+            Style.AnimateOutDuration = 1.6f;
+            Style.MoveAndScaleCurve = Curves.EaseOutBack;
 
             TargetSize = new Vector2(SizeConstraints.MinSize.X, SizeConstraints.MinSize.Y);
-            AnimationElapsed = 1f;   // already at final state
+            AnimationElapsed = 1f;
         }
 
         protected override void Update()
         {
-            // run UIContainer core logic
             base.Update();
+            Input.IsRequestingMouseFocus = true;
 
-            // Update input only when interactive (so follow mouse tooltips remain passive)
-            if (Behavior.AllowsInteraction)
-                Input.Update();
+            if (IsClosing)
+            {
+                TargetSize = Vector2.Zero;
+                float fadeT = (AnimationElapsed / Style.AnimateOutDuration) / 0.2f;
+                if (fadeT > 1f) fadeT = 1f;
 
-            // behavior-specific update
-            Behavior.Update(this);
+                if (fadeT >= 1f)
+                {
+                    Style.ShadowAll = 0;
+                    Style.ShowVerticalScrollBar = false;
+                    Style.Background = Color.Blank;
+                }
 
-            // lifecycle handling
-            HandleLifecycle();
+                Style.ContentAlpha = 1f - fadeT;
+
+                if (AnimationElapsed >= Style.AnimateOutDuration)
+                    Tooltips.ForceRemoveTooltip(this);
+            }
+            else
+            {
+                Style.ShowVerticalScrollBar = AnimationElapsed / Style.AnimateInDuration > 0.6f;
+                if (Behavior.AllowsInteraction)
+                    Input.Update();
+                HandleLifecycle();
+            }
+        }
+
+        public override void Close()
+        {
+            base.Close();
+
+            Vector2 center = new Vector2(
+                CurrentPosition.X + CurrentPosition.Width * 0.5f,
+                CurrentPosition.Y + CurrentPosition.Height * 0.5f
+            );
+
+            TargetSize = Vector2.Zero;
+            TargetPosition = center;
+            Style.AutoScale = true;
+
+            IsOpen = false;
+            InputManager.UnregisterContext(Input);
         }
 
         private void HandleLifecycle()
         {
             if (LockOpen)
                 return;
+
+            if (base.IsHovered() && Behavior.AllowsInteraction)
+                InputManager.RegisterContext(Input);
+            else
+                InputManager.UnregisterContext(Input);
+
 
             Behavior.Update(this);
         }
@@ -89,39 +137,75 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 
         internal void ComputeExpandedCloseBounds()
         {
-            var baseBounds = LastBorderBounds;
-            float margin = 0f;
-            if (Behavior is StaticTooltipBehavior sb)
-                margin = sb.CloseMargin;
+            Rectangle baseBounds = new Rectangle(TargetPosition, TargetSize);
+            float margin = 40f;
 
-            ExpandedCloseBounds = new Rectangle(
+            Rectangle expanded = new Rectangle(
                 baseBounds.X - margin,
                 baseBounds.Y - margin,
                 baseBounds.Width + margin * 2f,
                 baseBounds.Height + margin * 2f
             );
-        }
 
-        public void RequestReposition()
-        {
-            Tooltips.RequestReposition(this);
+            Vector2 windowSize = ForgeWardenEngine.Current.Window.Size;
+
+            // --- phase 1: prefer moving ---
+            float dx = 0f;
+            float dy = 0f;
+
+            if (expanded.X < 0f)
+                dx = -expanded.X;
+            else if (expanded.X + expanded.Width > windowSize.X)
+                dx = windowSize.X - (expanded.X + expanded.Width);
+
+            if (expanded.Y < 0f)
+                dy = -expanded.Y;
+            else if (expanded.Y + expanded.Height > windowSize.Y)
+                dy = windowSize.Y - (expanded.Y + expanded.Height);
+
+            expanded.X += dx;
+            expanded.Y += dy;
+
+            // --- phase 2: if moving wasn't enough, scale down ---
+            float maxWidth = windowSize.X;
+            float maxHeight = windowSize.Y;
+
+            if (expanded.Width > maxWidth || expanded.Height > maxHeight)
+            {
+                float scaleX = maxWidth / expanded.Width;
+                float scaleY = maxHeight / expanded.Height;
+                float scale = Math.Min(scaleX, scaleY);
+
+                Vector2 center = new Vector2(
+                    expanded.X + expanded.Width * 0.5f,
+                    expanded.Y + expanded.Height * 0.5f
+                );
+
+                expanded.Width *= scale;
+                expanded.Height *= scale;
+
+                expanded.X = center.X - expanded.Width * 0.5f;
+                expanded.Y = center.Y - expanded.Height * 0.5f;
+
+                // final clamp for safety
+                expanded.X = Math.Clamp(expanded.X, 0f, windowSize.X - expanded.Width);
+                expanded.Y = Math.Clamp(expanded.Y, 0f, windowSize.Y - expanded.Height);
+            }
+
+            ExpandedCloseBounds = expanded;
         }
 
         public override bool IsHovered()
         {
             if (Behavior.AllowsInteraction)
-                return base.IsHovered();
+            {
+                ComputeExpandedCloseBounds();
+                return Input.IsMouseHovering(ExpandedCloseBounds);
+            }
 
             return false;
         }
 
-        /// <summary>
-        /// Called to close the tooltip explicitly by consumers.
-        /// </summary>
-        public void CloseTooltip()
-        {
-            IsOpen = false;
-            Tooltips.Close(this, TooltipCloseReason.Explicit);
-        }
+        public void Show() => Tooltips.Show(this);
     }
 }

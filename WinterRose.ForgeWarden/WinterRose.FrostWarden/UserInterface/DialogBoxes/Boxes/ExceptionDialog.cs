@@ -90,44 +90,17 @@ internal class ExceptionDialog : Dialog
                     // --- 2. Last rendered frame ---
                     if (lastRenderedFrame?.Texture.Id != 0)
                     {
-                        unsafe
-                        {
-                            var frameEntry = zip.CreateEntry("LastFrame.png");
-                            using (var ms = new MemoryStream())
-                            {
-                                Image image = Raylib.LoadImageFromTexture(lastRenderedFrame!.Value.Texture);
+                        var frameEntry = zip.CreateEntry("LastFrame.png");
+                        using var ms = new MemoryStream();
+                        Image image = Raylib.LoadImageFromTexture(lastRenderedFrame!.Value.Texture);
+                        Raylib.ExportImage(image, "tmp.png");
+                        Raylib.UnloadImage(image);
 
-                                int* fileSize = stackalloc int[1];
-                                byte* fileContent;
+                        using (var fileStream = new TempFile())
+                        using (var entryStream = frameEntry.Open())
+                            fileStream.CopyTo(entryStream);
 
-                                // Use UTF8 null-terminated string for file type
-                                byte[] typeBytes = Encoding.ASCII.GetBytes("PNG\0"); // note the \0
-                                fixed (byte* fileType = typeBytes)
-                                {
-                                    fileContent = Raylib.ExportImageToMemory(image, (sbyte*)fileType, fileSize);
-                                }
-
-                                if (fileContent == null)
-                                {
-                                    new Log("ExceptionDialog").Warning("Failed to export last frame even though it was captured. Skipping frame in crash report.");
-                                    goto NoImage;
-                                }
-
-                                using (var fs = frameEntry.Open())
-                                {
-                                    byte[] managed = new byte[*fileSize];
-                                    Marshal.Copy((IntPtr)fileContent, managed, 0, *fileSize);
-                                    fs.Write(managed, 0, managed.Length);
-                                }
-
-                                Raylib.UnloadImage(image);
-                                Raylib.MemFree(fileContent); // <-- free the exported buffer
-
-                            }
-                        }
                     }
-
-NoImage:;
 
                     string logFolder = Path.Combine(exeFolder, "Logs");
                     string latestLogCandidate = Path.Combine(logFolder, "latest Log.log");
@@ -171,7 +144,7 @@ NoImage:;
                     {
                         zip.CreateEntryFromFile(actualLogPath, Path.GetFileName(actualLogPath));
                     }
-                  
+
                 }
 
                 // copy path to clipboard for convenience
