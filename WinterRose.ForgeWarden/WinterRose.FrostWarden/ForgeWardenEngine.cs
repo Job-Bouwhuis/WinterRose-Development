@@ -89,6 +89,7 @@ public abstract class ForgeWardenEngine
     private readonly bool useBrowser;
     private readonly bool gracefulErrorHandling;
     internal bool AllowThrow = false;
+    Exception? exception = null;
 
     private InputContext EngineLevelInput = new(new RaylibInputProvider(), int.MaxValue)
     {
@@ -147,7 +148,6 @@ public abstract class ForgeWardenEngine
 
     public void Run(string title, int width, int height, ConfigFlags flags = ConfigFlags.ResizableWindow)
     {
-        Exception? exception = null;
         try
         {
             if (!BulletPhysicsLoader.TryLoadBulletSharp())
@@ -252,7 +252,7 @@ public abstract class ForgeWardenEngine
                     catch (Exception ex)
                     {
                         HandleException(worldTex, ex, ExceptionDispatchInfo.Capture(ex));
-                        break;
+                        throw; // rethrow to trigger outer catch and ensure the exception ends up in the log file and not just silently handled by the dialog
                     }
                 }
                 else
@@ -260,7 +260,6 @@ public abstract class ForgeWardenEngine
                     MainApplicationLoop(camera, ref worldTex);
                 }
 
-                // If loop naturally exits due to GameIsClosing set elsewhere, we'll fall out and finish cleanup
                 if (GameIsClosing)
                     break;
             }
@@ -277,13 +276,15 @@ public abstract class ForgeWardenEngine
         {
             try
             {
+                Closing();
+
                 log.Info("Releasing all resources");
 
-                string ex = exception is null ? "" : $"Error of type {exception.GetType().Name} causing shutdown:";
+                string ex = exception is null ? "" : $"Error of type {exception.GetType().Name} causing shutdown!";
 
                 DrawBlackScreenWithCenteredText("Unloading world...", ex);
                 Universe.CurrentWorld.Dispose();
-                DrawBlackScreenWithCenteredText("Clearing sprites...", ex);
+                DrawBlackScreenWithCenteredText("Cleaning sprites...", ex);
                 SpriteCache.DisposeAll();
                 DrawBlackScreenWithCenteredText("Disposing hardware connections...", ex);
 
@@ -293,7 +294,6 @@ public abstract class ForgeWardenEngine
                 DrawBlackScreenWithCenteredText("Bye Bye!", ex);
                 Task.Delay(exception is null ? 250 : 2000).Wait();
 
-                Closing();
 
                 log.Info("All resources released, Closing window");
 
@@ -522,34 +522,23 @@ public abstract class ForgeWardenEngine
 
             ray.EndDrawing();
             Dialogs.CloseAll(true);
-            Dialogs.Show(new ExceptionDialog(ex, info));
+            Dialogs.Show(new ExceptionDialog(ex, info, worldTex));
             while (Dialogs.OpenDialogs > 0)
             {
                 if (ray.WindowShouldClose())
                     break;
 
                 Time.Update();
+                InputManager.Update();
                 Dialogs.Update(Time.deltaTime);
+                Tooltips.Update();
 
                 ray.BeginDrawing();
                 ray.ClearBackground(ClearColor);
 
                 if (Dialogs.GetActiveDialogs().FirstOrDefault() is ExceptionDialog exDialog)
                 {
-                    if (exDialog.IsClosing)
-                    {
-                        var text = RichText.Parse("An error occurred, the application will now close.", Color.Red, 50);
-                        var size = text.CalculateBounds(Window.Width - 20);
-
-                        RichTextRenderer.DrawRichText(
-                            text,
-                            new Vector2(
-                                (Window.Width - size.Width) / 2,
-                                (Window.Height - size.Height) / 2),
-                            Window.Width - 20,
-                            EngineLevelInput);
-                    }
-                    else if(worldTex is not null)
+                    if(worldTex is not null)
                     {
                         Raylib.DrawTexturePro(
                              worldTex.Value.Texture,

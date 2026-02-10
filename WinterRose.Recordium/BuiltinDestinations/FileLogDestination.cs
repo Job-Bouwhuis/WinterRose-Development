@@ -23,8 +23,15 @@ public class FileLogDestination : ILogDestination
             fileStream.Write(bytes, 0, bytes.Length);
         }
 
-        fileStream.Flush();
-        fileStream.Dispose();
+        try
+        {
+            fileStream.Flush();
+            fileStream.Dispose();
+        }
+        catch
+        {
+            // Ignore exceptions during cleanup
+        }
     }
 
     public bool TryDequeue(out LogEntry entry)

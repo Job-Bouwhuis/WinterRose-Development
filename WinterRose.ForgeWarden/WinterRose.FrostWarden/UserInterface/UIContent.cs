@@ -25,10 +25,13 @@ public abstract class UIContent
     /// </summary>
     public Rectangle LastRenderBounds { get; set; }
 
-    internal bool IsContentHovered(Rectangle contentBounds)
+    internal bool IsContentHovered(Rectangle contentBounds, bool includeHoverExtenders = true)
     {
         Vector2 mousePos = Input.MousePosition;
-        return ray.CheckCollisionPointRec(mousePos, contentBounds) || Tooltips.IsHoverExtended(this);
+        if (includeHoverExtenders && Tooltips.IsHoverExtended(this))
+            return true;
+
+        return ray.CheckCollisionPointRec(mousePos, contentBounds);
     }
 
     internal void InternalDraw(Rectangle bounds)

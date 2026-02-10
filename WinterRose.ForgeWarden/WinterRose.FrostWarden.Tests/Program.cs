@@ -33,7 +33,7 @@ using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.ForgeWarden.Tests;
 
-internal class Program : ForgeWardenEngine
+internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
 {
     // fullscreen PC
     //const int SCREEN_WIDTH = 2560;
@@ -106,15 +106,33 @@ internal class Program : ForgeWardenEngine
             UIWindow window = new UIWindow("Test window", 500, 600);
             window.Show();
 
-            var btn = new UIButton("neat!");
+            var btn = new UIButton("neat!", (c, b) =>
+            {
+                var ag = new AggregateException("This is a test exception", 
+                                                new Exception("Inner exception details"),
+                                                new Exception("Another inner exception"),
+                                                new Exception("Yet another inner exception"),
+                                                new Exception("Final inner exception"));
+                throw ag;
+            });
 
             btn.OnTooltipConfigure = Invocation.Create((Tooltip t) =>
             {
                 t.AddText("Hello, World");
                 t.AddButton("Test button");
             });
-
             window.AddContent(btn);
+
+            var slider = new UIValueSlider<int>(0, 100, 50);
+            slider.OnValueChangedBasic.Subscribe(i =>
+            {
+                log.Debug($"Slider value changed: {i}");
+            });
+            slider.Step = 1;
+            slider.SnapToStep = true;
+            slider.HoldShiftToDisableSnap = false;
+
+            window.AddContent(slider);
 
         }, TimeSpan.FromMilliseconds(50));
 

@@ -291,4 +291,9 @@ public class Log
     {
         await WriteAsync(CreateEntry(LogSeverity.Fatal, message, fileName, lineNumber));
     }
+
+    public static void Flush()
+    {
+        FlushAll();
+    }
 }

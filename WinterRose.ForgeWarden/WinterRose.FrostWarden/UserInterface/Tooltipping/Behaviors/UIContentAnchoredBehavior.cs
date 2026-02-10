@@ -23,7 +23,7 @@ public class UIContentAnchoredBehavior : TooltipBehavior
         if (content == null)
             return;
 
-        bool anchorHovered = content.IsHovered; // includes hover extenders
+        bool anchorHovered = content.IsContentHovered(content.LastRenderBounds, false); // includes hover extenders
         bool tooltipHovered = tooltip.IsHovered();
 
         // union of hover states: if either is hovered we treat the anchor as hovered

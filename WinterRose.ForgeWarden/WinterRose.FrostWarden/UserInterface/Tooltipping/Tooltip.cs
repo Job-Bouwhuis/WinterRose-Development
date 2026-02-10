@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using WinterRose.ForgeWarden.Geometry.Animation;
 using WinterRose.ForgeWarden.Input;
+using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping.Anchors;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping.Behaviors;
 
@@ -48,6 +50,8 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             Style.AutoScale = true;
             Style.AllowUserResizing = false;
             Style.PauseAutoDismissTimer = true;
+            Style.ContentMoveDuration = DEFAULT_ANIMATION_DURATION_MS;
+            Style.MoveAndScaleCurve = Curves.ExtraSlowFastSlow;
 
             TargetSize = new Vector2(SizeConstraints.MinSize.X, SizeConstraints.MinSize.Y);
             AnimationElapsed = 1f;   // already at final state
