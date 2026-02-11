@@ -129,7 +129,7 @@ public class RaylibInputProvider : IInputProvider
                             currentMousePosition.X > winWidth || currentMousePosition.Y > winHeight;
 
         if (mouseOutside /*|| !Raylib.IsWindowFocused()*/)
-            currentMousePosition = new(-1, -1);
+            currentMousePosition = lastMousePosition;
     }
 
     /// <inheritdoc cref="IInputProvider.IsPressed(InputBinding)(InputBinding)"/>

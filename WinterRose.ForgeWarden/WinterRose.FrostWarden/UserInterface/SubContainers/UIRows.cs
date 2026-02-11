@@ -18,6 +18,7 @@ public class UIRows : UIContent
     public float FixedRowHeight { get; set; } = DEFAULT_ROW_HEIGHT;
     public float RowSpacing { get; set; } = 6f;
     public float RowPadding { get; set; } = UIConstants.CONTENT_PADDING;
+    public bool AllowVerticalScroll { get; set; } = false;
 
     // scrollbar animation constants (container-level vertical scrollbar and per-row horizontal scrollbars)
     private const float SCROLLBAR_HOVER_DELAY = 0.25f;
@@ -363,16 +364,71 @@ public class UIRows : UIContent
         containerState.ScrollbarCurrentWidth = Lerp(SCROLLBAR_COLLAPSED_THICKNESS, SCROLLBAR_EXPANDED_THICKNESS, containerEased);
 
         // container-level vertical wheel handling when hovering container
-        bool isContainerHovered = IsContentHovered(bounds);
-        if (isContainerHovered)
+        // new: consult children first; only scroll container if allowed
+        float wheel = Input.ScrollDelta;
+        if (Math.Abs(wheel) > 0.001f)
         {
-            float wheel = Raylib_cs.Raylib.GetMouseWheelMove();
-            if (Math.Abs(wheel) > 0.001f)
+            bool consumed = false;
+
+            // find hovered row and ask its children if they want the wheel
+            float checkY = visibleStartY - containerState.ContentScrollY;
+            for (int ri = 0; ri < RowCount; ri++)
+            {
+                float rowH = ResolveRowHeight(ri);
+                Rectangle rowRect = new Rectangle(bounds.X, (int)checkY, bounds.Width, (int)rowH);
+
+                if (!IsContentHovered(rowRect))
+                {
+                    checkY += rowH + RowSpacing;
+                    continue;
+                }
+
+                var rowList = (ri < RowsContents.Count) ? RowsContents[ri] : new List<UIContent>();
+                var rstate = rowStates[ri];
+
+                float visibleRowStartX = rowRect.X + RowPadding;
+                float visibleRowWidth = rowRect.Width - RowPadding * 2f;
+                float contentWidth = visibleRowWidth;
+                if (rstate.IsScrollbarVisible)
+                    contentWidth = Math.Max(0f, contentWidth - (rstate.ScrollbarCurrentThickness + RowPadding));
+
+                float checkOffsetX = visibleRowStartX - rstate.ContentScrollX;
+
+                for (int c = 0; c < rowList.Count; c++)
+                {
+                    var child = rowList[c];
+                    var childSize = child.GetSize(new Rectangle(0, 0, int.MaxValue, (int)Math.Max(0f, rowH - RowPadding * 2f)));
+                    float childWidth = Math.Max(0f, childSize.X);
+                    Rectangle childBounds = new Rectangle((int)checkOffsetX, rowRect.Y + (int)RowPadding, (int)childWidth, (int)Math.Max(0f, rowH - RowPadding * 2f));
+
+                    if (child.WantsScroll(childBounds, wheel))
+                    {
+                        consumed = true;
+                        break;
+                    }
+
+                    checkOffsetX += childWidth + RowPadding;
+                }
+
+                // if not consumed and we allow vertical scrolling for the rows container, scroll the container
+                if (!consumed && AllowVerticalScroll && containerState.LastTotalRowsHeight > visibleHeight)
+                {
+                    containerState.ContentScrollY -= wheel * SCROLL_WHEEL_SPEED;
+                    containerState.ContentScrollY = Math.Clamp(containerState.ContentScrollY, 0f, Math.Max(0f, containerState.LastTotalRowsHeight - visibleHeight));
+                    consumed = true;
+                }
+
+                break; // we only check the hovered row
+            }
+
+            // fallback: if wheel wasn't consumed but mouse is over container and vertical scrolling allowed, scroll
+            if (!consumed && IsContentHovered(bounds) && AllowVerticalScroll)
             {
                 containerState.ContentScrollY -= wheel * SCROLL_WHEEL_SPEED;
                 containerState.ContentScrollY = Math.Clamp(containerState.ContentScrollY, 0f, Math.Max(0f, containerState.LastTotalRowsHeight - visibleHeight));
             }
         }
+
 
         // start drawing rows; apply container-level scroll
         float rowStartY = bounds.Y + RowPadding - containerState.ContentScrollY;
@@ -492,17 +548,36 @@ public class UIRows : UIContent
             rstate.ScrollbarCurrentThickness = Lerp(SCROLLBAR_COLLAPSED_THICKNESS, SCROLLBAR_EXPANDED_THICKNESS, reased);
 
             // handle wheel for horizontal scroll on a row when hovering it
-            bool isRowHovered = IsContentHovered(rowRect);
-            if (isRowHovered)
+            // new: consult row children first, then allow the row to consume wheel as horizontal scroll
+            float rowWheel = Input.ScrollDelta;
+            if (Math.Abs(rowWheel) > 0.001f)
             {
-                float wheel = Raylib_cs.Raylib.GetMouseWheelMove();
-                if (Math.Abs(wheel) > 0.001f)
+                bool consumedByChild = false;
+
+                // use measuredChildWidths (you already build it above) to iterate children
+                float checkOffsetX = visibleRowStartX - rstate.ContentScrollX;
+                for (int c = 0; c < rowList.Count; c++)
                 {
-                    // horizontal scroll with wheel (common UX: wheel scrolls vertically, but we allow horizontal in rows)
-                    rstate.ContentScrollX -= wheel * SCROLL_WHEEL_SPEED;
+                    float childWidth = measuredChildWidths[c];
+                    Rectangle childBounds = new Rectangle((int)checkOffsetX, (int)(rowRect.Y + RowPadding), (int)childWidth, (int)Math.Max(0f, rowHeight - RowPadding * 2f));
+
+                    if (rowList[c].WantsScroll(childBounds, rowWheel))
+                    {
+                        consumedByChild = true;
+                        break;
+                    }
+
+                    checkOffsetX += childWidth + RowPadding;
+                }
+
+                if (!consumedByChild && IsContentHovered(rowRect))
+                {
+                    // map vertical wheel into horizontal movement for the row
+                    rstate.ContentScrollX -= rowWheel * SCROLL_WHEEL_SPEED;
                     rstate.ContentScrollX = Math.Clamp(rstate.ContentScrollX, 0f, Math.Max(0f, rstate.LastTotalContentWidth - visibleRowWidth));
                 }
             }
+
 
             // draw children inside the row with scissor applied and respecting horizontal scroll
             float contentOffsetX = visibleRowStartX - rstate.ContentScrollX;
@@ -586,6 +661,68 @@ public class UIRows : UIContent
             }
         }
 
+    }
+
+    protected internal override bool WantsScroll(Rectangle bounds, float wheelDelta)
+    {
+        // only consider when mouse is over the whole rows area
+        if (!IsContentHovered(bounds))
+            return false;
+
+        float visibleStartY = bounds.Y + RowPadding;
+        float visibleHeight = bounds.Height - RowPadding * 2f;
+
+        // compute total rows height (same calculation as Draw)
+        float totalRowsHeight = 0f;
+        for (int i = 0; i < RowCount; i++)
+            totalRowsHeight += ResolveRowHeight(i);
+        totalRowsHeight += RowSpacing * Math.Max(0, RowCount - 1);
+
+        // find the row under the mouse and ask its children first
+        float checkY = visibleStartY - containerState.ContentScrollY;
+        for (int ri = 0; ri < RowCount; ri++)
+        {
+            float rowH = ResolveRowHeight(ri);
+            Rectangle rowRect = new Rectangle(bounds.X, (int)checkY, bounds.Width, (int)rowH);
+
+            if (IsContentHovered(rowRect))
+            {
+                var rowList = (ri < RowsContents.Count) ? RowsContents[ri] : new List<UIContent>();
+                var rstate = rowStates[ri];
+
+                float visibleRowStartX = rowRect.X + RowPadding;
+                float visibleRowWidth = rowRect.Width - RowPadding * 2f;
+                float contentWidth = visibleRowWidth;
+                if (rstate.IsScrollbarVisible)
+                    contentWidth = Math.Max(0f, contentWidth - (rstate.ScrollbarCurrentThickness + RowPadding));
+
+                float contentOffsetX = visibleRowStartX - rstate.ContentScrollX;
+
+                for (int c = 0; c < rowList.Count; c++)
+                {
+                    var child = rowList[c];
+                    var childSize = child.GetSize(new Rectangle(0, 0, int.MaxValue, (int)Math.Max(0f, rowH - RowPadding * 2f)));
+                    float childWidth = Math.Max(0f, childSize.X);
+                    Rectangle childBounds = new Rectangle((int)contentOffsetX, rowRect.Y + (int)RowPadding, (int)childWidth, (int)Math.Max(0f, rowH - RowPadding * 2f));
+
+                    if (child.WantsScroll(childBounds, wheelDelta))
+                        return true;
+
+                    contentOffsetX += childWidth + RowPadding;
+                }
+
+                // no child wanted the scroll — stop searching rows (we only check the hovered row)
+                break;
+            }
+
+            checkY += rowH + RowSpacing;
+        }
+
+        // if no child consumed the wheel and vertical scrolling is allowed, claim it if the container can scroll
+        if (AllowVerticalScroll && totalRowsHeight > visibleHeight)
+            return true;
+
+        return false;
     }
 
     // small helper for lerp

@@ -25,7 +25,7 @@ public class UICircleProgress : UIContent
         }
     } = 0f;
     public Func<UICircleProgress, float, float>? ProgressProvider { get; set; }
-    public string Text { get; set; }
+    public RichText Text { get; set; }
 
     private float visualProgress = 0f;
     private float percentStart;
@@ -245,7 +245,11 @@ public class UICircleProgress : UIContent
         bool prevWasIndeterminate = wasIndeterminate;
 
         if (ProgressProvider is not null)
-            ProgressValue = ProgressProvider(this, ProgressValue);
+        {
+            float val = ProgressProvider(this, ProgressValue);
+            if (val != -2)
+                ProgressValue = val;
+        }
 
         // normalize sentinel for indeterminate: -1 == indeterminate
         if (ProgressValue is < 0f and > -0.1f)
@@ -400,7 +404,7 @@ public class UICircleProgress : UIContent
         DrawProgressArc();
 
         // --- Text layout calculation (use renderer's measurement to match drawing) ---
-        string? infiniteTextToShow = (ProgressValue == -1 || AlwaysShowText) && !string.IsNullOrWhiteSpace(Text)
+        RichText? infiniteTextToShow = (ProgressValue == -1 || AlwaysShowText) && !Text.IsOnlyWhitespace()
             ? Text
             : null;
 

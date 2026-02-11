@@ -10,6 +10,7 @@ using WinterRose.ForgeWarden.Geometry.Animation;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.Tooltipping;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Utility;
 using WinterRose.ForgeWarden.Worlds;
@@ -21,7 +22,7 @@ using dialog = WinterRose.ForgeWarden.UserInterface.DialogBoxes.Dialog;
 
 namespace WinterRoseUtilityApp;
 
-internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
+internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
 {
     public static new Program Current => (Program)ForgeWardenEngine.Current;
     SubSystemManager subSystemManager;
@@ -98,6 +99,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
         t.AddContent(startup);
         t.AddButton("Close App",
             Invocation.Create<IUIContainer, UIButton>((c, b) => Close()));
+
         Toasts.ShowToast(t);
     }
 

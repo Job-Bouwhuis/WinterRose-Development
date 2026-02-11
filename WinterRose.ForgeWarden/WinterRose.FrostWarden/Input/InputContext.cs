@@ -334,13 +334,17 @@ public class InputContext
         }
         IsRequestingMouseFocus = ray.CheckCollisionPointRec(Provider.MousePosition, bounds);
     }
-    internal bool IsMouseHovering(Rectangle bounds)
+    internal bool IsMouseHovering(Rectangle bounds, bool ignorePriority = false)
     {
-        if (HighestPriorityMouseAbove is not null)
+        if (HighestPriorityMouseAbove is not null && !ignorePriority)
             return false;
         
         if (ray.CheckCollisionPointRec(Provider.MousePosition, bounds))
+        {
+            if (ignorePriority)
+                ;
             return true;
+        }
         return false;
     }
 }

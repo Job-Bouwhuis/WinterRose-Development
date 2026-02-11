@@ -32,6 +32,8 @@ public interface IUIContainer
     float Height { get; }
     ContentStyle Style { get; }
 
+    IReadOnlyList<UIContent> Contents { get; }
+
     /// <summary>
     /// Adds content to the container.
     /// </summary>

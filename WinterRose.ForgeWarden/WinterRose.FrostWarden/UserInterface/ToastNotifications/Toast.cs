@@ -117,7 +117,10 @@ public class Toast : UIContainer
         return this;
     }
 
-    protected override void OnContainerClicked(MouseButton button) => OnToastClicked.Invoke(this, button);
+    protected override void OnContainerClicked(MouseButton button)
+    {
+        OnToastClicked.Invoke(this, button);
+    }
 
     /// <summary>
     /// Adds a button to the toast

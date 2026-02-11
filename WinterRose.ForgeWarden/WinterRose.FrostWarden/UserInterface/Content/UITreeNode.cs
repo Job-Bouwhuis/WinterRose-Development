@@ -17,6 +17,7 @@ public class UITreeNode : UIContent, IUIContainer
     public object Context { get; set; }
 
     public List<UIContent> Children { get; } = new List<UIContent>();
+    public IReadOnlyList<UIContent> Contents => Children.AsReadOnly();
     public UITreeNode Parent { get; private set; }
 
     public bool IsCollapsed { get; private set; } = false;
@@ -230,6 +231,8 @@ public class UITreeNode : UIContent, IUIContainer
             for (int i = 0; i < Children.Count; i++)
             {
                 UIContent? child = Children[i];
+                if (child == null)
+                    continue;
                 height += child.GetHeight(childMaxWidth);
             }
         }

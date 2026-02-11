@@ -33,9 +33,9 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             return new Tooltip(behavior, anchor);
         }
 
-        public static Tooltip MouseFollow(Vector2 size, float followSpeed = 400)
+        public static Tooltip MouseFollow(Vector2 size)
         {
-            var anchor = new FollowMouseAnchor(size, followSpeed);
+            var anchor = new FollowMouseAnchor(size);
             var behavior = new FollowMouseBehavior();
             return new Tooltip(behavior, anchor) { SizeConstraints = { MinSize = size, MaxSize = size } };
         }
@@ -88,7 +88,14 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
                 BringToFront(tooltip);
             }
 
-
+            //tooltip.AddContent(new UIText("")
+            //{
+            //    TextProvider = () => tooltip.Input.Priority.ToString()
+            //});
+            //tooltip.AddContent(new UIText("")
+            //{
+            //    TextProvider = () => InputManager.IsRegistered(tooltip.Input).ToString()
+            //});
             return tooltip;
         }
 
@@ -217,6 +224,11 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             for (int i = 0; i < activeTooltips.Count; i++)
             {
                 // lower index = higher priority, so the last elements (mouseAnchors) get highest
+                if(activeTooltips[i] is null)
+                {
+                    activeTooltips.RemoveAt(i--);
+                    continue;
+                }
                 activeTooltips[i].Input.Priority = currentPriority + (i % PRIORITY_RANGE);
             }
         }
@@ -250,7 +262,20 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
         public static bool IsHoverExtended(UIContent content)
         {
             if (content == null) return false;
-            return hoverExtenders.ContainsKey(content);
+            bool r = hoverExtenders.ContainsKey(content);
+            if (r)
+                return true;
+
+            if(content is IUIContainer cont)
+            {
+                foreach(var child in cont.Contents)
+                {
+                    if (IsHoverExtended(child))
+                        return true;
+                }
+            }
+
+            return false;
         }
         public static void UnregisterAllHoverExtendersForTooltip(Tooltip tooltip)
         {

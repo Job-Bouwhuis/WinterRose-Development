@@ -7,16 +7,18 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using WinterRose.EventBusses;
+using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.Utility;
+using WinterRose.StateKeeper;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 public class UIColumns : UIContent, IUIContainer
 {
     // configuration
     public const int DEFAULT_COLUMN_COUNT = 2;
-    public const float DEFAULT_COLUMN_HEIGHT = 160f; // logical default height when no constraint is given
+    public const float DEFAULT_COLUMN_HEIGHT = 400f; // logical default height when no constraint is given
     public int ColumnCount { get; set; } = DEFAULT_COLUMN_COUNT;
     /// <summary>
     /// If > 0 each column will use this fixed width. If 0 (default) columns auto-scale to available width.
@@ -24,6 +26,26 @@ public class UIColumns : UIContent, IUIContainer
     public float FixedColumnWidth { get; set; } = 0f;
     public float ColumnSpacing { get; set; } = 6f;
     public float ColumnPadding { get; set; } = UIConstants.CONTENT_PADDING;
+    public float MaxHeight
+    {
+        get
+        {
+            if (Owner.CurrentPosition.Height == 0)
+                return DEFAULT_COLUMN_HEIGHT;
+
+            int parentCount = 0;
+            IUIContainer owner = Owner;
+            while (owner != null)
+            {
+                parentCount++;
+                owner = owner.Owner;
+            }
+            float max = Owner.CurrentPosition.Height - UIConstants.CONTENT_PADDING * parentCount * 2;
+            return max;
+        }
+    }
+
+    public List<bool> ColumnScrollEnabled { get; } = new();
 
     // scrollbar animation constants (kept local so subcontainers behave independently)
     private const float SCROLLBAR_HOVER_DELAY = 0.25f;
@@ -34,6 +56,8 @@ public class UIColumns : UIContent, IUIContainer
 
     // columns content storage
     public List<List<UIContent>> ColumnsContents { get; } = new();
+
+    public IReadOnlyList<UIContent> Contents => ColumnsContents.SelectMany(c => c).ToList();
 
     public bool IsVisible => Owner.IsVisible;
 
@@ -98,6 +122,9 @@ public class UIColumns : UIContent, IUIContainer
         while (columnStates.Count < count)
             columnStates.Add(new ColumnState());
 
+        while (ColumnScrollEnabled.Count < count)
+            ColumnScrollEnabled.Add(true);
+
         ColumnCount = count;
     }
 
@@ -149,34 +176,70 @@ public class UIColumns : UIContent, IUIContainer
         // width uses availableArea.Width
         float width = availableArea.Width;
 
-        // choose sensible default height independent of available area if caller gives infinite height:
-        // We'll measure heights of column contents using the column width each would get.
         float columnWidth = (FixedColumnWidth > 0f)
             ? FixedColumnWidth
             : (width - ColumnSpacing * (ColumnCount - 1)) / Math.Max(1, ColumnCount);
 
-        float maxColumnHeight = 0f;
+        float tallestNonScrollable = 0f;
+        float tallestScrollable = 0f;
+
         for (int c = 0; c < ColumnCount; c++)
         {
             float colHeight = 0f;
             if (c < ColumnsContents.Count)
             {
-                for (int i = 0; i < ColumnsContents[c].Count; i++)
+                var column = ColumnsContents[c];
+                for (int i = 0; i < column.Count; i++)
                 {
-                    UIContent? child = ColumnsContents[c][i];
-                    colHeight += child.GetHeight((int)columnWidth);
-                    colHeight += ColumnPadding;
+                    UIContent child = column[i];
+                    int measureWidth = Math.Max(1, (int)Math.Ceiling(columnWidth));
+                    colHeight += child.GetHeight(measureWidth);
+                    if (i < column.Count - 1)
+                        colHeight += ColumnPadding;
                 }
             }
-            maxColumnHeight = Math.Max(maxColumnHeight, colHeight);
+
+            bool scrollEnabled = c >= ColumnScrollEnabled.Count || ColumnScrollEnabled[c];
+
+            if (!scrollEnabled)
+                tallestNonScrollable = Math.Max(tallestNonScrollable, colHeight);
+            else
+                tallestScrollable = Math.Max(tallestScrollable, colHeight);
         }
 
-        // If there are no children, give a default logical height
-        if (maxColumnHeight <= 0f)
-            maxColumnHeight = DEFAULT_COLUMN_HEIGHT;
+        float reportedHeight;
 
-        return new Vector2(width, maxColumnHeight);
+        // tallest non-scrollable column may exceed MaxHeight
+        if (tallestNonScrollable > 0f)
+        {
+            // container must at least fit the tallest non-scrollable
+            reportedHeight = Math.Max(tallestNonScrollable, Math.Min(tallestScrollable, MaxHeight));
+        }
+        else
+        {
+            // no non-scrollable, clamp scrollable to MaxHeight
+            reportedHeight = Math.Min(tallestScrollable > 0f ? tallestScrollable : DEFAULT_COLUMN_HEIGHT, MaxHeight);
+        }
+
+        // Add top + bottom padding
+        reportedHeight += ColumnPadding * 2f;
+
+        // fallback
+        if (reportedHeight <= 0f)
+            reportedHeight = DEFAULT_COLUMN_HEIGHT + ColumnPadding * 2f;
+
+        reportedHeight = (float)Math.Ceiling(reportedHeight);
+
+        // final fallback
+        if (reportedHeight <= 0f)
+            reportedHeight = DEFAULT_COLUMN_HEIGHT + ColumnPadding * 2f;
+
+        // avoid tiny sub-pixel truncation causing Draw to floor into 1px less
+        reportedHeight = (float)Math.Ceiling(reportedHeight);
+
+        return new Vector2(width, reportedHeight);
     }
+
 
     protected internal override float GetHeight(float maxWidth)
     {
@@ -243,41 +306,62 @@ public class UIColumns : UIContent, IUIContainer
 
             // compute visible content area inside column (respect padding and possible title bar not relevant here)
             float visibleStartY = colRect.Y + ColumnPadding;
-            float visibleHeight = colRect.Height - ColumnPadding * 2f;
+            float visibleHeight = colRect.Height - ColumnPadding * 2;
             float availableContentWidthCandidate = Math.Max(0f, colRect.Width - ColumnPadding * 2f);
+            var state = columnStates[ci];
+            float contentWidth;
 
             // compute total content height for this column
             float totalContentHeight = 0f;
             var columnList = (ci < ColumnsContents.Count) ? ColumnsContents[ci] : new List<UIContent>();
-            foreach (var content in columnList)
+            for (int i = 0; i < columnList.Count; i++)
             {
-                totalContentHeight += content.GetHeight((int)availableContentWidthCandidate);
-                totalContentHeight += ColumnPadding;
+                UIContent? content = columnList[i];
+                // round width up so we never ask for less than the real width
+                contentWidth = Math.Max(1, (int)Math.Ceiling(availableContentWidthCandidate));
+                totalContentHeight += content.GetHeight(contentWidth);
+                if (i < columnList.Count - 1)            // add padding only between items
+                    totalContentHeight += ColumnPadding;
             }
+            // ------------------------------------------------------------------
+            bool scrollEnabled = ci >= ColumnScrollEnabled.Count || ColumnScrollEnabled[ci];
 
-            var state = columnStates[ci];
-
-            // determine scrollbar visibility and recalc if visible (reserve space)
-            if (totalContentHeight > visibleHeight)
+            if (scrollEnabled && totalContentHeight > visibleHeight)
             {
                 state.IsScrollbarVisible = true;
                 float reserved = state.ScrollbarCurrentWidth + ColumnPadding;
                 float availableContentWidth = Math.Max(0f, availableContentWidthCandidate - reserved);
 
                 totalContentHeight = 0f;
-                foreach (var content in columnList)
+                for (int i = 0; i < columnList.Count; i++)
                 {
-                    totalContentHeight += content.GetHeight((int)availableContentWidth);
-                    totalContentHeight += ColumnPadding;
+                    UIContent? content = columnList[i];
+                    contentWidth = Math.Max(1, (int)Math.Ceiling(availableContentWidth));
+                    totalContentHeight += content.GetHeight(contentWidth);
+                    if (i < columnList.Count - 1)
+                        totalContentHeight += ColumnPadding; // use single padding consistently
                 }
 
+                totalContentHeight += ColumnPadding;
                 state.LastTotalContentHeight = totalContentHeight;
             }
             else
             {
+                // No scrollbar either because content fits or scrolling is disabled
                 state.IsScrollbarVisible = false;
                 state.LastTotalContentHeight = totalContentHeight;
+
+                // If scrolling is disabled, ensure we don't keep a leftover scroll offset
+                if (!scrollEnabled)
+                    state.ContentScrollY = 0f;
             }
+
+            float maxScroll = Math.Max(0f, state.LastTotalContentHeight - visibleHeight) + 0.01f;
+            if (!(ci >= ColumnScrollEnabled.Count || ColumnScrollEnabled[ci]))
+                maxScroll = 0f; // enforce no scroll when disabled
+
+            state.ContentScrollY = Math.Clamp(state.ContentScrollY, 0f, maxScroll);
+            state.ContentScrollY = Math.Clamp(state.ContentScrollY, 0f, maxScroll);
 
             // handle hover/anim for scrollbar (local copy of earlier logic)
             var mouse = Input.MousePosition;
@@ -321,22 +405,43 @@ public class UIColumns : UIContent, IUIContainer
             state.ScrollbarCurrentWidth = Lerp(SCROLLBAR_COLLAPSED_WIDTH, SCROLLBAR_EXPANDED_WIDTH, eased);
 
             // handle mouse wheel for column only when hovering that column
-            bool isColumnHovered = IsContentHovered(colRect);
-            if (isColumnHovered)
+            // --- wheel consumption that respects child WantsScroll(...) ---
+            float wheel = Input.ScrollDelta;
+            if (ColumnScrollEnabled[ci] && Math.Abs(wheel) > 0.001f)
             {
-                float wheel = Raylib_cs.Raylib.GetMouseWheelMove();
-                if (Math.Abs(wheel) > 0.001f)
+                bool consumed = false;
+
+                float checkContentWidth = availableContentWidthCandidate;
+                if (state.IsScrollbarVisible)
+                    checkContentWidth = Math.Max(0f, checkContentWidth - (state.ScrollbarCurrentWidth + ColumnPadding));
+
+                float checkOffsetY = visibleStartY - state.ContentScrollY;
+                for (int i = 0; i < columnList.Count; i++)
+                {
+                    var child = columnList[i];
+                    float h = child.GetHeight((int)checkContentWidth);
+                    var childBounds = new Rectangle((int)(colRect.X + ColumnPadding), (int)checkOffsetY, (int)checkContentWidth, (int)h);
+
+                    if (child.WantsScroll(childBounds, wheel))
+                    {
+                        consumed = true;
+                        break;
+                    }
+
+                    checkOffsetY += h + ColumnPadding;
+                }
+
+                if (!consumed && IsContentHovered(colRect))
                 {
                     state.ContentScrollY -= wheel * SCROLL_WHEEL_SPEED;
-                    // clamp
-                    state.ContentScrollY = Math.Clamp(state.ContentScrollY, 0f, Math.Max(0f, state.LastTotalContentHeight - visibleHeight));
+                    state.ContentScrollY = Math.Clamp(state.ContentScrollY, 0f, maxScroll);
                 }
             }
 
             // compute content offset and draw children in column
             float contentOffsetY = visibleStartY - state.ContentScrollY;
             float contentX = colRect.X + ColumnPadding;
-            float contentWidth = availableContentWidthCandidate;
+            contentWidth = availableContentWidthCandidate;
             if (state.IsScrollbarVisible)
                 contentWidth = Math.Max(0f, availableContentWidthCandidate - (state.ScrollbarCurrentWidth + ColumnPadding));
 
@@ -380,12 +485,136 @@ public class UIColumns : UIContent, IUIContainer
                 contentOffsetY += contentHeight + ColumnPadding;
             }
 
+            if (state.IsScrollbarVisible)
+            {
+                float trackX = colRect.X + colRect.Width - state.ScrollbarCurrentWidth - ColumnPadding;
+                float trackY = visibleStartY;
+                float trackHeight = visibleHeight;
+
+                Rectangle trackRect = new Rectangle(trackX, trackY, state.ScrollbarCurrentWidth, trackHeight);
+
+                float visibleRatio = visibleHeight / state.LastTotalContentHeight;
+                float thumbHeight = Math.Max(18f, trackHeight * visibleRatio);
+
+                float scrollRatio = maxScroll > 0f ? (state.ContentScrollY / maxScroll) : 0f;
+                float thumbY = trackY + scrollRatio * (trackHeight - thumbHeight);
+
+                Rectangle thumbRect = new Rectangle(trackX, thumbY, state.ScrollbarCurrentWidth, thumbHeight);
+
+                var inset = 1f;
+
+                ray.DrawRectangleRec(
+                    new Rectangle(trackRect.X + inset, trackRect.Y + inset, trackRect.Width - inset * 2f, trackRect.Height - inset * 2f),
+                    Style.ScrollbarTrack
+                );
+
+                ray.DrawRectangleRec(
+                    new Rectangle(thumbRect.X + inset, thumbRect.Y + inset, thumbRect.Width - inset * 2f, thumbRect.Height - inset * 2f),
+                    Style.ScrollbarThumb
+                );
+
+                ray.DrawRectangleLinesEx(trackRect, 1, Style.Border);
+
+                if (Input.IsPressed(MouseButton.Left))
+                {
+                    if (ray.CheckCollisionPointRec(mouse, thumbRect))
+                    {
+                        state.IsScrollDragging = true;
+                        state.ScrollbarHoverTarget = true;
+                        state.ScrollbarHoverTimer = SCROLLBAR_HOVER_DELAY;
+                    }
+                    else if (ray.CheckCollisionPointRec(mouse, trackRect))
+                    {
+                        float normalized = (mouse.Y - trackY) / (trackHeight - thumbHeight);
+                        normalized = Math.Clamp(normalized, 0f, 1f);
+                        state.ContentScrollY = normalized * maxScroll;
+                    }
+                }
+
+                if (state.IsScrollDragging)
+                {
+                    bool leftDown = Input.Provider.IsDown(new InputBinding(InputDeviceType.Mouse, (int)MouseButton.Left));
+
+                    if (!leftDown)
+                    {
+                        state.IsScrollDragging = false;
+                    }
+                    else
+                    {
+                        float normalized = (mouse.Y - trackY - thumbHeight * 0.5f) / (trackHeight - thumbHeight);
+                        normalized = Math.Clamp(normalized, 0f, 1f);
+                        state.ContentScrollY = normalized * maxScroll;
+                    }
+                }
+
+                state.ContentScrollY = Math.Clamp(state.ContentScrollY, 0f, maxScroll);
+            }
+
+
             // pop scissor for this column
             ScissorStack.Pop();
         }
     }
 
-    // small helper for lerp
+    protected internal override bool WantsScroll(Rectangle bounds, float wheelDelta)
+    {
+        // only consider when mouse is over the whole UIColumns area
+        if (!IsContentHovered(bounds))
+            return false;
+
+        float totalSpacing = ColumnSpacing * (ColumnCount - 1);
+        float autoColumnWidth = FixedColumnWidth > 0f
+            ? FixedColumnWidth
+            : Math.Max(0f, (bounds.Width - totalSpacing) / ColumnCount);
+
+        for (int ci = 0; ci < ColumnCount; ci++)
+        {
+            float colX = bounds.X + ci * (autoColumnWidth + ColumnSpacing);
+            float colY = bounds.Y;
+            float colW = autoColumnWidth;
+            float colH = bounds.Height;
+
+            var colRect = new Rectangle((int)colX, (int)colY, (int)colW, (int)colH);
+
+            // only care about the column under the mouse
+            if (!IsContentHovered(colRect))
+                continue;
+
+            float visibleStartY = colRect.Y + ColumnPadding;
+            // FIX: subtract top+bottom padding to get true visible content height
+            float visibleHeight = colRect.Height - ColumnPadding * 2;
+            float availableContentWidthCandidate = Math.Max(0f, colRect.Width - ColumnPadding * 2f);
+
+            var state = columnStates[ci];
+            float contentWidth = availableContentWidthCandidate;
+            if (state.IsScrollbarVisible)
+                contentWidth = Math.Max(0f, contentWidth - (state.ScrollbarCurrentWidth + ColumnPadding));
+
+            float contentOffsetY = visibleStartY - state.ContentScrollY;
+
+            var columnList = (ci < ColumnsContents.Count) ? ColumnsContents[ci] : new List<UIContent>();
+            for (int i = 0; i < columnList.Count; i++)
+            {
+                var child = columnList[i];
+                float h = child.GetHeight((int)contentWidth);
+                var childBounds = new Rectangle((int)(colRect.X + ColumnPadding), (int)contentOffsetY, (int)contentWidth, (int)h);
+
+                if (child.WantsScroll(childBounds, wheelDelta))
+                    return true;
+
+                contentOffsetY += h + ColumnPadding;
+            }
+
+            // nothing deeper wanted the scroll — if this column can scroll, it wants the wheel
+            bool scrollEnabled = ci >= ColumnScrollEnabled.Count || ColumnScrollEnabled[ci];
+            if (scrollEnabled && state.LastTotalContentHeight > visibleHeight)
+                return true;
+        }
+
+        return false;
+    }
+
+
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
     public void RemoveColumn(int index)
@@ -402,6 +631,10 @@ public class UIColumns : UIContent, IUIContainer
         ColumnsContents.RemoveAt(index);
         columnStates.RemoveAt(index);
 
+        // Remove scroll-enabled flag if present
+        if (index < ColumnScrollEnabled.Count)
+            ColumnScrollEnabled.RemoveAt(index);
+
         // Update the count
         ColumnCount = ColumnsContents.Count;
 
@@ -412,8 +645,13 @@ public class UIColumns : UIContent, IUIContainer
 
     public void Clear()
     {
+        foreach(var contents in ColumnsContents)
+            foreach (var c in contents)
+                c.OnOwnerClosing();
+
         ColumnsContents.Clear();
         columnStates.Clear();
+        ColumnScrollEnabled.Clear();
         EnsureColumns(DEFAULT_COLUMN_COUNT);
     }
 

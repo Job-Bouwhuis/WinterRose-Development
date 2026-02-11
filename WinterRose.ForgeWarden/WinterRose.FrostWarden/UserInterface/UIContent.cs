@@ -36,6 +36,8 @@ public abstract class UIContent
         return ray.CheckCollisionPointRec(mousePos, contentBounds);
     }
 
+    public bool IsContentHovered(bool includeHoverExtenders = true) => IsContentHovered(LastRenderBounds, includeHoverExtenders);
+
     internal void InternalDraw(Rectangle bounds)
     {
         LastRenderBounds = bounds;
@@ -78,5 +80,10 @@ public abstract class UIContent
     {
         Owner.Close();
     }
+    protected internal virtual bool WantsScroll(Rectangle bounds, float wheelDelta)
+    {
+        return false;
+    }
+
 
 }

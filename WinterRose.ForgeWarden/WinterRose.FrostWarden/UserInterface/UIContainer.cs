@@ -144,6 +144,7 @@ public abstract class UIContainer : IUIContainer
     public ContentStyle Style { get; set; }
 
     internal List<UIContent> Contents { get; } = new();
+    IReadOnlyList<UIContent> IUIContainer.Contents => Contents;
 
     protected internal bool IsMorphDrawing { get; set; }
     protected Rectangle LastContentRenderBounds { get; set; }
@@ -372,6 +373,13 @@ public abstract class UIContainer : IUIContainer
 
             // apply new rect
             CurrentPosition = new Rectangle(newX, newY, newW, newH);
+
+            TargetPosition = new Vector2(newX, newY);
+            TargetSize = new Vector2(newW, newH);
+
+            // Stop any auto‑move animation so we don’t immediately snap back
+            AnimationElapsed = 1f;
+            AfterResize();
         }
     }
 
@@ -563,26 +571,48 @@ public abstract class UIContainer : IUIContainer
         float eased = Curves.Linear.Evaluate(ScrollbarAnimProgress);
         ScrollbarCurrentWidth = Lerp(SCROLLBAR_COLLAPSED_WIDTH, SCROLLBAR_EXPANDED_WIDTH, eased);
 
-        if (IsHovered())
+        float wheel = Input.ScrollDelta;
+
+        float contentOffsetY = visibleStartY - ContentScrollY;
+        float contentX = CurrentPosition.X + UIConstants.CONTENT_PADDING;
+        float contentWidth = availableContentWidthCandidate;
+        if (Style.ShowVerticalScrollBar && Math.Abs(wheel) > 0.001f)
         {
-            float wheel = Input.ScrollDelta;
-            if (Math.Abs(wheel) > 0.001f)
+            bool consumed = false;
+            if (IsScrollbarVisible)
+                contentWidth = Math.Max(0f, contentWidth - (ScrollbarCurrentWidth + UIConstants.CONTENT_PADDING));
+
+            for (int i = 0; i < Contents.Count; i++)
+            {
+                var content = Contents[i];
+
+                float h = content.GetHeight(contentWidth);
+                Rectangle bounds = new Rectangle(contentX, contentOffsetY, contentWidth, h);
+
+                if (content.WantsScroll(bounds, wheel))
+                {
+                    consumed = true;
+                    break;
+                }
+
+                contentOffsetY += h + UIConstants.CONTENT_PADDING;
+            }
+
+            if (!consumed && IsHovered())
             {
                 ContentScrollY -= wheel * SCROLL_WHEEL_SPEED;
                 ClampContentScroll();
             }
         }
 
-        float contentOffsetY = visibleStartY - ContentScrollY;
-
         bool[] currentPressed = new bool[7];
         foreach (MouseButton b in Enum.GetValues<MouseButton>())
         {
             currentPressed[(int)b] = Input.IsPressed(b);
+            if (currentPressed[(int)b])
+                OnContainerClicked(b);
         }
 
-        float contentX = CurrentPosition.X + UIConstants.CONTENT_PADDING;
-        float contentWidth = availableContentWidthCandidate;
         if (IsScrollbarVisible)
             contentWidth = Math.Max(0f, availableContentWidthCandidate - (ScrollbarCurrentWidth + UIConstants.CONTENT_PADDING));
 
@@ -938,7 +968,8 @@ public abstract class UIContainer : IUIContainer
     }
 
     public virtual bool IsHovered() => Input.IsMouseHovering(CurrentPosition);
-
+    public virtual bool IsHovered(bool ignorePrio = false) => Input.IsMouseHovering(CurrentPosition, ignorePrio);
+    
     public virtual void Close()
     {
         if (!IsClosing)

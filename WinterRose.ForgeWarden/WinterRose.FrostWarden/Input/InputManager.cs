@@ -47,6 +47,17 @@ public static class InputManager
         contextPriorities.Remove(context);
     }
 
+    internal static bool IsRegistered(InputContext context)
+    {
+        if (!contexts.TryGetValue(context.Priority, out var list))
+        {
+            list = new List<InputContext>();
+            contexts.Add(context.Priority, list);
+        }
+
+        return list.Contains(context);
+    }
+
 
     public static void Update()
     {

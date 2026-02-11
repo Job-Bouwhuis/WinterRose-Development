@@ -378,4 +378,26 @@ public class RichText
             FontSize = this.FontSize
         };
     }
+
+    internal bool IsOnlyWhitespace()
+    {
+        foreach(var e in Elements)
+        {
+            if (e is RichWord word)
+            {
+                if (!string.IsNullOrWhiteSpace(word.Text))
+                    return false;
+            }
+            else if (e is RichGlyph glyph)
+            {
+                if (!char.IsWhiteSpace(glyph.Character))
+                    return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        return true; // if we got here, either there are no elements, or all are whitespace
+    }
 }

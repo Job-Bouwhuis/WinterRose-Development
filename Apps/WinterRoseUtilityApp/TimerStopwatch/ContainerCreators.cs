@@ -9,6 +9,7 @@ using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.Tooltipping;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.Recordium;
 
@@ -107,16 +108,11 @@ internal class ContainerCreators
     {
         UICircleProgress progress = new(0, (self, cur) =>
         {
-            var rem = timer.Remaining.TotalSeconds;
-            var tot = timer.Duration.TotalSeconds;
+            double rem, tot;
+            self.Text = CreateText(timer, out rem, out tot);
+
             if (rem <= 10)
                 self.Owner.Style.PauseAutoDismissTimer = true;
-
-            if (timer.Remaining.Hours > 0)
-                self.Text = $"{timer.Remaining:hh\\:mm\\:ss\\.f}";
-            else
-                self.Text = $"{timer.Remaining:mm\\:ss\\.f}";
-
             if (timer.IsCompleted)
             {
                 if (owner is Toast)
@@ -136,6 +132,15 @@ internal class ContainerCreators
         return progress;
     }
 
+    private static string CreateText(RunningTimer timer, out double rem, out double tot)
+    {
+        rem = timer.Remaining.TotalSeconds;
+        tot = timer.Duration.TotalSeconds;
+        if (timer.Remaining.Hours > 0)
+            return $"{timer.Remaining:hh\\:mm\\:ss\\.f}";
+        return $"{timer.Remaining:mm\\:ss\\.f}";
+    }
+
     internal static UIWindow ViewTimers()
     {
         UIWindow window = new UIWindow("Active Timers", 400, 600);
@@ -149,13 +154,40 @@ internal class ContainerCreators
 
         foreach (var timer in TimerManager.Timers)
         {
-            UITreeNode timerContainer = new UITreeNode(timer.Name);
-            window.AddContent(timerContainer);
-            UICircleProgress progress = CreateProgressBarForTimer(timer, window);
-            window.Style.ProgressBarFill = ProgressBarDefault;
-            progress.AlwaysShowText = true;
-            progress.DontShowProgressPercent = true;
-            timerContainer.AddChild(progress);
+            UIButton btn = new($"Timer: {timer.Name}", (c, b) =>
+            {
+                TimerThresholdNotifier(timer).Show();
+            });
+            btn.TextProvider = () =>
+            {
+                string time = CreateText(timer, out _, out _);
+                return $"Timer: {timer.Name} - {time}";
+            };
+            btn.OnTooltipConfigure = Invocation.Create((Tooltip tip) =>
+            {
+                UICircleProgress progress = CreateProgressBarForTimer(timer, window);
+                window.Style.ProgressBarFill = ProgressBarDefault;
+                progress.AlwaysShowText = true;
+                progress.DontShowProgressPercent = true;
+                tip.AddContent(progress);
+
+                UIButton stopButton = new UIButton("Stop timer", (c, b) =>
+                {
+
+                });
+                stopButton.OnTooltipConfigure = Invocation.Create(void (Tooltip tip) => tip.AddText("Stops the timer, and removes it"));
+                UIButton pauseButton = new UIButton("Pause timer", (c, b) =>
+                {
+
+                });
+                pauseButton.OnTooltipConfigure = Invocation.Create(void (Tooltip tip) => tip.AddText("Pauses the timer until it can continue again"));
+                UIColumns cols = new UIColumns();
+                cols.AddToColumn(0, stopButton);
+                cols.AddToColumn(1, pauseButton);
+                tip.AddContent(cols);
+            });
+
+            window.AddContent(btn);
         }
         return window;
     }

@@ -9,4 +9,6 @@ public class MessageBody
 
     [JsonPropertyName("content")]
     public string Content { get; set; }
+
+    public bool Ready { get; set; } = true;
 }

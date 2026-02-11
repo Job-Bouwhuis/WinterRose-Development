@@ -154,7 +154,21 @@ internal static class OutlookAuthHandler
             if (args.HasStateChanged)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(cacheFilePath)!);
-                File.WriteAllBytes(cacheFilePath, args.TokenCache.SerializeMsalV3());
+
+                while (true)
+                {
+                    try
+                    {
+                        File.WriteAllBytes(cacheFilePath, args.TokenCache.SerializeMsalV3());
+                        break;
+                    }
+                    catch (IOException ex)
+                    {
+                        log.Error(ex, "Failed to write MSAL cache file. Retrying...");
+                        Thread.Sleep(100);
+                        continue;
+                    }
+                }
             }
         });
         return app;

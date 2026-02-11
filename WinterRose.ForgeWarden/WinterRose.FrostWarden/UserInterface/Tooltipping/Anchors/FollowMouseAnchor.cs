@@ -19,18 +19,14 @@ public class FollowMouseAnchor : TooltipAnchor
         OffsetFromMouse = offsetFromMouse;
     }
 
-    public FollowMouseAnchor(Vector2 size, float followSpeed) : this(size)
-    {
-        //FollowSpeed = followSpeed;
-    }
-
     public Vector2 Size { get; set; }
     public Vector2 OffsetFromMouse { get; set; }
-    public float FollowSpeed { get; set; } = 1f;
 
     public override Rectangle GetAnchorBounds()
     {
-        Vector2 mousePos = Raylib.GetMousePosition();
+        if(!Tooltip.Behavior.AllowsInteraction)
+            Tooltip.Input.Update(); // we need the provider to update for mouse input, so if the input system doesnt do it, we will
+        Vector2 mousePos = Tooltip.Input.Provider.MousePosition;
         Vector2 targetPos = mousePos + OffsetFromMouse;
 
         return new Rectangle(targetPos.X - Size.X, targetPos.Y - Size.Y, Size.X, Size.Y);

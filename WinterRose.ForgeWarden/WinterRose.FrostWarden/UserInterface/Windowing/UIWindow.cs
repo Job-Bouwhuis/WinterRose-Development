@@ -744,7 +744,8 @@ public class UIWindow : UIContainer
 
         float easedForHit = Curves.Linear?.Evaluate(collapseProgress) ?? collapseProgress;
         float collapsedHeight = /*UIConstants.CONTENT_PADDING * 2f +*/ (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
-        float animatedHeightForHit = Lerp(Maximized ? CurrentPosition.Height : fullPosCache.Height, collapsedHeight, easedForHit);
+        float animatedHeightForHit = Lerp(CurrentPosition.Height, collapsedHeight, easedForHit);
+
 
         var hitRect = new Rectangle(CurrentPosition.X, CurrentPosition.Y, CurrentPosition.Width,
                                     collapseProgress == 0f ? animatedHeightForHit : CurrentPosition.Height);

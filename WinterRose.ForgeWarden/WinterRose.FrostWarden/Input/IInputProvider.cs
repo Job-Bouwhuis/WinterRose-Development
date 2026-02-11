@@ -34,7 +34,7 @@ public interface IInputProvider
     void Update();
 
     /// <summary>
-    /// The current position of the mouse. Will be -1 -1 when the mouse is not hovering the window
+    /// The current position of the mouse.
     /// </summary>
     Vector2 MousePosition { get; }
     /// <summary>

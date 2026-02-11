@@ -32,6 +32,15 @@ public class UIButton : UIContent
 
     private Color backgroundColor;
 
+    /// <summary>
+    /// Sometimes, the text content may be generated dynamically or require special handling. 
+    /// This delegate allows you to provide a function that returns the current RichText to be displayed. 
+    /// If set, this function will be called during drawing and override the Text property,
+    /// allowing for dynamic text content that can change each frame or based on specific 
+    /// conditions without needing to manually update the Text property.
+    /// </summary>
+    public Func<RichText>? TextProvider { get; set; }
+
     public MulticastVoidInvocation<IUIContainer, UIButton> OnClick { get; set; } = new();
 
     public UIButton(string text, VoidInvocation<IUIContainer, UIButton>? onClick = null) : this(text)
@@ -72,6 +81,9 @@ public class UIButton : UIContent
 
     protected override void Draw(Rectangle btnRect)
     {
+        if (TextProvider != null)
+            Text = TextProvider();
+
         ray.DrawRectangleRec(btnRect, backgroundColor);
         ray.DrawRectangleLinesEx(btnRect, 1, Style.ButtonBorder);
 

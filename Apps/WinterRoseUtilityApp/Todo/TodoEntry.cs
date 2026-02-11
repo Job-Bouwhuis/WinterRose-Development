@@ -30,23 +30,7 @@ public sealed class EmailContext : ITodoContext
 
     public void Open()
     {
-        try
-        {
-            var account = EmailAuthManager.GetSavedAccounts()
-                .FirstOrDefault(a => a.Provider == AccountProvider && a.Address == AccountAddress);
-            if (account is not null)
-            {
-                var message = MailWatcher.Current?.FindMessageById(account, MessageId);
-                if (message is not null)
-                {
-                    MailReader.ContainerCreators.CreateMailDetailsWindow(message).Show();
-                    return;
-                }
-            }
-        }
-        catch { /* swallow, best-effort only */ }
-
-        Toasts.Info("Unable to open referenced email.");
+        Toasts.Info("Not implemented");
     }
 }
 

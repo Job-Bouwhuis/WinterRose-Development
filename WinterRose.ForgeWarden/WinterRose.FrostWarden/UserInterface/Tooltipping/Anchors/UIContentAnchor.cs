@@ -28,6 +28,13 @@ public class UIContentAnchor : TooltipAnchor
     }
     public override bool IsAnchorValid(bool tooltipHovered)
     {
-        return !Content.Owner.IsClosing || !Content.IsHovered;
+        return true;
+        if (!Content.IsContentHovered() && !tooltipHovered)
+            ;
+
+        bool res = !(Content.Owner.IsClosing || !Content.IsContentHovered());
+        if (!res)
+            ;
+        return res;
     }
 }
