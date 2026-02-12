@@ -100,6 +100,13 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
         t.AddButton("Close App",
             Invocation.Create<IUIContainer, UIButton>((c, b) => Close()));
 
+        t.AddContent(new UIButton("File Browser", (c, b) =>
+        {
+            UIWindow wind = new UIWindow("File Browser", 500, 600);
+            wind.AddFileExplorer();
+            wind.ShowMaximized();
+        }));
+
         Toasts.ShowToast(t);
     }
 

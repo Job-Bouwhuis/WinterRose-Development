@@ -192,6 +192,7 @@ public class UIColumns : UIContent, IUIContainer
                 for (int i = 0; i < column.Count; i++)
                 {
                     UIContent child = column[i];
+                    if(child == null) continue;
                     int measureWidth = Math.Max(1, (int)Math.Ceiling(columnWidth));
                     colHeight += child.GetHeight(measureWidth);
                     if (i < column.Count - 1)

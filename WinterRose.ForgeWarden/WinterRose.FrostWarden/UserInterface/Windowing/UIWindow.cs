@@ -4,11 +4,14 @@ using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.Tweens;
+using WinterRose.Recordium;
 
 namespace WinterRose.ForgeWarden.UserInterface.Windowing;
 
 public class UIWindow : UIContainer
 {
+    private Log log = new Log("UIWindow");
+
     private enum PendingAction
     {
         None,
@@ -745,7 +748,12 @@ public class UIWindow : UIContainer
         float easedForHit = Curves.Linear?.Evaluate(collapseProgress) ?? collapseProgress;
         float collapsedHeight = /*UIConstants.CONTENT_PADDING * 2f +*/ (Style.AllowUserResizing ? Style.TitleBarHeight : 0f);
         float animatedHeightForHit = Lerp(CurrentPosition.Height, collapsedHeight, easedForHit);
-
+       if(animatedHeightForHit != CurrentPosition.Height)
+        {
+            WinterRose.Windows.OpenConsole();
+            log.Debug($"Hitbox unlike drawn: {animatedHeightForHit}/{CurrentPosition.Height} (collapseProgress: {collapseProgress}, eased: {easedForHit})");
+            //CurrentPosition = CurrentPosition with { Height = animatedHeightForHit - (Style.AllowUserResizing ? Style.TitleBarHeight : 0f) };
+        }
 
         var hitRect = new Rectangle(CurrentPosition.X, CurrentPosition.Y, CurrentPosition.Width,
                                     collapseProgress == 0f ? animatedHeightForHit : CurrentPosition.Height);

@@ -482,4 +482,5 @@ public class UITreeNode : UIContent, IUIContainer
     }
 
     void IUIContainer.Close() => Close();
+    public void ClearChildren() => Children.Clear();
 }

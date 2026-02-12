@@ -268,8 +268,9 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 
             if(content is IUIContainer cont)
             {
-                foreach(var child in cont.Contents)
+                for (int i = 0; i < cont.Contents.Count; i++)
                 {
+                    UIContent? child = cont.Contents[i];
                     if (IsHoverExtended(child))
                         return true;
                 }

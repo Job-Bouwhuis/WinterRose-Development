@@ -257,7 +257,7 @@ public static partial class Windows
     /// <summary>
     /// Creates a new console window. if your app makes a managed window, then call this before you make the window.
     /// </summary>
-    public static void OpenConsole(bool WriteInitializeLine = true)
+    public static void OpenConsole()
     {
         AllocConsole();
 
@@ -265,9 +265,6 @@ public static partial class Windows
         Console.SetIn(new StreamReader(Console.OpenStandardInput()));
         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
         Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
-
-        if (WriteInitializeLine)
-            Console.WriteLine("Console Initialized");
     }
     /// <summary>
     /// Releases the console created by WinterRose.Windows.CreateConsole. <br></br><br></br>
