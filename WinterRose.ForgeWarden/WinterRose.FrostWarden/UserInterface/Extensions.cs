@@ -5,6 +5,7 @@ using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping;
+using WinterRose.ForgeWarden.UserInterface.Windowing;
 
 namespace WinterRose.ForgeWarden.UserInterface
 {
@@ -27,11 +28,17 @@ namespace WinterRose.ForgeWarden
             string startPath = null,
             Action<string> onSelect = null)
             {
-                container.AddContent(CreateFileExplorerRoot(mode, startPath, onSelect));
+                container.AddContent(CreateFileExplorerRoot(container, mode, startPath, onSelect));
+            }
+
+            public void AddTextEditor(string filePath, bool asEmbed)
+            {
+                CreateAndAddTextEditor(container, filePath, asEmbed);
             }
         }
 
         private static UIColumns CreateFileExplorerRoot(
+            IUIContainer container,
             ExplorerMode mode = ExplorerMode.Browse,
             string startPath = null,
             Action<string> onSelect = null)
@@ -184,10 +191,7 @@ namespace WinterRose.ForgeWarden
 
             void SetBreadcrumb(string path)
             {
-                // clickable breadcrumb: split by path separator
                 breadcrumb.Text = path;
-
-                // If you prefer clickable nodes in breadcrumb you could replace UIText with a UIColumns of buttons.
             }
 
             void SetCurrentPath(string path)
@@ -195,7 +199,7 @@ namespace WinterRose.ForgeWarden
                 currentPath = path;
                 SetBreadcrumb(path);
                 RefreshFolderTreeSelection(path);
-                Task.Run(() => RefreshFileList()); // don't block UI
+                Task.Run(() => RefreshFileList());
             }
 
             void RefreshAll()
@@ -207,22 +211,19 @@ namespace WinterRose.ForgeWarden
                 });
             }
 
-            // Build initial folder tree (drives + home), children added lazily when node clicked
             void RefreshFolderTreeRoot()
             {
                 folderColumn.ClearColumn(0);
                 folderColumn.AddToColumn(0, new UIText("Folders", UIFontSizePreset.Title));
 
-                // home / root quick access
                 try
                 {
                     string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
                     UIButton homeBtn = new UIButton("Home", (c, b) => SetCurrentPath(home));
                     folderColumn.AddToColumn(0, homeBtn);
                 }
-                catch { /* ignore */ }
+                catch { }
 
-                // drives (Windows) or root (Unix)
                 try
                 {
                     if (OperatingSystem.IsWindows())
@@ -243,13 +244,13 @@ namespace WinterRose.ForgeWarden
                         string userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
                         List<(string Label, string Path)> cloudLocations = new()
-                        {
-                            ("OneDrive", Path.Combine(userHome, "OneDrive")),
-                            ("Proton Drive", Path.Combine(userHome, "Proton Drive")),
-                            ("Dropbox", Path.Combine(userHome, "Dropbox")),
-                            ("Google Drive", Path.Combine(userHome, "Google Drive")),
-                            ("Proton Drive", "C:\\ProtonDrive")
-                        };
+                {
+                    ("OneDrive", Path.Combine(userHome, "OneDrive")),
+                    ("Proton Drive", Path.Combine(userHome, "Proton Drive")),
+                    ("Dropbox", Path.Combine(userHome, "Dropbox")),
+                    ("Google Drive", Path.Combine(userHome, "Google Drive")),
+                    ("Proton Drive", "C:\\ProtonDrive")
+                };
 
                         foreach (var location in cloudLocations)
                         {
@@ -269,7 +270,6 @@ namespace WinterRose.ForgeWarden
                     }
                     else
                     {
-                        // unix root
                         UITreeNode rootNode = new UITreeNode("/");
                         rootNode.ClickInvocation.Subscribe(node =>
                         {
@@ -279,15 +279,13 @@ namespace WinterRose.ForgeWarden
                         folderColumn.AddToColumn(0, rootNode);
                     }
                 }
-                catch { /* ignore drive enumeration errors */ }
+                catch { }
 
-                // Also add the currentPath parent chain into the tree so user sees where they are
                 Task.Run(() => ExpandTreeToPath(currentPath));
             }
 
             void EnsureTreeNodePopulated(UITreeNode node, string path)
             {
-                // avoid blocking UI: get subdirs in background then add children on UI thread
                 Task.Run(() =>
                 {
                     List<string> subdirs = new();
@@ -299,9 +297,8 @@ namespace WinterRose.ForgeWarden
                         }
                         subdirs.Sort(StringComparer.InvariantCultureIgnoreCase);
                     }
-                    catch { /* permission or IO errors */ }
+                    catch { }
 
-                    // Add children on UI thread (safe since UI funcs are typically thread-aware in your system)
                     node.ClearChildren();
                     foreach (var sub in subdirs)
                     {
@@ -324,19 +321,80 @@ namespace WinterRose.ForgeWarden
                 if (string.IsNullOrWhiteSpace(path)) return;
                 try
                 {
-                    // Walk up parents until a known root and create nodes as necessary
-                    var parts = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                    // For simplicity just refresh root; user can expand manually to explore deeper.
-                    // More advanced: create nodes programmatically to show path expanded.
+                    // keep simple: refresh root only
                 }
-                catch { /* ignore */ }
+                catch { }
             }
 
             void RefreshFolderTreeSelection(string path)
             {
-                // For now we don't attempt complex node selection; we rely on the breadcrumb + file list.
-                // Could implement node highlighting if UITreeNode supports it.
+                // noop for now
             }
+
+            UIButton CreateFileButton(string file, bool openDirectlyAsText)
+            {
+                string display = Path.GetFileName(file);
+                UIButton fileBtn = null!;
+
+                if (openDirectlyAsText)
+                {
+                    fileBtn = new UIButton(display, (c, b) =>
+                    {
+                        selectedPath = file;
+                        HighlightSelection(fileBtn);
+                        container.AddTextEditor(file, true);
+                    });
+                }
+                else
+                {
+                    fileBtn = new UIButton(display, (c, b) =>
+                    {
+                        selectedPath = file;
+                        HighlightSelection(fileBtn);
+                        Toasts.Info("Selected: " + display);
+                    });
+                }
+
+                fileBtn.OnTooltipConfigure = Invocation.Create((Tooltip tip) =>
+                {
+                    tip.AddText(file);
+                    tip.AddText($"Size: {(new FileInfo(file).Length)} bytes");
+
+                    UIColumns tipCols = new();
+
+                    tipCols.AddToColumn(0, new UIButton("Open externally", (cc, bb) =>
+                    {
+                        try
+                        {
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                            {
+                                FileName = file,
+                                UseShellExecute = true
+                            });
+                            if (container is UIWindow wind && ForgeWardenEngine.Current.Window.ConfigFlags.HasFlag(Raylib_cs.ConfigFlags.TransparentWindow))
+                                wind.Collapsed = true;
+                            //Toasts.Info("Opened file externally");
+                        }
+                        catch (Exception ex)
+                        {
+                            Toasts.Error("Failed to open: " + ex.Message);
+                        }
+                    }));
+
+                    if (!openDirectlyAsText)
+                    {
+                        tipCols.AddToColumn(0, new UIButton("Open as text", (cc, bb) =>
+                        {
+                            container.AddTextEditor(file, true);
+                        }));
+                    }
+
+                    tip.AddContent(tipCols);
+                });
+
+                return fileBtn;
+            }
+
 
             void RefreshFileList()
             {
@@ -368,7 +426,6 @@ namespace WinterRose.ForgeWarden
                 directories.Sort(StringComparer.InvariantCultureIgnoreCase);
                 files.Sort(StringComparer.InvariantCultureIgnoreCase);
 
-                // folder entries first
                 foreach (var dir in directories)
                 {
                     string display = Path.GetFileName(dir);
@@ -376,11 +433,9 @@ namespace WinterRose.ForgeWarden
 
                     UIButton dirBtn = new UIButton(display + "/", (c, b) =>
                     {
-                        // On click, navigate into that folder (browsing behavior)
                         SetCurrentPath(dir);
                     });
 
-                    // tooltip actions: select folder or open
                     dirBtn.OnTooltipConfigure = Invocation.Create((Tooltip tip) =>
                     {
                         tip.AddText(dir);
@@ -397,65 +452,20 @@ namespace WinterRose.ForgeWarden
                     fileColumn.AddToColumn(0, dirBtn);
                 }
 
-                // then files
                 foreach (var file in files)
                 {
-                    string display = Path.GetFileName(file);
-                    UIButton fileBtn = null!;
-                    fileBtn = new UIButton(display, (c, b) =>
-                    {
-                        selectedPath = file;
-                        HighlightSelection(fileBtn);
-                        Toasts.Info("Selected: " + display);
-                    });
+                    string ext = Path.GetExtension(file).ToLowerInvariant();
+                    bool openDirectlyAsText = ext == ".txt" || ext == ".md";
 
-                    fileBtn.OnTooltipConfigure = Invocation.Create((Tooltip tip) =>
-                    {
-                        tip.AddText(file);
-                        tip.AddText($"Size: {(new FileInfo(file).Length)} bytes");
-                        UIColumns tipCols = new();
-                        tipCols.AddToColumn(0, new UIButton("Open externally", (cc, bb) =>
-                        {
-                            try
-                            {
-                                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
-                                {
-                                    FileName = file,
-                                    UseShellExecute = true
-                                });
-                                Toasts.Info("Opened file externally");
-                            }
-                            catch (Exception ex) { Toasts.Error("Failed to open: " + ex.Message); }
-                        }));
-                        tip.AddContent(tipCols);
-                    });
-
+                    UIButton fileBtn = CreateFileButton(file, openDirectlyAsText);
                     fileColumn.AddToColumn(0, fileBtn);
                 }
 
-                // If in SelectFile mode, double-click or open file should select immediately.
-                // Since double-click may not be supported natively, a quick second click can be interpreted
-                // by the user: we rely on selecting + pressing 'Select' button. You can wire double-click logic later.
             }
 
             void HighlightSelection(UIButton btn)
             {
-                try
-                {
-                    if (lastSelectedButton != null)
-                    {
-                        // remove previous mark (simple: trim prefix if we added one)
-                        //lastSelectedButton.Text = lastSelectedButton.Text.TrimStart('→', ' ');
-                    }
-                }
-                catch { }
-                
                 lastSelectedButton = btn;
-                try
-                {
-                    btn.Text = "→ " + btn.Text;
-                }
-                catch { }
             }
 
             // initial population
@@ -474,6 +484,82 @@ namespace WinterRose.ForgeWarden
 
             return root;
         }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="container"></param>
+        /// <param name="filePath"></param>
+        /// <param name="asEmbed">When true, the close button should remove the elements this method created from the container rather than closing the container</param>
+        private static void CreateAndAddTextEditor(IUIContainer container, string filePath, bool asEmbed)
+        {
+            string content = string.Empty;
+            try
+            {
+                content = File.ReadAllText(filePath);
+            }
+            catch (Exception ex)
+            {
+                Toasts.Error("Failed to read file: " + ex.Message);
+                return;
+            }
+
+            // editor root content
+            UIColumns editorRoot = new UIColumns();
+            editorRoot.ColumnScrollEnabled[0] = true;
+            editorRoot.ColumnScrollEnabled[1] = true;
+
+            UITextInput editorInput = new UITextInput()
+            {
+                Text = content,
+                AllowMultiline = true,
+                MinLines = 20
+            };
+
+            editorRoot.AddToColumn(0, editorInput);
+
+            UIColumns editorButtons = new UIColumns();
+            editorButtons.ColumnScrollEnabled[0] = false;
+            editorButtons.ColumnScrollEnabled[1] = false;
+
+            UIButton saveBtn = new UIButton("Save", (c, b) =>
+            {
+                try
+                {
+                    File.WriteAllText(filePath, editorInput.Text);
+                    Toasts.Success("File saved");
+                }
+                catch (Exception ex)
+                {
+                    Toasts.Error("Save failed: " + ex.Message);
+                }
+            });
+
+            UIButton closeBtn = new UIButton("Close", (c, b) =>
+            {
+                if (asEmbed)
+                    container.RemoveContent(editorRoot);
+                else
+                    container.Close();
+            });
+
+
+            editorButtons.AddToColumn(0, saveBtn);
+            editorButtons.AddToColumn(1, closeBtn);
+
+            editorRoot.AddToColumn(1, editorButtons);
+
+            try
+            {
+                container.AddContent((UIColumns)editorRoot); // keep editor visible if window APIs not present
+            }
+            catch
+            {
+                try { container.AddContent(editorRoot); } catch { Toasts.Error("Failed to open editor UI"); }
+            }
+        }
+
 
     }
 }
