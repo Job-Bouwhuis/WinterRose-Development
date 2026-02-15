@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 using WinterRose.ForgeWarden.Input;
+using WinterRose.ForgeWarden.TextRendering.RichElements;
+using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes.Boxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
@@ -13,30 +15,44 @@ public static class RichTextRenderer
 {
     private static readonly Dictionary<string, Vector2> MEASURE_CACHE = new();
     private static readonly Dictionary<string, Vector2> SPRITE_SIZE_CACHE = new();
+    
+    public static FunctionRegistry FunctionRegistry { get; set; } = new();
 
-    public static void DrawRichText(string text, Vector2 position, float maxWidth, InputContext input)
-        => DrawRichText(RichText.Parse(text, Color.White), position, maxWidth, input);
+    public static void DrawRichText(string text, Vector2 position, float maxWidth, ContentStyle OtherStyle, InputContext input)
+        => DrawRichText(RichText.Parse(text, Color.White), position, maxWidth, OtherStyle, input);
 
-    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth, InputContext input)
-        => DrawRichText(richText, position, maxWidth, Color.White, input);
+    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth, ContentStyle OtherStyle, InputContext input)
+        => DrawRichText(richText, position, maxWidth, Color.White, OtherStyle, input);
 
     private static string GetMeasureKey(Font font, string s, float fontSize, float spacing)
     => $"{font.GetHashCode()}|{fontSize}|{spacing}|{s}";
 
     private static Vector2 MeasureTextExCached(Font font, string s, float fontSize, float spacing)
     {
+        return MeasureTextExCached(font, s, fontSize, spacing, MEASURE_CACHE);
+    }
+
+    /// <summary>
+    /// Public method for measuring text with caching support.
+    /// Used by RichElement implementations for rendering.
+    /// </summary>
+    public static Vector2 MeasureTextExCached(Font font, string s, float fontSize, float spacing, Dictionary<string, Vector2> cache)
+    {
         string key = GetMeasureKey(font, s, fontSize, spacing);
-        if (MEASURE_CACHE.TryGetValue(key, out var cached))
+        if (cache.TryGetValue(key, out var cached))
             return cached;
 
         var measured = Raylib.MeasureTextEx(font, s, fontSize, spacing);
-        MEASURE_CACHE[key] = measured;
+        cache[key] = measured;
         return measured;
     }
 
-    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth, Color overallTint, InputContext input)
+    public static void DrawRichText(RichText richText, Vector2 position, float maxWidth, Color overallTint, ContentStyle OtherStyle, InputContext input)
     {
         var lines = WrapText(richText, maxWidth);
+
+        // Initialize typewriter sequence indices for all RichWord elements
+        InitializeTypewriterSequence(lines);
 
         for (int lineIndex = 0; lineIndex < lines.Count; lineIndex++)
         {
@@ -47,189 +63,93 @@ public static class RichTextRenderer
             var linkHitboxes = new List<(string Url, Rectangle Rect, Color Tint)>();
             var line = lines[lineIndex];
 
+            // Create render context for this line
+            var renderContext = new RichTextRenderContext
+            {
+                RichText = richText,
+                Style = OtherStyle,
+                Position = new Vector2(x, y),
+                MaxWidth = maxWidth,
+                OverallTint = overallTint,
+                Input = input,
+                MeasureCache = MEASURE_CACHE,
+                SpriteSizeCache = SPRITE_SIZE_CACHE,
+                LinkHitboxes = linkHitboxes,
+                AdditionalData = new() { { "FunctionRegistry", FunctionRegistry } }
+            };
+
             int i = 0;
             while (i < line.Count)
             {
-                // handle glyph runs
-                if (line[i] is RichGlyph)
+                var element = line[i];
+
+                // Skip explicit newlines (they only serve as line-breaking markers)
+                if (element is RichGlyph glyph && glyph.Character == '\n')
                 {
-                    var runSb = new StringBuilder();
-                    Color runTint = default;
-                    string runUrl = null;
-                    bool runTintInit = false;
+                    i++;
+                    continue;
+                }
+
+                // Batch consecutive glyphs with the same color and link together
+                if (element is RichGlyph)
+                {
+                    var glyphRun = new List<RichGlyph>();
+                    Color runColor = (element as RichGlyph).Color;
+                    string runUrl = (element as RichGlyph).GlyphLinkUrl;
 
                     int j = i;
-                    for (; j < line.Count; j++)
+                    while (j < line.Count && line[j] is RichGlyph g)
                     {
-                        if (line[j] is not RichGlyph g) break;
-
-                        // compute tinted color for this glyph
-                        Color glyphTint = new(
-                            (byte)(g.Color.R * overallTint.R / 255),
-                            (byte)(g.Color.G * overallTint.G / 255),
-                            (byte)(g.Color.B * overallTint.B / 255),
-                            (byte)(g.Color.A * overallTint.A / 255)
-                        );
-
-                        if (!runTintInit)
+                        if (g.Color.R != runColor.R || g.Color.G != runColor.G || g.Color.B != runColor.B || g.Color.A != runColor.A
+                            || g.GlyphLinkUrl != runUrl)
                         {
-                            runTint = glyphTint;
-                            runUrl = g.GlyphLinkUrl;
-                            runTintInit = true;
+                            break;
                         }
-                        else
-                        {
-                            // break run if tint or url differ
-                            if (glyphTint.R != runTint.R || glyphTint.G != runTint.G || glyphTint.B != runTint.B || glyphTint.A != runTint.A
-                                || (g.GlyphLinkUrl != runUrl))
-                            {
-                                break;
-                            }
-                        }
-
-                        runSb.Append(g.Character);
+                        glyphRun.Add(g);
+                        j++;
                     }
 
-                    string runText = runSb.ToString();
-                    if (runText.Length > 0)
+                    // Render the glyph run as a single operation
+                    if (glyphRun.Count > 0)
                     {
-                        var runSize = MeasureTextExCached(richText.Font, runText, richText.FontSize, richText.Spacing);
-                        Raylib.DrawTextEx(richText.Font, runText, new Vector2(x, y), richText.FontSize, richText.Spacing, runTint);
+                        var runText = new StringBuilder();
+                        foreach (var g in glyphRun)
+                            runText.Append(g.Character);
+
+                        Color tintedColor = new(
+                            (byte)(runColor.R * overallTint.R / 255),
+                            (byte)(runColor.G * overallTint.G / 255),
+                            (byte)(runColor.B * overallTint.B / 255),
+                            (byte)(runColor.A * overallTint.A / 255)
+                        );
+
+                        var size = MeasureTextExCached(richText.Font, runText.ToString(), richText.FontSize, richText.Spacing);
+                        Raylib.DrawTextEx(richText.Font, runText.ToString(), new Vector2(x, y), richText.FontSize, richText.Spacing, tintedColor);
 
                         if (runUrl is not null)
                         {
-                            // underline whole run
-                            Raylib.DrawLineEx(new Vector2(x, y + runSize.Y + 2), new Vector2(x + runSize.X, y + runSize.Y + 2), 1, runTint);
-                            linkHitboxes.Add((runUrl, new Rectangle((int)x, (int)y, (int)runSize.X, (int)runSize.Y), runTint));
+                            Raylib.DrawLineEx(new Vector2(x, y + size.Y + 2), new Vector2(x + size.X, y + size.Y + 2), 1, tintedColor);
+                            linkHitboxes.Add((runUrl, new Rectangle((int)x, (int)y, (int)size.X, (int)size.Y), tintedColor));
                         }
 
-                        if (j < line.Count)
-                            x += runSize.X + richText.Spacing;
-                        else
-                            x += runSize.X;
+                        x += size.X + richText.Spacing;
                     }
 
                     i = j;
                     continue;
                 }
 
-                // handle sprites
-                if (line[i] is RichSprite sprite)
-                {
-                    var texture = RichSpriteRegistry.GetSprite(sprite.SpriteKey);
-                    if (texture is not null)
-                    {
-                        float spriteHeight = sprite.BaseSize * richText.FontSize;
-                        float scale = spriteHeight / texture.Height;
-
-                        Color tintedSpriteColor = new Color(
-                            (byte)(sprite.Tint.R * overallTint.R / 255),
-                            (byte)(sprite.Tint.G * overallTint.G / 255),
-                            (byte)(sprite.Tint.B * overallTint.B / 255),
-                            (byte)(sprite.Tint.A * overallTint.A / 255)
-                        );
-
-                        Raylib.DrawTextureEx(texture, new Vector2(x, y), 0, scale, tintedSpriteColor);
-
-                        if (sprite.Clickable && input != null)
-                        {
-                            var imageRect = new Rectangle((int)x, (int)y, (int)(texture.Width * scale), (int)(texture.Height * scale));
-                            
-                            if (ray.CheckCollisionPointRec(input.MousePosition, imageRect) && input.IsDown(MouseButton.Left))
-                            {
-                                Toasts.Error("Sprite dialog is temporarily out of order");
-                            }
-                        }
-
-                        if (i + 1 < line.Count)
-                            x += texture.Width * scale + richText.Spacing;
-                        else
-                            x += texture.Width * scale;
-                    }
-
-                    i++;
-                    continue;
-                }
-
-                if (line[i] is RichWord word)
-                {
-                    Color tinted = new Color(
-                        (byte)(word.Color.R * overallTint.R / 255),
-                        (byte)(word.Color.G * overallTint.G / 255),
-                        (byte)(word.Color.B * overallTint.B / 255),
-                        (byte)(word.Color.A * overallTint.A / 255)
-                    );
-
-                    var runSize = MeasureTextExCached(richText.Font, word.Text, richText.FontSize, richText.Spacing);
-                    Raylib.DrawTextEx(richText.Font, word.Text, new Vector2(x, y), richText.FontSize, richText.Spacing, tinted);
-
-                    if (!string.IsNullOrEmpty(word.LinkUrl))
-                    {
-                        Raylib.DrawLineEx(new Vector2(x, y + runSize.Y + 2), new Vector2(x + runSize.X, y + runSize.Y + 2), 1, tinted);
-                        linkHitboxes.Add((word.LinkUrl, new Rectangle((int)x, (int)y, (int)runSize.X, (int)runSize.Y), tinted));
-                    }
-
-                    if (i < line.Count)
-                        x += runSize.X + richText.Spacing;
-                    else
-                        x += runSize.X;
-                    i++;
-                    continue;
-                }
-
-                if (line[i] is RichSpinner spinner)
-                {
-                    // compute spinner pixel size relative to font
-                    float spinnerHeight = spinner.BaseSize * richText.FontSize;
-                    float diameter = spinnerHeight;
-                    float widthAllocated = diameter * spinner.HorizontalPaddingMultiplier; // give it some room to travel
-
-                    // tinted color multiplied by overall tint (same pattern as glyphs/sprites)
-                    Color tintedSpinner = new Color(
-                        (byte)(spinner.Tint.R * overallTint.R / 255),
-                        (byte)(spinner.Tint.G * overallTint.G / 255),
-                        (byte)(spinner.Tint.B * overallTint.B / 255),
-                        (byte)(spinner.Tint.A * overallTint.A / 255)
-                    );
-
-                    // compute ping-pong phase t in [0,1]
-                    double time = Time.sinceStartup;
-                    float raw = (float)((time * spinner.Speed) % 2.0);
-                    float t = raw > 1f ? 2f - raw : raw; // 0..1 ping-pong
-
-                    // quintic ease-in-out to make endpoints very slow and the middle very fast
-                    float eased = EvaluateBusyEased(t);
-
-                    // small margin so ball doesn't touch edges
-                    float margin = MathF.Max(1f, diameter * 0.25f);
-                    float travelRange = MathF.Max(0f, widthAllocated - diameter - (margin * 2f));
-
-                    // compute center position for the little ball
-                    float cx = x + margin + eased * travelRange + diameter * 0.5f;
-                    float cy = y + (richText.FontSize - spinnerHeight) / 2f + spinnerHeight * 0.5f;
-
-                    // background dot (subtle) so spinner reads on dark/light text
-                    var bgAlpha = (byte)(tintedSpinner.A * 0.20f);
-                    var bg = new Color(tintedSpinner.R, tintedSpinner.G, tintedSpinner.B, bgAlpha);
-                    Raylib.DrawCircleV(new Vector2(x + widthAllocated * 0.5f, cy), diameter * 0.45f, bg);
-
-                    // draw the moving sphere
-                    Raylib.DrawCircleV(new Vector2(cx, cy), diameter * 0.45f, tintedSpinner);
-
-                    // advance the x cursor by the allocated width + spacing
-                    x += widthAllocated + richText.Spacing;
-
-                    i++;
-                    continue;
-                }
-
+                // Delegate rendering to the element itself
+                var result = element.Render(renderContext, new Vector2(x, y));
+                x += result.WidthConsumed;
+                //y += result.HeightConsumed;
                 i++;
             }
 
-            // process link clicks for this line (one check per run)
+            // process link clicks for this line
             foreach (var (Url, Rect, Tint) in linkHitboxes)
             {
-                if (Url is not null && ray.CheckCollisionPointRec(input.MousePosition, Rect) && ray.IsMouseButtonPressed(MouseButton.Left))
+                if (Url is not null && Raylib.CheckCollisionPointRec(input.MousePosition, Rect) && Raylib.IsMouseButtonPressed(MouseButton.Left))
                 {
                     Dialogs.Show(new BrowserDialog(Url, DialogPlacement.CenterBig, DialogPriority.EngineNotifications));
                 }
@@ -264,6 +184,38 @@ public static class RichTextRenderer
     internal static List<List<RichElement>> WrapText(RichText text, float maxWidth)
     {
         var elements = text.Elements;
+
+        var normalizedElements = new List<RichElement>();
+        RichGlyph? lastGlyph = null;
+
+        foreach (var e in elements)
+        {
+            if (e is RichGlyph g)
+            {
+                if (g.Character == '\r' || g.Character == '\n')
+                {
+                    if (lastGlyph != null && (lastGlyph.Character == '\n'))
+                        continue;
+
+                    // Add a single normalized newline
+                    var newline = new RichGlyph('\n', g.Color) { ActiveModifiers = g.ActiveModifiers };
+                    normalizedElements.Add(newline);
+                    lastGlyph = newline;
+                }
+                else
+                {
+                    normalizedElements.Add(e);
+                    lastGlyph = g;
+                }
+            }
+            else
+            {
+                normalizedElements.Add(e);
+                lastGlyph = null;
+            }
+        }
+        elements = normalizedElements;
+
         var lines = new List<List<RichElement>>();
         var currentLine = new List<RichElement>();
         var currentWord = new List<RichElement>();
@@ -881,21 +833,6 @@ public static class RichTextRenderer
         return new RichGlyph('-', c);
     }
 
-    private static float EvaluateBusyEased(float t)
-    {
-        // t in [0,1]
-        if (t < 0.5f)
-        {
-            float x = 2f * t; // 0..1
-            return 0.5f * MathF.Pow(x, 5); // very slow near 0, quick in middle
-        }
-        else
-        {
-            float x = 2f * (1f - t); // 1..0
-            return 1f - 0.5f * MathF.Pow(x, 5); // symmetric
-        }
-    }
-
     private static Vector2 CalculateElementsSize(RichText text, List<RichElement> elements)
     {
         // sums width of a run of glyphs and sprites; returns combined width & max height
@@ -1028,4 +965,29 @@ public static class RichTextRenderer
     }
 
     //internal static void DrawRichText(RichText title, Vector2 textPos, float maxTextWidth, object white, object value) => throw new NotImplementedException();
+
+    /// <summary>
+    /// Initialize typewriter sequence indices for all RichWord elements across all lines.
+    /// This ensures that words know their character position in the typewriter sequence.
+    /// </summary>
+    private static void InitializeTypewriterSequence(List<List<RichElement>> lines)
+    {
+        int characterIndex = 0;
+        
+        foreach (var line in lines)
+        {
+            foreach (var element in line)
+            {
+                if (element is RichWord word)
+                {
+                    word.TypewriterSequenceStartIndex = characterIndex;
+                    characterIndex += word.Text.Length;
+                }
+                else if (element is RichGlyph glyph)
+                {
+                    characterIndex++;
+                }
+            }
+        }
+    }
 }

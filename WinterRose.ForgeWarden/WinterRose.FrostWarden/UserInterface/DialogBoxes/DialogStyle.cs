@@ -29,7 +29,7 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
 
             ProgressBarBackground = new Color(50, 45, 60);  // dark muted purple background
             ProgressBarFill = new Color(215, 95, 185);      // pink accent fill
-            BarText = new Color(250, 245, 250);             // gentle white
+            ProgressBarText = new Color(250, 245, 250);             // gentle white
 
             ButtonTextColor = new Color(250, 245, 250);
             ButtonBackground = new Color(75, 65, 90);       // soft purple-gray

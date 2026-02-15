@@ -5,16 +5,26 @@ using WinterRose.Recordium;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
+using EnvDTE;
 
 namespace WinterRose.ForgeWarden.Utility;
 
 public static class HttpImageLoader
 {
-    private static readonly HttpClient HTTP = new HttpClient();
+    private static readonly HttpClient HTTP;
+    static HttpImageLoader()
+    {
+        HTTP = new HttpClient();
+        HTTP.Timeout = TimeSpan.FromSeconds(10);
+        HTTP.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
+    }
 
     public static async Task<Sprite?> LoadSpriteFromUrlAsync(string url)
     {
-        string tmp = null;
+        string tmp = Path.Combine(Path.GetTempPath(), "WinterRose_Images", "winter_image_" + Guid.NewGuid().ToString("N") + ".png");
+        if(!Directory.Exists(Path.GetDirectoryName(tmp)))
+            Directory.CreateDirectory(Path.GetDirectoryName(tmp));
+
         byte[] bytes = null;
         try
         {
@@ -23,9 +33,6 @@ public static class HttpImageLoader
 
             // download raw bytes
             bytes = await HTTP.GetByteArrayAsync(url);
-
-            // create a temporary PNG path
-            tmp = Path.Combine(Path.GetTempPath(), "winter_image_" + Guid.NewGuid().ToString("N") + ".png");
 
             // convert to PNG using ImageSharp
             using (var ms = new MemoryStream(bytes))
@@ -47,7 +54,6 @@ public static class HttpImageLoader
         {
             if(tmp is not null)
             {
-                // try ico parser
                 try
                 {
                     ConvertIcoToPng(bytes, tmp);
@@ -66,8 +72,7 @@ public static class HttpImageLoader
                     return sprite;
             }
             new Log("Http ImageLoader").Error(ex);
-            if (File.Exists(tmp))
-                File.Delete(tmp);
+        
             return null;
         }
     }

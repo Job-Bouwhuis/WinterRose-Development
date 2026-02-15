@@ -29,7 +29,7 @@ namespace WinterRose.ForgeWarden.UserInterface
 
         private Color barBackground = new Color(44, 38, 52, 255);       // dark muted purple
         private Color barFill = new Color(255, 65, 225, 255);           // vibrant pink fill
-        private Color barText = new Color(250, 245, 250, 255);          // high contrast text
+        private Color progressBarText = new Color(75, 60, 90, 255);       
 
         private Color timerBarBackground = new Color(48, 42, 56, 255);  // slightly lifted base
         private Color timerBarFill = new Color(200, 120, 210, 255);     // pink-purple urgency
@@ -163,10 +163,10 @@ namespace WinterRose.ForgeWarden.UserInterface
             get => barFill.WithAlpha(ContentAlpha);
             set => barFill = value;
         }
-        public Color BarText
+        public Color ProgressBarText
         {
-            get => barText.WithAlpha(ContentAlpha);
-            set => barText = value;
+            get => progressBarText.WithAlpha(ContentAlpha);
+            set => progressBarText = value;
         }
 
         public Color TimerBarBackground
@@ -351,7 +351,7 @@ namespace WinterRose.ForgeWarden.UserInterface
 
         public Color BarBackgroundRaw => barBackground;
         public Color BarFillRaw => barFill;
-        public Color BarTextRaw => barText;
+        public Color ProgressBarTextRaw => progressBarText;
 
         public Color TextBoxBackgroundRaw => textBoxBackgroundColor;
         public Color TextBoxBorderRaw => textBoxBorderColor;
@@ -843,12 +843,14 @@ namespace WinterRose.ForgeWarden.UserInterface
                     field = value;
             }
         }
-        public Overridable<Color> BarText
+        public Overridable<Color> ProgressBarText
         {
             get;
             set
             {
-                StyleBase.BarText = value;
+                StyleBase.ProgressBarText = value;
+                if (value == Color.White)
+                    ;
                 if (field is not null)
                 {
                     var oldOverride = field.Override;
@@ -2134,7 +2136,7 @@ namespace WinterRose.ForgeWarden.UserInterface
 
             ProgressBarBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.BarBackgroundRaw : new Color(44, 38, 52, 255));
             ProgressBarFill = new Overridable<Color>(() => FollowContainerDefaults ? parent.BarFillRaw : new Color(255, 65, 225, 255));
-            BarText = new Overridable<Color>(() => FollowContainerDefaults ? parent.BarTextRaw : new Color(250, 245, 250, 255));
+            ProgressBarText = new Overridable<Color>(() => FollowContainerDefaults ? parent.ProgressBarTextRaw : new Color(75, 60, 90, 255));
 
             TimerBarBackground = new Overridable<Color>(() => FollowContainerDefaults ? parent.TimerBarBackgroundRaw : new Color(48, 42, 56, 255));
             TimerBarFill = new Overridable<Color>(() => FollowContainerDefaults ? parent.TimerBarFillRaw : new Color(200, 120, 210, 255));

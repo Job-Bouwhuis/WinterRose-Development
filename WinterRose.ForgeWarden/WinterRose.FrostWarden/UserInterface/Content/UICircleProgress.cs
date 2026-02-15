@@ -468,21 +468,21 @@ public class UICircleProgress : UIContent
             Vector2 percPos = new(infPos.X + infWidth + 6f, center.Y - fontSize / 2f);
 
             // draw with each measured width so they layout exactly as measured
-            RichTextRenderer.DrawRichText(infText!, infPos, Math.Max(1f, infWidth), null);
-            RichTextRenderer.DrawRichText(percText!, percPos, Math.Max(1f, percWidth), null);
+            RichTextRenderer.DrawRichText(infText!, infPos, Math.Max(1f, infWidth), Style, null);
+            RichTextRenderer.DrawRichText(percText!, percPos, Math.Max(1f, percWidth), Style, null);
         }
         else if (drawInfinite)
         {
             Vector2 infPos = new(center.X - infWidth / 2f, center.Y - fontSize / 2f);
 
             // allow full allowedTextWidth for wrapping (centered)
-            RichTextRenderer.DrawRichText(infText!, infPos, allowedTextWidth, null);
+            RichTextRenderer.DrawRichText(infText!, infPos, allowedTextWidth, Style, null);
         }
         else if (drawPercent)
         {
             Vector2 percPos = new(center.X - percWidth / 2f, center.Y - fontSize / 2f);
 
-            RichTextRenderer.DrawRichText(percText!, percPos, allowedTextWidth, null);
+            RichTextRenderer.DrawRichText(percText!, percPos, allowedTextWidth, Style, null);
         }
     }
 

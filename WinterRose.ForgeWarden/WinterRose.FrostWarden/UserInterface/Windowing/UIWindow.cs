@@ -398,7 +398,8 @@ public class UIWindow : UIContainer
 
         // draw the rich text; align vertically centered
         var textPos = new Vector2(leftPadding, titlebarBounds.Y + (titlebarBounds.Height - (int)(chosenFontSize)) / 2f - 1f);
-        RichTextRenderer.DrawRichText(Title, textPos, maxTextWidth, Style.White, null);
+        RichTextRenderer.DrawRichText(Title, textPos, maxTextWidth, Style.White,
+            Style, null);
 
         // --- interaction: if any button was released while mouse was over it AND this window has mouse focus,
         // return false so the base dragging logic won't run. (Caller can handle the actual action elsewhere.) ---
@@ -750,8 +751,8 @@ public class UIWindow : UIContainer
         float animatedHeightForHit = Lerp(CurrentPosition.Height, collapsedHeight, easedForHit);
        if(animatedHeightForHit != CurrentPosition.Height)
         {
-            WinterRose.Windows.OpenConsole();
-            log.Debug($"Hitbox unlike drawn: {animatedHeightForHit}/{CurrentPosition.Height} (collapseProgress: {collapseProgress}, eased: {easedForHit})");
+            //WinterRose.Windows.OpenConsole();
+            //log.Debug($"Hitbox unlike drawn: {animatedHeightForHit}/{CurrentPosition.Height} (collapseProgress: {collapseProgress}, eased: {easedForHit})");
             //CurrentPosition = CurrentPosition with { Height = animatedHeightForHit - (Style.AllowUserResizing ? Style.TitleBarHeight : 0f) };
         }
 

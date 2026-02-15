@@ -122,6 +122,7 @@ public class UIButton : UIContent
             new Vector2(textX, textY),
             textMaxWidth,
             new Color(255, 255, 255, Style.ContentAlpha),
+            Style,
             Input
         );
     }

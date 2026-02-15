@@ -415,6 +415,19 @@ namespace WinterRose.ForgeThread
         /// <param name="externalTask"></param>
         /// <param name="bypassTick"></param>
         /// <returns></returns>
+        public T ComputeOn<T>(string threadName, Func<Task<T>> externalTask, bool bypassTick = false)
+        {
+            return InvokeOn(threadName, externalTask, JobPriority.Normal, bypassTick).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Used to compute a value on a specific worker thread, blocking the caller until complete.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="threadName"></param>
+        /// <param name="externalTask"></param>
+        /// <param name="bypassTick"></param>
+        /// <returns></returns>
         public T InvokeOn<T>(string threadName, Func<T> externalTask, bool bypassTick)
         {
             return InvokeOn(threadName, async () => externalTask(), JobPriority.Normal, bypassTick).GetAwaiter().GetResult();

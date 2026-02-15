@@ -41,6 +41,8 @@ public class UIProgress : UIContent
     public float EdgeTransitionDuration { get; set; } = 0.25f;
     public Curve PercentCurve { get; set; } = Curves.ExtraSlowFastSlow;
 
+    public bool allowPauseAutoDismissTimer { get; set; } = true;
+
     public UIProgress(float initialProgress = 0f, Func<float, float>? ProgressProvider = null, string infiniteSpinText = "Working...")
     {
         ProgressValue = Math.Clamp(initialProgress, -1f, 1f);
@@ -66,7 +68,7 @@ public class UIProgress : UIContent
 
     protected override void Update()
     {
-        if (ProgressValue != 1)
+        if (ProgressValue != 1 && allowPauseAutoDismissTimer)
             Style.PauseAutoDismissTimer = true;
         if (ProgressProvider is not null)
             ProgressValue = ProgressProvider(ProgressValue);
@@ -84,7 +86,8 @@ public class UIProgress : UIContent
 
     protected override void Draw(Rectangle bounds)
     {
-        Owner.Style.TimeUntilAutoDismiss = 0;
+        if(allowPauseAutoDismissTimer)
+            Owner.Style.TimeUntilAutoDismiss = 0;
 
         Rectangle barBg = new(bounds.X, bounds.Y, bounds.Width, 20);
         maxWidth = barBg.Width * 0.3f;
@@ -208,7 +211,8 @@ public class UIProgress : UIContent
         float textX = barBg.X + (barBg.Width - textWidth) / 2;
         float textY = barBg.Y + (barBg.Height - fontSize) / 2;
 
-        ray.DrawText(progressText, (int)textX, (int)textY, fontSize, Style.StyleBase.White);
+        ray.DrawTextEx(ForgeWardenEngine.DefaultFont, progressText, new Vector2(textX, textY), fontSize, 1, Style.ProgressBarText);
+        //ray.DrawText(progressText, (int)textX, (int)textY, fontSize, Style.ProgressBarText);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

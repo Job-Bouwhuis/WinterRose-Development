@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Drawing.Drawing2D;
 using System.Linq.Expressions;
 using System.Text;
+using WinterRose.ForgeWarden.TextRendering.EscapeSequences;
+using WinterRose.ForgeWarden.TextRendering.RichElements;
 
 public class RichText
 {
@@ -26,6 +28,22 @@ public class RichText
                 if (element is RichWord word) return word.Color;
             }
             return Color.White;
+        }
+    }
+
+    public int Length
+    {
+        get
+        {
+            int totalLength = 0;
+            foreach (var e in Elements)
+            {
+                if (e is RichWord word)
+                    totalLength += word.Text.Length;
+                else
+                    totalLength += 1;
+            }
+            return totalLength;
         }
     }
 
@@ -130,10 +148,31 @@ public class RichText
         var elements = new List<RichElement>();
         Color currentColor = defaultColor;
         var sb = new StringBuilder(); // accumulates a word
+        
+        // Initialize modifier stack for lifetime management
+        var modifierStack = new ModifierStack();
+        modifierStack.RegisterModifier(new BoldModifier());
+        modifierStack.RegisterModifier(new ItalicModifier());
+        modifierStack.RegisterModifier(new WaveModifier());
+        modifierStack.RegisterModifier(new ShakeModifier());
+        modifierStack.RegisterModifier(new TypewriterModifier());
+        modifierStack.RegisterModifier(new ColorModifier(defaultColor)); // Register default color
+
         void FlushWord(string? linkUrl = null)
         {
             if (sb.Length == 0) return;
-            elements.Add(new RichWord(sb.ToString(), currentColor, linkUrl));
+            
+            // Check if there's an active link modifier
+            if (linkUrl == null && modifierStack.GetSnapshot().StackableModifiers.OfType<LinkModifier>().FirstOrDefault() is LinkModifier linkMod)
+            {
+                linkUrl = linkMod.Url;
+            }
+            
+            var word = new RichWord(sb.ToString(), currentColor, linkUrl)
+            {
+                ActiveModifiers = modifierStack.GetSnapshot()
+            };
+            elements.Add(word);
             sb.Clear();
         }
 
@@ -142,125 +181,181 @@ public class RichText
         {
             try
             {
-                if (text[i] == '\\' && i + 1 < text.Length)
+                if (text[i] == '\\')
                 {
-                    // color tag
-                    if (text[i + 1] == 'c' && i + 2 < text.Length && text[i + 2] == '[')
+                    int open = text.IndexOf('[', i + 1);
+                    if (open > i + 1)
                     {
-                        int close = text.IndexOf(']', i + 3);
-                        if (close > 0)
+                        string seq = text[(i + 1)..open];
+                        int close = text.IndexOf(']', open + 1);
+                        if (close > open)
                         {
-                            FlushWord();
-                            string colorStr = text[(i + 3)..close];
-                            currentColor = ParseColor(colorStr, defaultColor);
-                            i = close + 1;
-                            continue;
-                        }
-                    }
-                    // sprite tag
-                    else if (text[i + 1] == 's' && i + 2 < text.Length && text[i + 2] == '[')
-                    {
-                        int close = text.IndexOf(']', i + 3);
-                        if (close > 0)
-                        {
-                            FlushWord();
-                            string spriteKey = text[(i + 3)..close];
-                            RichSprite s = new RichSprite(spriteKey, RichSpriteRegistry.GetSourceFor(spriteKey), 1f, currentColor);
-                            elements.Add(s);
-                            i = close + 1;
+                            string content = text[(open + 1)..close];
 
-                            if (text.Length >= close + 2)
+                            // Handle \end[modifierName] to close stackable modifiers
+                            if (seq.Equals("end", StringComparison.OrdinalIgnoreCase))
                             {
-                                if (text[close + 1] == '\\' && text[close + 2] == '!')
-                                {
-                                    s.Clickable = true;
-                                    i += 2;
-                                }
-                            }
-                            continue;
-                        }
-                    }
-                    // link tag \L[url|display] or \L[url]
-                    else if (text[i + 1] == 'L' && i + 2 < text.Length && text[i + 2] == '[')
-                    {
-                        int close = text.IndexOf(']', i + 3);
-                        if (close > 0)
-                        {
-                            FlushWord();
-                            string content = text[(i + 3)..close];
-                            string linkUrl = content;
-                            string displayText = content;
-
-                            int eq = content.IndexOf('|');
-                            if (eq >= 0)
-                            {
-                                linkUrl = content[..eq];
-                                displayText = content[(eq + 1)..];
+                                FlushWord();
+                                string modifierName = content.Trim().ToLowerInvariant();
+                                modifierStack.PopStackable(modifierName);
+                                i = close + 1;
+                                continue;
                             }
 
-                            // split displayText into words and spaces, emit RichWord with LinkUrl
-                            var parts = displayText.Split(' ');
-                            for (int p = 0; p < parts.Length; p++)
+                            // Handle \link[url] to start a link scope
+                            if (seq.Equals("link", StringComparison.OrdinalIgnoreCase))
                             {
-                                if (parts[p].Length > 0)
-                                    elements.Add(new RichWord(parts[p], currentColor, linkUrl));
-                                if (p < parts.Length - 1)
-                                    elements.Add(new RichGlyph(' ', currentColor));
+                                FlushWord();
+                                var linkModifier = new LinkModifier(content);
+                                modifierStack.RegisterModifier(linkModifier);
+                                modifierStack.PushStackable("link");
+                                i = close + 1;
+                                continue;
                             }
 
-                            i = close + 1;
-                            continue;
-                        }
-                    }
-                    else if (text[i + 1] == 'e' && i + 2 < text.Length && text[i + 2] == '[')
-                    {
-                        float currentSize = 0;
-                        float currentSpeed = 0;
-                        Color color = currentColor;
-
-                        int close = text.IndexOf(']', i + 3);
-                        if (close > 0)
-                        {
-                            FlushWord();
-                            string paramStr = text[(i + 3)..close].Trim();
-
-                            if (!string.IsNullOrEmpty(paramStr))
+                            // Handle stackable modifiers (bold, italic, wave, shake, tw)
+                            switch (seq.ToLowerInvariant())
                             {
-                                var parameters = paramStr.Split(';', StringSplitOptions.RemoveEmptyEntries);
-                                foreach (var param in parameters)
-                                {
-                                    var kv = param.Split('=', 2);
-                                    if (kv.Length == 2)
+                                case "bold":
+                                case "b":
+                                    FlushWord();
+                                    modifierStack.PushStackable("bold");
+                                    i = close + 1;
+                                    continue;
+
+                                case "italic":
+                                case "i":
+                                    FlushWord();
+                                    modifierStack.PushStackable("italic");
+                                    i = close + 1;
+                                    continue;
+
+                                case "wave":
+                                case "w":
+                                    FlushWord();
+                                    var waveModifier = new WaveModifier();
+                                    // Parse wave parameters if provided
+                                    if (!string.IsNullOrEmpty(content))
                                     {
-                                        string key = kv[0].Trim().ToLowerInvariant();
-                                        string value = kv[1].Trim();
-
-                                        switch (key)
+                                        var parts = content.Split(';');
+                                        foreach (var part in parts)
                                         {
-                                            case "size":
-                                                if (float.TryParse(value, out float sz)) currentSize = sz;
-                                                break;
-                                            case "speed":
-                                                if (float.TryParse(value, out float spd)) currentSpeed = spd;
-                                                break;
-                                            case "color":
-                                                color = ParseColor(value, defaultColor);
-                                                break;
+                                            if (part.Contains('='))
+                                            {
+                                                var kv = part.Split('=');
+                                                var key = kv[0].Trim().ToLowerInvariant();
+                                                if (float.TryParse(kv[1].Trim(), out var val))
+                                                {
+                                                    switch (key)
+                                                    {
+                                                        case "amplitude": waveModifier.Amplitude = val; break;
+                                                        case "speed": waveModifier.Speed = val; break;
+                                                        case "wavelength": waveModifier.Wavelength = val; break;
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
-                                }
+                                    modifierStack.RegisterModifier(waveModifier);
+                                    modifierStack.PushStackable("wave");
+                                    i = close + 1;
+                                    continue;
+
+                                case "shake":
+                                case "sh":
+                                    FlushWord();
+                                    var shakeModifier = new ShakeModifier();
+                                    if (!string.IsNullOrEmpty(content))
+                                    {
+                                        var parts = content.Split(';');
+                                        foreach (var part in parts)
+                                        {
+                                            if (part.Contains('='))
+                                            {
+                                                var kv = part.Split('=');
+                                                var key = kv[0].Trim().ToLowerInvariant();
+                                                if (float.TryParse(kv[1].Trim(), out var val))
+                                                {
+                                                    switch (key)
+                                                    {
+                                                        case "intensity": shakeModifier.Intensity = val; break;
+                                                        case "speed": shakeModifier.Speed = val; break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    modifierStack.RegisterModifier(shakeModifier);
+                                    modifierStack.PushStackable("shake");
+                                    i = close + 1;
+                                    continue;
+
+                                case "typewriter":
+                                case "tw":
+                                    FlushWord();
+                                    var twModifier = new TypewriterModifier();
+                                    if (!string.IsNullOrEmpty(content))
+                                    {
+                                        var parts = content.Split(';');
+                                        foreach (var part in parts)
+                                        {
+                                            if (part.Contains('='))
+                                            {
+                                                var kv = part.Split('=');
+                                                var key = kv[0].Trim().ToLowerInvariant();
+                                                if (float.TryParse(kv[1].Trim(), out var val))
+                                                {
+                                                    if (key == "delay")
+                                                        twModifier.CharacterDelay = val;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    modifierStack.RegisterModifier(twModifier);
+                                    modifierStack.PushStackable("typewriter");
+                                    i = close + 1;
+                                    continue;
                             }
 
-                            if (currentSpeed is 0)
-                                currentSpeed = 2.5f;
-                            if(currentSize is 0)
-                                currentSize = 0.55f;
+                            // Handle persistent/replacement modifiers via registered handlers
+                            var handler = EscapeSequenceHandlerRegistry.GetHandler(seq);
+                            if (handler != null)
+                            {
+                                FlushWord();
 
-                            i = close + 1;
-                            elements.Add(new RichSpinner(currentSize, color, currentSpeed));
+                                // For color handler, update currentColor and also track in modifier stack
+                                if (handler is ColorSequenceHandler)
+                                {
+                                    currentColor = ParseColor(content, defaultColor);
+                                    var colorModifier = new ColorModifier(currentColor);
+                                    modifierStack.RegisterModifier(colorModifier);
+                                    modifierStack.SetPersistent("color", colorModifier);
+                                    i = close + 1;
+                                    continue;
+                                }
+
+                                // For other handlers, let them handle element creation
+                                int newPos = handler.Parse(content, currentColor, elements, text, close + 1);
+                                // Capture modifiers on any created elements
+                                for (int j = elements.Count - 1; j >= 0 && elements[j].ActiveModifiers == null; j--)
+                                {
+                                    elements[j].ActiveModifiers = modifierStack.GetSnapshot();
+                                }
+                                i = newPos;
+                                continue;
+                            }
+
+                            // Unknown sequence — treat the backslash as a literal and continue parsing
+                            sb.Append('\\');
+                            i++;
                             continue;
                         }
                     }
+
+                    // if we didn't find a valid '[...]' sequence, treat '\' as literal
+                    sb.Append('\\');
+                    i++;
+                    continue;
                 }
             }
             catch
@@ -273,7 +368,11 @@ public class RichText
             if (char.IsWhiteSpace(c))
             {
                 FlushWord();
-                elements.Add(new RichGlyph(c, currentColor));
+                var glyph = new RichGlyph(c, currentColor)
+                {
+                    ActiveModifiers = modifierStack.GetSnapshot()
+                };
+                elements.Add(glyph);
                 i++;
                 continue;
             }
@@ -324,28 +423,52 @@ public class RichText
 
     private static Color ParseColor(string input, Color fallback)
     {
-        if (input.StartsWith("#") && input.Length == 7)
+        if (string.IsNullOrWhiteSpace(input))
+            return fallback;
+
+        // Try hex color first (#RRGGBB or #RRGGBBAA)
+        if (input.StartsWith("#"))
         {
-            // Hex RGB like #ff99cc
-            return new Color(
-                Convert.ToInt32(input.Substring(1, 2), 16),
-                Convert.ToInt32(input.Substring(3, 2), 16),
-                Convert.ToInt32(input.Substring(5, 2), 16),
-                255
-            );
+            if (input.Length == 7) // #RRGGBB
+            {
+                try
+                {
+                    return new Color(
+                        Convert.ToInt32(input.Substring(1, 2), 16),
+                        Convert.ToInt32(input.Substring(3, 2), 16),
+                        Convert.ToInt32(input.Substring(5, 2), 16),
+                        255
+                    );
+                }
+                catch
+                {
+                    return fallback;
+                }
+            }
+            else if (input.Length == 9) // #RRGGBBAA
+            {
+                try
+                {
+                    return new Color(
+                        Convert.ToInt32(input.Substring(1, 2), 16),
+                        Convert.ToInt32(input.Substring(3, 2), 16),
+                        Convert.ToInt32(input.Substring(5, 2), 16),
+                        Convert.ToInt32(input.Substring(7, 2), 16)
+                    );
+                }
+                catch
+                {
+                    return fallback;
+                }
+            }
         }
 
-        // Simple color keywords
-        return input.ToLower() switch
-        {
-            "red" => Color.Red,
-            "blue" => Color.Blue,
-            "green" => Color.Green,
-            "white" => Color.White,
-            "black" => Color.Black,
-            "yellow" => Color.Yellow,
-            _ => fallback
-        };
+        // Try named color from registry
+        if (ColorRegistry.TryGetColor(input, out var namedColor))
+            return namedColor;
+
+        // Fallback if not found
+        return fallback;
     }
 
     public RichText Clone()

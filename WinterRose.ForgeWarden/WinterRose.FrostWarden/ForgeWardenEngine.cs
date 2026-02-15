@@ -101,6 +101,9 @@ public abstract class ForgeWardenEngine
     /// Highest priority input. use only when really necessary
     /// </summary>
     public InputContext Input => EngineLevelInput;
+
+    public bool FancyShutdown { get; }
+
     private List<Action> debugDraws = [];
 
     static ForgeWardenEngine()
@@ -122,7 +125,7 @@ public abstract class ForgeWardenEngine
 
     }
 
-    public ForgeWardenEngine(bool UseBrowser = true, bool GracefulErrorHandling =
+    public ForgeWardenEngine(bool UseBrowser = true, bool fancyShutdown = true, bool GracefulErrorHandling =
 #if RELEASE
          true) // use try catch with graceful error dialog box upon error rather than just closing without reason
 #else
@@ -133,6 +136,7 @@ public abstract class ForgeWardenEngine
             throw new InvalidOperationException("Application instance already exists. Only one instance is allowed.");
         Current = this;
         useBrowser = UseBrowser;
+        FancyShutdown = fancyShutdown;
         gracefulErrorHandling = GracefulErrorHandling;
         log = new Log("Engine");
 
@@ -282,18 +286,22 @@ public abstract class ForgeWardenEngine
 
                 string ex = exception is null ? "" : $"Error of type {exception.GetType().Name} causing shutdown!";
 
-                DrawBlackScreenWithCenteredText("Unloading world...", ex);
+                if(FancyShutdown)
+                    DrawBlackScreenWithCenteredText("Unloading world...", ex);
                 Universe.CurrentWorld.Dispose();
-                DrawBlackScreenWithCenteredText("Cleaning sprites...", ex);
+                if (FancyShutdown)
+                    DrawBlackScreenWithCenteredText("Cleaning sprites...", ex);
                 SpriteCache.DisposeAll();
-                DrawBlackScreenWithCenteredText("Disposing hardware connections...", ex);
 
+                if (FancyShutdown)
+                    DrawBlackScreenWithCenteredText("Disposing hardware connections...", ex);
                 Raylib.CloseAudioDevice();
-                DrawBlackScreenWithCenteredText("Finalizing Asset Headers..", ex);
+                if (FancyShutdown)
+                    DrawBlackScreenWithCenteredText("Finalizing Asset Headers..", ex);
                 Assets.FinalizeHeaders();
-                DrawBlackScreenWithCenteredText("Bye Bye!", ex);
+                if (FancyShutdown)
+                    DrawBlackScreenWithCenteredText("Bye Bye!", ex);
                 Task.Delay(exception is null ? 250 : 2000).Wait();
-
 
                 log.Info("All resources released, Closing window");
 

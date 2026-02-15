@@ -1,0 +1,24 @@
+{
+  "documentGenerator": {
+    "fromUrl": "https://helldivers-2.github.io/api/openapi/Helldivers-2-API.json",
+    "output": "Helldivers2OpenApi.json"
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "output": "GeneratedClient.cs",
+      "namespace": "Helldivers2.Client",
+      "className": "Helldivers2Client",
+      "injectHttpClient": true,
+      "wrapResponsesInResultClass": false,
+      "useHttpClientCreationMethod": true,
+      "useBaseUrlInClientConstructor": true,
+      "baseUrl": "https://api.helldivers2.dev/",
+      "jsonLibrary": "SystemTextJson",
+      "generateOptionalParameters": true,
+      "propertyNameHandling": "CamelCase",
+      "generateNullableReferenceTypes": true,
+      "generateClientInterfaces": true,
+      "useHttpClientInstance": true
+    }
+  }
+}

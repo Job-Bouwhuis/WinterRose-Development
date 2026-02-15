@@ -38,7 +38,7 @@ public class WindowStyle : ContentStyle
         // --- Progress bar ---
         ProgressBarBackground = new Color(55, 48, 62);
         ProgressBarFill = new Color(220, 90, 180);        // strong pink accent
-        BarText = new Color(250, 245, 250);
+        ProgressBarText = new Color(250, 245, 250);
 
         // --- Timer bar ---
         TimerBarBackground = new Color(50, 44, 58);

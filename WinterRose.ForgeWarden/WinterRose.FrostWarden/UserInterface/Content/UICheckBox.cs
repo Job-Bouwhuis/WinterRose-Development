@@ -329,6 +329,7 @@ public class UICheckBox : UIContent
             Text,
             new Vector2(textX, textY),
             bounds.Width - (textX - bounds.X),
+            Style,
             null
         );
     }

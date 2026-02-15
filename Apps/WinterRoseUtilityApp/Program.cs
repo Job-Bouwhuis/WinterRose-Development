@@ -7,6 +7,7 @@ using WinterRose.EventBusses;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.Geometry;
 using WinterRose.ForgeWarden.Geometry.Animation;
+using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.Content;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
@@ -42,11 +43,60 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
             new Program().RunAsOverlay(monitorIndex: 1);
     }
 
+    // Comprehensive demo of all new RichText features with modifier lifetime system
+    public static string GetRichTextDemo()
+    {
+        return @"\color[gold]\bold[]=== RICH TEXT FEATURE DEMO ===\end[bold]\color[white]
+
+\color[cyan]\bold[]Text Styling:\end[bold]\color[white]
+  • \bold[]Bold Text\end[bold] - Uses multi-pass stroke rendering
+  • \italic[]Italic Text\end[italic] - Character-by-character skew effect
+  • \bold[]\color[yellow]Bold + Yellow\color[white]\end[bold]
+
+\color[cyan]\bold[]Animated Effects:\end[bold]\color[white]
+  • \wave[amplitude=4;speed=2.5;wavelength=1]Waving Text!\end[wave]
+  • \shake[intensity=3;speed=12]Shaking Alert!\end[shake]
+  • \color[green]\tw[delay=1]Typewriter reveal...\end[tw]\color[white]
+
+\color[cyan]\bold[]Interactive Elements:\end[bold]\color[white]
+  • Progress: \progress[value=65;max=100;width=150]
+  • Status: \progress[value=0.8;width=120]
+  • \tt[Hover over me|This is a tooltip!] for more info
+
+\color[cyan]\bold[]Composition Examples:\end[bold]\color[white]
+  • \bold[]\color[red]ERROR\color[white]\end[bold]: \shake[intensity=2]Critical system failure\end[shake]
+  • \bold[]\color[green]SUCCESS\color[white]\end[bold]: \wave[]Operation complete!\end[wave]
+  • Loading: \progress[value=42;max=100;width=100]
+
+\color[cyan]\bold[]Nested Modifiers:\end[bold]\color[white]
+  • \bold[]\italic[]Bold AND italic\end[italic]\end[bold] text
+  • \shake[]\wave[amplitude=3]Both animations together\end[wave]\end[shake]
+  • Visit \link[https://github.com]our \bold[]GitHub\end[bold]\end[link]
+
+\color[cyan]\bold[]Mixed Styling:\end[bold]\color[white]
+  • Press \bold[\color[yellow]F1\color[white]\end[bold] for \tt[help|Press F1 to open the help menu]
+  • Status: \italic[\color[yellow]Awaiting user input...\end[italic]\color[white]
+  • \link[https://example.com]\color[cyan]Clickable example\color[white]\end[link]
+
+\color[gold]\bold[]=== End of Demo ===\end[bold]";
+    }
+
     public override World CreateFirstWorld()
     {
-
         LogDestinations.AddDestination(logConsole = new InAppLogConsole());
         Raylib.SetTargetFPS(144);
+
+        RichTextRenderer.FunctionRegistry.RegisterFunction(new FunctionDefinition("test", FunctionResult (string functionName,
+            Dictionary<string, string> arguments,
+            RichTextRenderContext context,
+            Vector2 position) => {
+
+                Toasts.Question($"Function '{functionName}' called with arguments: " +
+                    $"{string.Join(", ", arguments.Select(kv => $"{kv.Key}={kv.Value}"))}");
+
+                return new FunctionResult();
+        }));
+
         subSystemManager = new SubSystemManager();
         subSystemManager.Initialize().ContinueWith(t =>
         {
@@ -96,16 +146,30 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
             }
         ), currentStartupState);
 
-        t.AddContent(startup);
-        t.AddButton("Close App",
-            Invocation.Create<IUIContainer, UIButton>((c, b) => Close()));
-
         t.AddContent(new UIButton("File Browser", (c, b) =>
         {
             UIWindow wind = new UIWindow("File Browser", 500, 600);
             wind.AddFileExplorer();
             wind.ShowMaximized();
         }));
+
+        t.AddContent(new UIButton("Rich Text Test window", (c, b) =>
+        {
+            UIWindow test = new UIWindow("RichText Demo", 400, 300);
+            test.AddText(GetRichTextDemo());
+
+            test.AddContent(new UISpacer());
+
+            test.AddText("lets make an inline \\btn[button;test;arg1=5] cool no?\n" +
+                "this is like genuinely really darn cool like i wouldnt want it any other way");
+
+            test.Show();
+        }));
+
+        t.AddContent(startup);
+        t.AddButton("Close App",
+            Invocation.Create<IUIContainer, UIButton>((c, b) => Close()));
+
 
         Toasts.ShowToast(t);
     }

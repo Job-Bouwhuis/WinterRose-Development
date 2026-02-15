@@ -131,6 +131,7 @@ public class UIText : UIContent
             bounds.Position,
             bounds.Width,
             Style.StyleBase.White,
+            Style,
             Input
         );
     }

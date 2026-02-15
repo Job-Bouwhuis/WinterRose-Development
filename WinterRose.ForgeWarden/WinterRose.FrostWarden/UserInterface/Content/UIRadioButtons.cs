@@ -520,6 +520,7 @@ public class UIRadioButtons : UIContent
                     new Vector2(textX, textY),
                     rect.Width - (textX - rect.X),
                     new Color(255, 255, 255, (int)(255 * Style.ContentAlpha)),
+                    Style,
                     Input);
 
                 // If selected, draw a subtle accent line or glow to indicate the group relation

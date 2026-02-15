@@ -23,7 +23,7 @@ public class ToastStyle : ContentStyle
 
                 ProgressBarBackground = new Color(50, 20, 30, 180);
                 ProgressBarFill = new Color(255, 100, 150, 255);  // POP: brighter, full alpha
-                BarText = Color.White;
+                ProgressBarText = Color.White;
 
                 TimerBarBackground = new Color(50, 20, 30, 40);
                 TimerBarFill = new Color(255, 120, 160, 180);
@@ -77,7 +77,7 @@ public class ToastStyle : ContentStyle
 
                 ProgressBarBackground = new Color(40, 35, 60, 170);
                 ProgressBarFill = new Color(200, 130, 255, 255);  // POP
-                BarText = Color.White;
+                ProgressBarText = Color.White;
 
                 TimerBarBackground = new Color(40, 35, 60, 40);
                 TimerBarFill = new Color(210, 150, 255, 150);
@@ -129,9 +129,9 @@ public class ToastStyle : ContentStyle
                 ContentTint = Color.White;
                 Shadow = new Color(0, 0, 0, 90);
 
-                ProgressBarBackground = new Color(50, 40, 70, 170);
+                ProgressBarBackground = new Color(100, 70, 150, 255);
                 ProgressBarFill = new Color(220, 170, 255, 255);  // POP
-                BarText = Color.White;
+                ProgressBarText = Color.Black;
 
                 TimerBarBackground = new Color(50, 40, 70, 40);
                 TimerBarFill = new Color(220, 180, 255, 150);
@@ -185,7 +185,6 @@ public class ToastStyle : ContentStyle
 
                 ProgressBarBackground = new Color(60, 55, 65, 160);
                 ProgressBarFill = new Color(225, 130, 190, 255);  // POP but tasteful
-                BarText = Color.White;
 
                 TimerBarBackground = new Color(60, 55, 65, 40);
                 TimerBarFill = new Color(200, 140, 240, 140);
@@ -239,7 +238,7 @@ public class ToastStyle : ContentStyle
 
                 ProgressBarBackground = new Color(35, 60, 50, 170);
                 ProgressBarFill = new Color(80, 255, 180, 255);   // POP: very bright green-teal
-                BarText = Color.Black; // high contrast for bright fill
+                ProgressBarText = Color.Black; // high contrast for bright fill
 
                 TimerBarBackground = new Color(35, 60, 50, 50);
                 TimerBarFill = new Color(120, 255, 200, 170);
@@ -293,7 +292,7 @@ public class ToastStyle : ContentStyle
 
                 ProgressBarBackground = new Color(45, 45, 60, 160);
                 ProgressBarFill = new Color(120, 190, 255, 255);  // POP
-                BarText = Color.Black;
+                ProgressBarText = Color.Black;
 
                 TimerBarBackground = new Color(45, 45, 60, 30);
                 TimerBarFill = new Color(170, 200, 255, 140);
@@ -347,7 +346,7 @@ public class ToastStyle : ContentStyle
 
                 ProgressBarBackground = new Color(60, 40, 0, 170);
                 ProgressBarFill = new Color(255, 220, 90, 255);   // POP: bright amber
-                BarText = Color.Black;
+                ProgressBarText = Color.Black;
 
                 TimerBarBackground = new Color(60, 40, 0, 40);
                 TimerBarFill = new Color(255, 220, 130, 160);
@@ -401,7 +400,7 @@ public class ToastStyle : ContentStyle
 
                 ProgressBarBackground = new Color(60, 20, 30, 180);
                 ProgressBarFill = new Color(255, 90, 140, 255);   // POP
-                BarText = Color.White;
+                ProgressBarText = Color.White;
 
                 TimerBarBackground = new Color(60, 20, 30, 40);
                 TimerBarFill = new Color(255, 120, 170, 170);
@@ -455,7 +454,7 @@ public class ToastStyle : ContentStyle
 
                 ProgressBarBackground = new Color(40, 0, 10, 190);
                 ProgressBarFill = new Color(255, 0, 90, 255);     // POP: vivid magenta-red
-                BarText = Color.White;
+                ProgressBarText = Color.White;
 
                 TimerBarBackground = new Color(40, 0, 10, 50);
                 TimerBarFill = new Color(255, 40, 120, 180);

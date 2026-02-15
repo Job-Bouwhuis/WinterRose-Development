@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using WinterRose.ForgeWarden.TextRendering;
+using WinterRose.ForgeWarden.TextRendering.RichElements;
 using WinterRose.ForgeWarden.UserInterface.Content;
 
 namespace WinterRose.ForgeWarden.UserInterface;
@@ -316,7 +317,7 @@ public static partial class HtmlToUiTranslator
         if (raw.EndsWith("%")) return null;
 
         if (raw.EndsWith("px"))
-            raw = raw.Substring(0, raw.Length - 2).Trim();
+            raw = raw[..^2].Trim();
 
         if (float.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v))
             return v;
