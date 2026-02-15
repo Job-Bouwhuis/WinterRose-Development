@@ -74,7 +74,6 @@ public class RichWord : RichElement
 
                 // Calculate total characters revealed across the entire sequence
                 double elapsed = Time.sinceStartup - twModifier.StartTime;
-                Console.WriteLine(elapsed);
                 int totalCharsRevealed = (int)(elapsed / twModifier.CharacterDelay);
 
                 // Calculate how many characters of THIS word should be visible

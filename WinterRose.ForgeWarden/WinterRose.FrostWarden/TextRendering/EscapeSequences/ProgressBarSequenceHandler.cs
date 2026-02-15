@@ -2,6 +2,7 @@ namespace WinterRose.ForgeWarden.TextRendering.EscapeSequences;
 
 using Raylib_cs;
 using System.Collections.Generic;
+using System.Globalization;
 using WinterRose.ForgeWarden.TextRendering.RichElements;
 
 /// <summary>
@@ -15,12 +16,13 @@ public class ProgressBarSequenceHandler : EscapeSequenceHandler
     public override int Parse(string content, Raylib_cs.Color currentColor, List<RichElement> elements, string text, int currentPosition)
     {
         float value = 0.5f;
-        float? maxValue = null;
+        float? maxValue = 1f;
         float width = 100f;
 
         // Parse parameters (format: value=50 max=100 width=100)
         if (!string.IsNullOrEmpty(content))
         {
+
             var parameters = content.Split(';', System.StringSplitOptions.RemoveEmptyEntries);
             foreach (var param in parameters)
             {
@@ -29,19 +31,31 @@ public class ProgressBarSequenceHandler : EscapeSequenceHandler
                 {
                     string key = kv[0].Trim().ToLowerInvariant();
                     string val = kv[1].Trim();
-
+                    string normalized = val.Replace(',', '.');
                     switch (key)
                     {
                         case "value":
-                            if (float.TryParse(val, out float v))
+                            if (float.TryParse(
+                                normalized,
+                                NumberStyles.Float,
+                                CultureInfo.InvariantCulture,
+                                out float v))
                                 value = v;
                             break;
                         case "max":
-                            if (float.TryParse(val, out float m))
+                            if (float.TryParse(
+                              normalized,
+                              NumberStyles.Float,
+                              CultureInfo.InvariantCulture,
+                              out float m))
                                 maxValue = m;
                             break;
                         case "width":
-                            if (float.TryParse(val, out float w))
+                            if (float.TryParse(
+                              normalized,
+                              NumberStyles.Float,
+                              CultureInfo.InvariantCulture,
+                              out float w))
                                 width = w;
                             break;
                     }

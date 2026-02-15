@@ -187,7 +187,7 @@ public class RichText
                     if (open > i + 1)
                     {
                         string seq = text[(i + 1)..open];
-                        int close = text.IndexOf(']', open + 1);
+                        int close = FindMatchingBracket(text, open);
                         if (close > open)
                         {
                             string content = text[(open + 1)..close];
@@ -389,6 +389,32 @@ public class RichText
         {
             FontSize = fontSize
         };
+    }
+
+    static int FindMatchingBracket(string value, int start)
+    {
+        int depth = 0;
+
+        for (int p = start; p < value.Length; p++)
+        {
+            char ch = value[p];
+
+            if (ch == '[')
+            {
+                depth++;
+                continue;
+            }
+
+            if (ch == ']')
+            {
+                depth--;
+
+                if (depth == 0)
+                    return p;
+            }
+        }
+
+        return -1;
     }
 
     public float MeasureTextWidth(Font? font)

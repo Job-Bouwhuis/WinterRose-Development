@@ -56,7 +56,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
 \color[cyan]\bold[]Animated Effects:\end[bold]\color[white]
   • \wave[amplitude=4;speed=2.5;wavelength=1]Waving Text!\end[wave]
   • \shake[intensity=3;speed=12]Shaking Alert!\end[shake]
-  • \color[green]\tw[delay=1]Typewriter reveal...\end[tw]\color[white]
+  
 
 \color[cyan]\bold[]Interactive Elements:\end[bold]\color[white]
   • Progress: \progress[value=65;max=100;width=150]
@@ -74,7 +74,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
   • Visit \link[https://github.com]our \bold[]GitHub\end[bold]\end[link]
 
 \color[cyan]\bold[]Mixed Styling:\end[bold]\color[white]
-  • Press \bold[\color[yellow]F1\color[white]\end[bold] for \tt[help|Press F1 to open the help menu]
+  • Press \bold[\color[yellow]F1\color[white]\end[bold] for \tt[help|\wave[]Press F1 to open the help menu \progress[value=0.5]]
   • Status: \italic[\color[yellow]Awaiting user input...\end[italic]\color[white]
   • \link[https://example.com]\color[cyan]Clickable example\color[white]\end[link]
 
@@ -91,7 +91,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
             RichTextRenderContext context,
             Vector2 position) => {
 
-                Toasts.Question($"Function '{functionName}' called with arguments: " +
+                Toasts.Neutral($"Function '{functionName}' called with arguments: " +
                     $"{string.Join(", ", arguments.Select(kv => $"{kv.Key}={kv.Value}"))}");
 
                 return new FunctionResult();

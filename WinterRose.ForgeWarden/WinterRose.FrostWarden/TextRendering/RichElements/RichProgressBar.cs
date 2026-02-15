@@ -11,7 +11,7 @@ using System.Numerics;
 public class RichProgressBar : RichElement
 {
     public float Value { get; set; }           // Current value (0-1 if using normalized, or raw if using max)
-    public float? MaxValue { get; set; }       // Optional max value for normalization
+    public float? MaxValue { get; set; } = 1;     // Optional max value for normalization
     public float Width { get; set; } = 100f;   // Bar width in pixels
     public Color FillColor { get; set; } = Color.Green;
     public Color BackgroundColor { get; set; } = new Color(50, 50, 50, 255);

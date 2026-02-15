@@ -109,6 +109,8 @@ public abstract class UIContainer : IUIContainer
 
     internal Vector2 TargetPosition;
     internal Vector2 TargetSize;
+    float last = 0;
+
     /// <summary>
     /// Used for movement animations within the UIContainer
     /// </summary>
@@ -117,10 +119,13 @@ public abstract class UIContainer : IUIContainer
         get;
         set
         {
+            if (last > value)
+                ;
+            last = field;
             field = value;
         }
     }
-
+    protected internal float AnimationElapsedNormalized { get; private set; }
     private enum ResizeEdge
     {
         None,
@@ -394,7 +399,7 @@ public abstract class UIContainer : IUIContainer
                 AnimationElapsed / (IsClosing ?
                                             Style.AnimateOutDuration
                                             : Style.AnimateInDuration), 0f, 1f);
-
+            AnimationElapsedNormalized = tNormalized;
             Vector2 newPos = Vector2.Lerp(CurrentPosition.Position, TargetPosition, Style.MoveAndScaleCurve.Value.Evaluate(tNormalized));
             SetPosition(newPos);
             ComputeSize(tNormalized);
@@ -425,7 +430,7 @@ public abstract class UIContainer : IUIContainer
             TargetSize,
             Style.MoveAndScaleCurve.Value.Evaluate(tNormalized)
         );
-
+        Console.WriteLine(tNormalized);
         // recompute rect with locked center using absolute sizes
         float newWidth = CurrentSize.X;
         float newHeight = CurrentSize.Y;

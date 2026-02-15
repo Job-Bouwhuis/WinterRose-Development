@@ -175,7 +175,8 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 
             tooltip.TargetPosition = pos;
             tooltip.TargetSize = chosenSize;
-            tooltip.AnimationElapsed = 0f;
+            if(tooltip.AnimationElapsed > 0.9f && !tooltip.IsClosing)
+                tooltip.AnimationElapsed = 0;
         }
 
         private static Vector2 ClampPositionToViewport(Vector2 position, Vector2 size)

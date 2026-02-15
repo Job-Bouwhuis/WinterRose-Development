@@ -25,8 +25,8 @@ namespace WinterRose.ForgeWarden
         extension(IUIContainer container)
         {
             public void AddFileExplorer(ExplorerMode mode = ExplorerMode.Browse,
-            string startPath = null,
-            Action<string> onSelect = null)
+            string? startPath = null,
+            Action<string>? onSelect = null)
             {
                 container.AddContent(CreateFileExplorerRoot(container, mode, startPath, onSelect));
             }

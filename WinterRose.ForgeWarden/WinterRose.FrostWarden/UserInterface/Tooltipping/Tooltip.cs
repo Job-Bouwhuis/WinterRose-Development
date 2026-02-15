@@ -50,9 +50,10 @@ public sealed class Tooltip : UIContainer
         Style.AutoScale = true;
         Style.AllowUserResizing = false;
         Style.PauseAutoDismissTimer = true;
-        Style.AnimateInDuration = 0.06f;
+        Style.AnimateInDuration = 2f;
         Style.AnimateOutDuration = 1.6f;
         Style.MoveAndScaleCurve = Curves.EaseOutBack;
+        Style.ContentAlpha = 0;
 
         TargetSize = new Vector2(SizeConstraints.MinSize.X, SizeConstraints.MinSize.Y);
         AnimationElapsed = 1f;
@@ -70,8 +71,11 @@ public sealed class Tooltip : UIContainer
 
         if (IsClosing)
         {
+            float t = AnimationElapsedNormalized;
+
             TargetSize = Vector2.Zero;
-            float fadeT = (AnimationElapsed / Style.AnimateOutDuration) / 0.2f;
+
+            float fadeT = t / 0.1f;
             if (fadeT > 1f) fadeT = 1f;
 
             if (fadeT >= 1f)
@@ -83,13 +87,25 @@ public sealed class Tooltip : UIContainer
 
             Style.ContentAlpha = 1f - fadeT;
 
-            if (AnimationElapsed >= Style.AnimateOutDuration)
+            if (t >= 1f)
                 Tooltips.ForceRemoveTooltip(this);
+
         }
         else
         {
-            Style.ShowVerticalScrollBar = AnimationElapsed / Style.AnimateInDuration > 0.6f;
+            float t = AnimationElapsedNormalized;
+            Console.WriteLine($"{t} - {AnimationElapsed} - {Style.AnimateInDuration}");
+            Style.ShowVerticalScrollBar = t > 0.6f;
+
+            float fadeT = (t - 0.6f) / 0.4f;
+
+            if (fadeT < 0f) fadeT = 0f;
+            if (fadeT > 1f) fadeT = 1f;
+
+            Style.ContentAlpha = fadeT;
+
             HandleLifecycle();
+
         }
     }
 
@@ -105,6 +121,7 @@ public sealed class Tooltip : UIContainer
         TargetSize = Vector2.Zero;
         TargetPosition = center;
         Style.AutoScale = true;
+        AnimationElapsed = 0;
 
         IsOpen = false;
         InputManager.UnregisterContext(Input);
@@ -204,7 +221,7 @@ public sealed class Tooltip : UIContainer
             return true;
         }
 
-        foreach(var c in Contents)
+        foreach (var c in Contents)
         {
             if (Tooltips.IsHoverExtended(c))
             {
