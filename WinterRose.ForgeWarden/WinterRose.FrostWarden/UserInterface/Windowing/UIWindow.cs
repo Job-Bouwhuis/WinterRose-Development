@@ -1125,4 +1125,11 @@ public class UIWindow : UIContainer
     {
         return new Vector2(Lerp(a.X, b.X, t), Lerp(a.Y, b.Y, t));
     }
+
+    public void ClearContent()
+    {
+        foreach(var c in Contents)
+            c.OnOwnerClosing();
+        Contents.Clear();
+    }
 }

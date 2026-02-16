@@ -1,5 +1,7 @@
-﻿using System;
+﻿using BulletSharp.SoftBody;
+using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -56,9 +58,76 @@ internal class HelldiversEntry : SubSystem
         Program.Current.AddTrayItem(
                 new UIButton("Helldivers War Status", (c, b) => ShowWarStatusWindow())
             );
+        Program.Current.AddTrayItem(
+            new UIButton("Helldivers Newsfeed", (c, b) => ShowNewsfeedWindow())
+        );
+
 
         log.Info("Helldivers subsystem initialized");
     }
+
+    private void ShowNewsfeedWindow()
+    {
+        UIWindow window = new UIWindow("Newsfeed", 500, 800);
+
+        window.AddText("Fetching.... \\e[]");
+
+        DateTime cutoffDate = DateTime.UtcNow.AddDays(-30);
+
+        rateLimitManager.ExecuteAsync(
+            HelldiversClient.GetApiV2DispatchesAllAsync,
+            "GetNewsfeed")
+            .ContinueWith(newsTask =>
+            {
+                window.ClearContent();
+                if(newsTask.IsCanceled)
+                {
+                    window.AddText("\\c[red]\\tw[]Task unexpectedly interupted!");
+                    return;
+                }
+                if (newsTask.IsFaulted || newsTask.Result is null)
+                {
+                    if(newsTask.Result is null)
+                    {
+                        window.AddText("\\c[red]\\tw[]Fetch did not result in newsfeed items");
+                    }
+                    if (newsTask.Exception is Exception e)
+                    {
+                        List<Exception> exs = [];
+                        if (e is AggregateException aggr)
+                            exs.AddRange(aggr.InnerExceptions);
+                        else
+                            exs.Add(e);
+
+                        foreach(var ex in exs)
+                        {
+                            window.AddContent(new UIText(ex.GetType().Name, UIFontSizePreset.Subtitle));
+                            window.AddContent(new UIText(ex.Message, UIFontSizePreset.Text));
+                            window.AddContent(new UISpacer(8));
+                        }
+
+                    }
+                }
+
+                var recentMessages = newsTask.Result
+                    .Where(m => m.Published >= cutoffDate)
+                    .OrderByDescending(m => m.Published)
+                    .ToList();
+
+                foreach (var message in recentMessages)
+                {
+                    string header = $"[{message.Published:u}]";
+                    string body = message.Message ?? string.Empty;
+
+                    window.AddContent(new UIText(header, UIFontSizePreset.Subtitle));
+                    window.AddContent(new UIText(body, UIFontSizePreset.Text));
+                    window.AddContent(new UISpacer(8));
+                }
+            });
+
+        window.Show();
+    }
+
 
     private void FetchInitialData()
     {
