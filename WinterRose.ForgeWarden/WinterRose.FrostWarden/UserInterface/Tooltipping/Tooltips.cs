@@ -1,4 +1,5 @@
 ﻿using Raylib_cs;
+using System.Runtime.CompilerServices;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping.Anchors;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping.Behaviors;
@@ -168,16 +169,27 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
 
         private static void ComputeSizeAndPositionForTooltip(Tooltip tooltip)
         {
+            if (tooltip.IsClosing)
+                return;
+
             Vector2 chosenSize = TooltipLayoutResolver.ResolveBestSize(tooltip, tooltip.SizeConstraints);
             Rectangle anchorRect = tooltip.Anchor.GetAnchorBounds();
-            Vector2 pos = new Vector2(anchorRect.X + anchorRect.Width, anchorRect.Y + anchorRect.Height);
+            Vector2 pos = new Vector2(anchorRect.X, anchorRect.Y);
             pos = ClampPositionToViewport(pos, chosenSize);
 
+            if (NearlyEqual(pos, tooltip.TargetPosition, 1))
+                return;
+            if (NearlyEqual(chosenSize, tooltip.TargetSize, 1))
+                return;
+
+            log.Debug($"Tooltip position changed: {tooltip.TargetPosition} -> {pos}, size changed: {tooltip.TargetSize} -> {chosenSize}");
             tooltip.TargetPosition = pos;
             tooltip.TargetSize = chosenSize;
-            if(tooltip.AnimationElapsed > 0.9f && !tooltip.IsClosing)
-                tooltip.AnimationElapsed = 0;
+            tooltip.AnimationElapsed = 0;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool NearlyEqual(Vector2 a, Vector2 b, float tolerance) => Vector2.DistanceSquared(a, b) <= tolerance * tolerance;
 
         private static Vector2 ClampPositionToViewport(Vector2 position, Vector2 size)
         {
@@ -225,7 +237,7 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             for (int i = 0; i < activeTooltips.Count; i++)
             {
                 // lower index = higher priority, so the last elements (mouseAnchors) get highest
-                if(activeTooltips[i] is null)
+                if (activeTooltips[i] is null)
                 {
                     activeTooltips.RemoveAt(i--);
                     continue;
@@ -233,8 +245,6 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
                 activeTooltips[i].Input.Priority = currentPriority + (i % PRIORITY_RANGE);
             }
         }
-
-
 
         public static void RegisterHoverExtender(UIContent content, Tooltip tooltip)
         {
@@ -267,7 +277,7 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             if (r)
                 return true;
 
-            if(content is IUIContainer cont)
+            if (content is IUIContainer cont)
             {
                 for (int i = 0; i < cont.Contents.Count; i++)
                 {

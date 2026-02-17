@@ -64,6 +64,7 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
                 float ch = content.GetHeight(availableWidth);
                 totalContentHeight += ch + UIConstants.CONTENT_PADDING;
             }
+            totalContentHeight += UIConstants.CONTENT_PADDING * tooltip.Contents.Count;
 
             var measured = new Vector2(
                 width,

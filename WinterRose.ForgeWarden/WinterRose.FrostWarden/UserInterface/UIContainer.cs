@@ -108,7 +108,14 @@ public abstract class UIContainer : IUIContainer
     private Rectangle ResizeStartRect;
 
     internal Vector2 TargetPosition;
-    internal Vector2 TargetSize;
+    internal Vector2 TargetSize
+    {
+        get;
+        set
+        {
+            field = value;
+        }
+    }
     float last = 0;
 
     /// <summary>
@@ -254,7 +261,7 @@ public abstract class UIContainer : IUIContainer
             if (Math.Abs(CurrentPosition.Height - targetHeight) > 0.01f)
             {
                 TargetSize = new Vector2(
-                    CurrentPosition.Width,
+                    TargetSize.X,
                     targetHeight);
             }
 
@@ -399,6 +406,7 @@ public abstract class UIContainer : IUIContainer
                 AnimationElapsed / (IsClosing ?
                                             Style.AnimateOutDuration
                                             : Style.AnimateInDuration), 0f, 1f);
+
             AnimationElapsedNormalized = tNormalized;
             Vector2 newPos = Vector2.Lerp(CurrentPosition.Position, TargetPosition, Style.MoveAndScaleCurve.Value.Evaluate(tNormalized));
             SetPosition(newPos);
@@ -430,7 +438,6 @@ public abstract class UIContainer : IUIContainer
             TargetSize,
             Style.MoveAndScaleCurve.Value.Evaluate(tNormalized)
         );
-        Console.WriteLine(tNormalized);
         // recompute rect with locked center using absolute sizes
         float newWidth = CurrentSize.X;
         float newHeight = CurrentSize.Y;

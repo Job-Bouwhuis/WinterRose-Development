@@ -118,11 +118,10 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
 
     private void CreateTray()
     {
-        Toast t = new Toast(ToastType.Neutral, ToastRegion.Right, ToastStackSide.Bottom);
-        t.Style.TimeUntilAutoDismiss = 8;
+        Tooltip tray = Tooltips.Static(Input.Provider.MousePosition, new Vector2(400, 1000));
 
         foreach (var item in trayItems)
-            t.AddContent(item);
+            tray.AddContent(item);
 
         bool currentStartupState = StartupManager.IsStartupEnabled();
         UICheckBox startup = new UICheckBox("Start when the PC does?",
@@ -146,14 +145,14 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
             }
         ), currentStartupState);
 
-        t.AddContent(new UIButton("File Browser", (c, b) =>
+        tray.AddContent(new UIButton("File Browser", (c, b) =>
         {
             UIWindow wind = new UIWindow("File Browser", 500, 600);
             wind.AddFileExplorer();
             wind.ShowMaximized();
         }));
 
-        t.AddContent(new UIButton("Rich Text Test window", (c, b) =>
+        tray.AddContent(new UIButton("Rich Text Test window", (c, b) =>
         {
             UIWindow test = new UIWindow("RichText Demo", 400, 300);
             test.AddText(GetRichTextDemo());
@@ -166,12 +165,12 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
             test.Show();
         }));
 
-        t.AddContent(startup);
-        t.AddButton("Close App",
+        tray.AddContent(startup);
+        tray.AddButton("Close App",
             Invocation.Create<IUIContainer, UIButton>((c, b) => Close()));
 
 
-        Toasts.ShowToast(t);
+        tray.Show();
     }
 
     public override void Closing()

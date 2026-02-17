@@ -54,6 +54,7 @@ public sealed class Tooltip : UIContainer
         Style.AnimateOutDuration = 1.6f;
         Style.MoveAndScaleCurve = Curves.EaseOutBack;
         Style.ContentAlpha = 0;
+        Style.MaxAutoScaleHeight = 0;
 
         TargetSize = new Vector2(SizeConstraints.MinSize.X, SizeConstraints.MinSize.Y);
         AnimationElapsed = 1f;
@@ -68,6 +69,8 @@ public sealed class Tooltip : UIContainer
             Input.IsRequestingMouseFocus = true;
         else
             Input.IsRequestingMouseFocus = false;
+
+        Console.WriteLine(TargetSize);
 
         if (IsClosing)
         {
@@ -89,20 +92,20 @@ public sealed class Tooltip : UIContainer
 
             if (t >= 1f)
                 Tooltips.ForceRemoveTooltip(this);
-
         }
         else
         {
             float t = AnimationElapsedNormalized;
-            Console.WriteLine($"{t} - {AnimationElapsed} - {Style.AnimateInDuration}");
-            Style.ShowVerticalScrollBar = t > 0.6f;
+            Style.ShowVerticalScrollBar = !IsClosing && t > 0.6f;
 
             float fadeT = (t - 0.6f) / 0.4f;
 
             if (fadeT < 0f) fadeT = 0f;
-            if (fadeT > 1f) fadeT = 1f;
+            if (fadeT > 0.99f) fadeT = 1f;
 
-            Style.ContentAlpha = fadeT;
+            Style.ContentAlpha = Math.Max(fadeT * 255, 255);
+            if (Style.ContentAlpha < 0)
+                Style.ContentAlpha = 0;
 
             HandleLifecycle();
 
@@ -140,7 +143,6 @@ public sealed class Tooltip : UIContainer
 
         Behavior.Update(this);
     }
-
 
     public bool IsPointInside(Rectangle r, Vector2 p)
     {

@@ -34,6 +34,12 @@ public static class WardenUtils
         }
     }
 
+    extension(Vector2 vec)
+    {
+        public static bool operator <(Vector2 a, Vector2 b) => a.X < b.X && a.Y < b.Y;
+        public static bool operator >(Vector2 a, Vector2 b) => a.X > b.X && a.Y > b.Y;
+    }
+
     extension(Vector3 vec)
     {
         public Vector2 Vec2() => new(vec.X, vec.Y);
@@ -59,6 +65,7 @@ public static class WardenUtils
                    $"{vec.Z.ToString($"F{decimals}", CultureInfo.InvariantCulture)}>";
         }
     }
+
 
     
 
