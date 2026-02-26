@@ -22,6 +22,7 @@ namespace WinterRoseUtilityApp.Helldivers;
  
  */
 
+[SubSystems.SubSystemSkip]
 internal class HelldiversEntry : SubSystem
 {
     private Helldivers2 HelldiversClient;

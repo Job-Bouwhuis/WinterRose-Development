@@ -2,6 +2,7 @@
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.Tweens;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping.Anchors;
+using WinterRose.Recordium;
 
 namespace WinterRose.ForgeWarden.UserInterface.Tooltipping;
 
@@ -70,22 +71,23 @@ public sealed class Tooltip : UIContainer
         else
             Input.IsRequestingMouseFocus = false;
 
-        Console.WriteLine(TargetSize);
+        float proximity = 1f - (Vector2.Distance(CurrentPosition.Size, TargetSize) / TargetSize.Length());
+        float t = Math.Clamp(proximity, 0f, 1f); // ensure it stays between 0 and 1
+        if(IsClosing && t is float.NaN)
+            t = 1;
 
         if (IsClosing)
         {
-            float t = AnimationElapsedNormalized;
-
             TargetSize = Vector2.Zero;
 
             float fadeT = t / 0.1f;
             if (fadeT > 1f) fadeT = 1f;
 
-            if (fadeT >= 1f)
+            if (fadeT != 1f)
             {
                 Style.ShadowAll = 0;
                 Style.ShowVerticalScrollBar = false;
-                Style.Background = Color.Blank;
+                //Style.Background = Color.Blank;
             }
 
             Style.ContentAlpha = 1f - fadeT;
@@ -95,7 +97,6 @@ public sealed class Tooltip : UIContainer
         }
         else
         {
-            float t = AnimationElapsedNormalized;
             Style.ShowVerticalScrollBar = !IsClosing && t > 0.6f;
 
             float fadeT = (t - 0.6f) / 0.4f;
@@ -108,7 +109,6 @@ public sealed class Tooltip : UIContainer
                 Style.ContentAlpha = 0;
 
             HandleLifecycle();
-
         }
     }
 
