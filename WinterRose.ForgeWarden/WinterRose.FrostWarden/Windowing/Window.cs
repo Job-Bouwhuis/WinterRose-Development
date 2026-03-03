@@ -84,6 +84,24 @@ namespace WinterRose.ForgeWarden.Windowing
             }
         }
 
+        public void OptimizeWindowSize()
+        {
+            // calculate the optimal window size based on the screen the window is on, having it be 80% of the screen size, and centered on the screen
+            var monitor = Raylib_cs.Raylib.GetCurrentMonitor();
+            var screenWidth = Raylib_cs.Raylib.GetMonitorWidth(monitor);
+            var screenHeight = Raylib_cs.Raylib.GetMonitorHeight(monitor);
+
+            var windowWidth = (int)(screenWidth * 0.8f);
+            var windowHeight = (int)(screenHeight * 0.8f);
+
+            Raylib_cs.Raylib.SetWindowSize(windowWidth, windowHeight);
+
+            // move the window so that its centered on the screen the window is on
+            var windowX = (screenWidth - windowWidth) / 2;
+            var windowY = (screenHeight - windowHeight) / 2;
+            Raylib_cs.Raylib.SetWindowPosition(windowX, windowY);
+        }
+
         const int GWL_EXSTYLE = -20;
         const int WS_EX_TOOLWINDOW = 0x00000080;
         const int WS_EX_APPWINDOW = 0x00040000;

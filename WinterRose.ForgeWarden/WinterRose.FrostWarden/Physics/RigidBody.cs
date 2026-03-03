@@ -14,6 +14,16 @@ namespace WinterRose.ForgeWarden.Physics
         public RigidBody RigidBody { get; private set; }
         public float Mass { get; private set; }
 
+        /// <summary>
+        /// What layer this rigid body lives on
+        /// </summary>
+        public int CollisionLayer { get; set; }
+
+        /// <summary>
+        /// What layer this rigid body asserts physics on
+        /// </summary>
+        public int CollisionMask { get; set; }
+
         private MotionState motionState;
 
         public RigidBodyComponent(Collider collider, float mass)
@@ -51,7 +61,7 @@ namespace WinterRose.ForgeWarden.Physics
         }
         public override void AddToWorld(DiscreteDynamicsWorld physicsWorld)
         {
-            physicsWorld.AddRigidBody(RigidBody);
+            physicsWorld.AddRigidBody(RigidBody, CollisionLayer, CollisionMask);
             AddedToWorld = true;
 
             var dof = new Generic6DofConstraint(

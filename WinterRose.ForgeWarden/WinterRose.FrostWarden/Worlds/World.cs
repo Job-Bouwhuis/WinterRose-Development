@@ -115,9 +115,14 @@ public class World : IDisposable
     {
         Defer(() =>
         {
+            entity.CallOnDestroy();
+
+
             var physics = entity.GetAllComponents<PhysicsComponent>();
             foreach (var p in physics)
                 p.RemoveFromWorld(Physics);
+
+
 
             entities.Remove(entity);
             entity.world = null;
@@ -182,5 +187,35 @@ public class World : IDisposable
     public static World FromFile(string worldName)
     {
         return WinterForge.DeserializeFromFile<World>($"World/{worldName}.world");
+    }
+
+    public Entity? FindEntityWithName(string v)
+    {
+        foreach (var entity in entities)
+        {
+            if (entity.Name == v)
+                return entity;
+        }
+        return null;
+    }
+
+    public Entity? FindEntityByTag(string tag) => FindEntityByTags([tag], FindCondition.RequireAll);
+    public Entity? FindEntityByAnyTag(params string[] tags) => FindEntityByTags(tags, FindCondition.RequireAny);
+    public Entity? FindEntityWithAllTags(params string[] tags) => FindEntityByTags(tags, FindCondition.RequireAll);
+
+    public Entity? FindEntityByTags(string[] tags, FindCondition condition = FindCondition.RequireAny)
+    {
+        foreach (var entity in entities)
+        {
+            bool matches = condition switch
+            {
+                FindCondition.RequireAll => tags.All(t => entity.Tags.Contains(t)),
+                FindCondition.RequireAny => tags.Any(t => entity.Tags.Contains(t)),
+                _ => throw new ArgumentOutOfRangeException(nameof(condition), condition, "Dont use magic numbers!")
+            };
+            if (matches)
+                return entity;
+        }
+        return null;
     }
 }

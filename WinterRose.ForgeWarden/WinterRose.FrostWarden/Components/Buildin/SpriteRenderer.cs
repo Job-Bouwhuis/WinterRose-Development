@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WinterRose.ForgeWarden.Shaders;
 
-namespace WinterRose.ForgeWarden.Components
+namespace WinterRose.ForgeWarden
 {
     public class SpriteRenderer : Component, IRenderable
     {

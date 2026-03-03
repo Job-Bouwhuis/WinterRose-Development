@@ -5,6 +5,7 @@ using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.DamageSystem;
 using WinterRose.ForgeWarden.DamageSystem.WeaponSystem;
 using WinterRose.ForgeWarden.WeaponSystem;
+using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.ForgeWarden.HealthSystem;
 
@@ -66,7 +67,7 @@ public class Vitality : Component, IHittable
     /// <summary>
     /// Deals the damage based on the <see cref="DamageType"/> provided
     /// </summary>
-    public void TakeDamageFrom<T>(float amount) where T : DamageType => ActivatorExtra.CreateInstance<T>().DealDamage(this, amount);
+    public void TakeDamageFrom<T>(float amount) where T : DamageType => DynamicObjectCreator.CreateInstance<T>().DealDamage(this, amount);
 
     public void OnHit(HitInfo info)
     {

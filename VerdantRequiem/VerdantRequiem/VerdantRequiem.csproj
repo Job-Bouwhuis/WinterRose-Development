@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\WinterRose.ArgumentUtility\WinterRose.ArgumentUtility.csproj" />
+    <ProjectReference Include="..\..\WinterRose.ForgeWarden.Weapons\WinterRose.ForgeWarden.DamageSystem.csproj" />
+    <ProjectReference Include="..\..\WinterRose.ForgeWarden\WinterRose.FrostWarden\WinterRose.ForgeWarden.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets\Audio\Music\" />
+    <Folder Include="Assets\Audio\SFX\" />
+    <Folder Include="Assets\Fonts\" />
+    <Folder Include="Assets\Configs\" />
+    <Folder Include="Assets\Worlds\" />
+    <Folder Include="Assets\UI\" />
+    <Folder Include="Assets\Tiles\" />
+    <Folder Include="Assets\Sprites\Enemies\" />
+    <Folder Include="Assets\Sprites\Environment\" />
+    <Folder Include="Assets\Sprites\Weapons\" />
+    <Folder Include="Assets\Sprites\Player\" />
+    <Folder Include="Mods\" />
+    <Folder Include="Scripts\Enemies\" />
+    <Folder Include="Scripts\World\" />
+    <Folder Include="Scripts\UI\" />
+  </ItemGroup>
+
+</Project>

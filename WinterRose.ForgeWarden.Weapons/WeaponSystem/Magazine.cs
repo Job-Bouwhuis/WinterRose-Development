@@ -4,8 +4,17 @@ namespace WinterRose.ForgeWarden.DamageSystem.WeaponSystem;
 
 public class Magazine : Component, IUpdatable
 {
-    public Projectile Projectile { get; set; }
-    public ReloadBehavior ReloadBehavior { get; set; }
+    public ProjectileStats Projectile { get; set; }
+    public ReloadBehavior ReloadBehavior
+    {
+        get; set
+        {
+            if (value is null)
+                field.Magazine = null!;
+            field = value!;
+            field?.Magazine = this;
+        }
+    }
 
     public StaticCombinedModifier<float> Multishot { get; set; } = 1;
     public StaticCombinedModifier<int> AmmoConsumedPerShot { get; set; } = 1;
@@ -16,13 +25,33 @@ public class Magazine : Component, IUpdatable
     public void StartReload() => ReloadBehavior.StartReload();
     public void Update() => ReloadBehavior.Update();
 
-    public IReadOnlyList<Projectile> TakeProjectiles()
+    public int TakeProjectiles()
     {
-        CurrentLoadedAmmo -= AmmoConsumedPerShot;
-        return new List<Projectile>();
+        int ammoCost = AmmoConsumedPerShot;
+
+        if (CurrentLoadedAmmo < ammoCost)
+            return 0;
+
+        CurrentLoadedAmmo -= ammoCost;
+
+        float multishotValue = Multishot;
+
+        int guaranteedProjectiles = (int)MathF.Floor(multishotValue);
+        float fractional = multishotValue - guaranteedProjectiles;
+
+        int totalProjectiles = guaranteedProjectiles;
+
+        if (fractional > 0f)
+        {
+            float roll = Random.Shared.NextSingle();
+            if (roll < fractional)
+                totalProjectiles++;
+        }
+
+        return totalProjectiles;
     }
 
-    public Magazine(Projectile projectile, ReloadBehavior reloadBehavior)
+    public Magazine(ProjectileStats projectile, ReloadBehavior reloadBehavior)
     {
         Projectile = projectile;
         ReloadBehavior = reloadBehavior;

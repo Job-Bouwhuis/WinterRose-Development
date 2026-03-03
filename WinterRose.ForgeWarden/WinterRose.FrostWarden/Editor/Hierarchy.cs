@@ -32,6 +32,7 @@ public class Hierarchy : UIWindow
 
     private void RebuildEntitiesCache()
     {
+        ClearContent();
         (entitiesLast ??= []).Clear();
         World world = Universe.CurrentWorld;
 

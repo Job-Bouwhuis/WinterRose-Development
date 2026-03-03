@@ -231,4 +231,12 @@ public class Entity
         vitals = GetComponent<T>();
         return vitals is not null;
     }
+
+    /// <summary>
+    /// Will destroy this entity
+    /// </summary>
+    public void Destroy()
+    {
+       world.RemoveEntity(this);
+    }
 }

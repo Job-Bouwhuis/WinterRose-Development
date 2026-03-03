@@ -35,23 +35,7 @@ namespace WinterRose.ForgeWarden.Tests;
 
 internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
 {
-    // fullscreen PC
-    //const int SCREEN_WIDTH = 2560;
-    //const int SCREEN_HEIGHT = 1440;
-
-    // for on PC
-    const int SCREEN_WIDTH = 1920;
-    const int SCREEN_HEIGHT = 1080; // hellocojnsadahjdasd
-
-    // for on laptop
-    //const int SCREEN_WIDTH = 1280;
-    //const int SCREEN_HEIGHT = 720;
-
     //static Windows.SystemTrayIcon icon;
-
-    // for on steam deck
-    //const int SCREEN_WIDTH = 960;
-    //const int SCREEN_HEIGHT = 540;
 
     Color c = Color.Red;
 
@@ -67,9 +51,11 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
         reload.AddBinding(KeyboardKey.R);
         reload.Register();
 
-        new Program().Run("ForgeWarden Tests", SCREEN_WIDTH, SCREEN_HEIGHT);
+        new Program().Run("ForgeWarden Tests", 100, 100);
         //new Program().RunAsOverlay();
     }
+
+    public override void AfterWindowCreation() => Window.OptimizeWindowSize();
 
     public override void Draw()
     {

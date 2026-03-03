@@ -13,7 +13,7 @@ public class Log
 
     private static readonly Log UnhandledExceptionsLog = new("Global Unhandled Exceptions");
 
-    public string Category { get; }
+    public string Category { get; set; }
     public List<ILogDestination> Destinations { get; }
     private int cleanedUpFlag = 0;
 

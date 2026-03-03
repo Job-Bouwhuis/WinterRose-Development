@@ -49,7 +49,7 @@ public class InputContext
     }
 
     private static ConcurrentDictionary<string, NamedControl> Controls { get; } = new();
-    internal static void RegisterNamedControl(NamedControl namedControl)
+    public static void RegisterNamedControl(NamedControl namedControl)
     {
         if (Controls.TryGetValue(namedControl.Name, out _))
             throw new Exception($"Named Control with name {namedControl.Name} already exists!");
@@ -87,7 +87,10 @@ public class InputContext
             return false;
 
         if (!Controls.TryGetValue(controlName, out var control))
-            throw new InvalidInputException(controlName);
+        {
+            log.Warning($"Input binding with name '{controlName}' has not been registered, but it is being requested!");
+            return false;
+        }
 
         foreach (var binding in control.Bindings)
         {

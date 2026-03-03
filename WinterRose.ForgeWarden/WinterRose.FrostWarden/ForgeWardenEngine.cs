@@ -171,6 +171,7 @@ public abstract class ForgeWardenEngine
             // create window and remember params so we can recreate later
             Window = new Window(title, flags);
             Window.Create(width, height);
+            AfterWindowCreation();
 
             // save for reopen
             savedWindowTitle = title;
@@ -357,9 +358,6 @@ public abstract class ForgeWardenEngine
         Raylib.EndDrawing();
     }
 
-
-
-
     public void CloseWindowToBackground()
     {
         if (WindowClosedButRunning)
@@ -501,6 +499,7 @@ public abstract class ForgeWardenEngine
         ray.EndDrawing();
     }
 
+    public virtual void AfterWindowCreation() { }
     public virtual void Update() { }
     public virtual void Draw() { }
     public virtual void Closing() { }

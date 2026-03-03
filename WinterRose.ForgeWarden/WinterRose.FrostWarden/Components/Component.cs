@@ -2,11 +2,15 @@
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.Input;
+using WinterRose.Recordium;
 
 namespace WinterRose.ForgeWarden;
 
 public abstract class Component : IComponent
 {
+    [Hide]
+    protected readonly Log log;
+
     [WFInclude(Priority = int.MaxValue), Hide]
     public Entity owner { get; internal set; }
     [Hide]
@@ -27,6 +31,12 @@ public abstract class Component : IComponent
     [Hide]
     public float destroyTime { get; private set; }
 
+    public Component()
+    {
+        log = new Log($"[?] {GetType().Name}");
+    }
+
+
     protected virtual void Awake() { }
     protected virtual void Start() { }
     protected virtual void OnVanish() { }
@@ -34,6 +44,8 @@ public abstract class Component : IComponent
 
     internal void CallAwake()
     {
+        log.Category = $"[{owner.Name}] {GetType().Name}";
+
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         Awake();
         stopwatch.Stop();
@@ -93,5 +105,13 @@ public abstract class Component : IComponent
     protected void ReInjectMembers()
     {
         owner.InjectDependenciesIntoComponent(this, true);
+    }
+
+    /// <summary>
+    /// Will destroy the owner of this component
+    /// </summary>
+    public void Destroy()
+    {
+        owner.Destroy();
     }
 }
