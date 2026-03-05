@@ -29,6 +29,7 @@ public class FollowMouseAnchor : TooltipAnchor
         Vector2 mousePos = Tooltip.Input.Provider.MousePosition;
         Vector2 targetPos = mousePos + OffsetFromMouse;
 
+        Console.WriteLine($"mouse: {mousePos} - target: {targetPos}");
         return new Rectangle(targetPos.X - Size.X, targetPos.Y - Size.Y, Size.X, Size.Y);
     }
 

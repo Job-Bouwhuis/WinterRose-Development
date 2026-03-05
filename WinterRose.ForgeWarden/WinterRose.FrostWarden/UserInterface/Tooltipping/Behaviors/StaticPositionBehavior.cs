@@ -4,6 +4,6 @@
     {
         public override bool AllowsInteraction => true;
 
-        public override void Update(Tooltip tooltip) { }
+        public override void Update() { }
     }
 }

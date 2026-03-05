@@ -141,7 +141,7 @@ public sealed class Tooltip : UIContainer
         //    InputManager.UnregisterContext(Input);
 
 
-        Behavior.Update(this);
+        Behavior.Update();
     }
 
     public bool IsPointInside(Rectangle r, Vector2 p)

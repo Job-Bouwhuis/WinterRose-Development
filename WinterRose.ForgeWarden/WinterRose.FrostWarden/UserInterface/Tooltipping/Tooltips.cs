@@ -37,7 +37,7 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
         public static Tooltip MouseFollow(Vector2 size)
         {
             var anchor = new FollowMouseAnchor(size);
-            var behavior = new FollowMouseBehavior();
+            var behavior = new FollowMouseBehavior(new Vector2(30, 22));
             return new Tooltip(behavior, anchor) { SizeConstraints = { MinSize = size, MaxSize = size } };
         }
 
@@ -53,7 +53,7 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             tooltip.Behavior = behavior;
 
             // ask behavior if it should open
-            if (!behavior.ShouldOpen(tooltip))
+            if (!behavior.ShouldOpen())
                 return tooltip;
 
             // ask override
@@ -123,7 +123,7 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             if (tooltip.CloseOverride != null && !tooltip.CloseOverride(tooltip, reason))
                 return;
 
-            if (!tooltip.Behavior.ShouldClose(tooltip, reason))
+            if (!tooltip.Behavior.ShouldClose(reason))
                 return;
 
             UnregisterAllHoverExtendersForTooltip(tooltip);

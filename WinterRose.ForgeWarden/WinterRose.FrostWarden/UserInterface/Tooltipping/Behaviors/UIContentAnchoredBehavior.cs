@@ -11,9 +11,9 @@ public class UIContentAnchoredBehavior : TooltipBehavior
 
     public override bool AllowsInteraction => true; // tooltip should capture input while open
 
-    public override void Update(Tooltip tooltip)
+    public override void Update()
     {
-        if (tooltip == null || tooltip.Anchor is not UIContentAnchor contentAnchor)
+        if (Tooltip == null || Tooltip.Anchor is not UIContentAnchor contentAnchor)
             return;
 
         var content = contentAnchor.Content;
@@ -21,20 +21,20 @@ public class UIContentAnchoredBehavior : TooltipBehavior
             return;
 
         bool anchorHovered = content.IsContentHovered(content.LastRenderBounds, false); // includes hover extenders
-        bool tooltipHovered = tooltip.IsHovered();
+        bool tooltipHovered = Tooltip.IsHovered();
 
         // union of hover states: if either is hovered we treat the anchor as hovered
         if (anchorHovered || tooltipHovered)
-            Tooltips.RegisterHoverExtender(content, tooltip);
+            Tooltips.RegisterHoverExtender(content, Tooltip);
         else
         {
-            tooltip.OpenRequestTimer = 0f;
-            tooltip.CloseGraceTimer += Time.deltaTime;
+            Tooltip.OpenRequestTimer = 0f;
+            Tooltip.CloseGraceTimer += Time.deltaTime;
 
-            Tooltips.UnregisterHoverExtender(content, tooltip);
-            if (tooltip.CloseGraceTimer >= CloseGrace)
+            Tooltips.UnregisterHoverExtender(content, Tooltip);
+            if (Tooltip.CloseGraceTimer >= CloseGrace)
             {
-                Tooltips.Close(tooltip, TooltipCloseReason.TargetHoverLost);
+                Tooltips.Close(Tooltip, TooltipCloseReason.TargetHoverLost);
             }
         }
     }

@@ -1,17 +1,20 @@
-﻿using BulletSharp;
+﻿using System.Numerics;
+using BulletSharp;
 using Raylib_cs;
 using VerdantRequiem.Configs.Controls;
 using WinterRose.ArgumentUtility;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.Editor;
 using WinterRose.ForgeWarden.Input;
+using WinterRose.ForgeWarden.UserInterface.Tooltipping;
 using WinterRose.ForgeWarden.Worlds;
 
 namespace VerdantRequiem;
 
 // by default on DEBUG build mode graceful errors are disabled in the engine
-public class VerdantRequiem() : ForgeWardenEngine(UseBrowser: false) 
+public class VerdantRequiem() : ForgeWardenEngine(UseBrowser: false)
 {
+    private Tooltip t;
     public static VerdantRequiem Instance { get; private set; }
     public static ProgramArguments CLIArgs { get; private set; }
     public const string Name = "Verdant Requiem";

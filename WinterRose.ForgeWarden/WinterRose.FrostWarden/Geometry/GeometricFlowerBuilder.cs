@@ -551,10 +551,10 @@ namespace WinterRose.ForgeWarden.Geometry
                 ptsList.Add(new Vector2(x, y));
             }
 
-            var pts = ptsList.ToArray();
+            var points = ptsList.ToArray();
 
             var rot = Matrix3x2.CreateRotation(angle);
-            for (int i = 0; i < pts.Length; i++) pts[i] = Vector2.Transform(pts[i], rot);
+            for (int i = 0; i < points.Length; i++) points[i] = Vector2.Transform(points[i], rot);
 
             var style = new Rendering.ShapeStyle()
                 .Filled()
@@ -562,7 +562,7 @@ namespace WinterRose.ForgeWarden.Geometry
                 .WithColor(petalColor)
                 .WithThickness(2f);
 
-            return new ShapePath(pts, true, style, 1);
+            return new ShapePath(points, true, style, 1);
         }
 
         static ShapePath AnchorBaseCorner(ShapePath path)
