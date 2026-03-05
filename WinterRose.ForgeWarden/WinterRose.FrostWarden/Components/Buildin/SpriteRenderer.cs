@@ -37,29 +37,27 @@ namespace WinterRose.ForgeWarden
 
             Shader?.Apply(Sprite.Size);
 
-            var worldMatrix = owner.transform.worldMatrix;
-
-            Matrix4x4 finalMatrix = worldMatrix * viewMatrix;
+            var transform = owner.transform;
 
             Vector2 position2D = new Vector2(transform.position.X, transform.position.Y);
 
-            float scaleX = new Vector2(finalMatrix.M11, finalMatrix.M12).Length();
-            float scaleY = new Vector2(finalMatrix.M21, finalMatrix.M22).Length();
-            Vector2 scale = new Vector2(scaleX, scaleY);
+            Vector3 scale3D = transform.scale;
+            Vector2 scale = new Vector2(scale3D.X, scale3D.Y);
 
-            float rotationRadians = MathF.Atan2(finalMatrix.M21, finalMatrix.M11);
+            float rotationRadians = MathF.Atan2(
+                2f * (transform.rotation.W * transform.rotation.Z),
+                1f - 2f * (transform.rotation.Z * transform.rotation.Z)
+            );
+
             float rotationDegrees = rotationRadians * (180f / MathF.PI);
 
-            var scaledOrigin = new Vector2(
-                (Sprite.Width * scale.X) / 2f,
-                (Sprite.Height * scale.Y) / 2f
-            );
+            Vector2 origin = new Vector2(Sprite.Width / 2f, Sprite.Height / 2f);
 
             Raylib.DrawTexturePro(
                 Sprite.Texture,
                 new Rectangle(0, 0, Sprite.Width, Sprite.Height),
                 new Rectangle(position2D.X, position2D.Y, Sprite.Width * scale.X, Sprite.Height * scale.Y),
-                scaledOrigin,
+                origin,
                 rotationDegrees,
                 Tint
             );

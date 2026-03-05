@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using WinterRose.ForgeWarden;
+using WinterRose.ForgeWarden.Components.Buildin;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.HealthSystem;
 using WinterRose.ForgeWarden.Worlds;
@@ -27,6 +28,8 @@ internal static class PlayerFactory
         Entity weaponMount = world.CreateEntity("WeaponMount");
         weaponMount.transform.parent = player.transform;
         weaponMount.Tags = ["WeaponMount"];
+        weaponMount.AddComponent<LookAtMouse>();
+        weaponMount.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(10, 20, Color.Magenta));
 
         return player;
     }

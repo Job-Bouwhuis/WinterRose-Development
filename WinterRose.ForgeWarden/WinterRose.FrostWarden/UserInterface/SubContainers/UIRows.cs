@@ -6,7 +6,7 @@ using WinterRose.ForgeWarden.Utility;
 namespace WinterRose.ForgeWarden.UserInterface;
 
 
-public class UIRows : UIContent
+public class UIRows : UIContent, IUIContainer
 {
     // configuration
     public const int DEFAULT_ROW_COUNT = 1;
@@ -27,8 +27,37 @@ public class UIRows : UIContent
     private const float SCROLL_WHEEL_SPEED = 24f;
     private const float SCROLLBAR_ANIM_DURATION = 0.12f;
 
+    public List<bool> RowScrollEnabled { get; } = new();
+
+    private bool setupCalled = false;
+
     // rows content storage
     public List<List<UIContent>> RowsContents { get; } = new();
+
+    public bool IsVisible => Owner.IsVisible;
+
+    public bool IsClosing => Owner.IsClosing;
+
+    public bool IsBeingDragged => Owner.IsBeingDragged;
+
+    public bool PauseDragMovement => Owner.PauseDragMovement;
+
+    public Rectangle CurrentPosition => Owner.CurrentPosition;
+
+    public float Height => GetHeight(CurrentPosition.Width);
+
+    public IReadOnlyList<UIContent> Contents
+    {
+        get
+        {
+            List<UIContent> flattened = new List<UIContent>();
+
+            foreach (var row in RowsContents)
+                flattened.AddRange(row);
+
+            return flattened;
+        }
+    }
 
     // per-row runtime state (horizontal scrolling inside a row)
     private class RowState
@@ -116,14 +145,17 @@ public class UIRows : UIContent
         base.Setup();
         EnsureRows(RowCount);
 
-        foreach(var row in RowsContents)
+        foreach (var row in RowsContents)
         {
-            foreach(UIContent c in row)
+            foreach (UIContent c in row)
             {
-                c.Owner = Owner;
+                // owner should be the UIRows instance (parity with UIColumns)
+                c.Owner = this;
                 c.Setup();
             }
         }
+
+        setupCalled = true;
     }
 
     public void MoveRows(int byRows)
@@ -155,6 +187,9 @@ public class UIRows : UIContent
         // ensure minimum rows if needed
         if (RowCount == 0)
             EnsureRows(DEFAULT_ROW_COUNT);
+
+        // ensure auxiliary lists (RowScrollEnabled etc) are in sync
+        EnsureRows(RowCount);
     }
 
     private void EnsureRows(int count)
@@ -173,6 +208,14 @@ public class UIRows : UIContent
 
         while (rowStates.Count > RowsContents.Count)
             rowStates.RemoveAt(rowStates.Count - 1);
+
+        // ---- ROW SCROLL ENABLE LIST SYNC (parity with ColumnScrollEnabled) ----
+        while (RowScrollEnabled.Count < count)
+            RowScrollEnabled.Add(true);
+
+        while (RowScrollEnabled.Count > RowsContents.Count)
+            RowScrollEnabled.RemoveAt(RowScrollEnabled.Count - 1);
+        // ---------------------------------------------------------------------
 
         RowCount = RowsContents.Count;
         if (RowCount == 0)
@@ -203,8 +246,11 @@ public class UIRows : UIContent
         EnsureRows(rowIndex + 1);
         int idx = Math.Clamp(rowIndex, 0, RowCount - 1);
         RowsContents[idx].Add(content);
-        content.Owner = Owner;
-        content.Setup();
+
+        // owner should be this and only call Setup if this container already ran Setup()
+        content.Owner = this;
+        if (setupCalled)
+            content.Setup();
     }
 
     public void ClearRow(int rowIndex)
@@ -225,6 +271,10 @@ public class UIRows : UIContent
 
         RowsContents.RemoveAt(index);
         rowStates.RemoveAt(index);
+
+        // mirror removal for RowScrollEnabled
+        if (index < RowScrollEnabled.Count)
+            RowScrollEnabled.RemoveAt(index);
 
         RowCount = RowsContents.Count;
         if (RowCount == 0)
@@ -288,52 +338,84 @@ public class UIRows : UIContent
 
     protected override void Draw(Rectangle bounds)
     {
-        if (RowCount <= 0) return;
+        if (RowCount <= 0)
+            return;
+
         EnsureRows(RowCount);
+
+        float visibleStartY = bounds.Y + RowPadding;
+        float visibleHeight = bounds.Height - RowPadding * 2f;
+        float availableRowWidth = Math.Max(0f, bounds.Width - RowPadding * 2f);
+
+        //
+        // ------------------------------------------------------------------
+        // 1. MEASURE TOTAL ROW HEIGHT
+        // ------------------------------------------------------------------
+        //
 
         float totalRowsHeight = 0f;
 
         for (int i = 0; i < RowCount; i++)
-            totalRowsHeight += ResolveRowHeight(i);
+        {
+            // Auto-size support
+            var rstate = rowStates[i];
+            if (rstate.AutoSizeToContent)
+            {
+                float maxChildHeight = 0f;
+                var rowList = RowsContents[i];
 
+                for (int c = 0; c < rowList.Count; c++)
+                {
+                    float h = rowList[c].GetHeight(availableRowWidth);
+                    maxChildHeight = Math.Max(maxChildHeight, h);
+                }
+
+                rstate.CachedAutoHeight = maxChildHeight + RowPadding * 2f;
+            }
+
+            totalRowsHeight += ResolveRowHeight(i);
+        }
 
         totalRowsHeight += RowSpacing * (RowCount - 1);
 
-
-        // visible area inside this container
-        float visibleStartY = bounds.Y + RowPadding;
-        float visibleHeight = bounds.Height - RowPadding * 2f;
-        float availableRowWidthCandidate = Math.Max(0f, bounds.Width - RowPadding * 2f);
-
-        // compute total rows height (same as above but kept for state)
         containerState.LastTotalRowsHeight = totalRowsHeight;
 
-        // determine container-level vertical scrollbar
-        if (totalRowsHeight > visibleHeight)
-        {
-            containerState.IsScrollbarVisible = true;
-            float reserved = containerState.ScrollbarCurrentWidth + RowPadding;
-            float availableRowWidth = Math.Max(0f, availableRowWidthCandidate - reserved);
+        //
+        // ------------------------------------------------------------------
+        // 2. DETERMINE VERTICAL SCROLLBAR
+        // ------------------------------------------------------------------
+        //
 
-            // nothing else to recalc horizontally for rows; keep LastTotalRowsHeight
-        }
-        else
-        {
-            containerState.IsScrollbarVisible = false;
-        }
+        containerState.IsScrollbarVisible = totalRowsHeight > visibleHeight;
 
-        // container scrollbar hover/animation
+        float containerReservedWidth = 0f;
+
+        if (containerState.IsScrollbarVisible)
+            containerReservedWidth = containerState.ScrollbarCurrentWidth + RowPadding;
+
+        //
+        // ------------------------------------------------------------------
+        // 3. CONTAINER SCROLLBAR ANIMATION
+        // ------------------------------------------------------------------
+        //
+
         var mouse = Input.MousePosition;
+
         float trackCenterX = bounds.X + bounds.Width - RowPadding - (containerState.ScrollbarCurrentWidth / 2f);
         float trackTopY = visibleStartY;
         float trackBottomY = visibleStartY + visibleHeight;
 
         bool nearX = Math.Abs(mouse.X - trackCenterX) <= (containerState.ScrollbarCurrentWidth / 2f);
         bool withinY = mouse.Y >= trackTopY && mouse.Y <= trackBottomY;
-        bool isHoveringContainerScrollbar = containerState.IsScrollDragging || (containerState.IsScrollbarVisible && nearX && withinY);
-        if (isHoveringContainerScrollbar)
+
+        bool hoveringScrollbar =
+            containerState.IsScrollDragging ||
+            (containerState.IsScrollbarVisible && nearX && withinY);
+
+        if (hoveringScrollbar)
         {
             containerState.ScrollbarHoverTimer += Time.deltaTime;
+
             if (containerState.ScrollbarHoverTimer >= SCROLLBAR_HOVER_DELAY)
             {
                 containerState.ScrollbarHoverTimer = SCROLLBAR_HOVER_DELAY;
@@ -343,6 +425,7 @@ public class UIRows : UIContent
         else
         {
             containerState.ScrollbarHoverTimer -= Time.deltaTime;
+
             if (containerState.ScrollbarHoverTimer <= 0f)
             {
                 containerState.ScrollbarHoverTimer = 0f;
@@ -350,109 +433,87 @@ public class UIRows : UIContent
             }
         }
 
-        float containerTarget = containerState.ScrollbarHoverTarget ? 1f : 0f;
-        if (containerState.ScrollbarAnimProgress != containerTarget)
+        float target = containerState.ScrollbarHoverTarget ? 1f : 0f;
+
+        if (containerState.ScrollbarAnimProgress != target)
         {
             float delta = Time.deltaTime / Math.Max(0.0001f, SCROLLBAR_ANIM_DURATION);
-            if (containerTarget > containerState.ScrollbarAnimProgress)
+
+            if (target > containerState.ScrollbarAnimProgress)
                 containerState.ScrollbarAnimProgress = Math.Min(1f, containerState.ScrollbarAnimProgress + delta);
             else
                 containerState.ScrollbarAnimProgress = Math.Max(0f, containerState.ScrollbarAnimProgress - delta);
         }
 
-        float containerEased = Curves.Linear.Evaluate(containerState.ScrollbarAnimProgress);
-        containerState.ScrollbarCurrentWidth = Lerp(SCROLLBAR_COLLAPSED_THICKNESS, SCROLLBAR_EXPANDED_THICKNESS, containerEased);
+        float eased = Curves.Linear.Evaluate(containerState.ScrollbarAnimProgress);
 
-        // container-level vertical wheel handling when hovering container
-        // new: consult children first; only scroll container if allowed
+        containerState.ScrollbarCurrentWidth =
+            Lerp(SCROLLBAR_COLLAPSED_THICKNESS, SCROLLBAR_EXPANDED_THICKNESS, eased);
+
+        //
+        // ------------------------------------------------------------------
+        // 4. VERTICAL SCROLL WHEEL HANDLING
+        // ------------------------------------------------------------------
+        //
+
         float wheel = Input.ScrollDelta;
-        if (Math.Abs(wheel) > 0.001f)
+
+        if (Math.Abs(wheel) > 0.001f && AllowVerticalScroll)
         {
             bool consumed = false;
 
-            // find hovered row and ask its children if they want the wheel
-            float checkY = visibleStartY - containerState.ContentScrollY;
+            float rowY = visibleStartY - containerState.ContentScrollY;
+
             for (int ri = 0; ri < RowCount; ri++)
             {
-                float rowH = ResolveRowHeight(ri);
-                Rectangle rowRect = new Rectangle(bounds.X, (int)checkY, bounds.Width, (int)rowH);
+                float rowHeight = ResolveRowHeight(ri);
 
-                if (!IsContentHovered(rowRect))
-                {
-                    checkY += rowH + RowSpacing;
-                    continue;
-                }
+                Rectangle rowRect = new Rectangle(
+                    (int)bounds.X,
+                    (int)rowY,
+                    (int)bounds.Width,
+                    (int)rowHeight
+                );
 
-                var rowList = (ri < RowsContents.Count) ? RowsContents[ri] : new List<UIContent>();
-                var rstate = rowStates[ri];
-
-                float visibleRowStartX = rowRect.X + RowPadding;
-                float visibleRowWidth = rowRect.Width - RowPadding * 2f;
-                float contentWidth = visibleRowWidth;
-                if (rstate.IsScrollbarVisible)
-                    contentWidth = Math.Max(0f, contentWidth - (rstate.ScrollbarCurrentThickness + RowPadding));
-
-                float checkOffsetX = visibleRowStartX - rstate.ContentScrollX;
-
-                for (int c = 0; c < rowList.Count; c++)
-                {
-                    var child = rowList[c];
-                    var childSize = child.GetSize(new Rectangle(0, 0, int.MaxValue, (int)Math.Max(0f, rowH - RowPadding * 2f)));
-                    float childWidth = Math.Max(0f, childSize.X);
-                    Rectangle childBounds = new Rectangle((int)checkOffsetX, rowRect.Y + (int)RowPadding, (int)childWidth, (int)Math.Max(0f, rowH - RowPadding * 2f));
-
-                    if (child.WantsScroll(childBounds, wheel))
-                    {
-                        consumed = true;
-                        break;
-                    }
-
-                    checkOffsetX += childWidth + RowPadding;
-                }
-
-                // if not consumed and we allow vertical scrolling for the rows container, scroll the container
-                if (!consumed && AllowVerticalScroll && containerState.LastTotalRowsHeight > visibleHeight)
+                if (IsContentHovered(rowRect))
                 {
                     containerState.ContentScrollY -= wheel * SCROLL_WHEEL_SPEED;
-                    containerState.ContentScrollY = Math.Clamp(containerState.ContentScrollY, 0f, Math.Max(0f, containerState.LastTotalRowsHeight - visibleHeight));
+
+                    float maxScroll =
+                        Math.Max(0f, containerState.LastTotalRowsHeight - visibleHeight);
+
+                    containerState.ContentScrollY =
+                        Math.Clamp(containerState.ContentScrollY, 0f, maxScroll);
+
                     consumed = true;
+                    break;
                 }
 
-                break; // we only check the hovered row
+                rowY += rowHeight + RowSpacing;
             }
 
-            // fallback: if wheel wasn't consumed but mouse is over container and vertical scrolling allowed, scroll
-            if (!consumed && IsContentHovered(bounds) && AllowVerticalScroll)
+            if (!consumed && IsContentHovered(bounds))
             {
                 containerState.ContentScrollY -= wheel * SCROLL_WHEEL_SPEED;
-                containerState.ContentScrollY = Math.Clamp(containerState.ContentScrollY, 0f, Math.Max(0f, containerState.LastTotalRowsHeight - visibleHeight));
+
+                float maxScroll =
+                    Math.Max(0f, containerState.LastTotalRowsHeight - visibleHeight);
+
+                containerState.ContentScrollY =
+                    Math.Clamp(containerState.ContentScrollY, 0f, maxScroll);
             }
         }
 
+        //
+        // ------------------------------------------------------------------
+        // 5. DRAW ROWS
+        // ------------------------------------------------------------------
+        //
 
-        // start drawing rows; apply container-level scroll
-        float rowStartY = bounds.Y + RowPadding - containerState.ContentScrollY;
-        float currentRowY = rowStartY;
+        float currentRowY = bounds.Y + RowPadding - containerState.ContentScrollY;
+
         for (int ri = 0; ri < RowCount; ri++)
         {
-            var rstate2 = rowStates[ri];
-
-            // --- AUTO-SIZE MEASUREMENT (INSERT HERE) ---
-            if (rstate2.AutoSizeToContent)
-            {
-                float maxChildHeight = 0f;
-                var rowList2 = RowsContents[ri];
-
-                for (int c = 0; c < rowList2.Count; c++)
-                {
-                    float h = rowList2[c].GetHeight(bounds.Width - RowPadding * 2f);
-                    maxChildHeight = Math.Max(maxChildHeight, h);
-                }
-
-                rstate2.CachedAutoHeight = maxChildHeight + RowPadding * 2f;
-            }
-            // -----------------------------------------
-
             float rowHeight = ResolveRowHeight(ri);
 
             Rectangle rowRect = new Rectangle(
@@ -464,131 +525,76 @@ public class UIRows : UIContent
 
             currentRowY += rowHeight + RowSpacing;
 
-            // push scissor for this row
             ScissorStack.Push(rowRect);
 
-            // compute visible area inside row
             float visibleRowStartX = rowRect.X + RowPadding;
             float visibleRowWidth = rowRect.Width - RowPadding * 2f;
 
-            var rowList = (ri < RowsContents.Count) ? RowsContents[ri] : new List<UIContent>();
-
-            // measure total content width for this row
-            float totalContentWidth = 0f;
-            List<float> measuredChildWidths = new List<float>(rowList.Count);
-            for (int c = 0; c < rowList.Count; c++)
-            {
-                var child = rowList[c];
-                // measure child width given the row height constraint (subtract padding)
-                var childSize = child.GetSize(new Rectangle(0, 0, int.MaxValue, (int)Math.Max(0f, rowHeight - RowPadding * 2f)));
-                float childWidth = Math.Max(0f, childSize.X);
-                measuredChildWidths.Add(childWidth);
-                totalContentWidth += childWidth;
-                if (c < rowList.Count - 1)
-                    totalContentWidth += RowPadding; // spacing between items inside row
-            }
-
+            var rowList = RowsContents[ri];
             var rstate = rowStates[ri];
 
-            // determine per-row horizontal scrollbar visibility and recalc if visible
-            if (totalContentWidth > visibleRowWidth)
-            {
-                rstate.IsScrollbarVisible = true;
-                float reserved = rstate.ScrollbarCurrentThickness + RowPadding;
-                float availableRowWidth = Math.Max(0f, visibleRowWidth - reserved);
+            //
+            // ----- Measure children
+            //
 
-                // recalc with availableRowWidth if needed (we only measured preferred widths, assume same)
-                rstate.LastTotalContentWidth = totalContentWidth;
-            }
-            else
-            {
-                rstate.IsScrollbarVisible = false;
-                rstate.LastTotalContentWidth = totalContentWidth;
-                rstate.ContentScrollX = 0f;
-            }
+            float totalContentWidth = 0f;
+            List<float> measuredWidths = new List<float>(rowList.Count);
 
-            // per-row scrollbar hover/animation (horizontal)
-            float trackCenterY = rowRect.Y + rowRect.Height - RowPadding - (rstate.ScrollbarCurrentThickness / 2f);
-            float trackLeftX = visibleRowStartX;
-            float trackRightX = visibleRowStartX + visibleRowWidth;
-
-            bool nearY = Math.Abs(mouse.Y - trackCenterY) <= (rstate.ScrollbarCurrentThickness / 2f);
-            bool withinX = mouse.X >= trackLeftX && mouse.X <= trackRightX;
-            bool isHoveringRowScrollbar = rstate.IsScrollDragging || (rstate.IsScrollbarVisible && nearY && withinX);
-            if (isHoveringRowScrollbar)
-            {
-                rstate.ScrollbarHoverTimer += Time.deltaTime;
-                if (rstate.ScrollbarHoverTimer >= SCROLLBAR_HOVER_DELAY)
-                {
-                    rstate.ScrollbarHoverTimer = SCROLLBAR_HOVER_DELAY;
-                    rstate.ScrollbarHoverTarget = true;
-                }
-            }
-            else
-            {
-                rstate.ScrollbarHoverTimer -= Time.deltaTime;
-                if (rstate.ScrollbarHoverTimer <= 0f)
-                {
-                    rstate.ScrollbarHoverTimer = 0f;
-                    rstate.ScrollbarHoverTarget = false;
-                }
-            }
-
-            float rtarget = rstate.ScrollbarHoverTarget ? 1f : 0f;
-            if (rstate.ScrollbarAnimProgress != rtarget)
-            {
-                float delta = Time.deltaTime / Math.Max(0.0001f, SCROLLBAR_ANIM_DURATION);
-                if (rtarget > rstate.ScrollbarAnimProgress)
-                    rstate.ScrollbarAnimProgress = Math.Min(1f, rstate.ScrollbarAnimProgress + delta);
-                else
-                    rstate.ScrollbarAnimProgress = Math.Max(0f, rstate.ScrollbarAnimProgress - delta);
-            }
-
-            float reased = Curves.Linear.Evaluate(rstate.ScrollbarAnimProgress);
-            rstate.ScrollbarCurrentThickness = Lerp(SCROLLBAR_COLLAPSED_THICKNESS, SCROLLBAR_EXPANDED_THICKNESS, reased);
-
-            // handle wheel for horizontal scroll on a row when hovering it
-            // new: consult row children first, then allow the row to consume wheel as horizontal scroll
-            float rowWheel = Input.ScrollDelta;
-            if (Math.Abs(rowWheel) > 0.001f)
-            {
-                bool consumedByChild = false;
-
-                // use measuredChildWidths (you already build it above) to iterate children
-                float checkOffsetX = visibleRowStartX - rstate.ContentScrollX;
-                for (int c = 0; c < rowList.Count; c++)
-                {
-                    float childWidth = measuredChildWidths[c];
-                    Rectangle childBounds = new Rectangle((int)checkOffsetX, (int)(rowRect.Y + RowPadding), (int)childWidth, (int)Math.Max(0f, rowHeight - RowPadding * 2f));
-
-                    if (rowList[c].WantsScroll(childBounds, rowWheel))
-                    {
-                        consumedByChild = true;
-                        break;
-                    }
-
-                    checkOffsetX += childWidth + RowPadding;
-                }
-
-                if (!consumedByChild && IsContentHovered(rowRect))
-                {
-                    // map vertical wheel into horizontal movement for the row
-                    rstate.ContentScrollX -= rowWheel * SCROLL_WHEEL_SPEED;
-                    rstate.ContentScrollX = Math.Clamp(rstate.ContentScrollX, 0f, Math.Max(0f, rstate.LastTotalContentWidth - visibleRowWidth));
-                }
-            }
-
-
-            // draw children inside the row with scissor applied and respecting horizontal scroll
-            float contentOffsetX = visibleRowStartX - rstate.ContentScrollX;
             for (int c = 0; c < rowList.Count; c++)
             {
                 var child = rowList[c];
-                float childWidth = measuredChildWidths[c];
+
+                var childSize = child.GetSize(
+                    new Rectangle(0, 0, bounds.Width, (int)Math.Max(0f, rowHeight - RowPadding * 2f))
+                );
+
+                float width = Math.Max(0f, childSize.X);
+
+                measuredWidths.Add(width);
+                totalContentWidth += width;
+
+                if (c < rowList.Count - 1)
+                    totalContentWidth += RowPadding;
+            }
+
+            rstate.LastTotalContentWidth = totalContentWidth;
+            rstate.IsScrollbarVisible = totalContentWidth > visibleRowWidth;
+
+            if (!rstate.IsScrollbarVisible)
+                rstate.ContentScrollX = 0f;
+
+            //
+            // ----- Horizontal wheel scroll
+            //
+
+            float rowWheel = Input.ScrollDelta;
+
+            if (Math.Abs(rowWheel) > 0.001f && IsContentHovered(rowRect))
+            {
+                rstate.ContentScrollX -= rowWheel * SCROLL_WHEEL_SPEED;
+
+                float maxScroll =
+                    Math.Max(0f, totalContentWidth - visibleRowWidth);
+
+                rstate.ContentScrollX =
+                    Math.Clamp(rstate.ContentScrollX, 0f, maxScroll);
+            }
+
+            //
+            // ----- Draw children
+            //
+
+            float contentX = visibleRowStartX - rstate.ContentScrollX;
+
+            for (int c = 0; c < rowList.Count; c++)
+            {
+                var child = rowList[c];
+
+                float childWidth = measuredWidths[c];
                 float childHeight = Math.Max(0f, rowHeight - RowPadding * 2f);
 
                 Rectangle childBounds = new Rectangle(
-                    (int)contentOffsetX,
+                    (int)contentX,
                     (int)(rowRect.Y + RowPadding),
                     (int)childWidth,
                     (int)childHeight
@@ -607,60 +613,36 @@ public class UIRows : UIContent
                 }
                 else
                 {
-                    foreach (var button in Enum.GetValues<MouseButton>())
-                        if (Input.IsPressed(button))
-                            child.OnClickedOutsideOfContent(button);
-
                     if (child.IsHovered)
                         child.OnHoverEnd();
+
                     child.IsHovered = false;
                 }
 
                 child.InternalDraw(childBounds);
 
-                contentOffsetX += childWidth + RowPadding;
+                contentX += childWidth + RowPadding;
             }
 
-            // pop scissor for this row
             ScissorStack.Pop();
         }
 
-        // clamp container scroll after layout changes
-        containerState.ContentScrollY = Math.Clamp(containerState.ContentScrollY, 0f, Math.Max(0f, containerState.LastTotalRowsHeight - visibleHeight));
+        //
+        // ------------------------------------------------------------------
+        // 6. FINAL CLAMP + SCROLL PROGRESS
+        // ------------------------------------------------------------------
+        //
 
-        containerState.ScrollProgress = (containerState.LastTotalRowsHeight <= visibleHeight)
-            ? 0f
-            : containerState.ContentScrollY / (containerState.LastTotalRowsHeight - visibleHeight);
+        float maxContainerScroll =
+            Math.Max(0f, containerState.LastTotalRowsHeight - visibleHeight);
 
-        for (int ri = 0; ri < rowStates.Count; ri++)
-        {
-            var rstate = rowStates[ri];
+        containerState.ContentScrollY =
+            Math.Clamp(containerState.ContentScrollY, 0f, maxContainerScroll);
 
-            float visibleRowWidth = bounds.Width - RowPadding * 2f; // or precompute per row
-            float maxScrollX = Math.Max(0f, rstate.LastTotalContentWidth - visibleRowWidth);
-
-            // Manual scroll clamp
-            rstate.ContentScrollX = Math.Clamp(rstate.ContentScrollX, 0f, maxScrollX);
-
-            // Auto-scroll
-            if (rstate.AutoScrollEnabled && maxScrollX > 0f)
-            {
-                rstate.ContentScrollX += rstate.AutoScrollDirection * Style.AutoScrollSpeed * Time.deltaTime;
-
-                // Reverse direction at edges
-                if (rstate.ContentScrollX >= maxScrollX)
-                {
-                    rstate.ContentScrollX = maxScrollX;
-                    rstate.AutoScrollDirection = -1f;
-                }
-                else if (rstate.ContentScrollX <= 0f)
-                {
-                    rstate.ContentScrollX = 0f;
-                    rstate.AutoScrollDirection = 1f;
-                }
-            }
-        }
-
+        containerState.ScrollProgress =
+            (maxContainerScroll <= 0f)
+                ? 0f
+                : containerState.ContentScrollY / maxContainerScroll;
     }
 
     protected internal override bool WantsScroll(Rectangle bounds, float wheelDelta)
@@ -727,5 +709,168 @@ public class UIRows : UIContent
 
     // small helper for lerp
     private static float Lerp(float a, float b, float t) => a + (b - a) * t;
+
+
+    public IUIContainer AddContent(UIContent content)
+    {
+        AddToRow(0, content);
+        return this;
+    }
+
+    public IUIContainer AddContent(UIContent content, int index)
+    {
+        if (content == null) return this;
+
+        EnsureRows(RowCount);
+
+        var row = RowsContents[0];
+        int idx = Math.Clamp(index, 0, row.Count);
+        row.Insert(idx, content);
+
+        content.Owner = this;
+        if (setupCalled)
+            content.Setup();
+
+        return this;
+    }
+
+    public IUIContainer AddContent(UIContent reference, UIContent contentToAdd)
+    {
+        if (reference == null || contentToAdd == null) return this;
+
+        for (int r = 0; r < RowsContents.Count; r++)
+        {
+            var row = RowsContents[r];
+            int idx = row.IndexOf(reference);
+            if (idx >= 0)
+            {
+                // insert after reference (parity with UIColumns)
+                int insertIdx = Math.Clamp(idx + 1, 0, row.Count);
+                row.Insert(insertIdx, contentToAdd);
+
+                contentToAdd.Owner = this;
+                if (setupCalled)
+                    contentToAdd.Setup();
+
+                return this;
+            }
+        }
+
+        // fallback
+        AddToRow(0, contentToAdd);
+        return this;
+    }
+
+    public IUIContainer AddContent(UIContent reference, UIContent contentToAdd, int index)
+    {
+        if (reference == null || contentToAdd == null) return this;
+
+        for (int r = 0; r < RowsContents.Count; r++)
+        {
+            var row = RowsContents[r];
+            int refIdx = row.IndexOf(reference);
+            if (refIdx >= 0)
+            {
+                // If index == -1, append to the end of the referenced row
+                if (index == -1)
+                {
+                    row.Add(contentToAdd);
+                }
+                else
+                {
+                    int insertIdx = Math.Clamp(index, 0, row.Count);
+                    row.Insert(insertIdx, contentToAdd);
+                }
+
+                contentToAdd.Owner = this;
+                if (setupCalled)
+                    contentToAdd.Setup();
+
+                return this;
+            }
+        }
+
+        // Reference not found: fallback to first row behavior.
+        var fallbackRow = RowsContents[0];
+        if (index == -1)
+            fallbackRow.Add(contentToAdd);
+        else
+            fallbackRow.Insert(Math.Clamp(index, 0, fallbackRow.Count), contentToAdd);
+
+        contentToAdd.Owner = this;
+        if (setupCalled)
+            contentToAdd.Setup();
+
+        return this;
+    }
+
+    public void RemoveContent(UIContent element)
+    {
+        if (element == null) return;
+
+        for (int r = 0; r < RowsContents.Count; r++)
+        {
+            var row = RowsContents[r];
+            if (row.Remove(element))
+            {
+                element.OnOwnerClosing();
+                return;
+            }
+        }
+    }
+
+    public void AddAll(List<UIContent> contents)
+    {
+        if (contents == null) return;
+
+        // preserve order: insert reverse so first item in list ends up first in row
+        for (int i = contents.Count - 1; i >= 0; i--)
+        {
+            UIContent content = contents[i];
+            AddToRow(0, content);
+        }
+    }
+
+    public void AddAll(UIContent reference, List<UIContent> contents)
+    {
+        if (reference == null || contents == null) return;
+
+        for (int r = 0; r < RowsContents.Count; r++)
+        {
+            var row = RowsContents[r];
+            int idx = row.IndexOf(reference);
+            if (idx >= 0)
+            {
+                for (int i = contents.Count - 1; i >= 0; i--)
+                {
+                    UIContent content = contents[i];
+                    // append to the row (parity with UIColumns behavior)
+                    row.Add(content);
+                    content.Owner = this;
+                    if (setupCalled)
+                        content.Setup();
+                }
+                return;
+            }
+        }
+
+        // fallback to adding to first row
+        AddAll(contents);
+    }
+
+    public int GetContentIndex(UIContent content)
+    {
+        if (content == null) return -1;
+
+        for (int r = 0; r < RowsContents.Count; r++)
+        {
+            var row = RowsContents[r];
+            int idx = row.IndexOf(content);
+            if (idx >= 0)
+                return idx;
+        }
+        return -1;
+    }
+    void IUIContainer.Close() => Owner.Close();
 }
 

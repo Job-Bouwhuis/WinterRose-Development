@@ -12,7 +12,10 @@ public class Vector3PropertyDrawer : InspectorPropertyDrawer<Vector3>
 
     protected override UIContent CreateContent()
     {
+        UITreeNode node = new(TrackedValue.MemberName);
         UIColumns cols = new();
+        //node.AddChild(new UIText());
+        node.AddChild(cols);
         x =  new UINumericUpDown<float>();
         x.Label = "x";
 
@@ -51,10 +54,10 @@ public class Vector3PropertyDrawer : InspectorPropertyDrawer<Vector3>
         y.OnValueChanged.Subscribe(OnEditorValueUpdated);
         z.OnValueChanged.Subscribe(OnEditorValueUpdated);
 
-        cols.AddContent(x);
-        cols.AddContent(y);
-        cols.AddContent(z);
-        return cols;
+        cols.AddToColumn(1, x);
+        cols.AddToColumn(2, y);
+        cols.AddToColumn(3, z);
+        return node;
     }
 
     protected internal override void Init()

@@ -24,7 +24,7 @@ public partial class Worlds
         Camera cam = world.CreateEntity("cam", new Camera());
         cam.transform.position = cam.transform.position with
         {
-            Z = 0.6f
+            Z = 1.2f
         };
         var camFollow = cam.AddComponent<SmoothCamera2DMode>();
         camFollow.Target = player.transform;

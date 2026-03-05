@@ -13,40 +13,126 @@ namespace WinterRose.ForgeWarden
         [WFInclude]
         public Vector3 position
         {
-            get => _position;
-            set 
+            get => _position; // local
+            set
             {
                 _position = value;
                 MarkDirty(true);
-
-                var phcs = owner.GetAllComponents<PhysicsComponent>();
-                foreach (var p in phcs)
-                    p.Sync();
+                SyncPhysics();
             }
         }
-
-        public ref Vector3 positionRef => ref _position;
 
         [WFInclude]
         public Quaternion rotation
         {
-            get => _rotation;
+            get => _rotation; // local
             set
             {
                 _rotation = value;
                 MarkDirty(true);
+                SyncPhysics();
+            }
+        }
+
+        [WFInclude]
+        public Vector3 scale
+        {
+            get => _scale; // local
+            set
+            {
+                _scale = value;
+                MarkDirty(true);
+                SyncPhysics();
+            }
+        }
+
+        public Vector3 worldPosition
+        {
+            get => Vector3.Transform(_position, worldMatrix);
+            set
+            {
+                if (parent != null)
+                {
+                    Matrix4x4.Invert(parent.worldMatrix, out var inv);
+                    _position = Vector3.Transform(value, inv);
+                }
+                else _position = value;
+
+                MarkDirty(true);
+                SyncPhysics();
+            }
+        }
+
+        public Quaternion worldRotation
+        {
+            get => parent != null ? _rotation * parent.worldRotation : _rotation;
+            set
+            {
+                if (parent != null)
+                {
+                    _rotation = value * Quaternion.Inverse(parent.worldRotation);
+                }
+                else _rotation = value;
+                MarkDirty(true);
+                SyncPhysics();
+            }
+        }
+
+        public Vector3 worldScale
+        {
+            get => parent != null
+                ? new Vector3(_scale.X * parent.worldScale.X, _scale.Y * parent.worldScale.Y, _scale.Z * parent.worldScale.Z)
+                : _scale;
+            set
+            {
+                if (parent != null)
+                {
+                    _scale = new Vector3(
+                        value.X / parent.worldScale.X,
+                        value.Y / parent.worldScale.Y,
+                        value.Z / parent.worldScale.Z
+                    );
+                }
+                else _scale = value;
+
+                MarkDirty(true);
+                SyncPhysics();
             }
         }
 
         [Hide]
-        public ref Quaternion rotationRef => ref _rotation;
-
-        // Optional helper property for Euler degrees (for ease of use or editor)
+        public ref Vector3 positionRef
+        {
+            get
+            {
+                UpdateIfDirty();
+                return ref _position;
+            }
+        }
+        [Hide]
+        public ref Quaternion rotationRef
+        {
+            get
+            {
+                UpdateIfDirty();
+                return ref _rotation;
+            }
+        }
+        [Hide]
+        public ref Vector3 scaleRef
+        {
+            get
+            {
+                UpdateIfDirty();
+                return ref _scale;
+            }
+        }
+        [Hide]
         public Vector3 rotationEulerDegrees
         {
             get
             {
-                Vector3 eulerRadians = QuaternionToEuler(_rotation);
+                Vector3 eulerRadians = QuaternionToEuler(rotation);
                 return eulerRadians * (180f / MathF.PI);
             }
             set
@@ -56,21 +142,6 @@ namespace WinterRose.ForgeWarden
                 MarkDirty(true);
             }
         }
-
-        [WFInclude]
-        public Vector3 scale
-        {
-            get => _scale;
-            set 
-            { 
-                _scale = value; 
-                MarkDirty(true); 
-            }
-        }
-
-        [Hide]
-        public ref Vector3 scaleRef => ref _scale;
-
         [WFInclude]
         public Transform? parent
         {
@@ -92,7 +163,7 @@ namespace WinterRose.ForgeWarden
                 }
                 return field;
             }
-            private set => field = value;
+            private set;
         }
 
         [Hide]
@@ -102,13 +173,14 @@ namespace WinterRose.ForgeWarden
             {
                 if (_dirty)
                 {
+                    RecalculateLocalMatrix();
                     field = parent != null
                         ? localMatrix * parent.worldMatrix
                         : localMatrix;
 
+                    field.M44 = 1f; // ensure proper homogeneous coordinate
                     _dirty = false;
                 }
-
                 return field;
             }
         }
@@ -131,6 +203,8 @@ namespace WinterRose.ForgeWarden
         [Hide]
         public Vector3 back => -forward;
 
+        private void UpdateIfDirty() => _ = worldMatrix;
+
         public void SetParent(Transform? newParent)
         {
             if (_parent == newParent)
@@ -142,12 +216,25 @@ namespace WinterRose.ForgeWarden
             MarkDirty(recursive: true);
         }
 
+        private void SyncPhysics()
+        {
+            var phcs = owner.GetAllComponents<PhysicsComponent>();
+            foreach (var p in phcs)
+                if (p is not RigidBodyComponent)
+                    p.Sync();
+        }
+
+        [Hide]
         private Vector3 _position = Vector3.Zero;
+        [Hide]
         private Quaternion _rotation = Quaternion.Identity;
+        [Hide]
         private Vector3 _scale = Vector3.One;
 
+        [Hide]
         private bool _dirty = true;
 
+        [Hide]
         private Transform? _parent;
 
         [WFInclude]
@@ -156,6 +243,7 @@ namespace WinterRose.ForgeWarden
         private void MarkDirty(bool recursive = false)
         {
             _dirty = true;
+            UpdateIfDirty();
 
             if (recursive)
             {
@@ -241,13 +329,15 @@ namespace WinterRose.ForgeWarden
             return q;
         }
 
-
         public void LookAt(Transform target)
         {
-            if (target == null)
-                return;
+            LookAt(target.position);
+        }
 
-            Vector3 direction = Vector3.Normalize(target.position - position);
+        public void LookAt(Vector3 pos)
+        {
+
+            Vector3 direction = Vector3.Normalize(pos - position);
 
             // Handle degenerate case where target is at same position
             if (direction == Vector3.Zero)

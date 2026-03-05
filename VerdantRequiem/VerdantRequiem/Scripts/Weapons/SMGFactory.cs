@@ -1,7 +1,7 @@
-﻿using Microsoft.VisualStudio.OLE.Interop;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VerdantRequiem.Scripts.Util;
 using WinterRose.ForgeWarden.DamageSystem;
 using WinterRose.ForgeWarden.DamageSystem.WeaponSystem;
 using WinterRose.ForgeWarden.Entities;
@@ -21,7 +21,19 @@ internal class SMGFactory
             FireRate = 8
         }];
 
-        mag.Projectile = SMGProjectile();
+        mag.Projectile = new()
+        {
+            DamageType = new PhysicalDamage(),
+            Damage = 10,
+            CritChance = 0.1f,
+            CritMultiplier = 1.5f,
+            StatusChance = 0.05f,
+            Speed = 50,
+            PunchThrough = 0,
+            CollisionLayer = player ? Constants.CollisionLayers.PROJECTILE_PLAYER : Constants.CollisionLayers.PROJECTILE_ENEMY,
+            CollisionMask = (player ? Constants.CollisionLayers.ENEMY : Constants.CollisionLayers.PLAYER) | Constants.CollisionLayers.WORLD
+        };
+
         mag.ReloadBehavior = new FullReloadBehavior()
         {
             ReloadTime = 1.5f
@@ -29,15 +41,4 @@ internal class SMGFactory
 
         return weapon;
     }
-
-    private static ProjectileStats SMGProjectile() => new()
-    {
-        DamageType = new PhysicalDamage(),
-        Damage = 10,
-        CritChance = 0.1f,
-        CritMultiplier = 1.5f,
-        StatusChance = 0.05f,
-        Speed = 50,
-        PunchThrough = 0
-    };
 }

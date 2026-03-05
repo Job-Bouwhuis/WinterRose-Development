@@ -54,6 +54,7 @@ public class Weapon : Component, IUpdatable
                     var projectiles = Magazine.TakeProjectiles();
 
                     CreateProjectile();
+
                 }
             }
         }
@@ -65,7 +66,9 @@ public class Weapon : Component, IUpdatable
         e.AddComponent<SpriteRenderer>(Magazine.Projectile.ProjectileTexture);
         var texBounds = Magazine.Projectile.ProjectileTexture.Size;
         var col = e.AddComponent<Collider>(new Box2DShape(texBounds.X / 2, texBounds.Y / 2, 0.0001f));
-        e.AddComponent<RigidBodyComponent>(col, 10);
+        var rb = e.AddComponent<RigidBodyComponent>(col, 10);
+        rb.CollisionLayer = Magazine.Projectile.CollisionLayer;
+        rb.CollisionMask = Magazine.Projectile.CollisionMask;
 
         Projectile p = e.AddComponent<Projectile>();
         p.Stats = Magazine.Projectile;

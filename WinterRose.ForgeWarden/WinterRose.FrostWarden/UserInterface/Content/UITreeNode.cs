@@ -22,6 +22,8 @@ public class UITreeNode : UIContent, IUIContainer
 
     public bool IsCollapsed { get; private set; } = false;
 
+    private bool setupCalled = false;
+
     public MulticastVoidInvocation<UITreeNode> ClickInvocation { get; set; } = new();
     public MulticastVoidInvocation<UITreeNode> DoubleClickInvocation { get; set; } = new();
 
@@ -73,7 +75,8 @@ public class UITreeNode : UIContent, IUIContainer
 
         // adopt owner and run setup so child is ready immediately
         child.Owner = this;
-        child.Setup();
+        if(setupCalled)
+            child.Setup();
     }
 
     public bool RemoveChild(UIContent child)
@@ -332,8 +335,10 @@ public class UITreeNode : UIContent, IUIContainer
         // Delegate setup to children
         foreach (var child in Children)
         {
+            child.Owner = Owner;
             child.Setup();
         }
+        setupCalled = true;
     }
 
     protected override void Update()
