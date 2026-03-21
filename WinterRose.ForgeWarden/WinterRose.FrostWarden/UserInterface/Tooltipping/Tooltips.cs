@@ -182,7 +182,6 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
             if (NearlyEqual(chosenSize, tooltip.TargetSize, 1))
                 return;
 
-            log.Debug($"Tooltip position changed: {tooltip.TargetPosition} -> {pos}, size changed: {tooltip.TargetSize} -> {chosenSize}");
             tooltip.TargetPosition = pos;
             tooltip.TargetSize = chosenSize;
             tooltip.AnimationElapsed = 0;
@@ -224,19 +223,16 @@ namespace WinterRose.ForgeWarden.UserInterface.Tooltipping
                     normal.Add(t);
             }
 
-            // clear original list
             activeTooltips.Clear();
 
-            // lower in list = higher priority, so we add normal first, then non-interactable, then mouse-anchored
+            // lower in list = higher priority
             activeTooltips.AddRange(normal);
             activeTooltips.AddRange(nonInteractable);
             activeTooltips.AddRange(mouseAnchors);
 
-            // assign priorities
             int currentPriority = PRIORITY_BASE;
             for (int i = 0; i < activeTooltips.Count; i++)
             {
-                // lower index = higher priority, so the last elements (mouseAnchors) get highest
                 if (activeTooltips[i] is null)
                 {
                     activeTooltips.RemoveAt(i--);

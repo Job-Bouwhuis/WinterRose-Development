@@ -20,7 +20,6 @@
     <Folder Include="Assets\Configs\" />
     <Folder Include="Assets\Worlds\" />
     <Folder Include="Assets\UI\" />
-    <Folder Include="Assets\Tiles\" />
     <Folder Include="Assets\Sprites\Enemies\" />
     <Folder Include="Assets\Sprites\Environment\" />
     <Folder Include="Assets\Sprites\Weapons\" />
@@ -29,6 +28,12 @@
     <Folder Include="Scripts\Enemies\" />
     <Folder Include="Scripts\World\" />
     <Folder Include="Scripts\UI\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Assets\Tiles\grassTile.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

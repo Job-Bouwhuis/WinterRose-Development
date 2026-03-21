@@ -18,8 +18,10 @@ public class TileMap : Component, IUpdatable, IRenderable
     public int Seed { get; set; } = 0;
     public bool GenerateBiomesOnRegionCreate { get; set; } = true;
 
+    [Hide]
     readonly Dictionary<long, TileRegion> regions = new();
 
+    [Hide]
     public PerlinNoise Noise { get; set; }
 
     public TileMap(BiomeRegistry biomes)
@@ -35,7 +37,7 @@ public class TileMap : Component, IUpdatable, IRenderable
     /// <summary>
     /// If updated after creating, existing regions will not contain the new biome
     /// </summary>
-    public BiomeRegistry Biomes { get; set; }
+    public BiomeRegistry Biomes { get; set; } = new();
 
     public void Initialize(int tileSize = 256, int regionSize = 32, int layerCount = 8)
     {

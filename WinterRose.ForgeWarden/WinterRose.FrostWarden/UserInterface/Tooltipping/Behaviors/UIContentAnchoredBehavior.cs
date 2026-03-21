@@ -9,7 +9,7 @@ public class UIContentAnchoredBehavior : TooltipBehavior
 {
     public float CloseGrace = 0.18f;
 
-    public override bool AllowsInteraction => true; // tooltip should capture input while open
+    public override bool AllowsInteraction => true;
 
     public override void Update()
     {
@@ -20,10 +20,9 @@ public class UIContentAnchoredBehavior : TooltipBehavior
         if (content == null)
             return;
 
-        bool anchorHovered = content.IsContentHovered(content.LastRenderBounds, false); // includes hover extenders
+        bool anchorHovered = content.IsContentHovered(content.LastRenderBounds, false);
         bool tooltipHovered = Tooltip.IsHovered();
 
-        // union of hover states: if either is hovered we treat the anchor as hovered
         if (anchorHovered || tooltipHovered)
             Tooltips.RegisterHoverExtender(content, Tooltip);
         else

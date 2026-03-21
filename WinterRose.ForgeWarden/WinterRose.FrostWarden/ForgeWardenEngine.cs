@@ -171,7 +171,7 @@ public abstract class ForgeWardenEngine
             // create window and remember params so we can recreate later
             Window = new Window(title, flags);
             Window.Create(width, height);
-            AfterWindowCreation();
+
 
             // save for reopen
             savedWindowTitle = title;
@@ -182,6 +182,7 @@ public abstract class ForgeWardenEngine
             SetExitKey(KeyboardKey.Null);
 
             LoadDefaultFont();
+
 
             if (!browserTask.IsCompleted)
             {
@@ -208,35 +209,31 @@ public abstract class ForgeWardenEngine
             ClearBackground(ClearColor);
             EndDrawing();
 
+            AfterWindowCreation();
             Universe.CurrentWorld = CreateFirstWorld();
             Camera? camera = Universe.CurrentWorld.GetAll<Camera>().FirstOrDefault();
             Camera.main = camera;
             RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
 
-            // ----- MAIN ENGINE LOOP -----
             while (!GameIsClosing)
             {
-                // if window was closed via OS/user, enter background update mode instead of terminating the engine
                 if (Window != null && Window.ShouldClose())
                     GameIsClosing = true;
 
-                // background mode: only keep Time.Update() and the abstract Update() running at BACKGROUND_UPS
                 if (WindowClosedButRunning)
                 {
                     long nowMs = backgroundTimer.ElapsedMilliseconds;
                     if (nowMs - lastBackgroundTickMs >= (1000 / BACKGROUND_UPS))
                     {
-                        Time.Update(); // Time.deltaTime will reflect the elapsed time between these calls
-                        Update(); // only engine-level update callback runs while backgrounded
+                        Time.Update();
+                        Update();
                         lastBackgroundTickMs = nowMs;
                     }
 
-                    // light sleep to avoid burning CPU while waiting for next tick or a call to ReopenWindowFull()
                     Thread.Sleep(1);
                     continue;
                 }
 
-                // Regular foreground frame (unchanged pipeline)
                 InputManager.Update();
                 Time.Update();
                 GlobalHotkey.Update();
@@ -257,7 +254,7 @@ public abstract class ForgeWardenEngine
                     catch (Exception ex)
                     {
                         HandleException(worldTex, ex, ExceptionDispatchInfo.Capture(ex));
-                        throw; // rethrow to trigger outer catch and ensure the exception ends up in the log file and not just silently handled by the dialog
+                        throw;
                     }
                 }
                 else
@@ -301,8 +298,10 @@ public abstract class ForgeWardenEngine
                     DrawBlackScreenWithCenteredText("Finalizing Asset Headers..", ex);
                 Assets.FinalizeHeaders();
                 if (FancyShutdown)
+                {
                     DrawBlackScreenWithCenteredText("Bye Bye!", ex);
-                Task.Delay(exception is null ? 250 : 2000).Wait();
+                    Task.Delay(exception is null ? 250 : 2000).Wait();
+                }
 
                 log.Info("All resources released, Closing window");
 

@@ -8,10 +8,13 @@ using WinterRose.ForgeWarden.Editor;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping;
 using WinterRose.ForgeWarden.Worlds;
+using WinterRose.ForgeWarden.UserInterface.Windowing;
+using WinterRose.ForgeWarden.UserInterface;
+using WinterRose.EventBusses;
+using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 
 namespace VerdantRequiem;
 
-// by default on DEBUG build mode graceful errors are disabled in the engine
 public class VerdantRequiem() : ForgeWardenEngine(UseBrowser: false)
 {
     private Tooltip t;
@@ -32,7 +35,6 @@ public class VerdantRequiem() : ForgeWardenEngine(UseBrowser: false)
     {
         Window.OptimizeWindowSize();
         Raylib.SetTargetFPS(144);
-
         ControlBindings.BindInitial();
     }
 

@@ -1,6 +1,8 @@
 ﻿using Raylib_cs;
 using System;
 using System.Collections.Generic;
+using System.Runtime;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace WinterRose.ForgeWarden;
@@ -9,6 +11,7 @@ public static class RaylibExtensions
 {
     extension(Color c)
     {
+        [get: MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string HexA => $"#{c.R:X2}{c.G:X2}{c.B:X2}{c.A:X2}";
         public string Hex => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
     }
@@ -58,6 +61,56 @@ public static class RaylibExtensions
 
             s.SetPanning(pan);
             s.SetVolume(volume);
+        }
+    }
+
+
+    extension(Rectangle r)
+    {
+        public float Left => r.X;
+        public float Right => r.X + r.Width;
+        public float Top => r.Y;
+        public float Bottom => r.Y + r.Height;
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Contains(Rectangle other)
+        {
+            return other.Left >= r.Left &&
+                   other.Right <= r.Right &&
+                   other.Top >= r.Top &&
+                   other.Bottom <= r.Bottom;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Contains(Vector2 point)
+        {
+            return Raylib.CheckCollisionPointRec(point, r);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Rectangle Offset(int x, int y)
+        {
+            return new Rectangle(r.X + x, r.Y + y, r.Width, r.Height);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Rectangle Inflate(int x, int y)
+        {
+            return new Rectangle(
+                r.X - x,
+                r.Y - y,
+                r.Width + x * 2,
+                r.Height + y * 2
+            );
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Intersects(Rectangle other)
+        {
+            return Raylib.CheckCollisionRecs(r, other);
         }
     }
 }
