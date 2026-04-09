@@ -20,6 +20,7 @@
     <Folder Include="Assets\Configs\" />
     <Folder Include="Assets\Worlds\" />
     <Folder Include="Assets\UI\" />
+    <Folder Include="Assets\Tiles\" />
     <Folder Include="Assets\Sprites\Enemies\" />
     <Folder Include="Assets\Sprites\Environment\" />
     <Folder Include="Assets\Sprites\Weapons\" />
@@ -31,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Assets\Tiles\grassTile.jpg">
+    <None Update="Assets\Tiles\grasstile.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

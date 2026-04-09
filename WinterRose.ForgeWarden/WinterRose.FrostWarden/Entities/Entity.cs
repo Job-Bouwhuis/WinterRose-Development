@@ -9,9 +9,11 @@ using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.Physics;
 using WinterRose.ForgeWarden.Worlds;
 using WinterRose.Reflection;
+using System.Diagnostics;
 
 namespace WinterRose.ForgeWarden.Entities;
 
+[DebuggerDisplay("Entity: {Name} <> Components: {components.Count}")]
 public class Entity
 {
     public string Name { get; set; }

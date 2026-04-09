@@ -1,5 +1,6 @@
 ﻿using PuppeteerSharp;
 using Raylib_cs;
+using System.Diagnostics;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -11,6 +12,9 @@ using WinterRose.ForgeThread;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components;
 using WinterRose.ForgeWarden.Editor;
+using WinterRose.ForgeWarden.EngineLayers;
+using WinterRose.ForgeWarden.EngineLayers.BuiltinLayers;
+using WinterRose.ForgeWarden.EngineLayers.Events;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.Geometry.Rendering;
 using WinterRose.ForgeWarden.Input;
@@ -35,15 +39,16 @@ namespace WinterRose.ForgeWarden;
 public abstract class ForgeWardenEngine
 {
     protected bool WindowClosedButRunning { get; private set; } = false;
-    private const int BACKGROUND_UPS = 10; // updates per second while window is closed
+    private const int BACKGROUND_UPDATES = 10;
     private readonly System.Diagnostics.Stopwatch backgroundTimer = new();
     private long lastBackgroundTickMs = 0;
 
-    // store initial window params so we can recreate the window later
     private string savedWindowTitle = "";
     private int savedWindowWidth = 0;
     private int savedWindowHeight = 0;
     private ConfigFlags savedWindowConfigFlags = ConfigFlags.ResizableWindow;
+
+    public LayerStack LayerStack { get; private set; }
 
     public static ForgeWardenEngine Current { get; private set; }
 
@@ -61,12 +66,28 @@ public abstract class ForgeWardenEngine
 
     public ThreadLoom GlobalThreadLoom { get; } = new();
 
-    public bool ShowFPS { get; set; }
+    public bool ShowFPS { get; set; } = true;
     public Window Window { get; private set; }
     /// <summary>
     /// True when the engine is in the process of finishing up and close
     /// </summary>
     public bool GameIsClosing { get; private set; }
+
+    private RuntimeLayer runtimeLayer;
+    private EditorLayer editorLayer;
+
+    /// <summary>
+    /// Get or set whether the editor is enabled. When enabled, the EditorLayer is active and RuntimeLayer is disabled.
+    /// </summary>
+    public bool EditorEnabled
+    {
+        get => editorLayer?.Enabled ?? false;
+        set
+        {
+            if (editorLayer != null) editorLayer.Enabled = value;
+            if (runtimeLayer != null) runtimeLayer.Enabled = !value;
+        }
+    }
 
     private Color clearColor = Color.LightGray;
 
@@ -104,7 +125,7 @@ public abstract class ForgeWardenEngine
 
     public bool FancyShutdown { get; }
 
-    private List<Action> debugDraws = [];
+    internal List<Action> debugDraws = [];
 
     static ForgeWardenEngine()
     {
@@ -140,6 +161,8 @@ public abstract class ForgeWardenEngine
         gracefulErrorHandling = GracefulErrorHandling;
         log = new Log("Engine");
 
+        LayerStack = new LayerStack();
+
         GlobalThreadLoom.RegisterMainThread();
         GlobalThreadLoom.CreatePool(ENGINE_POOL_NAME, Environment.ProcessorCount / 2);
     }
@@ -168,10 +191,8 @@ public abstract class ForgeWardenEngine
 
             SetTargetFPS(0);
 
-            // create window and remember params so we can recreate later
             Window = new Window(title, flags);
             Window.Create(width, height);
-
 
             // save for reopen
             savedWindowTitle = title;
@@ -183,6 +204,19 @@ public abstract class ForgeWardenEngine
 
             LoadDefaultFont();
 
+
+            LayerStack.AddLayer(new EngineCoreLayer());
+            LayerStack.AddLayer(new RenderLayer());
+            LayerStack.AddLayer(new WorldRenderLayer());
+            LayerStack.AddLayer(new UiLayer());
+            runtimeLayer = new RuntimeLayer();
+            editorLayer = new EditorLayer();
+            LayerStack.AddLayer(runtimeLayer);
+            LayerStack.AddLayer(editorLayer);
+
+            editorLayer.Enabled = false;
+
+            AfterWindowCreation();
 
             if (!browserTask.IsCompleted)
             {
@@ -209,61 +243,21 @@ public abstract class ForgeWardenEngine
             ClearBackground(ClearColor);
             EndDrawing();
 
-            AfterWindowCreation();
             Universe.CurrentWorld = CreateFirstWorld();
             Camera? camera = Universe.CurrentWorld.GetAll<Camera>().FirstOrDefault();
             Camera.main = camera;
             RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
 
-            while (!GameIsClosing)
+            while (!Raylib.WindowShouldClose() && !GameIsClosing)
             {
-                if (Window != null && Window.ShouldClose())
-                    GameIsClosing = true;
+                LayerStack.Update();
 
-                if (WindowClosedButRunning)
-                {
-                    long nowMs = backgroundTimer.ElapsedMilliseconds;
-                    if (nowMs - lastBackgroundTickMs >= (1000 / BACKGROUND_UPS))
-                    {
-                        Time.Update();
-                        Update();
-                        lastBackgroundTickMs = nowMs;
-                    }
-
-                    Thread.Sleep(1);
-                    continue;
-                }
-
-                InputManager.Update();
-                Time.Update();
-                GlobalHotkey.Update();
-                GlobalThreadLoom.TickThread(maxItems: 10);
-
-                if (ray.IsWindowResized())
-                {
-                    ray.UnloadRenderTexture(worldTex);
-                    worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
-                }
-
-                if (gracefulErrorHandling)
-                {
-                    try
-                    {
-                        MainApplicationLoop(camera, ref worldTex);
-                    }
-                    catch (Exception ex)
-                    {
-                        HandleException(worldTex, ex, ExceptionDispatchInfo.Capture(ex));
-                        throw;
-                    }
-                }
-                else
-                {
-                    MainApplicationLoop(camera, ref worldTex);
-                }
-
-                if (GameIsClosing)
-                    break;
+                Raylib.BeginDrawing();
+                ClearBackground(ClearColor);
+                LayerStack.Render();
+                if (ShowFPS)
+                    Raylib.DrawText($"FPS: {ray.GetFPS()} - Delta: {Time.deltaTime}", 10, 10, 18, Color.Magenta);
+                Raylib.EndDrawing();
             }
 
             Raylib.UnloadRenderTexture(worldTex);
@@ -284,7 +278,7 @@ public abstract class ForgeWardenEngine
 
                 string ex = exception is null ? "" : $"Error of type {exception.GetType().Name} causing shutdown!";
 
-                if(FancyShutdown)
+                if (FancyShutdown)
                     DrawBlackScreenWithCenteredText("Unloading world...", ex);
                 Universe.CurrentWorld.Dispose();
                 if (FancyShutdown)
@@ -298,10 +292,8 @@ public abstract class ForgeWardenEngine
                     DrawBlackScreenWithCenteredText("Finalizing Asset Headers..", ex);
                 Assets.FinalizeHeaders();
                 if (FancyShutdown)
-                {
                     DrawBlackScreenWithCenteredText("Bye Bye!", ex);
-                    Task.Delay(exception is null ? 250 : 2000).Wait();
-                }
+                Task.Delay(exception is null ? 250 : 2000).Wait();
 
                 log.Info("All resources released, Closing window");
 
@@ -312,7 +304,7 @@ public abstract class ForgeWardenEngine
                 }
                 Window.Close();
             }
-            catch  (Exception ex)
+            catch (Exception ex)
             {
                 log.Warning($"Exception of type {ex.GetType().Name} during unloading: {ex.Message}");
             }
@@ -321,7 +313,7 @@ public abstract class ForgeWardenEngine
         }
     }
 
-    public static void DrawBlackScreenWithCenteredText(params string[] lines)
+    static void DrawBlackScreenWithCenteredText(params string[] lines)
     {
         Raylib.BeginDrawing();
 
@@ -330,8 +322,7 @@ public abstract class ForgeWardenEngine
 
         Raylib.ClearBackground(Color.Black);
 
-        // Measure total height
-        float lineSpacing = 1; // space between lines
+        float lineSpacing = 1; 
         float totalHeight = 0;
         Vector2[] sizes = new Vector2[lines.Length];
 
@@ -341,10 +332,8 @@ public abstract class ForgeWardenEngine
             totalHeight += sizes[i].Y;
         }
 
-        // Add spacing between lines
         totalHeight += lineSpacing * (lines.Length - 1);
 
-        // Start Y so the block is vertically centered
         float startY = (screenHeight - totalHeight) / 2;
 
         for (int i = 0; i < lines.Length; i++)
@@ -363,17 +352,14 @@ public abstract class ForgeWardenEngine
             return;
         log.Info("Closing window to background mode.");
 
-        // save current window params for later recreation
         savedWindowTitle = Window.Title;
         savedWindowWidth = Window.Width;
         savedWindowHeight = Window.Height;
         savedWindowConfigFlags = Window.ConfigFlags;
 
-        // close window but keep engine running
         Window.Close();
         WindowClosedButRunning = true;
 
-        // start background timer
         backgroundTimer.Restart();
         lastBackgroundTickMs = backgroundTimer.ElapsedMilliseconds;
 
@@ -386,18 +372,15 @@ public abstract class ForgeWardenEngine
 
         log.Info("Reopening window from background mode.");
 
-        // recreate window using saved params
         try
         {
             Window = new Window(savedWindowTitle, savedWindowConfigFlags);
             Window.Create(savedWindowWidth, savedWindowHeight);
 
-            // reset background flags and timers
             WindowClosedButRunning = false;
             backgroundTimer.Reset();
             lastBackgroundTickMs = 0;
 
-            // perform an initial clear so the first frame is clean
             BeginDrawing();
             ClearBackground(ClearColor);
             EndDrawing();
@@ -415,87 +398,6 @@ public abstract class ForgeWardenEngine
             DefaultFont = f;
         else
             DefaultFont = ray.GetFontDefault();
-    }
-
-    private void MainApplicationLoop(Camera? camera, ref RenderTexture2D worldTex)
-    {
-        if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
-            Universe.CurrentWorld.Update();
-
-        Universe.Hirarchy.UpdateHirarchy();
-
-        UIWindowManager.Update();
-        Dialogs.Update(Time.deltaTime);
-        ToastToDialogMorpher.Update();
-        Toasts.Update(Time.deltaTime);
-        Tooltips.Update();
-        ShapeRenderer.Update();
-        Update();
-
-        BeginDrawing();
-        ShapeRenderer.Begin();
-        Raylib.ClearBackground(ClearColor);
-        Raylib.DrawRectangle(0, 0, Window.Width, Window.Height, new Color(0, 0, 0, 1));
-
-        ray.BeginBlendMode(BlendMode.Alpha);
-
-        if (!Window.ConfigFlags.HasFlag(ConfigFlags.TransparentWindow))
-        {
-            Raylib.BeginTextureMode(worldTex);
-            Raylib.ClearBackground(ClearColor);
-            Raylib.DrawRectangle(0, 0, Window.Width, Window.Height, new Color(0, 0, 0, 1));
-
-            if (camera != null)
-            {
-                if (camera.is3D)
-                    Raylib.BeginMode3D(camera.Camera3D);
-                else
-                    Raylib.BeginMode2D(camera.Camera2D);
-            }
-
-            Universe.CurrentWorld.Draw(camera?.ViewMatrix ?? Matrix4x4.Identity);
-
-            if (camera != null)
-            {
-                if (camera.is3D)
-                    Raylib.EndMode3D();
-                else
-                    Raylib.EndMode2D();
-            }
-
-            Raylib.EndTextureMode();
-
-            Raylib.DrawTexturePro(
-                worldTex.Texture,
-                new Rectangle(0, 0, worldTex.Texture.Width, -worldTex.Texture.Height),
-                new Rectangle(0, 0, Window.Width, Window.Height),
-                Vector2.Zero,
-                0,
-                Color.White);
-        }
-
-        ShapeRenderer.Draw();
-        UIWindowManager.Draw();
-        Dialogs.Draw();
-        ToastToDialogMorpher.Draw();
-        Toasts.Draw();
-        Tooltips.Draw();
-        Draw();
-
-        for (int i = 0; i < debugDraws.Count; i++)
-        {
-            Action? dd = debugDraws[i];
-            dd();
-        }
-
-        debugDraws.Clear();
-
-        if (ShowFPS)
-            ray.DrawFPS(10, 10);
-
-        ShapeRenderer.End();
-        ray.EndBlendMode();
-        ray.EndDrawing();
     }
 
     public virtual void AfterWindowCreation() { }
@@ -519,62 +421,6 @@ public abstract class ForgeWardenEngine
         });
     }
 
-    private void HandleException(RenderTexture2D? worldTex, Exception ex, ExceptionDispatchInfo info)
-    {
-        try
-        {
-            log.Critical(ex, "Unhandled exception during execution of main engine loop");
-
-
-            ray.EndDrawing();
-            Dialogs.CloseAll(true);
-            Dialogs.Show(new ExceptionDialog(ex, info, worldTex));
-            while (Dialogs.OpenDialogs > 0)
-            {
-                if (ray.WindowShouldClose())
-                    break;
-
-                Time.Update();
-                InputManager.Update();
-                Dialogs.Update(Time.deltaTime);
-                Tooltips.Update();
-
-                ray.BeginDrawing();
-                ray.ClearBackground(ClearColor);
-
-                if (Dialogs.GetActiveDialogs().FirstOrDefault() is ExceptionDialog exDialog)
-                {
-                    if(worldTex is not null)
-                    {
-                        Raylib.DrawTexturePro(
-                             worldTex.Value.Texture,
-                             new Rectangle(0, 0, worldTex.Value.Texture.Width, -worldTex.Value.Texture.Height),
-                             new Rectangle(0, 0, Window.Width, Window.Height),
-                             Vector2.Zero,
-                             0,
-                             Color.White);
-                    }
-                }
-
-                Dialogs.Draw();
-                ray.EndDrawing();
-            }
-        }
-        catch (Exception innerEx)
-        {
-            SpriteCache.DisposeAll();
-
-            if (AllowThrow)
-                throw;
-
-            // deal with the inner exception that not even the exception dialog could handle.
-            // preferably on windows a message box.
-            // but its a cross-platform engine, so we need a multi platform solution,
-            // that picks the best available option for the platform.
-        }
-
-    }
-
     public void Close()
     {
         GameIsClosing = true;
@@ -593,10 +439,10 @@ public abstract class ForgeWardenEngine
     {
         var monitorsize = Windows.GetScreenSize(monitorIndex);
         Run(title, monitorsize.X, monitorsize.Y,
-            ConfigFlags.TransparentWindow | 
-            ConfigFlags.UndecoratedWindow | 
-            ConfigFlags.BorderlessWindowMode | 
-            ConfigFlags.TopmostWindow | 
+            ConfigFlags.TransparentWindow |
+            ConfigFlags.UndecoratedWindow |
+            ConfigFlags.BorderlessWindowMode |
+            ConfigFlags.TopmostWindow |
             ConfigFlags.AlwaysRunWindow
             );
     }

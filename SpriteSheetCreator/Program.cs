@@ -172,8 +172,6 @@ internal class Program : ForgeWardenEngine
 
     public override World CreateFirstWorld()
     {
-        Raylib_cs.Raylib.SetTargetFPS(144);
-
         World world = new("");
 
         return world;

@@ -54,7 +54,7 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
             return DialogShowState.Active;
         }
 
-        public static void Update(float deltaTime)
+        public static void Update()
         {
             HandlePriorityDialogs();
 
@@ -67,12 +67,12 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
 
                 if (!dialog.IsClosing)
                 {
-                    UpdateDialogAnimation(dialog, deltaTime);
+                    UpdateDialogAnimation(dialog);
                     dialog.UpdateContainer();
                 }
                 else
                 {
-                    UpdateDialogAnimation(dialog, deltaTime);
+                    UpdateDialogAnimation(dialog);
                     if (dialog.CurrentAnim.Completed)
                     {
                         activeDialogs.RemoveAt(i);
@@ -192,10 +192,10 @@ namespace WinterRose.ForgeWarden.UserInterface.DialogBoxes
             }
         }
 
-        static void UpdateDialogAnimation(Dialog dialog, float deltaTime)
+        static void UpdateDialogAnimation(Dialog dialog)
         {
             DialogAnimation anim = dialog.CurrentAnim;
-            anim.Elapsed += deltaTime;
+            anim.Elapsed += Time.deltaTime;
 
             var style = dialog.Style;
 

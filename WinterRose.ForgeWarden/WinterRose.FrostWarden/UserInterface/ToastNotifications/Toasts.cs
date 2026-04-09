@@ -92,7 +92,7 @@ public static class Toasts
     private static float reorderTime = 2;
     private static float reorderTimer = 0; 
 
-    public static void Update(float deltaTime)
+    public static void Update()
     {
         reorderTimer += Time.deltaTime;
         if (ray.IsWindowResized() || requestReorder || reorderTimer >= reorderTime)
@@ -117,7 +117,7 @@ public static class Toasts
                 anyHovered = true;
         }
 
-        if (anyHovered /*&& Input.HighestPriorityMouseAbove == null*/)
+        if (anyHovered)
             Input.IsRequestingMouseFocus = true;
         else
         {

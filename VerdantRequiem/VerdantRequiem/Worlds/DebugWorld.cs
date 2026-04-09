@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Raylib_cs;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using VerdantRequiem.Scripts.Player;
@@ -17,11 +18,6 @@ public partial class Worlds
     public static World DebugLevel()
     {
         World world = new World("Debug Level");
-
-        TileMap tiles = world.CreateEntity<TileMap>("Map");
-        tiles.Biomes.AddBiome(new Biome(Assets.Load<Sprite>("grassTile")), 1);
-        tiles.Initialize(32);
-
         var player = PlayerFactory.CreatePlayer(world);
 
         Entity wm = world.FindEntityByTag("WeaponMount")!;
@@ -33,10 +29,19 @@ public partial class Worlds
         {
             Z = 1.2f
         };
-
         var camFollow = cam.AddComponent<SmoothCamera2DMode>();
         camFollow.Target = player.transform;
 
+        Entity tilemap = world.CreateEntity("TileMap");
+
+        BiomeRegistry biomes = new();
+        Biome plains = new(Sprite.CreateRectangle(32, 32, Color.Red));
+        biomes.AddBiome(plains, 0.2f);
+
+        Biome idk = new(Assets.Load<Sprite>("grasstile"));
+        biomes.AddBiome(idk, 0.8f);
+
+        TileMap map = tilemap.AddComponent<TileMap>(biomes);
 
         return world;
     }

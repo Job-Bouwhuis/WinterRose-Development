@@ -26,7 +26,7 @@ using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping;
 using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Worlds;
-using WinterRose.FrostWarden.Tests;
+using WinterRose.FrostWarden;
 using WinterRose.Recordium;
 using WinterRose.StateKeeper;
 using WinterRose.WinterForgeSerializing;
@@ -55,7 +55,11 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
         //new Program().RunAsOverlay();
     }
 
-    public override void AfterWindowCreation() => Window.OptimizeWindowSize();
+    public override void AfterWindowCreation()
+    {
+        Window.OptimizeWindowSize();
+        EditorEnabled = true;
+    }
 
     public override void Draw()
     {
@@ -64,8 +68,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
 
     public override World CreateFirstWorld()
     {
-        Universe.Hirarchy.Show();
-        ray.SetTargetFPS(144);
+        //Universe.Hirarchy.Show();
         World world = new World("testworld");
 
         // Generate region and fill with tiles using noise
@@ -89,63 +92,6 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
         RichSpriteRegistry.RegisterSprite("crystal", new Sprite("crystalitem"));
 
 
-        GlobalThreadLoom.InvokeAfter(ENGINE_POOL_NAME, () =>
-        {
-            UIWindow window = new UIWindow("Test window", 500, 600);
-            window.Show();
-
-            UIText text = new UIText("Hello, World! This is a test of the UI system. It should wrap text properly and adjust the height of the window accordingly.");
-            window.AddContent(text);
-
-            var btn = new UIButton("neat!", (c, b) =>
-            {
-                //var ag = new AggregateException("This is a test exception", 
-                //                                new Exception("Inner exception details"),
-                //                                new Exception("Another inner exception"),
-                //                                new Exception("Yet another inner exception"),
-                //                                new Exception("Final inner exception"));
-                //throw ag;
-
-
-                Tooltip t = Tooltips.MouseFollow(new Vector2(150, 150));
-                t.AddText("hi there cutie patootie dajuska darling <3");
-                t.Show();
-            });
-
-            text.OnTooltipConfigure = Invocation.Create((Tooltip t) =>
-            {
-                t.AddText("Hello, World");
-                t.AddButton("Test button");
-            });
-
-            btn.OnTooltipConfigure = Invocation.Create((Tooltip t) =>
-            {
-                string h = c.Hex;
-                t.AddText($"\\c[{h}]Watch out, it will crash the game!");
-                var picker = new UIColorPicker();
-                picker.SelectedColor = c;
-                picker.OnColorChangedBasic.Subscribe(col =>
-                {
-                    c = col;
-                });
-                t.AddContent(picker);
-            });
-            window.AddContent(btn);
-
-            var slider = new UIValueSlider<int>(0, 100, 50);
-            slider.OnValueChangedBasic.Subscribe(i =>
-            {
-                log.Debug($"Slider value changed: {i}");
-            });
-            slider.Step = 1;
-            slider.SnapToStep = true;
-            slider.HoldShiftToDisableSnap = false;
-
-            window.AddContent(slider);
-
-        }, TimeSpan.FromMilliseconds(50));
-
-
         var cam = world.CreateEntity<Camera>("cam");
         cam.transform.position = cam.transform.position with
         {
@@ -156,6 +102,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
         entity.AddComponent<ImportantComponent>();
         entity.AddComponent<SpriteRenderer>(Assets.Load<Sprite>("Rositta"));
         entity.AddComponent<CharacterController>();
+
         var vitals = entity.AddComponent<Vitality>();
         vitals.Health.MaxHealth = 100;
         var statusEffector = entity.AddComponent<StatusEffector>();
@@ -166,8 +113,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
 
         #region weapon stuff
 
-        var projectile = world.CreateEntity<Projectile>("demoProjectile");
-        var projStats = new Projectile.ProjectileStats
+        var projStats = new ProjectileStats
         {
             DamageType = new PhysicalDamage(),
             Damage = 15,
@@ -175,10 +121,6 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
             CritMultiplier = 2.0f,
             StatusChance = 1.0f
         };
-
-        // Assign stats to projectile
-        projectile.Stats = projStats;
-
 
         // 5. Create trigger
         var trigger = new StandardTrigger()
@@ -189,7 +131,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: true)
         // 6. Create weapon entity
         var gun = world.CreateEntity("demoGun");
 
-        var magazine = gun.AddComponent<Magazine>(projectile, new PerShellReloadBehavior()
+        var magazine = gun.AddComponent<Magazine>(projStats, new PerShellReloadBehavior()
         {
             ReloadTime = 5
         });

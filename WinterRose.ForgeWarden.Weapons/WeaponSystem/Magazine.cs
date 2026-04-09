@@ -22,6 +22,13 @@ public class Magazine : Component, IUpdatable
     public int AmmoReserves { get; set; } = 1000;
     public int CurrentLoadedAmmo { get; set; }
 
+    public Magazine(ProjectileStats projectile, ReloadBehavior reloadBehavior)
+    {
+        Projectile = projectile;
+        ReloadBehavior = reloadBehavior;
+        reloadBehavior.Magazine = this;
+    }
+
     public void StartReload() => ReloadBehavior.StartReload();
     public void Update() => ReloadBehavior.Update();
 
@@ -49,13 +56,6 @@ public class Magazine : Component, IUpdatable
         }
 
         return totalProjectiles;
-    }
-
-    public Magazine(ProjectileStats projectile, ReloadBehavior reloadBehavior)
-    {
-        Projectile = projectile;
-        ReloadBehavior = reloadBehavior;
-        reloadBehavior.Magazine = this;
     }
 
     private Magazine() { } // for serialization
