@@ -17,6 +17,7 @@ public class TileMap : Component, IUpdatable, IRenderable
     [ReadOnly]
     public int Seed { get; set; } = 0;
     public bool GenerateBiomesOnRegionCreate { get; set; } = true;
+    public float RegionTextureStaleSeconds { get; set; } = 5f;
 
     [Hide]
     readonly Dictionary<long, TileRegion> regions = new();
@@ -92,7 +93,29 @@ public class TileMap : Component, IUpdatable, IRenderable
         }
     }
 
-    public bool PlaceTile(int x, int y, Tile tile)
+    void MarkRegionsDirtyAround(int regionX, int regionY, int spreadRange = 1)
+    {
+        int range = Math.Max(0, spreadRange);
+        for (int ry = regionY - range; ry <= regionY + range; ry++)
+        {
+            for (int rx = regionX - range; rx <= regionX + range; rx++)
+            {
+                if (TryGetRegion(rx, ry, out var region))
+                {
+                    region.MarkRenderDirty();
+                    region.IsDirty = true;
+                }
+            }
+        }
+    }
+
+    void MarkRegionsDirtyAroundTile(int x, int y, int spreadRange = 1)
+    {
+        var (rx, ry) = RegionCoordFromTile(x, y);
+        MarkRegionsDirtyAround(rx, ry, spreadRange);
+    }
+
+    public bool PlaceTile(int x, int y, Tile tile, int dirtySpreadRange = 1)
     {
         var cell = GetTileCell(x, y, create: true);
         if (cell == null) return false;
@@ -108,6 +131,7 @@ public class TileMap : Component, IUpdatable, IRenderable
 
         if (region.State == LoadedState.Unloaded) region.State = LoadedState.Loaded;
 
+        MarkRegionsDirtyAround(rx, ry, dirtySpreadRange);
         NotifyNeighborsChange(x, y);
         return true;
     }
@@ -131,7 +155,7 @@ public class TileMap : Component, IUpdatable, IRenderable
     }
 
     // --- REPLACE RemoveTileAt: let the region notify the tile about removal ---
-    public bool RemoveTileAt(int x, int y, Predicate<Tile> match)
+    public bool RemoveTileAt(int x, int y, Predicate<Tile> match, int dirtySpreadRange = 1)
     {
         var cell = GetTileCell(x, y, create: false);
         if (cell == null) return false;
@@ -148,6 +172,7 @@ public class TileMap : Component, IUpdatable, IRenderable
                 cell.Tiles.RemoveAt(i);
                 // inform the region (if available) so it can call OnRemoved
                 region?.NotifyTileRemoved(localX, localY, removed, x, y);
+                MarkRegionsDirtyAround(rx, ry, dirtySpreadRange);
                 NotifyNeighborsChange(x, y);
                 return true;
             }
@@ -155,7 +180,7 @@ public class TileMap : Component, IUpdatable, IRenderable
         return false;
     }
 
-    public void SetTileAt(int x, int y, Tile tile)
+    public void SetTileAt(int x, int y, Tile tile, int dirtySpreadRange = 1)
     {
         if (tile == null)
             throw new ArgumentNullException(nameof(tile));
@@ -173,6 +198,7 @@ public class TileMap : Component, IUpdatable, IRenderable
 
         // mark region as dirty for saving
         region.IsDirty = true;
+        MarkRegionsDirtyAroundTile(x, y, dirtySpreadRange);
 
         // notify neighbors (still handled by the tilemap itself)
         NotifyNeighborsChange(x, y);
@@ -219,10 +245,8 @@ public class TileMap : Component, IUpdatable, IRenderable
         return null;
     }
 
-    // iterate cells with a callback
     public void ForEachCell(Action<int, int, TileCell> action)
     {
-        // iterate only existing regions (can't iterate infinite space)
         foreach (var kv in regions)
         {
             var region = kv.Value;
@@ -240,7 +264,6 @@ public class TileMap : Component, IUpdatable, IRenderable
         }
     }
 
-    // ---- biome support (very small placeholder) ----
     public Biome GetBiomeAt(int x, int y, bool create = false)
     {
         var cell = GetTileCell(x, y, create);
@@ -251,10 +274,12 @@ public class TileMap : Component, IUpdatable, IRenderable
     {
         var cell = GetTileCell(x, y, create: true);
         if (cell != null) cell.Biome = biome;
+        MarkRegionsDirtyAroundTile(x, y);
     }
 
     public void UpdateRegionLoadingAroundCamera(int radiusInRegions = 7)
     {
+        float now = WinterRose.ForgeWarden.Time.sinceStartup;
         Vector2 camWorld;
         if (Camera.main is null)
             camWorld = ForgeWardenEngine.Current.Window.Size / 2;
@@ -264,7 +289,6 @@ public class TileMap : Component, IUpdatable, IRenderable
         var (centerGx, centerGy) = WorldToGrid(camWorld);
         var (centerRx, centerRy) = RegionCoordFromTile(centerGx, centerGy);
 
-        // compute new active set
         var activeNow = new HashSet<long>();
         for (int ry = centerRy - radiusInRegions; ry <= centerRy + radiusInRegions; ry++)
         {
@@ -276,17 +300,18 @@ public class TileMap : Component, IUpdatable, IRenderable
 
                 if (region.State == LoadedState.Unloaded || region.State == LoadedState.Loading)
                 {
-                    region.State = LoadedState.Loaded; // transition to Loaded
+                    region.State = LoadedState.Loaded;
                 }
 
                 if (region.State != LoadedState.Persisted)
                 {
                     region.State = LoadedState.Active;
                 }
+
+                region.MarkVisited(now);
             }
         }
 
-        // deactivate previously active regions that are not in activeNow and not Persisted
         var keys = new List<long>(regions.Keys);
         for (int i = 0; i < keys.Count; i++)
         {
@@ -294,15 +319,22 @@ public class TileMap : Component, IUpdatable, IRenderable
             if (activeNow.Contains(key)) continue;
             var region = regions[key];
             if (region.State == LoadedState.Active)
-            {
                 region.State = LoadedState.Loaded;
-            }
+
+            region.ReleaseCompiledTextureIfStale(now, Math.Max(1f, RegionTextureStaleSeconds));
+        }
+
+        foreach (var region in regions.Values)
+        {
+            if (region.State == LoadedState.Active || region.State == LoadedState.Persisted)
+                continue;
+
+            region.ReleaseCompiledTextureIfStale(now, Math.Max(1f, RegionTextureStaleSeconds));
         }
     }
 
     static long PackRegionKey(int rx, int ry) => ((long)rx << 32) | (uint)ry;
 
-    // floor-division helper for negative coordinates
     static int FloorDiv(int value, int divisor)
     {
         double d = (double)value / divisor;
@@ -336,7 +368,6 @@ public class TileMap : Component, IUpdatable, IRenderable
             if (GenerateBiomesOnRegionCreate)
             {
                 InitializeRegionBiomes(region);
-                // mark newly generated region as loaded so it's available without extra steps
                 region.State = LoadedState.Loaded;
             }
         }
@@ -369,7 +400,54 @@ public class TileMap : Component, IUpdatable, IRenderable
                 float noise = PatternNoise(gx, gy, Seed);
                 var biome = Biomes.Get(noise);
                 cell.Biome = biome;
+            }
+        }
+
+        for (int ly = 0; ly < region.Size; ly++)
+        {
+            for (int lx = 0; lx < region.Size; lx++)
+            {
+                int gx = baseTileX + lx;
+                int gy = baseTileY + ly;
+
+                var cell = region.GetCell(lx, ly);
+                if (cell == null) continue;
+
+                var biome = cell.Biome;
+                if (biome == null) continue;
                 biome.GenerateTile(gx, gy, cell, Noise);
+            }
+        }
+
+        for (int ly = 0; ly < region.Size; ly++)
+        {
+            for (int lx = 0; lx < region.Size; lx++)
+            {
+                int gx = baseTileX + lx;
+                int gy = baseTileY + ly;
+
+                var cell = region.GetCell(lx, ly);
+                if (cell == null) continue;
+
+                var biome = cell.Biome;
+                if (biome == null) continue;
+                biome.GeneratePathTile(gx, gy, cell, Noise);
+            }
+        }
+
+        for (int ly = 0; ly < region.Size; ly++)
+        {
+            for (int lx = 0; lx < region.Size; lx++)
+            {
+                int gx = baseTileX + lx;
+                int gy = baseTileY + ly;
+
+                var cell = region.GetCell(lx, ly);
+                if (cell == null) continue;
+
+                var biome = cell.Biome;
+                if (biome == null) continue;
+                biome.GenerateDetailTile(gx, gy, cell, Noise);
             }
         }
     }
@@ -396,28 +474,29 @@ public class TileMap : Component, IUpdatable, IRenderable
         }
     }
 
-    // ---- update / draw ----
     public void Update()
     {
-        // default streaming behaviour: ensure couple regions around camera are active
         UpdateRegionLoadingAroundCamera(radiusInRegions: 1);
 
-        // let regions handle ticking for active/persisted regions
         foreach (var region in ActiveRegions())
         {
             region.Update();
         }
     }
 
-    // --- REPLACE Draw: delegate per-region drawing to the region itself ---
     public void Draw(Matrix4x4 viewMatrix)
     {
-        // pass a small delegate to convert grid-to-world positions
         Func<int, int, Vector2> gridToWorld = (gx, gy) => GridToWorld(gx, gy, center: true);
 
         foreach (var region in ActiveRegions())
-        {
             region.Draw(viewMatrix, TileSize, gridToWorld);
+    }
+
+    protected override void OnDestroy()
+    {
+        foreach (var region in regions.Values)
+        {
+            region.Destroy();
         }
     }
 }

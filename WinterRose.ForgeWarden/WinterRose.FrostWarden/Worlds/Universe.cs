@@ -32,13 +32,10 @@ namespace WinterRose.ForgeWarden.Worlds
             get => currentWorld;
             set
             {
-                if (currentWorld == null)
-                {
-                    currentWorld = value;
-                    currentWorld.InitializeWorld();
-                    return;
-                }
+
                 nextWorld = value;
+                if (currentWorld == null)
+                    CommitWorldChangeIfNeeded();
             }
         }
 
@@ -47,12 +44,13 @@ namespace WinterRose.ForgeWarden.Worlds
         {
             if (nextWorld is not null)
             {
-                // dispose calls the dispose on all related entities, and all entities call dispose on their components.
-                // effectively disposing all unmanaged resources assuming each component didnt forget anything
-                currentWorld.Dispose();
+                currentWorld?.Dispose();
 
                 currentWorld = nextWorld;
                 nextWorld = null;
+
+                Camera? camera = Universe.CurrentWorld.GetAll<Camera>().FirstOrDefault();
+                Camera.main = camera!;
 
                 currentWorld.InitializeWorld();
             }

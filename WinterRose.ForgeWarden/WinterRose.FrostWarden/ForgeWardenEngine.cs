@@ -244,9 +244,7 @@ public abstract class ForgeWardenEngine
             EndDrawing();
 
             Universe.CurrentWorld = CreateFirstWorld();
-            Camera? camera = Universe.CurrentWorld.GetAll<Camera>().FirstOrDefault();
-            Camera.main = camera;
-            RenderTexture2D worldTex = Raylib.LoadRenderTexture(Window.Width, Window.Height);
+
 
             while (!Raylib.WindowShouldClose() && !GameIsClosing)
             {
@@ -259,8 +257,9 @@ public abstract class ForgeWardenEngine
                     Raylib.DrawText($"FPS: {ray.GetFPS()} - Delta: {Time.deltaTime}", 10, 10, 18, Color.Magenta);
                 Raylib.EndDrawing();
             }
-
-            Raylib.UnloadRenderTexture(worldTex);
+            log.Info("Starting world disposal");
+            Universe.CurrentWorld.Dispose();
+            log.Info($"Destroying world took {Universe.CurrentWorld._Entities.Sum(e => e.GetAllComponents().Sum(c => c.destroyTime))}ms");
 
         }
         catch (Exception ex)

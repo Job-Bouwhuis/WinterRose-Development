@@ -81,6 +81,7 @@ namespace WinterRose.ForgeWarden
             Raylib.UnloadImage(img);
             var sprite = new Sprite(tex, false);
             sprite.Source = key;
+            sprite.SourceRect = new Rectangle(0, 0, width, height);
             SpriteCache.RegisterSprite(sprite);
             return sprite;
         }

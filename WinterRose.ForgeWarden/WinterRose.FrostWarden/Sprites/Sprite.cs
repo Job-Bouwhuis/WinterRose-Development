@@ -70,6 +70,7 @@ namespace WinterRose.ForgeWarden
 
             var sprite = new Sprite(tex, false);
             sprite.Source = $"Generated_Circle_{diameter}_{fillColor.R}{fillColor.G}{fillColor.B}{fillColor.A}";
+            sprite.SourceRect = new Rectangle(0, 0, diameter, diameter);
             SpriteCache.RegisterSprite(sprite);
             return sprite;
         }

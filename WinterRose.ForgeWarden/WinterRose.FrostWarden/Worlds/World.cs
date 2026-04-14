@@ -171,7 +171,9 @@ public class World : IDisposable
 
     public void Dispose()
     {
-        // Clean up Bullet resources
+        foreach (var entity in entities)
+            entity.CallOnDestroy();
+
         physicsWorld.Dispose();
         solver.Dispose();
         broadphase.Dispose();

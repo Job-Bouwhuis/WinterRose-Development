@@ -1,4 +1,7 @@
-﻿namespace WinterRose.ForgeWarden.TileMaps;
+﻿using Raylib_cs;
+using System.Numerics;
+
+namespace WinterRose.ForgeWarden.TileMaps;
 
 public class TileRegion
 {
@@ -12,6 +15,12 @@ public class TileRegion
     public bool IsDirty { get; internal set; }
     public TileMap Map { get; internal set; }
 
+    private RenderTexture2D compiledTexture;
+    private bool hasCompiledTexture;
+    private int compiledTileSize = -1;
+    private bool isRenderDirty = true;
+    private float lastVisitedAt = 0f;
+
     public TileRegion(int rx, int ry, int size, TileMap map)
     {
         Map = map;
@@ -22,6 +31,8 @@ public class TileRegion
         for (int i = 0; i < Cells.Length; i++)
             Cells[i] = CreateTileCell();
         State = LoadedState.Unloaded;
+        IsDirty = true;
+        isRenderDirty = true;
     }
 
     private TileCell CreateTileCell()
@@ -38,22 +49,18 @@ public class TileRegion
         return Cells[localY * Size + localX];
     }
 
-    // called when region should load its data (can be overridden/filled later)
     public virtual void Load()
     {
-        // default: no-op (user can override)
     }
 
-    // called when region should save its data (can be overridden/filled later)
     public virtual void Save()
     {
-        // default: no-op (user can override)
     }
 
-    // called from TileMap.Update() — ticks tiles inside this region
     public virtual void Update()
     {
-        // tick every tile in region (in tile-layer order as stored in TileCell)
+        bool foundDirtyTile = false;
+
         for (int ly = 0; ly < Size; ly++)
         {
             for (int lx = 0; lx < Size; lx++)
@@ -64,17 +71,68 @@ public class TileRegion
                 for (int i = 0; i < list.Count; i++)
                 {
                     list[i].Tick();
+                    if (list[i].Dirty)
+                    {
+                        list[i].Dirty = false;
+                        foundDirtyTile = true;
+                    }
                 }
             }
         }
+
+        if (foundDirtyTile)
+            MarkRenderDirty();
     }
 
-    // called from TileMap.Draw() — draws tiles inside this region
-    // gridToWorld: delegate provided by TileMap to convert grid coords to world pos
-    public virtual void Draw(System.Numerics.Matrix4x4 viewMatrix, int tileSize, Func<int, int, System.Numerics.Vector2> gridToWorld)
+    public virtual void Draw(Matrix4x4 viewMatrix, int tileSize, Func<int, int, Vector2> gridToWorld)
     {
+        EnsureCompiledTexture(tileSize);
+        if (isRenderDirty)
+            RebuildCompiledTexture(viewMatrix, tileSize);
+
         int baseTileX = RegionX * Size;
         int baseTileY = RegionY * Size;
+        float half = tileSize * 0.5f;
+        Vector2 regionWorldCenter = gridToWorld(baseTileX, baseTileY);
+
+        Raylib.DrawTexturePro(
+            compiledTexture.Texture,
+            new Rectangle(0, 0, compiledTexture.Texture.Width, -compiledTexture.Texture.Height),
+            new Rectangle(regionWorldCenter.X - half, regionWorldCenter.Y - half, Size * tileSize, Size * tileSize),
+            Vector2.Zero,
+            0f,
+            Color.White);
+    }
+
+    private void EnsureCompiledTexture(int tileSize)
+    {
+        if (hasCompiledTexture && compiledTileSize == tileSize && compiledTexture.Id != 0)
+            return;
+
+        if (hasCompiledTexture && compiledTexture.Id != 0)
+        {
+            Raylib.UnloadRenderTexture(compiledTexture);
+            hasCompiledTexture = false;
+        }
+
+        int sizeInPixels = Size * tileSize;
+        compiledTexture = Raylib.LoadRenderTexture(sizeInPixels, sizeInPixels);
+        compiledTileSize = tileSize;
+        hasCompiledTexture = true;
+        isRenderDirty = true;
+    }
+
+    private void RebuildCompiledTexture(Matrix4x4 viewMatrix, int tileSize)
+    {
+        if (!hasCompiledTexture || compiledTexture.Id == 0)
+            return;
+
+        Raylib.BeginTextureMode(compiledTexture);
+        Raylib.ClearBackground(new Color(0, 0, 0, 0));
+
+        int baseTileX = RegionX * Size;
+        int baseTileY = RegionY * Size;
+        float half = tileSize * 0.5f;
 
         for (int ly = 0; ly < Size; ly++)
         {
@@ -85,7 +143,7 @@ public class TileRegion
 
                 int gx = baseTileX + lx;
                 int gy = baseTileY + ly;
-                var worldPos = gridToWorld(gx, gy);
+                Vector2 worldPos = new(lx * tileSize + half, ly * tileSize + half);
 
                 var list = cell.Tiles;
                 for (int i = 0; i < list.Count; i++)
@@ -94,19 +152,64 @@ public class TileRegion
                 }
             }
         }
+
+        Raylib.EndTextureMode();
+        isRenderDirty = false;
     }
 
-    // called by TileMap when a tile was placed into this region
     public virtual void NotifyTilePlaced(int localX, int localY, Tile tile, int globalX, int globalY)
     {
-        // default behaviour: call tile's placed handler
         tile.OnPlaced(globalX, globalY);
+        MarkRenderDirty();
+        IsDirty = true;
     }
 
-    // called by TileMap when a tile was removed from this region
     public virtual void NotifyTileRemoved(int localX, int localY, Tile tile, int globalX, int globalY)
     {
-        // default behaviour: call tile's removed handler
         tile.OnRemoved(globalX, globalY);
+        MarkRenderDirty();
+        IsDirty = true;
+    }
+
+    internal void MarkRenderDirty()
+    {
+        isRenderDirty = true;
+    }
+
+    internal void MarkVisited(float now)
+    {
+        lastVisitedAt = now;
+    }
+
+    internal void ReleaseCompiledTextureIfStale(float now, float staleAfterSeconds)
+    {
+        if (!hasCompiledTexture || compiledTexture.Id == 0)
+            return;
+
+        if (State == LoadedState.Active || State == LoadedState.Persisted)
+            return;
+
+        float idleTime = now - lastVisitedAt;
+        if (idleTime < staleAfterSeconds)
+            return;
+
+        UnloadCompiledTexture();
+    }
+
+    internal void Destroy()
+    {
+        Save();
+        UnloadCompiledTexture();
+    }
+
+    private void UnloadCompiledTexture()
+    {
+        if (!hasCompiledTexture || compiledTexture.Id == 0)
+            return;
+
+        Raylib.UnloadRenderTexture(compiledTexture);
+        hasCompiledTexture = false;
+        compiledTileSize = -1;
+        isRenderDirty = true;
     }
 }

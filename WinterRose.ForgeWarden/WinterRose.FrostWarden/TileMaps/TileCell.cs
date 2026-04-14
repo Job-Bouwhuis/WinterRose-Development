@@ -16,6 +16,8 @@ public class TileCell
 
     public void AddTile(Tile tile)
     {
+        tile.Cell = this;
+
         int insertIndex = Tiles.Count;
         for (int i = 0; i < Tiles.Count; i++)
         {
