@@ -1,7 +1,4 @@
 ﻿using Raylib_cs;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using VerdantRequiem.Scripts.Player;
 using VerdantRequiem.Scripts.Weapons;
 using WinterRose.ForgeWarden;
@@ -11,14 +8,18 @@ using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.TileMaps;
 using WinterRose.ForgeWarden.Worlds;
 
-namespace VerdantRequiem;
+namespace VerdantRequiem.Worlds;
 
-public partial class Worlds
+public static class DebugWorld
 {
     public static World DebugLevel()
     {
         World world = new World("Debug Level");
+
+        Entity tilemap = world.CreateEntity("TileMap");
+
         var player = PlayerFactory.CreatePlayer(world);
+
 
         Entity wm = world.FindEntityByTag("WeaponMount")!;
         Weapon w = SMGFactory.CreateSMG(world);
@@ -27,12 +28,10 @@ public partial class Worlds
         Camera cam = world.CreateEntity("cam", new Camera());
         cam.transform.position = cam.transform.position with
         {
-            Z = 1.2f
+            Z = 0.6f
         };
         var camFollow = cam.AddComponent<SmoothCamera2DMode>();
         camFollow.Target = player.transform;
-
-        Entity tilemap = world.CreateEntity("TileMap");
 
         BiomeRegistry biomes = new();
         Biome plains = new(Sprite.CreateRectangle(32, 32, new Color(70, 150, 70, 255)));
@@ -98,6 +97,10 @@ public partial class Worlds
         using var grassTileSource = grassTileHeader.Source;
         var grassSheet = SpriteSheet.Load(grassTileSource.Name, 64, 64);
 
+        var wellTileHeader = Assets.GetHeader("Well");
+        using var wellTileSource = wellTileHeader.Source;
+        var wellSheet = SpriteSheet.Load(wellTileSource.Name, 32, 32);
+
         var grassPatternTile = new BiomeTileDefinition(
             "grasstile_pattern",
             () => new PatternSheetTile(grassSheet, columns: 2, layer: 0),
@@ -105,13 +108,60 @@ public partial class Worlds
 
         grassPatternTile.AllowNoDetails();
 
-        Biome idk = new Biome(Assets.Load<Sprite>("grasstile"))
+        var grassBiomeSprite = Assets.Load<Sprite>("grasstile") ?? Sprite.CreateRectangle(32, 32, new Color(70, 150, 70, 255));
+
+        Biome idk = new Biome(grassBiomeSprite)
             .ClearGroundVariants()
             .RegisterGroundVariant(new BiomeGroundVariant(grassPatternTile, weight: 1f));
+
         biomes.AddBiome(idk, 0.3f);
 
         TileMap map = tilemap.AddComponent<TileMap>(biomes);
 
+        var wellStructure = CreateWellStructure(wellSheet);
+        map.Structures.AddRule(new StructureSpawnRule("well", wellStructure)
+        {
+            SpawnChance = 0.25f,
+            GridSize = 24,
+            Priority = 10,
+            Salt = 731,
+            AllowRotation = false,
+            CanSpawnAt = (tileMap, x, y) => tileMap.GetBiomeAt(x, y) == idk
+        });
+
         return world;
+    }
+
+    private static StructureDefinition CreateWellStructure(SpriteSheet wellSheet)
+    {
+        var well = new StructureDefinition("well");
+
+        for (int y = 0; y < 4; y++)
+        {
+            for (int x = 0; x < 3; x++)
+            {
+                int index = y * 3 + x;
+                var sprite = wellSheet.GetSprite(index);
+                string tileId = $"well_{x}_{y}";
+
+                well.AddTile(
+                    x,
+                    y,
+                    CreateWellTileDefinition(sprite, $"{tileId}_north", rotation: 0f),
+                    CreateWellTileDefinition(sprite, $"{tileId}_east", rotation: 90f),
+                    CreateWellTileDefinition(sprite, $"{tileId}_south", rotation: 180f),
+                    CreateWellTileDefinition(sprite, $"{tileId}_west", rotation: 270f));
+            }
+        }
+
+        return well;
+    }
+
+    private static BiomeTileDefinition CreateWellTileDefinition(Sprite sprite, string id, float rotation, int layer = 2)
+    {
+        return new BiomeTileDefinition(
+            id,
+            () => new GeneralTile(id, sprite, layer, rotation),
+            layer);
     }
 }

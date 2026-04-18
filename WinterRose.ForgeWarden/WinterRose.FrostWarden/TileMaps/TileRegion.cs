@@ -8,7 +8,7 @@ public class TileRegion
     public readonly int RegionX;
     public readonly int RegionY;
     public LoadedState State;
-    public readonly int Size; // tiles per side
+    public readonly int Size;
     [Hide]
     public readonly TileCell[] Cells;
 

@@ -1068,28 +1068,17 @@ public class UITextInput : UIContent
                         float xa = 0f;
                         foreach (var span in spans)
                         {
-                            // injected or token spans occupy visual width but are atomic
                             if (span.IsInjected || span.IsToken)
                             {
-                                //if (span.GlobalIndex < targetIndex ||
-                                //    (IncludeTrailingInjections(targetIndex) && span.GlobalIndex == targetIndex))
-                                //{
                                     xa += span.Width;
-                                //}
-
-                                // always continue to next span (they do not consume render chars)
                                 continue;
                             }
 
-                            // plain run span (may contain multiple visible characters)
                             int runStartGlobal = span.GlobalIndex;
                             int runCharCount = span.RenderLength;
 
                             if (targetIndex <= runStartGlobal)
-                            {
-                                // target is before this run -> done
                                 break;
-                            }
 
                             if (targetIndex >= runStartGlobal + runCharCount)
                             {

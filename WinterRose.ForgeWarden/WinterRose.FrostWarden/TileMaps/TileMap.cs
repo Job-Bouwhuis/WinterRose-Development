@@ -1,6 +1,7 @@
 ﻿using Raylib_cs;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace WinterRose.ForgeWarden.TileMaps;
@@ -24,6 +25,14 @@ public class TileMap : Component, IUpdatable, IRenderable
 
     [Hide]
     public PerlinNoise Noise { get; set; }
+
+    public StructureGenerator Structures { get; } = new();
+
+    readonly HashSet<long> structurePlannedRegions = new();
+    readonly HashSet<long> structureAppliedRegions = new();
+    readonly Dictionary<long, List<ResolvedStructureTile>> structureTilesByRegion = new();
+    readonly Dictionary<long, List<ResolvedStructureEntitySpawn>> structureSpawnsByRegion = new();
+    readonly HashSet<long> structureFootprints = new();
 
     public TileMap(BiomeRegistry biomes)
     {
@@ -54,6 +63,11 @@ public class TileMap : Component, IUpdatable, IRenderable
         }
 
         regions.Clear();
+        structurePlannedRegions.Clear();
+        structureAppliedRegions.Clear();
+        structureTilesByRegion.Clear();
+        structureSpawnsByRegion.Clear();
+        structureFootprints.Clear();
 
         var origin = GetOrCreateRegion(0, 0);
         origin.State = LoadedState.Loaded;
@@ -435,6 +449,8 @@ public class TileMap : Component, IUpdatable, IRenderable
             }
         }
 
+        ApplyStructuresToRegion(region);
+
         for (int ly = 0; ly < region.Size; ly++)
         {
             for (int lx = 0; lx < region.Size; lx++)
@@ -450,6 +466,89 @@ public class TileMap : Component, IUpdatable, IRenderable
                 biome.GenerateDetailTile(gx, gy, cell, Noise);
             }
         }
+    }
+
+    public bool IsStructureFootprint(int gx, int gy)
+    {
+        var (rx, ry) = RegionCoordFromTile(gx, gy);
+        EnsureStructurePlanForRegion(rx, ry);
+        return structureFootprints.Contains(PackTileCoord(gx, gy));
+    }
+
+    public IReadOnlyList<ResolvedStructureEntitySpawn> GetStructureEntitySpawnsInRegion(int regionX, int regionY)
+    {
+        EnsureStructurePlanForRegion(regionX, regionY);
+        long key = PackRegionKey(regionX, regionY);
+        if (structureSpawnsByRegion.TryGetValue(key, out var spawns))
+            return spawns;
+        return Array.Empty<ResolvedStructureEntitySpawn>();
+    }
+
+    void EnsureStructurePlanForRegion(int regionX, int regionY)
+    {
+        long key = PackRegionKey(regionX, regionY);
+        if (structurePlannedRegions.Contains(key))
+            return;
+
+        structurePlannedRegions.Add(key);
+
+        if (!Structures.HasRules)
+        {
+            structureTilesByRegion[key] = new List<ResolvedStructureTile>();
+            structureSpawnsByRegion[key] = new List<ResolvedStructureEntitySpawn>();
+            return;
+        }
+
+        var plan = Structures.PlanRegion(this, regionX, regionY, Seed);
+        structureTilesByRegion[key] = plan.Tiles.ToList();
+        structureSpawnsByRegion[key] = plan.EntitySpawns.ToList();
+
+        foreach (var footprint in plan.FootprintTileKeys)
+            structureFootprints.Add(footprint);
+    }
+
+    void ApplyStructuresToRegion(TileRegion region)
+    {
+        long key = PackRegionKey(region.RegionX, region.RegionY);
+        if (structureAppliedRegions.Contains(key))
+            return;
+
+        EnsureStructurePlanForRegion(region.RegionX, region.RegionY);
+        if (!structureTilesByRegion.TryGetValue(key, out var placements) || placements.Count == 0)
+        {
+            structureAppliedRegions.Add(key);
+            return;
+        }
+
+        for (int i = 0; i < placements.Count; i++)
+        {
+            var placement = placements[i];
+            var (localX, localY) = LocalCoordInRegion(placement.X, placement.Y);
+            var cell = region.GetCell(localX, localY);
+            if (cell == null)
+                continue;
+
+            if (placement.ReplaceExistingOnLayer)
+                cell.RemoveTile(t => t.Layer == placement.Definition.Layer);
+            else if (cell.Tiles.Any(t => t.Layer == placement.Definition.Layer))
+                continue;
+
+            var tile = placement.Definition.TileFactory();
+            tile.Layer = placement.Definition.Layer;
+            if (string.IsNullOrWhiteSpace(tile.Id))
+                tile.Id = placement.Definition.Id;
+
+            cell.AddTile(tile);
+        }
+
+        region.MarkRenderDirty();
+        region.IsDirty = true;
+        structureAppliedRegions.Add(key);
+    }
+
+    static long PackTileCoord(int x, int y)
+    {
+        return ((long)x << 32) | (uint)y;
     }
 
     public void SetRegionPersisted(int regionX, int regionY, bool persist)

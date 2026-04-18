@@ -2,6 +2,7 @@
 using BulletSharp;
 using Raylib_cs;
 using VerdantRequiem.Configs.Controls;
+using VerdantRequiem.Worlds;
 using WinterRose.ArgumentUtility;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.Editor;
@@ -44,6 +45,6 @@ public class VerdantRequiem() : ForgeWardenEngine(UseBrowser: false)
         Universe.Hirarchy.Show();
 #endif
 
-        return Worlds.DebugLevel();
+        return DebugWorld.DebugLevel();
     }
 }

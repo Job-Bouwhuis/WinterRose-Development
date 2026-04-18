@@ -1,8 +1,10 @@
 ﻿using Raylib_cs;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 using WinterRose.ForgeWarden;
+using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.ForgeWarden.Components.Buildin;
 using WinterRose.ForgeWarden.Entities;
 using WinterRose.ForgeWarden.HealthSystem;
@@ -23,7 +25,8 @@ internal static class PlayerFactory
         player.AddComponent(new Vitality());
 
         // temporary sprite for the player until theres an actual sprite
-        player.AddComponent<SpriteRenderer>(Sprite.CreateRectangle(32, 32, Color.Green));
+        player.AddComponent<SpriteRenderer>(Assets.Load<Sprite>("playertest"));
+        player.transform.scale = new Vector3(2, 2, 1);
 
         Entity weaponMount = world.CreateEntity("WeaponMount");
         weaponMount.transform.parent = player.transform;

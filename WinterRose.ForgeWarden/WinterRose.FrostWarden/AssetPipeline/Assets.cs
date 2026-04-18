@@ -32,7 +32,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             public bool isReadonly { get; set; } = false;
         }
         private static Log log = new Log("Assets");
-        private static Dictionary<string, AssetHeader> assetHeaders = [];
+        private static Dictionary<string, AssetHeader> assetHeaders = new(StringComparer.OrdinalIgnoreCase);
         private static Dictionary<Type, HandlerEntry> handerTypeMap = [];
         private const string ASSET_HEADER_EXTENSION = ".fwah";
         private const string ASSET_EXTENSION = ".fwasset";
