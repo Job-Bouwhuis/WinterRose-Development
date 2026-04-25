@@ -251,6 +251,9 @@ public class Biome
 
     private bool CanSpawnDetailOnTarget(TileMap map, int x, int y, BiomeTileDefinition detailDefinition)
     {
+        if (map.IsStructureFootprint(x, y))
+            return false;
+
         var tiles = map.GetTilesAt(x, y);
         if (tiles.Count == 0)
             return true;
