@@ -20,6 +20,7 @@ namespace WinterRose.ForgeWarden
         {
             Texture = SpriteCache.Get(filePath);
             Source = filePath;
+            SourceRect = new Rectangle(0, 0, Texture.Width, Texture.Height);
         }
 
         public Sprite(string filePath, bool ownsTexture)
@@ -27,12 +28,14 @@ namespace WinterRose.ForgeWarden
             Texture = ray.LoadTexture(filePath);
             this.OwnsTexture = ownsTexture;
             Source = filePath;
+            SourceRect = new Rectangle(0, 0, Texture.Width, Texture.Height);
         }
 
         public Sprite(Texture2D texture, bool ownsTexture)
         {
             Texture = texture;
             this.OwnsTexture = ownsTexture;
+            SourceRect = new Rectangle(0, 0, Texture.Width, Texture.Height);
         }
 
         protected Sprite() { }

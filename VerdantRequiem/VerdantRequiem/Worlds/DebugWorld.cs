@@ -103,12 +103,99 @@ public partial class Worlds
             () => new PatternSheetTile(grassSheet, columns: 2, layer: 0),
             layer: 0);
 
-        grassPatternTile.AllowNoDetails();
+        var idkStump = BiomeTileDefinition.FromSprite(Assets.Load<Sprite>("stump"), layer: 2, id: "idk_stump");
+        var idkFlower = BiomeTileDefinition.FromSprite(Assets.Load<Sprite>("yellowflower"), layer: 2, id: "idk_flower");
+        var idkBrownMushroom = BiomeTileDefinition.FromSprite(Assets.Load<Sprite>("Brown_Mushroom"), layer: 2, id: "idk_brown_mushroom");
+        var idkWhiteMushroom = BiomeTileDefinition.FromSprite(Assets.Load<Sprite>("White_Mushroom1"), layer: 2, id: "idk_white_mushroom");
+        var idkGrassA = BiomeTileDefinition.FromSprite(Assets.Load<Sprite>("smallgrass1"), layer: 2, id: "idk_small_grass_1");
+        var idkGrassB = BiomeTileDefinition.FromSprite(Assets.Load<Sprite>("smallgrass2"), layer: 2, id: "idk_small_grass_2");
+        var idkDeadBush = BiomeTileDefinition.FromSprite(Assets.Load<Sprite>("Dead_Bush"), layer: 2, id: "idk_dead_bush");
+        var idkBerryBush = BiomeTileDefinition.FromSprite(Assets.Load<Sprite>("Berry_Bush"), layer: 2, id: "idk_berry_bush");
 
-        Biome idk = new Biome(Assets.Load<Sprite>("grasstile"))
+        idkStump
+            .AddNeighbor(TileNeighborSide.Left, idkBrownMushroom, 0.22f)
+            .AddNeighbor(TileNeighborSide.Right, idkBrownMushroom, 0.22f)
+            .AddNeighbor(TileNeighborSide.Up, idkWhiteMushroom, 0.18f)
+            .AddNeighbor(TileNeighborSide.Down, idkWhiteMushroom, 0.18f);
+
+        grassPatternTile.AllowDetails(
+            idkStump,
+            idkFlower,
+            idkBrownMushroom,
+            idkWhiteMushroom,
+            idkGrassA,
+            idkGrassB,
+            idkDeadBush,
+            idkBerryBush);
+
+        Biome dajuksabiome = new Biome(Assets.Load<Sprite>("grasstile"))
             .ClearGroundVariants()
-            .RegisterGroundVariant(new BiomeGroundVariant(grassPatternTile, weight: 1f));
-        biomes.AddBiome(idk, 0.3f);
+            .RegisterGroundVariant(new BiomeGroundVariant(grassPatternTile, weight: 1f))
+            .RegisterDetailFeature(new BiomeFeatureDefinition("stump_clusters", idkStump)
+            {
+                SpawnChance = 0.04f,
+                MinNoise = 0.15f,
+                MaxNoise = 0.90f,
+                MaxDepth = 1,
+                ReplaceExistingOnLayer = false
+            })
+            .RegisterDetailFeature(new BiomeFeatureDefinition("flower", idkFlower)
+            {
+                SpawnChance = 0.09f,
+                MinNoise = 0.05f,
+                MaxNoise = 0.95f,
+                MaxDepth = 0,
+                ReplaceExistingOnLayer = false
+            })
+            //.RegisterDetailFeature(new BiomeFeatureDefinition("brown_mushroom", idkBrownMushroom)
+            //{
+            //    SpawnChance = 0.03f,
+            //    MinNoise = 0.15f,
+            //    MaxNoise = 0.90f,
+            //    MaxDepth = 0,
+            //    ReplaceExistingOnLayer = false
+            //})
+            //.RegisterDetailFeature(new BiomeFeatureDefinition("white_mushroom", idkWhiteMushroom)
+            //{
+            //    SpawnChance = 0.03f,
+            //    MinNoise = 0.15f,
+            //    MaxNoise = 0.90f,
+            //    MaxDepth = 0,
+            //    ReplaceExistingOnLayer = false
+            //})
+            .RegisterDetailFeature(new BiomeFeatureDefinition("small_grass_1", idkGrassA)
+            {
+                SpawnChance = 0.15f,
+                MinNoise = 0.00f,
+                MaxNoise = 1.00f,
+                MaxDepth = 0,
+                ReplaceExistingOnLayer = false
+            })
+            .RegisterDetailFeature(new BiomeFeatureDefinition("small_grass_2", idkGrassB)
+            {
+                SpawnChance = 0.15f,
+                MinNoise = 0.00f,
+                MaxNoise = 1.00f,
+                MaxDepth = 0,
+                ReplaceExistingOnLayer = false
+            })
+            .RegisterDetailFeature(new BiomeFeatureDefinition("dead_bush", idkDeadBush)
+            {
+                SpawnChance = 0.02f,
+                MinNoise = 0.10f,
+                MaxNoise = 0.90f,
+                MaxDepth = 0,
+                ReplaceExistingOnLayer = false
+            })
+            .RegisterDetailFeature(new BiomeFeatureDefinition("berry_bush", idkBerryBush)
+            {
+                SpawnChance = 0.04f,
+                MinNoise = 0.10f,
+                MaxNoise = 0.92f,
+                MaxDepth = 0,
+                ReplaceExistingOnLayer = false
+            });
+        biomes.AddBiome(dajuksabiome, 0.3f);
 
         TileMap map = tilemap.AddComponent<TileMap>(biomes);
 

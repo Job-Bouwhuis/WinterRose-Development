@@ -66,7 +66,7 @@ public abstract class ForgeWardenEngine
 
     public ThreadLoom GlobalThreadLoom { get; } = new();
 
-    public bool ShowFPS { get; set; } = true;
+    public bool ShowFPS { get; set; } = false;
     public Window Window { get; private set; }
     /// <summary>
     /// True when the engine is in the process of finishing up and close
