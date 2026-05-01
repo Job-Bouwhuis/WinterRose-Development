@@ -4,6 +4,10 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <Title>WinterRose.Recordium</Title>
+        <Authors>TheSnowOwl</Authors>
+        <Version>26.1.0</Version>
     </PropertyGroup>
 
     <ItemGroup>

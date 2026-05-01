@@ -14,24 +14,8 @@ public class Log
     private static readonly Log UnhandledExceptionsLog = new("Global Unhandled Exceptions");
 
     public string Category { get; set; }
-    public List<ILogDestination> Destinations { get; }
+    public IReadOnlyList<ILogDestination> Destinations { get; }
     private int cleanedUpFlag = 0;
-
-    /// <summary>
-    /// Creates a new logger
-    /// </summary>
-    /// <param name="category">eg "Networking" or "Renderer"</param>
-    /// <param name="destinations">Extends on the destinations provided at <see cref="LogDestinations"/></param>
-    public Log(string category, params List<ILogDestination> destinations)
-    {
-        Category = category;
-        Destinations = LogDestinations.GetAllDestinations(destinations);
-
-        lock (LOG_INSTANCES_LOCK)
-        {
-            LOG_INSTANCES.Add(new WeakReference<Log>(this));
-        }
-    }
 
     public Log(string category)
     {
@@ -92,7 +76,7 @@ public class Log
         if (Interlocked.Exchange(ref cleanedUpFlag, 1) == 1)
             return;
 
-        List<ILogDestination> globalDestinations = LogDestinations.GetAllDestinations();
+        IReadOnlyList<ILogDestination> globalDestinations = LogDestinations.GetAllDestinations();
 
         foreach (var dest in Destinations)
         {
@@ -100,7 +84,6 @@ public class Log
                 dest.Cleanup();
         }
 
-        // remove this instance from the global list and compact dead refs
         lock (LOG_INSTANCES_LOCK)
         {
             for (int i = LOG_INSTANCES.Count - 1; i >= 0; i--)
@@ -141,8 +124,7 @@ public class Log
                 try { Console.WriteLine("Exception while flushing logs: " + ex); } catch { }
             }
         }
-
-        // cleanup dead refs
+        
         lock (LOG_INSTANCES_LOCK)
         {
             for (int i = LOG_INSTANCES.Count - 1; i >= 0; i--)

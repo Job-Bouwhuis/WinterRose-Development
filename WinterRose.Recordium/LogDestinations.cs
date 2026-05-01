@@ -14,15 +14,8 @@ public static class LogDestinations
         logDestinations.Remove(logDestination);
     }
 
-    public static List<ILogDestination> GetAllDestinations(params List<ILogDestination> extenders)
+    public static IReadOnlyList<ILogDestination> GetAllDestinations()
     {
-        var r = new List<ILogDestination>();
-        r.AddRange(logDestinations);
-        r.AddRange(extenders);
-#if DEBUG
-        if(r.Count == 0)
-            r.Add(new ConsoleLogDestination());
-#endif
-        return r;
+        return logDestinations;
     }
 }
