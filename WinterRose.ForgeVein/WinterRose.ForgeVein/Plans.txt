@@ -1,0 +1,255 @@
+Phase 1 — Core architecture and transport foundation
+
+Create the initial architecture foundation for a networking framework named WinterRose.Vein.
+
+This project is intended as a learning and experimentation platform for networking architecture, abstraction design, transport systems, and distributed communication. The focus is maintainability, modularity, extensibility, and strict separation of concerns rather than production optimization.
+
+The architecture must be interface-first wherever reasonably possible. Default implementations must remain replaceable.
+
+The system must be layered and responsibilities must remain isolated between layers. Layers must not bypass each other.
+
+Requirements:
+
+Create the foundational project structure for WinterRose.Vein.
+Create examples and usage demonstrations in WinterRose.ForgeVein.Tests.
+Create transport abstractions for TCP and UDP communication.
+Create interfaces for transport servers, transport clients, and transport connections.
+The transport layer must only manage raw byte communication and connection lifecycle.
+The transport layer must not know about packets, DTOs, serialization, validation, routing, or application logic.
+Create base abstractions for logical connections.
+Create base abstractions for packets.
+Create packet registry abstractions.
+Create abstractions for serializers, loggers, event buses, threading systems, and diagnostics providers.
+Create default implementations using WinterForge, Recordium, ForgeSignal, and ForgeThread while keeping implementations replaceable.
+Create base server and client abstractions intended for inheritance by developers.
+Create packet metadata structures supporting:
+packet names
+packet categories
+reliability settings
+validation requirements
+hotpath flags
+Create packet categories such as:
+Handshake
+Control
+Reliable
+HotPath
+Relay
+Stream
+Diagnostics
+Authentication
+Create a packet registry capable of mapping:
+packet identifiers
+packet names
+packet types
+serializers
+metadata
+Avoid runtime reflection during packet dispatching wherever possible.
+The system should support transport agnostic logical connections while still respecting differences between TCP and UDP internally.
+
+Do not implement:
+
+validation
+clustering
+encryption
+relay systems
+substreams
+delegation
+authentication
+reliability handling
+hotpath optimization internals
+
+Focus entirely on establishing clean architecture boundaries and strong abstractions.
+
+Phase 2 — Session layer and reliability system
+
+Extend WinterRose.Vein with a session layer and UDP reliability handling.
+
+Requirements:
+
+Create a dedicated session layer separated from the transport layer.
+The session layer must manage:
+connection identity
+handshake state
+session metadata
+timeout handling
+reliability tracking
+encryption state placeholders
+delegation state placeholders
+Create logical session abstractions independent from TCP and UDP transport internals.
+Implement server-authoritative connection handshakes.
+Handshake flow:
+client connects
+server immediately assigns and sends a connection ID
+server requests identity/authentication information
+invalid or missing responses close the connection with a forbidden response
+TCP connections must use native TCP reliability behavior.
+UDP connections must implement manual acknowledge handling for reliable packets.
+Create packet acknowledge tracking for UDP.
+Create resend tracking and timeout handling for UDP reliable packets.
+Hotpath UDP packets must bypass acknowledge handling entirely.
+The developer experience should remain transport agnostic where possible.
+Create session events using ForgeSignal abstractions.
+Create diagnostics information for:
+session counts
+packet throughput
+reliability statistics
+timeout statistics
+
+Do not implement:
+
+clustering
+relay systems
+substreams
+encryption internals
+validation system
+
+Focus on clean session architecture and reliability separation.
+
+Phase 3 — Validation system and packet processing pipeline
+
+Extend WinterRose.Vein with a validation system and packet processing pipeline.
+
+Requirements:
+
+Create a validation layer completely separated from transport and routing systems.
+Validation must be optional.
+Validation must never run for hotpath packets.
+Create fluent validation abstractions similar to:
+validator.RuleFor(x => x.Name).MinLength(5);
+Create:
+IValidationDefinition<T>
+IValidator<T>
+IRuleBuilder<T, TProp>
+Create extensible validation rule systems.
+Create validation extension methods such as:
+MinLength
+MaxLength
+NotNull
+Range
+Predicate
+Validation definitions must be user extensible.
+The architecture should support future optimization through:
+delegate compilation
+source generation
+without requiring redesign.
+Create packet processing pipelines supporting:
+deserialization
+validation
+packet dispatching
+diagnostics
+Use WinterForge for serialization and deserialization.
+Create packet handler registration abstractions.
+Create packet dispatch systems avoiding runtime reflection wherever possible.
+Create hotpath packet abstractions optimized for minimal metadata overhead.
+Hotpath packets should:
+skip validation
+minimize metadata
+reduce serialization overhead
+
+Do not implement:
+
+clustering
+relay systems
+encryption internals
+substreams
+
+Focus on packet processing architecture and extensibility.
+
+Phase 4 — Routing, relay systems, and substreams
+
+Extend WinterRose.Vein with routing systems and logical relayed streams.
+
+Requirements:
+
+Create a routing layer separated from transport and serialization systems.
+Create abstractions for:
+packet routing
+client relay
+stream relay
+inter-session communication
+Create logical substream abstractions between clients.
+From the client perspective, substreams should behave similarly to directly opening a stream to another client.
+Substreams must remain logical abstractions and must not create dedicated sockets.
+Either side must be capable of closing a substream independently.
+Create relay packet support.
+Create relay diagnostics.
+Create routing metadata systems.
+Allow packets to be routed through the server between clients.
+Ensure routing systems remain transport agnostic.
+Create stream lifecycle handling.
+Create abstractions for future peer-to-peer support without implementing P2P itself.
+
+Do not implement:
+
+clustering
+delegation
+encryption internals
+
+Focus on routing boundaries and logical stream architecture.
+
+Phase 5 — Cluster delegation and authority architecture
+
+Extend WinterRose.Vein with cluster-aware delegation systems.
+
+Requirements:
+
+Create cluster abstractions.
+Servers within the same cluster must be capable of delegating clients between services.
+Cross-cluster communication is not required.
+Create authority server abstractions responsible for:
+authentication
+delegation approval
+service routing
+Service servers must not directly transfer clients between each other.
+Delegation flow:
+service server requests delegation through authority server
+authority server validates delegation
+authority server notifies destination service
+authority server confirms delegation to original service
+original service instructs client to reconnect/switch
+client reconnects using delegation information
+Create delegation tokens or delegation metadata abstractions.
+Create diagnostics for:
+cluster state
+active delegations
+service registrations
+Create abstractions for service discovery within a cluster.
+Ensure delegation architecture remains independent from transport implementation details.
+
+Do not implement:
+
+distributed databases
+cross-cluster communication
+advanced load balancing
+
+Focus on clean delegation architecture and service separation.
+
+Phase 6 — Encryption pipeline and diagnostics expansion
+
+Extend WinterRose.Vein with encryption pipeline architecture and expanded diagnostics systems.
+
+Requirements:
+
+Create pluggable encryption pipeline abstractions.
+Encryption must remain independent from transport implementations.
+Create interfaces supporting future:
+RSA encryption
+hybrid encryption
+session key negotiation
+Do not tightly couple encryption into packet serializers.
+Encryption should exist as a configurable pipeline stage.
+Create encryption state tracking in the session layer.
+Create diagnostics retrieval systems intended for optional UI integration.
+Diagnostics should support:
+connection statistics
+packet statistics
+throughput
+reliability metrics
+relay metrics
+session information
+cluster information
+Diagnostics systems must remain optional and loosely coupled.
+Create diagnostics provider abstractions.
+Create extensible diagnostics reporting models.
+
+Focus on future-proofing architecture and maintaining clean separation of concerns.
