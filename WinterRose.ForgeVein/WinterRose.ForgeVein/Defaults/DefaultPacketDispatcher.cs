@@ -1,3 +1,4 @@
+using WinterRose.ForgeVein.Networking.Application;
 using WinterRose.ForgeVein.Networking.Packets;
 using WinterRose.ForgeVein.Networking.Session;
 using WinterRose.Recordium;
@@ -50,24 +51,21 @@ public sealed class DefaultPacketDispatcher : IPacketDispatcher
         return true;
     }
 
-    private void DispatchToHandler(ISessionConnection session, IPacketDescriptor descriptor, object packet, CancellationToken cancellationToken)
+    private void DispatchToHandler(ISessionConnection session, IPacketDescriptor descriptor, object? packet, CancellationToken cancellationToken)
     {
-        var handler = handlerRegistry.GetType().GetMethod("TryGetHandler")!
-            .MakeGenericMethod(descriptor.PacketType)
-            .Invoke(handlerRegistry, Array.Empty<object?>());
-
-        if (handler is bool { } success && success)
+        if (packet is null)
         {
-            var handlerProperty = handlerRegistry.GetType().GetMethod("TryGetHandler")!
-                .MakeGenericMethod(descriptor.PacketType)
-                .Invoke(handlerRegistry, Array.Empty<object?>());
+            logger.Warning($"Packet deserialization failed for packet {descriptor.Metadata.Name}.");
+            return;
         }
 
-        var tryGet = handlerRegistry.GetType().GetMethod("TryGetHandler")!
+        // Note: Generic method invocation required for handler dispatch
+        var tryGetMethod = handlerRegistry.GetType().GetMethod("TryGetHandler")!
             .MakeGenericMethod(descriptor.PacketType);
 
         var parameters = new object?[] { null };
-        var found = (bool)tryGet.Invoke(handlerRegistry, parameters)!;
+        var found = (bool)tryGetMethod.Invoke(handlerRegistry, parameters)!;
+
         if (!found || parameters[0] is null)
         {
             logger.Warning($"No handler registered for packet {descriptor.Metadata.Name}.");
@@ -75,7 +73,8 @@ public sealed class DefaultPacketDispatcher : IPacketDispatcher
         }
 
         var handlerInstance = parameters[0];
-        var handleMethod = handlerInstance.GetType().GetMethod("HandleAsync")!;
-        handleMethod.Invoke(handlerInstance, new object[] { session, packet, cancellationToken });
+        var handleMethod = handlerInstance.GetType().GetMethod("HandleAsync", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!;
+
+        _ = handleMethod.Invoke(handlerInstance, new object[] { session, packet, cancellationToken });
     }
 }

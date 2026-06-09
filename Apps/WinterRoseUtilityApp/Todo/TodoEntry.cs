@@ -188,8 +188,6 @@ internal class TodoEntry : SubSystem
 
     public override void Init()
     {
-        base.Init();
-        // nothing heavy yet
     }
 
     public override void Update()

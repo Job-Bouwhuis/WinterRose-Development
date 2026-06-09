@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using WinterRose;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.Input;
+using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.Utility;
 using WinterRose.Recordium;
@@ -25,15 +26,18 @@ internal class NoteKeeperEntryPoint : SubSystem
         GlobalHotkey.RegisterHotkey(QuickNoteHotkey, true, HotkeyScancode.LeftAlt, HotkeyScancode.V);
 
         // Alt+N for All Notes window
-        GlobalHotkey.RegisterHotkey(AllNotesHotkey, true, HotkeyScancode.LeftAlt, HotkeyScancode.N);
+        //GlobalHotkey.RegisterHotkey(AllNotesHotkey, true, HotkeyScancode.LeftAlt, HotkeyScancode.N);
+
+        Program.Current.AddTrayItem(new UIButton("Notes", 
+            (IUIContainer c, UIButton b) => ContainerCreators.AllNotes().Show()));
     }
 
     public override void Update()
     {
         if(GlobalHotkey.IsTriggered(QuickNoteHotkey))
             ContainerCreators.QuickNote().Show();
-        if (GlobalHotkey.IsTriggered(AllNotesHotkey))
-            ContainerCreators.AllNotes().Show();
+        //if (GlobalHotkey.IsTriggered(AllNotesHotkey))
+        //    ContainerCreators.AllNotes().Show();
     }
 }
 

@@ -10,7 +10,7 @@ The system must be layered and responsibilities must remain isolated between lay
 
 Requirements:
 
-Create the foundational project structure for WinterRose.Vein.
+Create the foundational project structure for WinterRose.ForgeVein.
 Create examples and usage demonstrations in WinterRose.ForgeVein.Tests.
 Create transport abstractions for TCP and UDP communication.
 Create interfaces for transport servers, transport clients, and transport connections.
@@ -48,15 +48,11 @@ The system should support transport agnostic logical connections while still res
 
 Do not implement:
 
-validation
-clustering
 encryption
 relay systems
 substreams
 delegation
 authentication
-reliability handling
-hotpath optimization internals
 
 Focus entirely on establishing clean architecture boundaries and strong abstractions.
 

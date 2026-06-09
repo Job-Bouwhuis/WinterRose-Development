@@ -105,7 +105,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
         });
 
         GlobalHotkey.RegisterHotkey("OpenLogConsole", true, HotkeyScancode.LeftAlt, HotkeyScancode.L);
-        GlobalHotkey.RegisterHotkey("OpenTray", true, HotkeyScancode.LeftAlt, HotkeyScancode.Q);
+        //GlobalHotkey.RegisterHotkey("OpenTray", true, HotkeyScancode.LeftAlt, HotkeyScancode.Q);
 
         if (OperatingSystem.IsWindows())
         {

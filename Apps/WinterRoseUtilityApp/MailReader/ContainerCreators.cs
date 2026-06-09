@@ -274,8 +274,8 @@ internal class ContainerCreators
 
         UIDropdown<string> emailType = new();
         emailType.AddOption("Outlook");
-        emailType.AddOption("Gmail");
-        emailType.AddOption("ProtonMail");
+        emailType.SelectedIndex = 0;
+        //emailType.AddOption("Gmail");
 
         UIColumns buttonCols = new UIColumns();
         buttonCols.AddToColumn(0, new UIButton("Cancel", (c, b) => c.Close()));

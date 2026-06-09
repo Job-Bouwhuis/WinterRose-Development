@@ -30,15 +30,15 @@ public class MailWatcher
     Log log = new Log("MailWatcher");
 
     MailPreferences preferences;
-    private const string INTERVAL_ASSET_NAME = "MailPreferences";
+    private const string MAIL_PREFERENCES_ASSET_NAME = "MailPreferences";
 
     public MailWatcher()
     {
         Current = this;
-        if (!Assets.Exists(INTERVAL_ASSET_NAME))
-            Assets.CreateAsset(INTERVAL_ASSET_NAME);
+        if (!Assets.Exists(MAIL_PREFERENCES_ASSET_NAME))
+            Assets.CreateAsset(MAIL_PREFERENCES_ASSET_NAME);
 
-        preferences = Assets.Load<MailPreferences>(INTERVAL_ASSET_NAME);
+        preferences = Assets.Load<MailPreferences>(MAIL_PREFERENCES_ASSET_NAME);
         checkInterval = TimeSpan.FromMinutes(preferences.CheckIntervalMinutes);
     }
 
