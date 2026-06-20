@@ -67,7 +67,7 @@ public class Vitality : Component, IHittable
     /// <summary>
     /// Deals the damage based on the <see cref="DamageType"/> provided
     /// </summary>
-    public void TakeDamageFrom<T>(float amount) where T : DamageType => DynamicObjectCreator.CreateInstance<T>().DealDamage(this, amount);
+    public void TakeDamageFrom<T>(float amount) where T : DamageType => ((DamageType)DynamicObjectCreator.CreateInstance(typeof(T), [])).DealDamage(this, amount);
 
     public void OnHit(HitInfo info)
     {

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "RandomTesting": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

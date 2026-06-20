@@ -73,9 +73,6 @@ internal class Program() : ForgeWardenEngine(false, fancyShutdown: false)
         }
 
         return Settings.FlowerDisplayTime.TotalSeconds;
-
-        Vector2 test = new(1, 2);
-        byte[] bytes = Marshal.PackStruct(test);
     }
 
 

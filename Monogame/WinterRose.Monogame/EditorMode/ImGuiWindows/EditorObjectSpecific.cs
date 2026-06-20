@@ -14,6 +14,7 @@ using System.Collections;
 using System.Windows.Forms;
 using WinterRose.WinterForgeSerializing.Workers;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.FuzzySearching;
 
 namespace WinterRose.Monogame.EditorMode
 {
@@ -391,7 +392,7 @@ namespace WinterRose.Monogame.EditorMode
                 filteredComponents = allComponents;
             else
             {
-                var search = allComponents.SearchMany(componentSearch, type => type.Name, Fuzzy.ComparisonType.IgnoreCase | Fuzzy.ComparisonType.Trim);
+                var search = allComponents.SearchMany(componentSearch, type => type.Name, FuzzyComparisonType.IgnoreCase | FuzzyComparisonType.Trim);
                 filteredComponents = search.Select(x => x.item).ToList();
             }
 

@@ -5,59 +5,36 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace WinterRose
+namespace WinterRose.FuzzySearching
 {
+
     /// <summary>
     /// Provides functions to preform fuzzy searches on collections of strings.
     /// </summary>
     public static class Fuzzy
     {
-        /// <summary>
-        /// The searchType of comparison to use when searching for a string.
-        /// </summary>
-        [Flags]
-        public enum ComparisonType
-        {
-            /// <summary>
-            /// Default comparison searchType.
-            /// </summary>
-            None,
-            /// <summary>
-            /// The search will ignore the case of the characters.
-            /// </summary>
-            IgnoreCase,
-            /// <summary>
-            /// The search will trim the strings before comparing them.
-            /// </summary>
-            Trim
-        }
+        const float PREFIX_BONUS = 2f;
+        const float CONTAINS_BONUS = 2f;
+        const float INORDER_BONUS = 0.45f;
+        const float LEADING_MATCH_SCORE = 1f;
+        const float CONSECUTIVE_BONUS = 0.35f;
+        const float MISMATCH_PENALTY_BASE = 0.75f;
 
-        // --- Updated scoring helper (more typo-tolerant) ---
         private static float ComputeFuzzyScore(string name, string search)
         {
             if (name == null) return 0f;
             if (search == null) return 0f;
             if (search.Length == 0) return 0f;
 
-            // exact match stays supreme (preserves existing behavior)
             if (name == search) return int.MaxValue;
-
-            const float PREFIX_BONUS = 2f;
-            const float CONTAINS_BONUS = 2f;
-            const float INORDER_BONUS = 0.45f;
-            const float LEADING_MATCH_SCORE = 1f;
-            const float CONSECUTIVE_BONUS = 0.35f; // reward runs of correct chars
-            const float MISMATCH_PENALTY_BASE = 0.75f;
 
             float score = 0f;
 
-            // prefix / contains bonuses
             if (name.StartsWith(search))
                 score += PREFIX_BONUS;
             else if (name.Contains(search))
                 score += CONTAINS_BONUS;
 
-            // leading character matches + escalating penalties + consecutive runs bonus
             int prefixMatchCount = 0;
             float missedChars = 0f;
             int limit = Math.Min(search.Length, name.Length);
@@ -162,14 +139,14 @@ namespace WinterRose
         public static List<(string item, float score)> SearchMany(
             this IEnumerable<string> items,
             string search, 
-            ComparisonType searchType = ComparisonType.None)
+            FuzzyComparisonType searchType = FuzzyComparisonType.None)
         {
             List<(string item, float score)> results = new();
             var itemsList = items.ToList();
 
-            if (searchType.HasFlag(ComparisonType.IgnoreCase))
+            if (searchType.HasFlag(FuzzyComparisonType.IgnoreCase))
                 search = search.ToLower();
-            if (searchType.HasFlag(ComparisonType.Trim))
+            if (searchType.HasFlag(FuzzyComparisonType.Trim))
                 search = search.Trim();
 
             for (int i = 0; i < itemsList.Count; i++)
@@ -178,9 +155,9 @@ namespace WinterRose
                 if (raw is null) continue;
 
                 string item = raw;
-                if (searchType.HasFlag(ComparisonType.Trim))
+                if (searchType.HasFlag(FuzzyComparisonType.Trim))
                     item = item.Trim();
-                if (searchType.HasFlag(ComparisonType.IgnoreCase))
+                if (searchType.HasFlag(FuzzyComparisonType.IgnoreCase))
                     item = item.ToLower();
 
                 var score = ComputeFuzzyScore(item, search);
@@ -204,11 +181,11 @@ namespace WinterRose
             this IEnumerable<T> items,
             string search, 
             Func<T, string?> stringSelector,
-            ComparisonType searchType = ComparisonType.None)
+            FuzzyComparisonType searchType = FuzzyComparisonType.None)
         {
-            if (searchType.HasFlag(ComparisonType.IgnoreCase))
+            if (searchType.HasFlag(FuzzyComparisonType.IgnoreCase))
                 search = search.ToLower();
-            if (searchType.HasFlag(ComparisonType.Trim))
+            if (searchType.HasFlag(FuzzyComparisonType.Trim))
                 search = search.Trim();
 
             List<(T item, float score)> results = new();
@@ -218,9 +195,9 @@ namespace WinterRose
                 if (name is null) continue;
 
                 string proc = name;
-                if (searchType.HasFlag(ComparisonType.Trim))
+                if (searchType.HasFlag(FuzzyComparisonType.Trim))
                     proc = proc.Trim();
-                if (searchType.HasFlag(ComparisonType.IgnoreCase))
+                if (searchType.HasFlag(FuzzyComparisonType.IgnoreCase))
                     proc = proc.ToLower();
 
                 var score = ComputeFuzzyScore(proc, search);
@@ -240,7 +217,7 @@ namespace WinterRose
         /// <param name="search"></param>
         /// <param name="stringSelector"></param>
         /// <returns>A copy of <paramref name="items"/> sorted in such a way where the item with the highest score is first</returns>
-        public static List<(T item, float score)> SearchMany<T>(this IEnumerable<T> items, string search, Func<T, string> stringSelector, float threshold, ComparisonType searchType = ComparisonType.None)
+        public static List<(T item, float score)> SearchMany<T>(this IEnumerable<T> items, string search, Func<T, string> stringSelector, float threshold, FuzzyComparisonType searchType = FuzzyComparisonType.None)
         {
             return items.SearchMany(search, stringSelector, searchType).Where(x => x.score >= threshold).ToList();
         }
@@ -254,7 +231,7 @@ namespace WinterRose
         /// <param name="items"></param>
         /// <param name="search"></param>
         /// <returns>A copy of <paramref name="items"/> sorted in such a way where the item with the highest score is first</returns>
-        public static List<(string item, float score)> SearchMany(this IEnumerable<string> items, string search, float threshold, ComparisonType searchType = ComparisonType.None)
+        public static List<(string item, float score)> SearchMany(this IEnumerable<string> items, string search, float threshold, FuzzyComparisonType searchType = FuzzyComparisonType.None)
         {
             return items.SearchMany(search, searchType).Where(x => x.score >= threshold).ToList();
         }
@@ -269,7 +246,7 @@ namespace WinterRose
         /// <param name="search"></param>
         /// <param name="stringSelector"></param>
         /// <returns>The item from the collection with the highest score</returns>
-        public static T Search<T>(this IEnumerable<T> items, string search, Func<T, string> stringSelector, ComparisonType searchType = ComparisonType.None)
+        public static T Search<T>(this IEnumerable<T> items, string search, Func<T, string> stringSelector, FuzzyComparisonType searchType = FuzzyComparisonType.None)
         {
             return items.SearchMany(search, stringSelector, searchType).FirstOrDefault().item;
         }
@@ -283,7 +260,7 @@ namespace WinterRose
         /// <param name="items"></param>
         /// <param name="search"></param>
         /// <returns>The item from the collection with the highest score</returns>
-        public static string Search(this IEnumerable<string> items, string search, ComparisonType searchType = ComparisonType.None)
+        public static string Search(this IEnumerable<string> items, string search, FuzzyComparisonType searchType = FuzzyComparisonType.None)
         {
             return items.SearchMany(search, searchType).FirstOrDefault().item;
         }

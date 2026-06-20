@@ -59,6 +59,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\..\WinterRose.FuzzySearching\WinterRose.FuzzySearching.csproj" />
 	  <ProjectReference Include="..\..\WinterRose\WinterRose\WinterRose.csproj" />
 	</ItemGroup>
 

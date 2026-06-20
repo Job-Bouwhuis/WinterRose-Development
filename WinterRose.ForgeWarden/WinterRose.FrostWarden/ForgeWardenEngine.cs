@@ -249,10 +249,13 @@ public abstract class ForgeWardenEngine
             while (!Raylib.WindowShouldClose() && !GameIsClosing)
             {
                 LayerStack.Update();
+                //ShapeRenderer.Update();
 
                 Raylib.BeginDrawing();
                 ClearBackground(ClearColor);
                 LayerStack.Render();
+                Draw();
+                ShapeRenderer.Draw();
                 if (ShowFPS)
                     Raylib.DrawText($"FPS: {ray.GetFPS()} - Delta: {Time.deltaTime}", 10, 10, 18, Color.Magenta);
                 Raylib.EndDrawing();
