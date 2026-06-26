@@ -1,4 +1,4 @@
-﻿namespace RandomTesting.WebsitePreviewFetcher
+﻿namespace RandomTesting.ConsoleWindowing
 {
     // ========== RENDERER ==========
     public static class Renderer

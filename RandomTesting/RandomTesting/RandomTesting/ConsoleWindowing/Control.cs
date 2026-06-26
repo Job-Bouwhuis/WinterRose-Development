@@ -1,4 +1,4 @@
-﻿namespace RandomTesting.WebsitePreviewFetcher
+﻿namespace RandomTesting.ConsoleWindowing
 {
     public abstract class Control : LayoutElement, IConsumesNavigation
     {

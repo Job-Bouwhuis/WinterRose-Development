@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text.RegularExpressions;
 
-namespace RandomTesting.WebsitePreviewFetcher;
+namespace RandomTesting.WebsitePreviews;
 
 public class WebsitePreview
 {
@@ -172,7 +172,7 @@ public class WebsitePreviewFetcher
 
         // Limit description length (Discord shows ~200 chars)
         if (!string.IsNullOrEmpty(description))
-            description = description[..500] + "...";
+            description = description[..Math.Min(description.Length, 500)] + "...";
 
         return (title, description, imageUrl, siteName);
     }

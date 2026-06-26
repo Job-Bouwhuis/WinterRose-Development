@@ -54,8 +54,6 @@ public abstract class ForgeWardenEngine
 
     public static Font DefaultFont { get; set; }
 
-    public ShapeRenderer ShapeRenderer { get; } = new(new ShapeAnimationSystem());
-
     public const string ENGINE_POOL_NAME = "EnginePool";
     protected Log log { get; private set; }
 
@@ -255,7 +253,6 @@ public abstract class ForgeWardenEngine
                 ClearBackground(ClearColor);
                 LayerStack.Render();
                 Draw();
-                ShapeRenderer.Draw();
                 if (ShowFPS)
                     Raylib.DrawText($"FPS: {ray.GetFPS()} - Delta: {Time.deltaTime}", 10, 10, 18, Color.Magenta);
                 Raylib.EndDrawing();

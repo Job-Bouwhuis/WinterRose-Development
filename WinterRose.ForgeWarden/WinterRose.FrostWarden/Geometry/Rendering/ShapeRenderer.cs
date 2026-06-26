@@ -24,7 +24,6 @@ public sealed class ShapeRenderer : ShapeRendererBase
         drawQueue.Clear();
     }
 
-
     protected override void OnDrawPath(ShapePath path, ShapeStyle style)
     {
         if (path.Points.Count < 2) return;

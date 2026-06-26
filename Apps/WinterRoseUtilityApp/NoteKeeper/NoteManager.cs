@@ -13,6 +13,7 @@ using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.AssetPipeline;
 using WinterRose.Recordium;
 using WinterRose.WinterForgeSerializing;
+using WinterRose.FuzzySearching;
 
 namespace WinterRoseUtilityApp.NoteKeeper;
 internal struct NoteManager : IAssetHandler<List<Note>>
@@ -151,7 +152,7 @@ internal struct NoteManager : IAssetHandler<List<Note>>
 
     public List<(Note item, float score)> Search(
         string query,
-        Fuzzy.ComparisonType comparisonType = Fuzzy.ComparisonType.IgnoreCase,
+        FuzzyComparisonType comparisonType = FuzzyComparisonType.IgnoreCase,
         float titleWeight = 2.0f,
         float bodyWeight = 1.0f)
     {

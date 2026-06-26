@@ -1,4 +1,4 @@
-﻿namespace RandomTesting.WebsitePreviewFetcher
+﻿namespace RandomTesting.ConsoleWindowing
 {
     // ========== LABEL ==========
     public class Label : Control

@@ -87,9 +87,9 @@ namespace WinterRose.ForgeWarden.AssetPipeline
                             m.GetParameters()[0].ParameterType == typeof(AssetHeader) &&
                             m.ReturnType == typeof(bool));
 
-                    if (saveMethodH == null 
-                        || loadMethod == null 
-                        || saveMethodS == null 
+                    if (saveMethodH == null
+                        || loadMethod == null
+                        || saveMethodS == null
                         || initializeNewAssetMethod == null)
                         throw new InvalidOperationException($"Asset handler {type.FullName} does not have required methods.");
 
@@ -261,7 +261,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
             GetHandler<T>().SaveMethodH.Invoke(null, [assetHeader, asset]);
             return assetHeader;
         }
-        
+
         /// <summary>
         /// Creates a new empty asset of the specified type.
         /// </summary>
@@ -375,7 +375,7 @@ namespace WinterRose.ForgeWarden.AssetPipeline
         public static T? Load<T>(string name) => Load<T>(GetHeader(name));
         public static void Save<T>(string name, T accounts)
         {
-            if(!Exists(name))
+            if (!Exists(name))
             {
                 CreateAsset(accounts, name);
             }
@@ -386,6 +386,21 @@ namespace WinterRose.ForgeWarden.AssetPipeline
                     throw new InvalidOperationException("Can not save a assembly resource asset. They are readonly");
                 handler.SaveMethodS.Invoke(null, [name, accounts]);
             }
+        }
+
+        public static void Delete(string flowerAssetName) => Delete(GetHeader(flowerAssetName));
+
+        public static void Delete(AssetHeader assetHeader)
+        {
+            if (assetHeader.IsReadOnly)
+                throw new InvalidOperationException("Cannot delete a read-only asset.");
+            if (File.Exists(assetHeader.Path))
+                File.Delete(assetHeader.Path);
+            string headerPath = ASSET_ROOT + assetHeader.Name + ASSET_HEADER_EXTENSION;
+            if (File.Exists(headerPath))
+                File.Delete(headerPath);
+            assetHeaders.Remove(assetHeader.Name);
+
         }
     }
 }

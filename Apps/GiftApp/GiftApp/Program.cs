@@ -8,7 +8,10 @@ using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.Geometry;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface;
+using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Worlds;
+using static WinterRose.ForgeWarden.Geometry.GeometricFlowerBuilder;
 
 internal class Program() : ForgeWardenEngine(false, fancyShutdown: false)
 {
@@ -19,9 +22,9 @@ internal class Program() : ForgeWardenEngine(false, fancyShutdown: false)
 
     private static void Main(string[] args)
     {
-        screenSize = Windows.GetScreenSize(0);
+        screenSize = Windows.GetScreenSize(1);
 
-        new Program().RunAsOverlay("Gift App", 0);
+        new Program().RunAsOverlay("Gift App", 1);
     }
 
     public float time = 0;
@@ -46,130 +49,210 @@ internal class Program() : ForgeWardenEngine(false, fancyShutdown: false)
         Settings.Shutdown();
     }
 
+    public override void AfterWindowCreation()
+    {
+        Toasts.Success("Hello darling2!!!!! I love you so much! 💖💖💖💖", ToastRegion.Center, ToastStackSide.Top);
+    }
+
+    public enum DisplayState
+    {
+        Waiting,
+        Flower,
+        MorphingToHeart,
+        Heart,
+        MorphingAway
+    }
+
+    private DisplayState state = DisplayState.Waiting;
+
     private void CreateFlower()
     {
-        var cfg = new GeometricFlowerBuilder.FlowerConfig
+        var cfg = new FlowerConfig
         {
             Center = new Vector2(Window.Size.X / 2, Window.Size.Y),
         };
 
-        shape = GeometricFlowerBuilder.Flower(cfg);
+        var flower = Flower(cfg);
+        shape = flower.Shapes;
+
+        FlowerGalleryManager.RegisterGeneratedFlower(flower.ResolvedConfig, flower.Shapes);
+
+        state = DisplayState.Flower;
+    }
+
+    private RichText GenerateStyledMessage(string message)
+    {
+        var sb = new StringBuilder();
+
+        sb.Append("\\c[#FF9EBB]");
+
+        if (Raylib.GetRandomValue(0, 100) < 20)
+        {
+            sb.Append("\\tw[]");
+            sb.Append(message);
+
+            return sb.ToString();
+        }
+
+        var modifiers = new List<string>
+    {
+        "\\bold[]",
+        "\\wave[]",
+        "\\shake[]"
+    };
+
+        int guaranteedIndex = Raylib.GetRandomValue(
+            0,
+            modifiers.Count - 1);
+
+        sb.Append(modifiers[guaranteedIndex]);
+
+        for (int i = 0; i < modifiers.Count; i++)
+        {
+            if (i == guaranteedIndex)
+                continue;
+
+            if (Raylib.GetRandomValue(0, 100) < 30)
+                sb.Append(modifiers[i]);
+        }
+
+        sb.Append(message);
+
+        return sb.ToString();
     }
 
     public double GetCurrentTimerSeconds()
     {
-        if (shape == null)
-            return Settings.FlowerInterval.TotalSeconds;
-
-        if (morph != null)
+        return state switch
         {
-            double time;
-            if (currentMessage.Length > 300)
-                time = Settings.HeartDisplayTime.TotalSeconds + (currentMessage.Length - 300) / 4;
-            else
-                time = Settings.HeartDisplayTime.TotalSeconds;
-
-            return time;
-        }
-
-        return Settings.FlowerDisplayTime.TotalSeconds;
+            DisplayState.MorphingAway or DisplayState.Waiting => Settings.FlowerInterval.TotalSeconds,
+            DisplayState.Flower => Settings.FlowerDisplayTime.TotalSeconds,
+            DisplayState.MorphingToHeart => -1,
+            DisplayState.Heart => Settings.HeartDisplayTime.TotalSeconds + (currentMessage.Length > 300 ? (currentMessage.Length - 300) / 4.0 : 0),
+        };
     }
-
 
     public override void Update()
     {
         time += Time.deltaTime;
 
-        if (shape == null)
+        switch (state)
         {
-            if(time > Settings.FlowerInterval.TotalSeconds)
-            {
-                CreateFlower();
-                time = 0;
-            }
-            return;
-        }
-
-        if (morph != null)
-        {
-            if(time > GetCurrentTimerSeconds())
-            {
-                morph = null;
-                shape = null;
-                time = 0;
-            }
-            return;
-        }
-          
-        if(time > Settings.FlowerDisplayTime.TotalSeconds)
-        {
-            var heart = GeometricHeartBuilder.Build(HeartCenter, 20, Color.Red, Color.Brown, 0);
-            morph = ShapeCollectionMorpher.CreateMorph(shape, heart, 1.5f);
-            currentMessage = GenerateStyledMessage(messages.GetRandomMessage());
-            currentMessage.FontSize = 24;
-            time = 0;
-
-              
-            string GenerateStyledMessage(string message)
-            {
-                var sb = new StringBuilder();
-
-                sb.Append("\\c[#FF9EBB]");
-
-                // --- Typewriter roll ---
-                if (Raylib.GetRandomValue(0, 100) < 20)
+            case DisplayState.Waiting:
                 {
-                    sb.Append("\\tw[]");
-                    sb.Append(message);
-                    time += currentMessage.Length * 0.1f;
-                    return sb.ToString();
+                    if (time > Settings.FlowerInterval.TotalSeconds)
+                    {
+                        CreateFlower();
+                        time = 0;
+                    }
+
+                    break;
                 }
 
-                // --- Guarantee at least ONE modifier ---
-                var modifiers = new List<string>
+            case DisplayState.Flower:
                 {
-                    "\\bold[]",
-                    "\\wave[]",
-                    "\\shake[]"
-                };
+                    if (time > Settings.FlowerDisplayTime.TotalSeconds)
+                    {
+                        var heart = GeometricHeartBuilder.Build(
+                            HeartCenter,
+                            20,
+                            Color.Red,
+                            Color.Brown,
+                            0);
 
-                int guaranteedIndex = Raylib.GetRandomValue(0, modifiers.Count - 1);
-                sb.Append(modifiers[guaranteedIndex]);
+                        morph = ShapeCollectionMorpher.CreateMorph(
+                            shape,
+                            heart,
+                            1.5f);
 
-                // --- Optional extra rolls (can include the guaranteed one again, so skip it) ---
-                for (int i = 0; i < modifiers.Count; i++)
-                {
-                    if (i == guaranteedIndex)
-                        continue;
+                        currentMessage = GenerateStyledMessage(
+                            messages.GetRandomMessage());
 
-                    if (Raylib.GetRandomValue(0, 100) < 30) // tuning knob
-                        sb.Append(modifiers[i]);
+                        currentMessage.FontSize = 24;
+
+                        state = DisplayState.MorphingToHeart;
+                        time = 0;
+                    }
+
+                    break;
                 }
 
-                sb.Append(message);
+            case DisplayState.MorphingToHeart:
+                {
+                    if (morph.IsCompleted)
+                    {
+                        shape = morph.Snapshot();
+                        morph = null;
 
-                return sb.ToString();
-            }
+                        state = DisplayState.Heart;
+                        time = 0;
+                    }
+
+                    break;
+                }
+
+            case DisplayState.Heart:
+                {
+                    if (time > GetCurrentTimerSeconds())
+                    {
+                        currentMessage = null;
+
+                        morph = ShapeCollectionMorpher.CreateMorph(
+                            shape,
+                            new ShapeCollection(),
+                            1.5f);
+
+                        state = DisplayState.MorphingAway;
+                        time = 0;
+                    }
+
+                    break;
+                }
+
+            case DisplayState.MorphingAway:
+                {
+                    if (morph.IsCompleted)
+                    {
+                        morph = null;
+                        shape = null;
+
+                        state = DisplayState.Waiting;
+                        time = 0;
+                    }
+
+                    break;
+                }
         }
     }
 
     public override void Draw()
     {
         if (morph != null)
-        {
             morph.Draw();
-            if(morph.IsCompleted)
-            {
-                var textWidth = RichTextRenderer.MeasureRichText(currentMessage, 100).Size.X;
-                textWidth = MathF.Min(textWidth, 250);
-                RichTextRenderer.DrawRichText(currentMessage, HeartCenter 
-                    with { 
-                        X = HeartCenter.X - textWidth / 2,
-                        Y = HeartCenter.Y + 25 
-                    }, 100 + textWidth, style, null);
-            }
-        }
         else
             shape?.Draw();
+
+        if ((state == DisplayState.Heart ||
+             state == DisplayState.MorphingAway) &&
+            currentMessage != null)
+        {
+            var textWidth =
+                RichTextRenderer.MeasureRichText(
+                    currentMessage,
+                    100).Size.X;
+
+            textWidth = MathF.Min(textWidth, 250);
+
+            RichTextRenderer.DrawRichText(
+                currentMessage,
+                HeartCenter with
+                {
+                    X = HeartCenter.X - textWidth / 2,
+                    Y = HeartCenter.Y + 25
+                },
+                100 + textWidth,
+                style,
+                null);
+        }
     }
 }

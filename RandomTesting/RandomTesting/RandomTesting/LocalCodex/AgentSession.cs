@@ -6,7 +6,7 @@ using WinterRose.FuzzySearching;
 
 namespace LocalCodexAgent;
 
-public sealed class AgentSession
+public sealed class AgentSession : IAsyncDisposable
 {
     private readonly IChatModel chatModel;
     private readonly AgentOptions options;
@@ -20,7 +20,7 @@ public sealed class AgentSession
         set
         {
             commandContext.WorkspaceRoot = value;
-            options.WorkspaceRoot = value;
+            options.SetWorkspaceRoot(value);
         }
     }
 
@@ -45,8 +45,6 @@ public sealed class AgentSession
 
         messages.Add(new AgentMessage("system", options.InstructionText));
     }
-
-
 
     public async Task RunAsync(string userMessage, CancellationToken cancellationToken)
     {
@@ -118,5 +116,10 @@ public sealed class AgentSession
     public async Task CreateSystemMessage(string v, CancellationToken none)
     {
         messages.Add(new AgentMessage("system", v));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await chatModel.DisposeAsync();
     }
 }

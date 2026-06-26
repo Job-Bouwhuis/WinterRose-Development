@@ -113,4 +113,15 @@ public static class RaylibExtensions
             return Raylib.CheckCollisionRecs(r, other);
         }
     }
+
+    extension (Vector3 v)
+    {
+        public (float x, float y, float z) ToTuple() => (v.X, v.Y, v.Z);
+        public void Deconstruct(out float x, out float y, out float z)
+        {
+            x = v.X;
+            y = v.Y;
+            z = v.Z;
+        }
+    }
 }

@@ -6,11 +6,21 @@ using WinterRose.WinterForgeSerializing;
 
 namespace WinterRose.Diff;
 
+public enum FileState
+{
+    Unchanged,
+    Modified,
+    Added,
+    Deleted
+}
+
 public class FileDiff
 {
     [WFInclude]
     internal List<DiffEngine.Op> ops;
-    
+
+    public FileState State { get; set; }
+
     public IReadOnlyList<DiffEngine.Op> Operations => ops;
 
     public static implicit operator FileDiff(List<DiffEngine.Op> ops) => new FileDiff { ops = ops };

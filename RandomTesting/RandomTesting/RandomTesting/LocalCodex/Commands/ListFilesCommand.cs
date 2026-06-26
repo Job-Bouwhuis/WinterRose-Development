@@ -17,7 +17,6 @@ public sealed class ListFilesCommand : IAgentCommand
     {
         var path = GetRequired(arguments, "path");
         var pattern = GetOptional(arguments, "pattern");
-        var recursive = GetOptionalBool(arguments, "recursive", false);
 
         var fullPath = context.ResolvePath(path);
 
@@ -26,10 +25,8 @@ public sealed class ListFilesCommand : IAgentCommand
             return Task.FromResult(FormatOperationResult(false, $"Directory not found: {path}"));
         }
 
-        var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-
-        var files = Directory.GetFiles(fullPath, "*", searchOption);
-        var dirs = Directory.GetDirectories(fullPath, "*", searchOption);
+        var files = Directory.GetFiles(fullPath, "*");
+        var dirs = Directory.GetDirectories(fullPath, "*");
 
         var filteredFiles = ApplyPattern(files, pattern);
         var filteredDirs = ApplyPattern(dirs, pattern);
@@ -59,11 +56,61 @@ public sealed class ListFilesCommand : IAgentCommand
             return items;
         }
 
-        pattern = pattern.Replace("*", string.Empty);
+        pattern = pattern.Trim();
 
         return items.Where(item =>
-            Path.GetFileName(item)
-                .Contains(pattern, StringComparison.OrdinalIgnoreCase));
+        {
+            var fileName = Path.GetFileName(item);
+
+            return MatchesGlob(fileName, pattern);
+        });
+    }
+
+    private static bool MatchesGlob(string text, string pattern)
+    {
+        var parts = pattern.Split('*', StringSplitOptions.None);
+
+        if (parts.Length == 1)
+        {
+            return text.Equals(pattern, StringComparison.OrdinalIgnoreCase);
+        }
+
+        int index = 0;
+
+        for (int i = 0; i < parts.Length; i++)
+        {
+            var part = parts[i];
+
+            if (string.IsNullOrEmpty(part))
+            {
+                continue;
+            }
+
+            var foundIndex = text.IndexOf(part, index, StringComparison.OrdinalIgnoreCase);
+
+            if (foundIndex == -1)
+            {
+                return false;
+            }
+
+            if (i == 0 && !pattern.StartsWith("*") && foundIndex != 0)
+            {
+                return false;
+            }
+
+            index = foundIndex + part.Length;
+        }
+
+        if (!pattern.EndsWith("*"))
+        {
+            var lastPart = parts[^1];
+            if (!text.EndsWith(lastPart, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static string ToRelative(string root, string fullPath)
@@ -86,18 +133,6 @@ public sealed class ListFilesCommand : IAgentCommand
         return arguments.TryGetValue(name, out var value) ? value : string.Empty;
     }
 
-    private static bool GetOptionalBool(IReadOnlyDictionary<string, string> arguments, string name, bool defaultValue)
-    {
-        if (!arguments.TryGetValue(name, out var value) || string.IsNullOrWhiteSpace(value))
-        {
-            return defaultValue;
-        }
-
-        return bool.TryParse(value.Trim(), out var parsed)
-            ? parsed
-            : defaultValue;
-    }
-
     private static string FormatOperationResult(bool success, string message)
     {
         return "OPERATION_RESULT:" + Environment.NewLine +
@@ -113,7 +148,6 @@ public sealed class ListFilesCommand : IAgentCommand
 Arguments:
 - path: string (required, directory path to list)
 - pattern: string (optional, simple filter applied to file/folder names)
-- recursive: bool (optional, default = false; if true, searches subdirectories)
 
 Notes:
 - Lists both files and directories under the specified path.

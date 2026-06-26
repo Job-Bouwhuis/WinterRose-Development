@@ -12,37 +12,48 @@ namespace WinterRose.ForgeWarden
     {
         private static readonly Dictionary<string, Sprite> cache = [];
         private static readonly Dictionary<string, Texture2D> rawTextureCache = [];
+        private static readonly Dictionary<string, int> referenceCount = [];
 
         private static readonly HashSet<string> temporaryFiles = new();
 
         public static Sprite Get(string source, bool temporary = false)
         {
-            if (cache.TryGetValue(source, out var sprite))
-                return sprite;
-
-            if (rawTextureCache.TryGetValue(source, out Texture2D tex))
-                return new Sprite(tex, false);
-
-            Sprite newSprite;
-
-            if (source.StartsWith("Generated_"))
-                newSprite = CreateGeneratedSpriteFromKey(source);
-            else if (Assets.Exists(source))
-                newSprite = Assets.Load<Sprite>(source);
-            else
+            try
             {
-                if (!File.Exists(source))
-                    throw new InvalidOperationException("File doesn't exist: " + source);
+                if (cache.TryGetValue(source, out var sprite))
+                    return sprite;
 
-                newSprite = new Sprite(ray.LoadTexture(source), false);
-                newSprite.Source = source;
+                if (rawTextureCache.TryGetValue(source, out Texture2D tex))
+                    return new Sprite(tex, false);
 
-                if (temporary)
-                    temporaryFiles.Add(source);
+                Sprite newSprite;
+
+                if (source.StartsWith("Generated_"))
+                    newSprite = CreateGeneratedSpriteFromKey(source);
+                else if (Assets.Exists(source))
+                    newSprite = Assets.Load<Sprite>(source);
+                else
+                {
+                    if (!File.Exists(source))
+                        throw new InvalidOperationException("File doesn't exist: " + source);
+
+                    newSprite = new Sprite(ray.LoadTexture(source), false);
+                    newSprite.Source = source;
+
+                    if (temporary)
+                        temporaryFiles.Add(source);
+                }
+
+                cache[source] = newSprite;
+                return newSprite;
             }
+            finally
+            {
+                if (!referenceCount.ContainsKey(source))
+                    referenceCount[source] = 0;
 
-            cache[source] = newSprite;
-            return newSprite;
+                referenceCount[source]++;
+            }
         }
         public static void RegisterSprite(Sprite sprite) => cache[sprite.Source] = sprite;
 
@@ -109,8 +120,22 @@ namespace WinterRose.ForgeWarden
             if (sprite == null)
                 return;
 
+            referenceCount[sprite.Source]--;
+            if (referenceCount[sprite.Source] <= 0)
+            {
+                DisposeTexture(sprite);
+                cache.Remove(sprite.Source);
+            }
+        }
+
+        public static void RegisterTexture2D(string key, Texture2D texture) => rawTextureCache.Add(key, texture);
+
+        private static void DisposeTexture(Sprite sprite)
+        {
             if (!sprite.OwnsTexture && sprite is not SpriteGif)
                 ray.UnloadTexture(sprite.Texture);
+
+            cache.Remove(sprite.Source);
 
             if (temporaryFiles.FirstOrDefault(tf => tf == sprite.Source) is string tf)
             {
@@ -126,8 +151,6 @@ namespace WinterRose.ForgeWarden
             sprite.Dispose();
             GC.Collect();
         }
-
-        public static void RegisterTexture2D(string key, Texture2D texture) => rawTextureCache.Add(key, texture);
     }
 
 }

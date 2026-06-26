@@ -14,7 +14,7 @@ public interface IUIContainer
         get
         {
             IUIContainer? c = Owner;
-            while (c != null)
+            while (c.Owner != null)
                 c = c.Owner;
 
             if (c != null)

@@ -7,7 +7,7 @@ public sealed class AgentOptions
     public string WorkspaceRoot
     {
         get => workspaceRoot;
-        private set => workspaceRoot = value;
+        init => workspaceRoot = value;
     }
 
     public string ModelName { get; init; } = "qwen3-coder:30b";
@@ -25,7 +25,7 @@ public sealed class AgentOptions
 
     internal void SetWorkspaceRoot(string workspaceRoot)
     {
-        WorkspaceRoot = workspaceRoot;
+        this.workspaceRoot = workspaceRoot;
     }
 
     internal void SetToolList(IEnumerable<string> toolExamples)

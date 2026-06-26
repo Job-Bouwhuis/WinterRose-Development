@@ -50,6 +50,7 @@
 		<ProjectReference Include="..\..\StateKeeper\WinterRose.StateKeeper\WinterRose.StateKeeper.csproj" />
 		<ProjectReference Include="..\..\WinterForge.ForgeThread\WinterRose.ForgeThread\WinterRose.ForgeThread.csproj" />
 		<ProjectReference Include="..\..\WinterRose.ForgeSignal\WinterRose.ForgeSignal\WinterRose.ForgeSignal.csproj" />
+		<ProjectReference Include="..\..\WinterRose.FuzzySearching\WinterRose.FuzzySearching.csproj" />
 		<ProjectReference Include="..\..\WinterRose.Recordium\WinterRose.Recordium.csproj" />
 		<ProjectReference Include="..\..\WinterRose\WinterRose\WinterRose.csproj" />
 	</ItemGroup>
@@ -63,10 +64,6 @@
 
 	<ItemGroup>
 		<None Include="Cleanup.targets" Pack="true" PackagePath="buildTransitive\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Geometry\Modifiers\" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,4 +1,4 @@
-﻿namespace RandomTesting.WebsitePreviewFetcher
+﻿namespace RandomTesting.ConsoleWindowing
 {
     // ========== SCREEN MANAGER ==========
     public static class Screen

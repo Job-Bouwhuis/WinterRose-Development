@@ -4,8 +4,10 @@ namespace WinterRose.ForgeWarden.Geometry.Animation;
 
 public sealed class ShapeMorph
 {
-    public ShapePath From { get; }
-    public ShapePath To { get; }
+    public ShapePath From { get; private set; }
+    public ShapePath To { get; private set; }
+
+    private ShapeMorph() { }
 
     public ShapeMorph(ShapePath from, ShapePath to)
     {
@@ -66,5 +68,10 @@ public sealed class ShapeMorph
     public AnimatedShape Animate(float duration)
     {
         return new AnimatedShape(this, duration);
+    }
+
+    internal ShapeMorph Duplicate()
+    {
+        return new ShapeMorph(From.Duplicate(), To.Duplicate());
     }
 }

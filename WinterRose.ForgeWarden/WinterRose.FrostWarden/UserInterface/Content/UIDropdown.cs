@@ -2,6 +2,7 @@
 using WinterRose.EventBusses;
 using WinterRose.ForgeWarden.Input;
 using WinterRose.ForgeWarden.Utility;
+using WinterRose.FuzzySearching;
 
 namespace WinterRose.ForgeWarden.UserInterface;
 
@@ -98,7 +99,7 @@ public class UIDropdown<T> : UIContent
         }
         else
         {
-            var found = items.SearchMany(q, stringSelector, Fuzzy.ComparisonType.IgnoreCase);
+            var found = items.SearchMany(q, stringSelector, FuzzyComparisonType.IgnoreCase);
             foreach (var f in found)
             {
                 if (f.score > 0.1)

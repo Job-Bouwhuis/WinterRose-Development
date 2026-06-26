@@ -1,24 +1,16 @@
-﻿namespace WinterRose.ForgeWarden.Geometry.Rendering;
+﻿using WinterRose.Recordium;
+
+namespace WinterRose.ForgeWarden.Geometry.Rendering;
 
 public abstract class ShapeRendererBase : IShapeRenderer
 {
+    private static Log log = new Log("ShapeRenderer");
+
     public Matrix4x4 Transform { get; set; } = Matrix4x4.Identity;
 
     private readonly List<ShapeDrawCommand> drawQueue = new();
 
     public void Draw()
-    {
-        Collect();
-    }
-
-    public abstract void Collect();
-
-    public virtual void Begin()
-    {
-        drawQueue.Clear();
-    }
-
-    public virtual void End()
     {
         drawQueue.Sort(static (a, b) => a.Layer.CompareTo(b.Layer));
 
@@ -27,6 +19,8 @@ public abstract class ShapeRendererBase : IShapeRenderer
 
         drawQueue.Clear();
     }
+
+    public abstract void Collect();
 
     protected void Enqueue(ShapePath path)
     {

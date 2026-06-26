@@ -1,4 +1,4 @@
-﻿namespace RandomTesting.WebsitePreviewFetcher
+﻿namespace RandomTesting.ConsoleWindowing
 {
     // ========== BUTTON ==========
     public class Button : Control

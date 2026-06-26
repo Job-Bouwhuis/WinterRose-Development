@@ -17,7 +17,6 @@ public class EngineCoreLayer : EngineLayer
         Time.Update();
         GlobalHotkey.Update();
         Universe.Hirarchy.UpdateHirarchy();
-        Engine.ShapeRenderer.Update();
         Engine.Update();
         Engine.GlobalThreadLoom.TickThread();
     }

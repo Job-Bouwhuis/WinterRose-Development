@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using WinterRose.ForgeWarden.Geometry.Rendering;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
 using WinterRose.ForgeWarden.UserInterface.Tooltipping;
@@ -10,6 +11,8 @@ namespace WinterRose.ForgeWarden.EngineLayers.BuiltinLayers;
 
 public class UiLayer : EngineLayer
 {
+    public ShapeRenderer ShapeRenderer { get; } = new(new ShapeAnimationSystem());
+
     public UiLayer() : base("UI") => Importance = -400;
 
     public override void OnEvent<TEvent>(ref TEvent engineEvent)
@@ -22,6 +25,7 @@ public class UiLayer : EngineLayer
         ToastToDialogMorpher.Draw();
         Toasts.Draw();
         Tooltips.Draw();
+        ShapeRenderer.Draw();
     }
 
     public override void OnUpdate()
@@ -31,5 +35,6 @@ public class UiLayer : EngineLayer
         ToastToDialogMorpher.Update();
         Toasts.Update();
         Tooltips.Update();
+        ShapeRenderer.Update();
     }
 }

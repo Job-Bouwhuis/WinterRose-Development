@@ -1,12 +1,8 @@
-﻿using BulletSharp.SoftBody;
-using PuppeteerSharp;
-using Raylib_cs;
+﻿using Raylib_cs;
 using System.Numerics;
 using WinterRose;
 using WinterRose.EventBusses;
 using WinterRose.ForgeWarden;
-using WinterRose.ForgeWarden.Geometry;
-using WinterRose.ForgeWarden.Geometry.Animation;
 using WinterRose.ForgeWarden.TextRendering;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.Content;
@@ -17,9 +13,7 @@ using WinterRose.ForgeWarden.Utility;
 using WinterRose.ForgeWarden.Worlds;
 using WinterRose.Recordium;
 using WinterRose.WinterForgeSerializing;
-using WinterRose.WIP.TestClasses;
 using WinterRoseUtilityApp.SubSystems;
-using dialog = WinterRose.ForgeWarden.UserInterface.DialogBoxes.Dialog;
 
 namespace WinterRoseUtilityApp;
 
@@ -35,8 +29,6 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
 
     private static async Task Main(string[] args)
     {
-        Dictionary<Dictionary<List<int>, List<string>>, List<bool>> a = [];
-
         if (OperatingSystem.IsLinux() || forceWindow)
             new Program().Run("WinterRose Util App", 1280, 720);
         else
@@ -105,7 +97,6 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
         });
 
         GlobalHotkey.RegisterHotkey("OpenLogConsole", true, HotkeyScancode.LeftAlt, HotkeyScancode.L);
-        //GlobalHotkey.RegisterHotkey("OpenTray", true, HotkeyScancode.LeftAlt, HotkeyScancode.Q);
 
         if (OperatingSystem.IsWindows())
         {

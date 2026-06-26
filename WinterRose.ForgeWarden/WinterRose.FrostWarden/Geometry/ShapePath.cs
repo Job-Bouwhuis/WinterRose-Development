@@ -7,12 +7,22 @@ using WinterRose.ForgeWarden.Geometry.Rendering;
 
 namespace WinterRose.ForgeWarden.Geometry;
 
-public sealed class ShapePath(IReadOnlyList<Vector2> points, bool isClosed, Rendering.ShapeStyle style, int layer = 0)
+public sealed class ShapePath
 {
-    public IReadOnlyList<Vector2> Points { get; private set; } = points ?? throw new ArgumentNullException(nameof(points));
-    public bool IsClosed { get; private set; } = isClosed;
-    public ShapeStyle Style { get; private set; } = style ?? throw new ArgumentNullException(nameof(points));
-    public int Layer { get; private set; } = layer;
+    public IReadOnlyList<Vector2> Points { get; private set; }
+    public bool IsClosed { get; private set; }
+    public ShapeStyle Style { get; private set; }
+    public int Layer { get; private set; }
+
+    private ShapePath() { }
+
+    public ShapePath(IReadOnlyList<Vector2> points, bool isClosed, Rendering.ShapeStyle style, int layer = 0)
+    {
+        Points = points ?? throw new ArgumentNullException(nameof(points));
+        IsClosed = isClosed;
+        Style = style ?? throw new ArgumentNullException(nameof(points));
+        Layer = layer;
+    }
 
     public ShapeStyle GetStyle()
     {
@@ -168,6 +178,7 @@ public sealed class ShapePath(IReadOnlyList<Vector2> points, bool isClosed, Rend
         ray.DrawShape(this);
     }
 
-    internal ShapeSnapshot Snapshot() => new ShapeSnapshot([.. Points], Style, IsClosed, Layer);
+    public ShapeSnapshot Snapshot() => new ShapeSnapshot([.. Points], Style, IsClosed, Layer);
+    public ShapePath Duplicate() => Snapshot();
 }
 

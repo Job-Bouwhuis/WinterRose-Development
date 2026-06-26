@@ -63,7 +63,8 @@ public class UISprite : UIContent
 
     protected internal override void OnOwnerClosing()
     {
-        SpriteCache.DisposeOf(Sprite);
+        if(DisposeSpriteOnOwnerClose)
+            SpriteCache.DisposeOf(Sprite);
     }
 
     protected override void Draw(Rectangle bounds)

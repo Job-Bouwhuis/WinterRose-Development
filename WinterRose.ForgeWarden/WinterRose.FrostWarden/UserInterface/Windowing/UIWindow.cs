@@ -715,6 +715,7 @@ public class UIWindow : UIContainer
 
         // ensure nothing else moves us while closing
         NoAutoMove = true;
+        OnClosing.Invoke(this);
     }
 
     protected override void Update()
@@ -1118,7 +1119,6 @@ public class UIWindow : UIContainer
 
         StartCloseAnimation();
         base.Close();
-        OnClosing.Invoke(this);
     }
 
     protected static Vector2 LerpVec2(Vector2 a, Vector2 b, float t)

@@ -1,8 +1,9 @@
 ﻿// OllamaChatModel.cs
+using LocalCodexAgent;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace LocalCodexAgent;
+namespace RandomTesting.LocalCodex.Ollama;
 
 public sealed class OllamaChatModel : IChatModel
 {
@@ -10,12 +11,17 @@ public sealed class OllamaChatModel : IChatModel
     private readonly Uri baseUri;
     private readonly string modelName;
 
-    public OllamaChatModel(HttpClient httpClient, Uri baseUri, string modelName)
+    public OllamaChatModel(Uri baseUri, string modelName)
     {
-        this.httpClient = httpClient;
+        this.httpClient = new HttpClient()
+        {
+            Timeout = TimeSpan.FromHours(1)
+        };
         this.baseUri = baseUri;
         this.modelName = modelName;
     }
+
+    public async ValueTask DisposeAsync() => await Task.Run(httpClient.Dispose);
 
     public async Task<string> GetReplyAsync(IReadOnlyList<AgentMessage> messages, CancellationToken cancellationToken)
     {

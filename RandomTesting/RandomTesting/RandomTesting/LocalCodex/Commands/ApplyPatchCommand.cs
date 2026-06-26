@@ -16,6 +16,11 @@ public sealed class ApplyPatchCommand : IAgentCommand
         var path = GetRequired(arguments, "path");
         var patch = GetPatch(arguments);
 
+        if(IsPatchNoOp(patch))
+        {
+            return FormatOperationResult(true, "Patch is a no-op, and no changes were applied. Please provide a valid diff with additions or removals.");
+        }
+
         var fullPath = context.ResolvePath(path);
 
         if (!File.Exists(fullPath))
@@ -133,6 +138,34 @@ public sealed class ApplyPatchCommand : IAgentCommand
         return value;
     }
 
+    public bool IsPatchNoOp(string patch)
+    {
+        var lines = patch.Split('\n');
+        int hunkCount = 0;
+        int totalChanges = 0;
+
+        foreach (var line in lines)
+        {
+            if (line.StartsWith("@@"))
+                hunkCount++;
+
+            if (line.StartsWith("+") && !line.StartsWith("+++"))
+                totalChanges++;
+            if (line.StartsWith("-") && !line.StartsWith("---"))
+                totalChanges++;
+        }
+
+        // No hunks → no changes
+        if (hunkCount == 0)
+            return true;
+
+        // No additions/removals (only metadata) → no-op
+        if (totalChanges == 0)
+            return true;
+
+        return false;
+    }
+
     private static string GetRequired(IReadOnlyDictionary<string, string> arguments, string name)
     {
         if (!arguments.TryGetValue(name, out var value) || string.IsNullOrWhiteSpace(value))
@@ -165,9 +198,9 @@ Notes:
 - Line numbers in the patch are 1-based.
 - The tool performs a direct in-place modification of the file.
 - If multiple hunks exist, they are applied sequentially.
-- this tool is still being tested. and is therefor encouraged to use. if it FAILS, please stop your current task and report the issue to the user. and wait for further instructions. DO NOT CONTINUE WORKING ON THE TASK UNTIL TOLD OTHERWISE.
 
 Failure points:
+- Diff syntax given results in no operation
 - File not found at resolved path
 - Patch format is invalid or cannot be parsed
 - Hunk target range does not match file content

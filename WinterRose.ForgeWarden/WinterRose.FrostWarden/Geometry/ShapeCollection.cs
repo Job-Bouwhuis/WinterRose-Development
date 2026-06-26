@@ -6,8 +6,12 @@ namespace WinterRose.ForgeWarden.Geometry;
 
 public sealed class ShapeCollection
 {
-    private readonly List<ShapePath> staticShapes = new();
-    private readonly List<Animation.AnimatedShape> animatedShapes = new();
+
+    [WFInclude]
+    private List<ShapePath> staticShapes = new();
+
+    [WFInclude]
+    private List<Animation.AnimatedShape> animatedShapes = new();
 
     public ShapeCollection() { }
 
@@ -104,6 +108,22 @@ public sealed class ShapeCollection
     {
         foreach (var snapshot in shapeSnapshots)
             staticShapes.Add(snapshot);
+    }
+
+    public void EnsureAnimationEnd(ShapeCollection shapes)
+    {
+        foreach (var anim in animatedShapes)
+            anim.EnsureComplete();
+    }
+
+    public ShapeCollection Duplicate()
+    {
+        var newCollection = new ShapeCollection();
+        foreach (var shape in staticShapes)
+            newCollection.Add(shape.Duplicate());
+        foreach (var anim in animatedShapes)
+            newCollection.Add(anim.Duplicate());
+        return newCollection;
     }
 }
 

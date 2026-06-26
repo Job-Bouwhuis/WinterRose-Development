@@ -112,4 +112,13 @@ public sealed class LayerStack
                 return;
         }
     }
+
+    public T GetLayer<T>(string layerName) where T : EngineLayer
+    {
+        foreach (EngineLayer layer in layers)
+            if (layer is T typedLayer && layer.Name == layerName)
+                return typedLayer;
+
+        throw new ArgumentException("Layer not found", nameof(layerName));
+    }
 }

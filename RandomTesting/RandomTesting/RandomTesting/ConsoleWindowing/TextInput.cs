@@ -1,6 +1,6 @@
 ﻿using WinterRose.FuzzySearching;
 
-namespace RandomTesting.WebsitePreviewFetcher
+namespace RandomTesting.ConsoleWindowing
 {
     // ========== TEXT INPUT ==========
     public class TextInput : Control

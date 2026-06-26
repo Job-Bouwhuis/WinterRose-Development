@@ -68,14 +68,12 @@ public sealed class CreateFileCommand : IAgentCommand
 
 Arguments:
 - path: string (required, relative or absolute file path)
-- overwrite: bool (optional, default = false; allows overwriting existing files)
+- overwrite: bool (optional, default = false; Clears the file content if it already exists)
 
 Notes:
 - Creates a new file at the specified path.
 - Automatically creates missing directories in the path.
-- Normalizes newline characters to the system format.
 - If overwrite is false and file already exists, the operation fails safely.
-- If content is not provided, an empty file is created.
 
 Failure points:
 - Missing required argument: path

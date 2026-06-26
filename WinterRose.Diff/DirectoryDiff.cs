@@ -11,11 +11,11 @@ public class DirectoryDiff
 
     public void Save(string path)
     {
-        WinterForge.SerializeToFile(this, path);
+        WinterForge.SerializeToFile(this, path, TargetFormat.FormattedHumanReadable);
     }
 
-    public static FileDiff Load(string path)
+    public static DirectoryDiff Load(string path)
     {
-        return WinterForge.DeserializeFromFile<FileDiff>(path);
+        return WinterForge.DeserializeFromHumanReadableFile<DirectoryDiff>(path);
     }
 }

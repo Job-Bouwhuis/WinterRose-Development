@@ -17,11 +17,6 @@ public sealed class AgentCommandContext
             throw new InvalidOperationException("Path is required.");
         }
 
-        if (Path.IsPathRooted(relativePath))
-        {
-            throw new InvalidOperationException("Only paths inside the workspace root are allowed.");
-        }
-
         var combinedPath = Path.GetFullPath(Path.Combine(WorkspaceRoot, relativePath));
         var rootPath = Path.GetFullPath(WorkspaceRoot);
 
@@ -36,8 +31,14 @@ public sealed class AgentCommandContext
     private static bool IsInsideRoot(string path, string rootPath)
     {
         var comparison = GetComparison();
-        var normalizedRoot = Path.TrimEndingDirectorySeparator(rootPath) + Path.DirectorySeparatorChar;
-        return path.StartsWith(normalizedRoot, comparison);
+
+        var fullPath = Path.GetFullPath(path);
+        var fullRoot = Path.GetFullPath(rootPath);
+
+        return fullPath.StartsWith(fullRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, comparison)
+               || string.Equals(fullPath.TrimEnd(Path.DirectorySeparatorChar),
+                                fullRoot.TrimEnd(Path.DirectorySeparatorChar),
+                                comparison);
     }
 
     private static bool IsSamePath(string left, string right)

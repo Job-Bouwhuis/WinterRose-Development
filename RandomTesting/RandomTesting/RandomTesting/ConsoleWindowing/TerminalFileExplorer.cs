@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace RandomTesting.WebsitePreviewFetcher
+namespace RandomTesting.ConsoleWindowing
 {
     public static class TerminalFileExplorer
     {

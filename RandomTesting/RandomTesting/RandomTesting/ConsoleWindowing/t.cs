@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using WinterRose.FuzzySearching;
 
-namespace RandomTesting.WebsitePreviewFetcher
+namespace RandomTesting.ConsoleWindowing
 {
     
 

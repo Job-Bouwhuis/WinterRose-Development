@@ -32,7 +32,7 @@ public static class Settings
         if (File.Exists("settings.wf"))
         {
             // winterforge has the ability to deserialize into static classes directly if serialized that way
-            WinterForge.DeserializeFromFile("settings.wf");
+            WinterForge.DeserializeFromHumanReadableFile("settings.wf");
         }
         else
         {
@@ -47,6 +47,13 @@ public static class Settings
             {
                 Program.Current.GlobalThreadLoom.InvokeOn("Main", () =>
                 {
+                    FlowerGalleryManager.CreateFlowerGalleryWindow().Show();
+                });
+            });
+            trayIcon.RightClick.Subscribe(() =>
+            {
+                Program.Current.GlobalThreadLoom.InvokeOn("Main", () =>
+                {
                     CreateWindow((Program)Program.Current);
                 });
             });
@@ -55,11 +62,14 @@ public static class Settings
         {
             log.Error("Failed to create system tray icon: " + ex.Message);
         }
+
+        FlowerGalleryManager.Initialize();
     }
 
     public static void Shutdown()
     {
         Save();
+        FlowerGalleryManager.Shutdown();
         try
         {
             trayIcon.DeleteIcon();
@@ -126,7 +136,7 @@ public static class Settings
         window.AddContent(heartDisplayTimeSlider);
 
         window.AddText("Flower Display Time (seconds):");
-        UIValueSlider<double> flowerDisplayTimeSlider = new UIValueSlider<double>(3, 30, FlowerDisplayTime.TotalSeconds);
+        UIValueSlider<double> flowerDisplayTimeSlider = new UIValueSlider<double>(3, 60, FlowerDisplayTime.TotalSeconds);
         flowerDisplayTimeSlider.Step = 1;
         flowerDisplayTimeSlider.HoldShiftToDisableSnap = false;
         flowerDisplayTimeSlider.ValueChanged.Subscribe((newValue) =>

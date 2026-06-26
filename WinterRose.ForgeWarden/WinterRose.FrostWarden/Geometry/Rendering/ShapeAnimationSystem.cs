@@ -19,7 +19,7 @@ public sealed class ShapeAnimationSystem
     {
         for (int i = animations.Count - 1; i >= 0; i--)
         {
-            animations[i].Update();
+            animations[i].Update(Time.deltaTime);
 
             if (!animations[i].IsPlaying)
                 animations.RemoveAt(i);

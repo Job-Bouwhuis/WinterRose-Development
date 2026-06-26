@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RandomTesting.WebsitePreviewFetcher
+namespace RandomTesting.ConsoleWindowing
 {
     public class TreeNode : Control
     {

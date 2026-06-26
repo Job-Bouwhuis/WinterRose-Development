@@ -5,9 +5,12 @@ namespace WinterRose.ForgeWarden.Geometry.Animation;
 
 public sealed class AnimatedShape
 {
-    readonly ShapeMorph morph;
-    readonly float duration;
-    IEasingFunction easing = Easing.CubicInOut;
+    [WFInclude]
+    private ShapeMorph morph;
+    [WFInclude]
+    private float duration;
+    [WFInclude]
+    private IEasingFunction easing = Easing.CubicInOut;
 
     float elapsed;
     public bool IsPlaying { get; private set; }
@@ -27,6 +30,7 @@ public sealed class AnimatedShape
     /// </summary>
     public float EasedProgress => easing?.Evaluate(Progress) ?? Progress;
 
+    private AnimatedShape() { }
 
     public AnimatedShape(ShapeMorph morph, float duration)
     {
@@ -88,10 +92,10 @@ public sealed class AnimatedShape
         return this;
     }
 
-    internal void Update()
+    internal void Update(float delta)
     {
         if (!IsPlaying) return;
-        elapsed += Time.deltaTime;
+        elapsed += delta;
         if (elapsed >= duration)
         {
             elapsed = duration;
@@ -102,7 +106,7 @@ public sealed class AnimatedShape
 
     public void Draw()
     {
-        Update();
+        Update(Time.deltaTime);
         CurrentShape.Draw();
     }
 
@@ -116,5 +120,20 @@ public sealed class AnimatedShape
     {
         Completed += callback;
         return this;
+    }
+
+    public void EnsureComplete()
+    {
+        if (elapsed < duration)
+        {
+            elapsed = duration;
+            IsPlaying = false;
+            Completed?.Invoke();
+        }
+    }
+
+    internal AnimatedShape Duplicate()
+    {
+        return new AnimatedShape(morph.Duplicate(), duration);
     }
 }

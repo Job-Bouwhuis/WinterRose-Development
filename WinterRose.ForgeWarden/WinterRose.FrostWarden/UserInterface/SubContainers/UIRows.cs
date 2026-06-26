@@ -52,8 +52,11 @@ public class UIRows : UIContent, IUIContainer
         {
             List<UIContent> flattened = new List<UIContent>();
 
-            foreach (var row in RowsContents)
+            for (int i = 0; i < RowsContents.Count; i++)
+            {
+                List<UIContent>? row = RowsContents[i];
                 flattened.AddRange(row);
+            }
 
             return flattened;
         }
