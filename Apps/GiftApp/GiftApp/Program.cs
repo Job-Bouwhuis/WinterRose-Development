@@ -51,7 +51,7 @@ internal class Program() : ForgeWardenEngine(false, fancyShutdown: false)
 
     public override void AfterWindowCreation()
     {
-        Toasts.Success("Hello darling2!!!!! I love you so much! 💖💖💖💖", ToastRegion.Center, ToastStackSide.Top);
+        Toasts.Success("This was updated!", ToastRegion.Center, ToastStackSide.Top);
     }
 
     public enum DisplayState

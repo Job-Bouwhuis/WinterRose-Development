@@ -1,63 +1,22 @@
-﻿using System.Buffers;
-using System.Drawing;
-using WinterRose.Recordium;
-
-namespace WinterRose.Diff;
+﻿namespace WinterRose.Diff;
 
 public class DiffEngine
 {
     public const int WINDOW_SIZE = 2;
     public const ulong HASH_BASE = 257UL;
 
-    class EditRegion
-    {
-        public long OldStart;
-        public long OldEnd;
-        public List<Op> Ops = new();
-    }
-
-    public abstract class Op
-    {
-        public long Offset { get; protected set; }
-        protected Op(long offset) => Offset = offset;
-        protected Op() { }
-    }
-
-    public class Delete : Op
-    {
-        public long Length { get; set; }
-        private Delete() { } // serialization
-        public Delete(long offset, long length) : base(offset) => Length = length;
-    }
-
-    public class Insert : Op
-    {
-        public byte[] Data { get; set; }
-        private Insert() { } // serialization
-        public Insert(long offset, byte[] data) : base(offset) => Data = data;
-    }
-
-
-    private class Match
-    {
-        public long OldStart;
-        public long NewStart;
-        public long Length;
-
-        public long OldEnd => OldStart + Length;
-        public long NewEnd => NewStart + Length;
-
-        public bool IsMoveCandidate => OldStart != NewStart;
-    }
-
-    public List<Op> Diff(string oldPath, string newPath)
+    public FileDiff Diff(string oldPath, string newPath)
     {
         using FileView oldData = new FileView(oldPath);
         using FileView newData = new FileView(newPath);
 
         var ops = BuildOps(oldData, newData);
         ops = OptimizeOps(ops);
-        return ops;
+
+        return new FileDiff(ops) 
+        {
+            NewFileHash = newData.ComputeSha256()
+        };
     }
 
     private List<Op> BuildOps(FileView oldData, FileView newData)
@@ -232,36 +191,6 @@ public class DiffEngine
         return true; // default to insert
     }
 
-    private List<Op> AdjustOffsetsForDelta(List<Op> ops)
-    {
-        // Sort by offset so we process ops in file order
-        var sorted = ops.OrderBy(o => o.Offset).ToList();
-
-        long delta = 0;
-        var result = new List<Op>(sorted.Count);
-
-        foreach (var op in sorted)
-        {
-            switch (op)
-            {
-                case Delete del:
-                    // Delete offset stays anchored to the original file position,
-                    // but we shift it by the accumulated delta from prior ops.
-                    result.Add(new Delete(del.Offset + delta, del.Length));
-                    delta -= del.Length; // deletes shrink the file
-                    break;
-
-                case Insert ins:
-                    // Insert offset is also shifted by accumulated delta.
-                    result.Add(new Insert(ins.Offset + delta, ins.Data));
-                    delta += ins.Data.Length; // inserts grow the file
-                    break;
-            }
-        }
-
-        return result;
-    }
-
     private List<Op> OptimizeOps(List<Op> ops)
     {
         int oldLength;
@@ -279,10 +208,8 @@ public class DiffEngine
         }
         while (oldLength != ops.Count);
 
-        // future:
-        // ops = ConvertInsertDeleteToUpdate(ops);
+        ops = ConvertInsertDeleteToUpdate(ops);
 
-        //ops = AdjustOffsetsForDelta(ops);
         return ops;
     }
 
@@ -371,6 +298,51 @@ public class DiffEngine
 
         if (current != null)
             result.Add(current);
+
+        return result;
+    }
+
+    private List<Op> ConvertInsertDeleteToUpdate(List<Op> ops)
+    {
+        var result = new List<Op>();
+
+        for (int i = 0; i < ops.Count; i++)
+        {
+            // Case 1: Delete then Insert at same offset
+            if (ops[i] is Delete del &&
+                i + 1 < ops.Count &&
+                ops[i + 1] is Insert ins &&
+                ins.Offset == del.Offset)
+            {
+                result.Add(new Update(del.Offset, del.Length, ins.Data));
+                i++;
+                continue;
+            }
+
+            // Case 2: Insert then Delete at same offset (reversed order)
+            if (ops[i] is Insert ins2 &&
+                i + 1 < ops.Count &&
+                ops[i + 1] is Delete del2 &&
+                del2.Offset == ins2.Offset)
+            {
+                result.Add(new Update(ins2.Offset, del2.Length, ins2.Data));
+                i++;
+                continue;
+            }
+
+            // Case 3: Delete then Insert at delete's end offset (insert follows deleted region)
+            if (ops[i] is Delete del3 &&
+                i + 1 < ops.Count &&
+                ops[i + 1] is Insert ins3 &&
+                ins3.Offset == del3.Offset + del3.Length)
+            {
+                result.Add(new Update(del3.Offset, del3.Length, ins3.Data));
+                i++;
+                continue;
+            }
+
+            result.Add(ops[i]);
+        }
 
         return result;
     }

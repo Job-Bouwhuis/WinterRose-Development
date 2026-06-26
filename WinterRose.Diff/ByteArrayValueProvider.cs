@@ -16,6 +16,8 @@ internal class ByteArrayValueProvider : CustomValueProvider<byte[]>
         }
         if (value is string str)
         {
+            if (str.StartsWith('"') && str.EndsWith('"'))
+                str = str[1..^1];
             return Convert.FromBase64String(str);
         }
         throw new InvalidOperationException($"Cannot create byte[] from value of type {value.GetType().FullName}");

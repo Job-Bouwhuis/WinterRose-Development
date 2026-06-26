@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Security.Cryptography;
 
 namespace WinterRose.Diff;
 
@@ -11,6 +9,21 @@ public class FileView : IDisposable
     private readonly byte[] buffer;
     private long bufferStart;
     private int bufferLength;
+
+    public static implicit operator FileStream(FileView view) => view.stream;
+
+    public string ComputeSha256()
+    {
+        var location = stream.Position;
+        stream.Position = 0;
+        using var sha256 = SHA256.Create();
+
+        byte[] hash = sha256.ComputeHash(stream);
+
+        stream.Position = location;
+
+        return Convert.ToHexString(hash);
+    }
 
     public FileView(string path)
     {

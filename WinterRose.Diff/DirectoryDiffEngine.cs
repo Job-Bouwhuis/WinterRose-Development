@@ -51,15 +51,38 @@ public class DirectoryDiffEngine
                     // =========================
                     if (!oldExists && newExists)
                     {
-                        byte[] data = File.ReadAllBytes(newPath!);
+                        const long MaxChunkSize = 2L * 1024 * 1024 * 1024; // 2GB
+
+                        var fileInfo = new FileInfo(newPath!);
+                        var ops = new List<Op>();
+
+                        if (fileInfo.Length <= MaxChunkSize)
+                        {
+                            ops.Add(new Insert(0, File.ReadAllBytes(newPath!)));
+                        }
+                        else
+                        {
+                            using FileStream fs = File.OpenRead(newPath!);
+                            long offset = 0;
+
+                            while (offset < fileInfo.Length)
+                            {
+                                long chunkSize = Math.Min(MaxChunkSize, fileInfo.Length - offset);
+                                byte[] chunk = new byte[chunkSize];
+                                fs.ReadExactly(chunk);
+                                ops.Add(new Insert(offset, chunk));
+                                offset += chunkSize;
+                            }
+                        }
+
+                        using FileView view = new FileView(newPath!);
+                        string hash = view.ComputeSha256();
 
                         bag[key] = new FileDiff
                         {
                             State = FileState.Added,
-                            ops = new List<DiffEngine.Op>
-                            {
-                            new DiffEngine.Insert(0, data)
-                            }
+                            ops = ops,
+                            NewFileHash = hash
                         };
 
                         return;
@@ -75,10 +98,7 @@ public class DirectoryDiffEngine
                         bag[key] = new FileDiff
                         {
                             State = FileState.Deleted,
-                            ops = new List<DiffEngine.Op>
-                            {
-                            new DiffEngine.Delete(0, len)
-                            }
+                            ops = [new DeleteFile()]
                         };
 
                         return;
@@ -98,14 +118,10 @@ public class DirectoryDiffEngine
 
                         var diff = new DiffEngine().Diff(oldPath!, newPath!);
 
-                        if (diff.Count == 0)
+                        if (diff.State is FileState.Unchanged)
                             return; // unchanged
 
-                        bag[key] = new FileDiff
-                        {
-                            State = FileState.Modified,
-                            ops = diff
-                        };
+                        bag[key] = diff;
                     }
                 }
                 finally

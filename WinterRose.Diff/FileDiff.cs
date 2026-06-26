@@ -17,13 +17,30 @@ public enum FileState
 public class FileDiff
 {
     [WFInclude]
-    internal List<DiffEngine.Op> ops;
+    internal List<Op> ops;
 
     public FileState State { get; set; }
+    public string NewFileHash { get; set; }
 
-    public IReadOnlyList<DiffEngine.Op> Operations => ops;
+    public IReadOnlyList<Op> Operations => ops;
 
-    public static implicit operator FileDiff(List<DiffEngine.Op> ops) => new FileDiff { ops = ops };
+    public FileDiff()
+    {
+        ops = new List<Op>();
+        State = FileState.Unchanged;
+    }
+
+    public FileDiff(FileState state, List<Op> operations)
+    {
+        State = state;
+        ops = operations ?? new List<Op>();
+    }
+
+    public FileDiff(List<Op> operations)
+    {
+        ops = operations ?? new List<Op>();
+        State = ops.Count is 0 ? FileState.Unchanged : FileState.Modified;
+    }
 
     public void Save(string path)
     {
