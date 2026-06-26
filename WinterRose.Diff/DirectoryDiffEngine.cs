@@ -51,7 +51,7 @@ public class DirectoryDiffEngine
                     // =========================
                     if (!oldExists && newExists)
                     {
-                        const long MaxChunkSize = 2L * 1024 * 1024 * 1024; // 2GB
+                        const long MaxChunkSize = 1L << 30; // 1GB
 
                         var fileInfo = new FileInfo(newPath!);
                         var ops = new List<Op>();
