@@ -33,7 +33,7 @@ public class SubSystemManager
 
     private IEnumerator initializeCoroutine()
     {
-        Toast progressToast = new Toast(ToastType.Info, ToastRegion.Center, ToastStackSide.Top);
+        Toast progressToast = new Toast(ToastType.Question, ToastRegion.Center, ToastStackSide.Top);
         progressToast.Style.TimeUntilAutoDismiss = 0;
         UIText text = new UIText("Loading subsystems... \\e[]", UIFontSizePreset.Title);
         progressToast.AddContent(text);

@@ -23,12 +23,13 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
     SubSystemManager subSystemManager;
     Windows.SystemTrayIcon trayIcon;
     private List<UIContent> trayItems = [];
-    private InAppLogConsole logConsole;
+    private static InAppLogConsole logConsole;
     private bool faulted = false;
     private const bool forceWindow = false;
 
     private static async Task Main(string[] args)
     {
+        LogDestinations.AddDestination(logConsole = new InAppLogConsole());
         if (OperatingSystem.IsLinux() || forceWindow)
             new Program().Run("WinterRose Util App", 1280, 720);
         else
@@ -75,7 +76,7 @@ internal class Program() : ForgeWardenEngine(GracefulErrorHandling: false)
 
     public override World CreateFirstWorld()
     {
-        LogDestinations.AddDestination(logConsole = new InAppLogConsole());
+        
         Raylib.SetTargetFPS(144);
 
         RichTextRenderer.FunctionRegistry.RegisterFunction(new FunctionDefinition("test", FunctionResult (string functionName,

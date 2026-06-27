@@ -12,6 +12,37 @@ public class Log
     private static readonly object LOG_INSTANCES_LOCK = new();
 
     private static readonly Log UnhandledExceptionsLog = new("Global Unhandled Exceptions");
+    private static readonly Dictionary<LogVerbosity, string> DEFAULT_TEMPLATES = new()
+    {
+        [LogVerbosity.Minimal] = "[{severity}] {message} {exception}",
+        [LogVerbosity.Normal] = "[{time}] [{severity}] [{category}] {message} {exception}",
+        [LogVerbosity.Detailed] = "[{time}] [{severity}] [{category}] {message} {?file:(in {file})|} {exception}",
+        [LogVerbosity.Full] = "[{time}] [{severity}] [{category}] {message} {?file:(in {file})|} {?thread:in thread {thread}|} {exception}"
+    };
+
+    private static readonly Dictionary<LogVerbosity, string?> CUSTOM_TEMPLATES = new();
+
+    public static string GetTemplate(LogVerbosity verbosity)
+    {
+        if (CUSTOM_TEMPLATES.TryGetValue(verbosity, out var custom) &&
+            !string.IsNullOrWhiteSpace(custom))
+        {
+            return custom;
+        }
+
+        return DEFAULT_TEMPLATES[verbosity];
+    }
+
+    public static void SetTemplate(LogVerbosity verbosity, string template)
+    {
+        CUSTOM_TEMPLATES[verbosity] = template;
+    }
+
+    public static void ResetTemplate(LogVerbosity verbosity)
+    {
+        CUSTOM_TEMPLATES.Remove(verbosity);
+    }
+
 
     public string Category { get; set; }
     public IReadOnlyList<ILogDestination> Destinations { get; }
@@ -149,7 +180,7 @@ public class Log
         _ = WriteAsync(entry);
     }
 
-    private LogEntry CreateEntry(LogSeverity severity, string message, string fileName, int lineNumber)
+    public LogEntry CreateEntry(LogSeverity severity, string message, string fileName, int lineNumber)
     {
         return new LogEntry(
             severity,
@@ -159,8 +190,8 @@ public class Log
             lineNumber,
             Environment.CurrentManagedThreadId);
     }
-    
-    private LogEntry CreateEntry(LogSeverity severity, Exception ex, string message, string fileName, int lineNumber)
+
+    public LogEntry CreateEntry(LogSeverity severity, Exception? ex, string message, string? fileName, int lineNumber)
     {
         return new LogEntry(
             severity,
@@ -277,5 +308,21 @@ public class Log
     public static void Flush()
     {
         FlushAll();
+    }
+
+    public static Log? GetLogger(string category)
+    {
+        lock (LOG_INSTANCES_LOCK)
+        {
+            foreach (var weak in LOG_INSTANCES)
+            {
+                if (weak.TryGetTarget(out var log))
+                {
+                    if (log.Category == category)
+                        return log;
+                }
+            }
+        }
+        return new Log(category);
     }
 }

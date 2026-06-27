@@ -1,15 +1,20 @@
 namespace WinterRose.Recordium;
 
-public class ConsoleLogDestination : ILogDestination
+public class ConsoleLogDestination(
+    LogVerbosity verbosity = LogVerbosity.Detailed,
+    LogSeverity minumumSeverity = LogSeverity.Debug) : ILogDestination
 {
     public bool Invalidated { get; set; }
 
     public async Task WriteAsync(LogEntry entry)
     {
+        if (entry.Severity < minumumSeverity)
+            return;
+
         ConsoleColor color = entry.Severity switch
         {
             LogSeverity.Debug => ConsoleColor.Gray,
-            LogSeverity.Info => ConsoleColor.White,
+            LogSeverity.Info => ConsoleColor.Green,
             LogSeverity.Warning => ConsoleColor.Yellow,
             LogSeverity.Error => ConsoleColor.Red,
             LogSeverity.Critical => ConsoleColor.Magenta,
@@ -17,11 +22,35 @@ public class ConsoleLogDestination : ILogDestination
             _ => ConsoleColor.White
         };
 
-        var previousColor = Console.ForegroundColor;
-        Console.ForegroundColor = color;
+        var previousForeground = Console.ForegroundColor;
+        var previousBackground = Console.BackgroundColor;
 
-        await Console.Out.WriteLineAsync(entry.ToString(LogVerbosity.Detailed));
+        foreach(var part in entry.GetFragments(verbosity))
+        {
+            Console.ForegroundColor = part switch
+            {
+                PrintableLogFragment { Type: LogFragmentType.Timestamp } => ConsoleColor.DarkGray,
+                PrintableLogFragment { Type: LogFragmentType.Severity } => color,
+                PrintableLogFragment { Type: LogFragmentType.Category } => ConsoleColor.Yellow,
+                PrintableLogFragment { Type: LogFragmentType.Message } => ConsoleColor.White,
+                PrintableLogFragment { Type: LogFragmentType.Exception } => ConsoleColor.White,
+                _ => ConsoleColor.White
+            };
 
-        Console.ForegroundColor = previousColor;
+            Console.BackgroundColor = part switch
+            {
+                PrintableLogFragment { Type: LogFragmentType.Message } => 
+                    entry.Severity == LogSeverity.Fatal ? ConsoleColor.DarkGray : ConsoleColor.Black,
+
+                _ => ConsoleColor.Black
+            };
+
+            await Console.Out.WriteAsync(part.Fragment);
+        }
+
+        await Console.Out.WriteLineAsync();
+
+        Console.ForegroundColor = previousForeground;
+        Console.BackgroundColor = previousBackground;
     }
 }

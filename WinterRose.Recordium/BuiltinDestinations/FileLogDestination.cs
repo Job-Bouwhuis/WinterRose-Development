@@ -43,7 +43,9 @@ public class FileLogDestination : ILogDestination
         return false;
     }
 
-    public FileLogDestination(string fileDirectory)
+    public FileLogDestination(string fileDirectory = "logs", 
+        LogVerbosity verbosity = LogVerbosity.Detailed,
+        LogSeverity minumumSeverity = LogSeverity.Debug)
     {
         string date = DateTime.UtcNow.ToString("yyyy.MM.dd_HH.mm.ss");
 
@@ -62,12 +64,18 @@ public class FileLogDestination : ILogDestination
             shortcutPath: Path.Combine(di.FullName, "Latest Log"),
             targetPath: fi.FullName
         );
+        Verbosity = verbosity;
+        MinumumSeverity = minumumSeverity;
     }
 
     public bool Invalidated { get; set; }
+    public LogVerbosity Verbosity { get; }
+    public LogSeverity MinumumSeverity { get; }
 
     public async Task WriteAsync(LogEntry entry)
     {
+        if(entry.Severity < MinumumSeverity)
+            return;
         Enqueue(entry);
         if (logEntries.Count > CommitEvery)
             await CommitWrite();
@@ -78,7 +86,7 @@ public class FileLogDestination : ILogDestination
         while (TryDequeue(out LogEntry entry))
         {
             await fileStream.WriteAsync(
-                Encoding.UTF8.GetBytes(entry.ToString(LogVerbosity.Detailed) + Environment.NewLine));
+                Encoding.UTF8.GetBytes(entry.ToString(Verbosity) + Environment.NewLine));
             await fileStream.FlushAsync();
         }
     }
