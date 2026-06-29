@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\WinterRose.WinterForge\src\WinterRose.WinterForge\WinterRose.WinterForge.csproj" />
+    <ProjectReference Include="..\..\WinterRoseWebApp\Utils\WinterRose.ProgressKeeping\WinterRose.ProgressKeeping.csproj" />
     <ProjectReference Include="..\WinterRose.Recordium\WinterRose.Recordium.csproj" />
   </ItemGroup>
 

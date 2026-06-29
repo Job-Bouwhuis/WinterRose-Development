@@ -6,12 +6,12 @@ namespace WinterRose.Recordium;
 /// <summary>
 /// A central place to funnel your logs into.
 /// </summary>
-public class Log
+public class Log : ILogger
 {
     private static readonly List<WeakReference<Log>> LOG_INSTANCES = new();
     private static readonly object LOG_INSTANCES_LOCK = new();
 
-    private static readonly Log UnhandledExceptionsLog = new("Global Unhandled Exceptions");
+    private static readonly Log UnhandledExceptionsLogger = new("Global Unhandled Exceptions");
     private static readonly Dictionary<LogVerbosity, string> DEFAULT_TEMPLATES = new()
     {
         [LogVerbosity.Minimal] = "[{severity}] {message} {exception}",
@@ -80,7 +80,7 @@ public class Log
             if (args.ExceptionObject is Exception ex)
             {
                 var (file, line) = ExtractSource(ex);
-                UnhandledExceptionsLog.Fatal(ex,
+                UnhandledExceptionsLogger.Fatal(ex,
                     $"Unhandled exception thrown!" +
                     $"{(args.IsTerminating ? " This is causing the app to crash!" : "")}",
                     file ?? "Unknown",
@@ -88,7 +88,7 @@ public class Log
             }
             else
             {
-                UnhandledExceptionsLog.Fatal(
+                UnhandledExceptionsLogger.Fatal(
                     $"Exception of type {args.ExceptionObject.GetType().Name} thrown and unhandled. " +
                     $"{(args.IsTerminating ? "This is causing the app to crash!" : "")}",
                     "Unknown", 0);
@@ -102,7 +102,8 @@ public class Log
             FlushAll();
         };
     }
-    private void Cleanup()
+
+    public void Dispose()
     {
         if (Interlocked.Exchange(ref cleanedUpFlag, 1) == 1)
             return;
@@ -146,13 +147,10 @@ public class Log
             try
             {
                 if (weak.TryGetTarget(out var log))
-                {
-                    log.Cleanup();
-                }
+                    log.Dispose();
             }
-            catch (Exception ex)
+            catch // we dont care about these errors
             {
-                try { Console.WriteLine("Exception while flushing logs: " + ex); } catch { }
             }
         }
         

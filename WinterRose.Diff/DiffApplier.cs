@@ -1,8 +1,10 @@
-﻿namespace WinterRose.Diff;
+﻿using WinterRose.ProgressKeeping;
 
-public class DiffApplyer
+namespace WinterRose.Diff;
+
+public class DiffApplier
 {
-    public bool ApplyDiff(string filePath, FileDiff diff)
+    public bool ApplyDiff(string filePath, FileDiff diff, IProgressScope? progress = null)
     {
         try
         {
@@ -16,20 +18,23 @@ public class DiffApplyer
             {
                 if (File.Exists(filePath))
                     File.Delete(filePath);
+
+                progress?.Report(1.0, $"Deleted {Path.GetFileName(filePath)}");
+                return true;
             }
 
             if (diff.State == FileState.Modified)
             {
                 using FileStream file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
 
-                // Ops are in old-file space; track cumulative byte shift as we apply
                 long delta = 0;
+                int totalOps = diff.Operations.Count;
+                int completedOps = 0;
 
                 foreach (var op in diff.Operations)
                 {
                     if (op is Insert insert)
                     {
-                        // Shift offset into current live-file space
                         var shifted = new Insert(insert.Offset + delta, insert.Data);
                         ApplyInsert(file, shifted);
                         delta += insert.Data.Length;
@@ -50,14 +55,97 @@ public class DiffApplyer
                         file.Close();
                         File.Delete(filePath);
                     }
+
+                    completedOps++;
+
+                    if (progress != null && totalOps > 0)
+                    {
+                        double frac = (double)completedOps / totalOps;
+                        string opLabel = op switch
+                        {
+                            Insert  => "insert",
+                            Delete  => "delete",
+                            Update  => "update",
+                            DeleteFile => "delete file",
+                            _ => "op"
+                        };
+                        progress.Report(frac, $"{Path.GetFileName(filePath)}: {opLabel} ({completedOps}/{totalOps})");
+                    }
                 }
+
+                // If there were no operations, still mark complete
+                if (totalOps == 0)
+                    progress?.Report(1.0, Path.GetFileName(filePath));
             }
+
             return true;
         }
-        catch (Exception ex) 
+        catch (Exception)
         {
+            progress?.Report(1.0, $"Failed: {Path.GetFileName(filePath)}");
             return false;
         }
+    }
+
+    public async Task<List<string>> ApplyDiff(string targetDirectory, DirectoryDiff diff, IProgressScope? progress = null)
+    {
+        var semaphore = new SemaphoreSlim(Environment.ProcessorCount);
+        var failedFiles = new System.Collections.Concurrent.ConcurrentBag<string>();
+
+        // Weight each file's child scope by its operation count so overall
+        // progress reflects actual work rather than raw file count.
+        var tasks = diff.FileDiffs.Select(kvp =>
+        {
+            string relativePath = kvp.Key;
+            FileDiff fileDiff = kvp.Value;
+
+            // Create the child scope before entering the task so weights are
+            // registered on the parent before any work starts.
+            double weight = Math.Max(1, fileDiff.Operations.Count);
+            IProgressScope? fileScope = progress?.CreateChild(weight);
+
+            return Task.Run(async () =>
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+
+                try
+                {
+                    string targetPath = Path.Combine(targetDirectory, relativePath);
+                    string? directory = Path.GetDirectoryName(targetPath);
+
+                    if (!string.IsNullOrEmpty(directory))
+                        Directory.CreateDirectory(directory);
+
+                    bool applied = ApplyDiff(targetPath, fileDiff, fileScope);
+                    if (!applied)
+                    {
+                        failedFiles.Add(relativePath);
+                        return;
+                    }
+
+                    if (!string.IsNullOrEmpty(fileDiff.NewFileHash))
+                    {
+                        fileScope?.Report(1.0, $"Verifying {relativePath}...");
+
+                        using FileView view = new(targetPath);
+                        string actualHash = view.ComputeSha256();
+
+                        if (!string.Equals(actualHash, fileDiff.NewFileHash, StringComparison.OrdinalIgnoreCase))
+                        {
+                            failedFiles.Add(relativePath);
+                            fileScope?.Report(1.0, $"{relativePath} failed. Queued for redownload");
+                        }
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+        });
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+        return failedFiles.ToList();
     }
 
     private long ApplyUpdate(FileStream file, long delta, Update update)
@@ -161,51 +249,4 @@ public class DiffApplyer
         file.SetLength(end - length);
     }
 
-    public async Task<List<string>> ApplyDiff(string testDirectory, DirectoryDiff diff)
-    {
-        var semaphore = new SemaphoreSlim(Environment.ProcessorCount);
-        var failedFiles = new System.Collections.Concurrent.ConcurrentBag<string>();
-
-        var tasks = diff.FileDiffs.Select(kvp =>
-            Task.Run(async () =>
-            {
-                await semaphore.WaitAsync().ConfigureAwait(false);
-
-                try
-                {
-                    string relativePath = kvp.Key;
-                    FileDiff fileDiff = kvp.Value;
-
-                    string targetPath = Path.Combine(testDirectory, relativePath);
-                    string? directory = Path.GetDirectoryName(targetPath);
-
-                    if (!string.IsNullOrEmpty(directory))
-                        Directory.CreateDirectory(directory);
-
-                    bool applied = ApplyDiff(targetPath, fileDiff);
-                    if (!applied)
-                    {
-                        failedFiles.Add(relativePath);
-                        return;
-                    }
-
-                    if (!string.IsNullOrEmpty(fileDiff.NewFileHash))
-                    {
-                        using FileView view = new(targetPath);
-                        string actualHash = view.ComputeSha256();
-
-                        if (!string.Equals(actualHash, fileDiff.NewFileHash, StringComparison.OrdinalIgnoreCase))
-                            failedFiles.Add(relativePath);
-                    }
-                }
-                finally
-                {
-                    semaphore.Release();
-                }
-            })
-        );
-
-        await Task.WhenAll(tasks).ConfigureAwait(false);
-        return failedFiles.ToList();
-    }
 }

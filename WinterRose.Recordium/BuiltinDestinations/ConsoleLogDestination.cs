@@ -1,14 +1,24 @@
 namespace WinterRose.Recordium;
 
-public class ConsoleLogDestination(
-    LogVerbosity verbosity = LogVerbosity.Detailed,
-    LogSeverity minumumSeverity = LogSeverity.Debug) : ILogDestination
+public class ConsoleLogDestination : ILogDestination
 {
+    public LogVerbosity Verbosity { get; set; }
+    public LogSeverity MinumumSeverity { get; set; }
+
+    public ConsoleLogDestination() : this(LogVerbosity.Detailed, LogSeverity.Debug) {}
+    
+    public ConsoleLogDestination(LogVerbosity verbosity = LogVerbosity.Detailed,
+        LogSeverity minumumSeverity = LogSeverity.Debug)
+    {
+        Verbosity = verbosity;
+        MinumumSeverity = minumumSeverity;
+    }
+
     public bool Invalidated { get; set; }
 
     public async Task WriteAsync(LogEntry entry)
     {
-        if (entry.Severity < minumumSeverity)
+        if (entry.Severity < MinumumSeverity)
             return;
 
         ConsoleColor color = entry.Severity switch
@@ -25,7 +35,7 @@ public class ConsoleLogDestination(
         var previousForeground = Console.ForegroundColor;
         var previousBackground = Console.BackgroundColor;
 
-        foreach(var part in entry.GetFragments(verbosity))
+        foreach(var part in entry.GetFragments(Verbosity))
         {
             Console.ForegroundColor = part switch
             {
@@ -52,5 +62,10 @@ public class ConsoleLogDestination(
 
         Console.ForegroundColor = previousForeground;
         Console.BackgroundColor = previousBackground;
+    }
+
+    public bool AllowDuplicate(ILogDestination logDestination)
+    {
+        return false;
     }
 }

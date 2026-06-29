@@ -9,4 +9,6 @@ public interface ILogDestination
     /// <br/> Method is called when the app will close either gracefully or as a crash
     /// </summary>
     virtual void Cleanup() {}
+
+    bool AllowDuplicate(ILogDestination logDestination);
 }

@@ -41,6 +41,7 @@ namespace WinterRose.ForgeThread
         /// </summary>
         public void CreateQueueGroup(string groupName)
         {
+            var a = Thread.CurrentThread.ManagedThreadId;
             if (string.IsNullOrWhiteSpace(groupName)) throw new ArgumentException("groupName required", nameof(groupName));
             if (!sharedQueues.TryAdd(groupName, new SharedWorkQueue()))
             {
