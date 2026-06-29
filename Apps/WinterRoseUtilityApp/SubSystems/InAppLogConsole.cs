@@ -103,5 +103,7 @@ internal class InAppLogConsole : ILogDestination
         window.AddContent(logRows);
         return window;
     }
+
+    public bool AllowDuplicate(ILogDestination logDestination) => false;
 }
 

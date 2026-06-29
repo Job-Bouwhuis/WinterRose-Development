@@ -6,7 +6,7 @@ using WinterRose.WinterForgeSerializing.Workers;
 
 namespace WinterRose.Diff;
 
-internal class ByteArrayValueProvider : CustomValueProvider<byte[]>
+public class ByteArrayValueProvider : CustomValueProvider<byte[]>
 {
     public override byte[]? CreateObject(object value, WinterForgeVM executor)
     {
