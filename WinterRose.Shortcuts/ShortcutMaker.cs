@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace WinterRose.FileManagement.Shortcuts;
+﻿namespace WinterRose.Shortcuts;
 
 /// <summary>
 /// A static factory class for creating shortcuts. it automatically selects the appropriate implementation based on the operating system.
@@ -35,5 +31,31 @@ public static class ShortcutMaker
             throw new NotSupportedException("This operating system is not supported.");
 
         shortcutMaker.CreateShortcut(shortcutPath, targetPath, arguments, workingDirectory, iconPath);
+    }
+    
+    /// <inheritdoc cref="IShortcutMaker.CreateUriShortcut(string, string, string?)"/>
+    public static void CreateUriShortcut(string shortcutPath, string uri, string? iconPath = null)
+    {
+        IShortcutMaker shortcutMaker;
+
+        if (Path.GetExtension(shortcutPath) != string.Empty)
+            shortcutPath = Path.ChangeExtension(shortcutPath, null);
+
+        if (OperatingSystem.IsWindows())
+        {
+            shortcutPath = Path.ChangeExtension(shortcutPath, ".lnk");
+            shortcutMaker = new WindowsShortcutMaker();
+        }
+        else if (OperatingSystem.IsLinux())
+        {
+            shortcutPath = Path.ChangeExtension(shortcutPath, ".desktop");
+            shortcutMaker = new LinuxShortcutMaker();
+        }
+        else
+        {
+            throw new NotSupportedException("This operating system is not supported.");
+        }
+
+        shortcutMaker.CreateUriShortcut(shortcutPath, uri, iconPath);
     }
 }

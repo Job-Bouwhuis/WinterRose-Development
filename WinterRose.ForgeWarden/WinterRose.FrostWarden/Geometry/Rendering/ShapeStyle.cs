@@ -100,10 +100,6 @@ public sealed class ShapeStyle
 
         // interpolate stroke/fill alpha separately
         float strokeAlpha = a.StrokeAlpha + (b.StrokeAlpha - a.StrokeAlpha) * t;
-        if(strokeAlpha < .1)
-        {
-
-        }
         float fillAlpha = a.FillAlpha + (b.FillAlpha - a.FillAlpha) * t;
         
         bool isStroke = b?.HasOutline ?? a.HasOutline;

@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using WinterRose.FileManagement.Shortcuts;
+using WinterRose.Shortcuts;
 
 namespace WinterRose.Recordium;
 

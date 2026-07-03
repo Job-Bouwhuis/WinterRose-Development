@@ -1,8 +1,8 @@
 using System.Diagnostics;
 
-namespace WinterRose.FileManagement.Shortcuts;
+namespace WinterRose.Shortcuts;
 
-public sealed class LinuxShortcutMaker : IShortcutMaker
+internal sealed class LinuxShortcutMaker : IShortcutMaker
 {
     public void CreateShortcut(
         string shortcutPath,
@@ -49,5 +49,25 @@ Terminal=false
 
         if (!string.IsNullOrEmpty(errors))
             throw new Exception($"Error setting shortcut executable: {errors}");
+    }
+    
+    public void CreateUriShortcut(
+        string shortcutPath,
+        string uri,
+        string? iconPath = null
+    )
+    {
+        if (!shortcutPath.EndsWith(".desktop"))
+            shortcutPath += ".desktop";
+
+        string desktopFileContent =
+            $@"[Desktop Entry]
+Type=Link
+Name={System.IO.Path.GetFileNameWithoutExtension(shortcutPath)}
+URL={uri}
+{(string.IsNullOrEmpty(iconPath) ? "" : $"Icon={iconPath}")}
+";
+
+        System.IO.File.WriteAllText(shortcutPath, desktopFileContent);
     }
 }

@@ -1,11 +1,8 @@
-﻿using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Diagnostics;
 
-namespace WinterRose.FileManagement.Shortcuts;
+namespace WinterRose.Shortcuts;
 
-public sealed class WindowsShortcutMaker : IShortcutMaker
+internal sealed class WindowsShortcutMaker : IShortcutMaker
 {
     public void CreateShortcut(
         string shortcutPath,
@@ -61,5 +58,52 @@ public sealed class WindowsShortcutMaker : IShortcutMaker
 
         if (!string.IsNullOrEmpty(errors))
             throw new Exception($"Error creating shortcut: {errors}");
+    }
+    
+    public void CreateUriShortcut(
+        string shortcutPath,
+        string uri,
+        string? iconPath = null
+    )
+    {
+        string psCommand = @"""
+                        $WshShell = New-Object -ComObject WScript.Shell
+                        $Shortcut = $WshShell.CreateShortcut('{0}')
+                        $Shortcut.TargetPath = '{1}'
+                        {2}
+                        $Shortcut.Save()
+                        Write-Output 'URI shortcut created successfully'
+                        """;
+
+        string iconLine = string.IsNullOrEmpty(iconPath)
+            ? ""
+            : $"$Shortcut.IconLocation = '{iconPath}'";
+
+        string finalCommand = string.Format(
+            psCommand,
+            shortcutPath.Replace("'", "''"),
+            uri.Replace("'", "''"),
+            iconLine
+        );
+
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -Command \"{finalCommand}\"",
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            }
+        };
+
+        process.Start();
+
+        string errors = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        if (!string.IsNullOrEmpty(errors))
+            throw new Exception($"Error creating URI shortcut: {errors}");
     }
 }
