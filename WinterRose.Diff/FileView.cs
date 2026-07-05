@@ -15,14 +15,21 @@ public class FileView : IDisposable
     public string ComputeSha256()
     {
         var location = stream.Position;
-        stream.Position = 0;
-        using var sha256 = SHA256.Create();
+        try
+        {
+            stream.Position = 0;
+            using var sha256 = SHA256.Create();
 
-        byte[] hash = sha256.ComputeHash(stream);
+            byte[] hash = sha256.ComputeHash(stream);
 
-        stream.Position = location;
+            stream.Position = location;
 
-        return Convert.ToHexString(hash);
+            return Convert.ToHexString(hash);
+        }
+        finally
+        {
+            stream.Position = location;
+        }
     }
 
     public FileView(string path)
@@ -35,6 +42,12 @@ public class FileView : IDisposable
             1 << 20,
             FileOptions.SequentialScan);
 
+        buffer = new byte[8 * 1024 * 1024];
+    }
+
+    public FileView(FileStream stream)
+    {
+        this.stream = stream;
         buffer = new byte[8 * 1024 * 1024];
     }
 

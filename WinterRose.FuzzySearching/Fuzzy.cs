@@ -20,28 +20,28 @@ namespace WinterRose.FuzzySearching
         const float CONSECUTIVE_BONUS = 0.35f;
         const float MISMATCH_PENALTY_BASE = 0.75f;
 
-        private static float ComputeFuzzyScore(string name, string search)
+        private static float ComputeFuzzyScore(string entry, string search)
         {
-            if (name == null) return 0f;
+            if (entry == null) return 0f;
             if (search == null) return 0f;
             if (search.Length == 0) return 0f;
 
-            if (name == search) return int.MaxValue;
+            if (entry == search) return int.MaxValue;
 
             float score = 0f;
 
-            if (name.StartsWith(search))
+            if (entry.StartsWith(search))
                 score += PREFIX_BONUS;
-            else if (name.Contains(search))
+            else if (entry.Contains(search))
                 score += CONTAINS_BONUS;
 
             int prefixMatchCount = 0;
             float missedChars = 0f;
-            int limit = Math.Min(search.Length, name.Length);
+            int limit = Math.Min(search.Length, entry.Length);
             int consecutive = 0;
             for (int j = 0; j < limit; j++)
             {
-                if (search[j] == name[j])
+                if (search[j] == entry[j])
                 {
                     score += LEADING_MATCH_SCORE;
                     prefixMatchCount++;
@@ -59,9 +59,9 @@ namespace WinterRose.FuzzySearching
 
             // subsequence (in-order) matches across the whole name
             int seqIndex = 0;
-            for (int j = 0; j < name.Length && seqIndex < search.Length; j++)
+            for (int j = 0; j < entry.Length && seqIndex < search.Length; j++)
             {
-                if (name[j] == search[seqIndex])
+                if (entry[j] == search[seqIndex])
                     seqIndex++;
             }
             int seqMatches = seqIndex;
@@ -77,9 +77,9 @@ namespace WinterRose.FuzzySearching
             float baseNormalized = score / maxPossibleScore;
             baseNormalized = Math.Max(0f, Math.Min(1f, baseNormalized));
 
-            // incorporate edit distance (Levenshtein) to accept typos/transpositions
-            int dist = LevenshteinDistance(name, search);
-            int maxLen = Math.Max(name.Length, search.Length);
+            // incorporate edit distance to accept typos/transpositions
+            int dist = LevenshteinDistance(entry, search);
+            int maxLen = Math.Max(entry.Length, search.Length);
             float editNormalized = 0f;
             if (maxLen > 0)
             {
@@ -96,7 +96,6 @@ namespace WinterRose.FuzzySearching
             return combined;
         }
 
-        // --- New helper: Levenshtein distance (simple, robust) ---
         private static int LevenshteinDistance(string s, string t)
         {
             if (s == null) return t?.Length ?? 0;
