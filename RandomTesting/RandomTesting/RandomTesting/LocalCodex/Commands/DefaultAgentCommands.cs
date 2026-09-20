@@ -20,6 +20,7 @@ public static class DefaultAgentCommands
         registry.Register(new GoogleSearchCommand());
         registry.Register(new MemoryCommand());
         registry.Register(new ExecuteCSharpCodeCommand());
+        registry.Register(new ClearTrashCommand());
         return registry;
     }
 }

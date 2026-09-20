@@ -1,0 +1,4 @@
+Anonymous as Section2 : global content {
+	string:name = "Syila";
+}
+return content;

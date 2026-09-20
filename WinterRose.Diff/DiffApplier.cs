@@ -22,7 +22,7 @@ public class DiffApplier
                 if (File.Exists(filePath))
                     File.Delete(filePath);
 
-                await progress.ReportAsync(1.0, $"Deleted {Path.GetFileName(filePath)}", ReportStatus.Info);
+                await progress.ReportAsync(.95, $"Deleted {Path.GetFileName(filePath)}", ReportStatus.Info);
                 return;
             }
 
@@ -73,19 +73,20 @@ public class DiffApplier
                             DeleteFile => "delete file",
                             _ => "op"
                         };
-                        await progress.ReportAsync(frac, $"{Path.GetFileName(filePath)}: {opLabel} ({completedOps}/{totalOps})", ReportStatus.Info);
+                        _ = progress.ReportAsync(frac, $"{Path.GetFileName(filePath)}: {opLabel} ({completedOps}/{totalOps})", ReportStatus.Info);
+                        await Console.Out.WriteLineAsync(frac.ToString("D"));
                     }
                 }
 
                 if (totalOps == 0)
-                    await progress.ReportAsync(1.0, Path.GetFileName(filePath), ReportStatus.Info);
+                    await progress.ReportAsync(.95, Path.GetFileName(filePath), ReportStatus.Info);
             }
 
             return;
         }
         catch (Exception)
         {
-            await progress.ReportAsync(1.0, $"Failed: {Path.GetFileName(filePath)}", ReportStatus.Error);
+            await progress.ReportAsync(.95, $"Failed: {Path.GetFileName(filePath)}", ReportStatus.Error);
         }
     }
 
@@ -161,13 +162,13 @@ public class DiffApplier
                                         continue;
                                     }
                                     
-                                    await fileScope.ReportAsync(1, $"Replacement successfully applied.", ReportStatus.Success);
+                                    await fileScope.ReportAsync(.95, $"Replacement successfully applied.", ReportStatus.Success);
                                     break;
                                 }
                             }
                             else
                             {
-                                await fileScope.ReportAsync(1.0, $"{relativePath} failed", ReportStatus.Error);
+                                await fileScope.ReportAsync(.95, $"{relativePath} failed", ReportStatus.Error);
                                 failedFiles.Add(relativePath);
                             }
                         }

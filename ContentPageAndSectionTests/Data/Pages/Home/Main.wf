@@ -1,0 +1,12 @@
+Anonymous as HomeMain : global content {
+	string:title = "Hello, Star Citizen";
+	string:overmij = "mooie aanpassing Mijn vrienden, familie, leerkrachten en medestudenten kennen mij als een serieus, humoristisch, betrouwbaar en hard werkend persoon. Door mijn empathisch vermogen weten mensen mij altijd snel te vinden voor een goed gesprek. ";
+	string:description = "this is another discription that makes no sense";
+
+	Anonymous as NestedHomeMain : 1 {
+		string:title = "Drake Ironclad";
+		string:image = "/images/ironclad.webp";
+	}
+	NestedHomeMain:nested = #ref(1);
+}
+return content;

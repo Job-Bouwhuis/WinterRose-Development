@@ -1,5 +1,4 @@
-﻿using LocalCodexAgent;
-using RandomTesting.LocalCodex;
+using LocalCodexAgent;using RandomTesting.LocalCodex;
 using RandomTesting.LocalCodex.Commands;
 using RandomTesting.LocalCodex.Ollama;
 using System.Text;
@@ -39,6 +38,7 @@ Console.WriteLine("Local Codex-style agent ready.");
 Console.WriteLine("Type a message and press Enter.");
 Console.WriteLine("Type /models to list and switch models.");
 Console.WriteLine("Type /exit to quit.");
+Console.WriteLine("Type /new to start a new chat context.");
 Console.WriteLine();
 
 while (true)
@@ -150,6 +150,15 @@ while (true)
         continue;
     }
 
+    if (string.Equals(command, "/new", StringComparison.OrdinalIgnoreCase))
+    {
+        // Create a new session with the same settings but fresh context
+        await ReplaceSessionAsync(selectedModelName, baseOptions, ollamaModels, CancellationToken.None);
+        Console.WriteLine("New chat context started.");
+        Console.WriteLine();
+        continue;
+    }
+
     if (string.IsNullOrWhiteSpace(input))
     {
         continue;
@@ -181,7 +190,6 @@ async Task ReplaceSessionAsync(
     var newSession = await CreateSessionAsync(modelName, templateOptions, modelManager, cancellationToken);
 
     await session.DisposeAsync();
-
 
     session = newSession;
     BindSessionEvents(session);

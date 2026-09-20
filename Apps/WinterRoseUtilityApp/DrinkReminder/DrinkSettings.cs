@@ -36,8 +36,6 @@ internal class DrinkSettings
             "Even aliens understand hydration.",
             "Your body asks for water, not coffee.",
             "Achievement unlocked: Time to drink.",
-            "Drink, so that Dajuska can have a fully functional boyfriend >:(",
-            "I love you! Mwah <3\n- Dajuska"
         ]
     };
 

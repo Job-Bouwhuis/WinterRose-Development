@@ -83,15 +83,34 @@ public class MailWatcher
             fetchProgress.Stats = tots;
         }
 
+        List<string> spamFolders = ["spam", "junk", "trash", "junk email", "deleted items"];
+
         foreach (IMailMonitor monitor in monitors)
-        {
+        { 
             log.Info($"Fetching mail from {monitor.Account.Address}");
             var messages = await monitor.FetchNewAsync(CancellationToken.None, fetchProgress);
             log.Info($"Complete, fetched {messages.Sum(p => p.Value.Count)} mails for {messages.Keys.Count} folders");
 
             foreach (var (folder, emails) in messages)
             {
-                if(emails.Count > 0)
+                if(spamFolders.Contains(folder.DisplayName.ToLower()))
+                {
+                    log.Info($"Skipping folder {folder.DisplayName}");
+
+                    foreach(var email in emails)
+                    {
+                        if (monitor.MarkAsRead(folder, email))
+                        {
+                            log.Warning("Mailwatcher rate limited by external API. waiting 5 seconds before proceeding to the next mail...");
+                            await Task.Delay(5000);
+                            log.Info("Resuming mail processing...");
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (emails.Count > 0)
                     log.Info($"Processing {emails.Count} new emails in folder: {folder.DisplayName}");
                 foreach (var email in emails)
                 {
@@ -224,6 +243,6 @@ public class MailWatcher
             return fullMessage.Body;
         }
 
-        throw new NotSupportedException($"FetchEmailBodyAsync is not implemented for provider {email.OwnerAccount.Provider}");
+        log.Error($"FetchEmailBodyAsync is not implemented for provider {email.OwnerAccount.Provider}");
     }
 }

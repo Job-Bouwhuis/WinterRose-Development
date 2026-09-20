@@ -86,10 +86,17 @@ public class Log : ILogger
                     file ?? "Unknown",
                     line);
             }
-            else
+            else if (args.ExceptionObject is not null)
             {
                 UnhandledExceptionsLogger.Fatal(
                     $"Exception of type {args.ExceptionObject.GetType().Name} thrown and unhandled. " +
+                    $"{(args.IsTerminating ? "This is causing the app to crash!" : "")}",
+                    "Unknown", 0);
+            }
+            else
+            {
+                UnhandledExceptionsLogger.Fatal(
+                    $"An unknown exception was thrown and unhandled. " +
                     $"{(args.IsTerminating ? "This is causing the app to crash!" : "")}",
                     "Unknown", 0);
             }

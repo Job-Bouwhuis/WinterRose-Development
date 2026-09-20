@@ -1,0 +1,29 @@
+﻿@page "/"
+@using ContentPageAndSectionTests.PageContentSystem.Components
+@using WinterRose.AnonymousTypes
+
+<PageTitle>Home</PageTitle>
+
+<ContentPage PageKey="Home">
+    <ContentSection Key="Main">
+        <Content Context="content">
+            <h1>@content["title"]</h1>
+            @(content["overmij"] )
+            @(content.Get<Anonymous>("nested")?.Get<string>("title"))
+        </Content>
+    </ContentSection>
+
+    <ContentSection Key="Section2">
+        <Content Context="content">
+            Hello @content["name"]
+        </Content>
+    </ContentSection>
+
+    <ContentSection Key="Section3">
+        <Content Context="content">
+            Hello @content["name"]
+        </Content>
+    </ContentSection>
+</ContentPage>
+
+

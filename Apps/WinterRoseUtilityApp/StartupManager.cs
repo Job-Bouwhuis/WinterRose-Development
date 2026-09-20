@@ -5,9 +5,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using WinterRose.FileManagement.Shortcuts;
 using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.Shortcuts;
 
 namespace WinterRoseUtilityApp;
 

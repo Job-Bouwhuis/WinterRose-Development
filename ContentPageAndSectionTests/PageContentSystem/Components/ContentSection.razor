@@ -1,0 +1,91 @@
+﻿@using WinterRose.AnonymousTypes
+
+@inject ContentService contentService
+
+@*
+@if (IsLoading)
+{
+    @if (ContentLoading is not null)
+    {
+        @ContentLoading
+    }
+    else if (!DisableLoading)
+    {
+        <div>Loading...</div>
+    }
+}
+else 
+*@
+
+@if (ContentContext is not null && Content is not null)
+{
+    @Content(ContentContext)
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string Key { get; set; } = string.Empty;
+
+    [Parameter]
+    public RenderFragment<Anonymous>? Content { get; set; }
+
+    [Parameter]
+    public RenderFragment? ContentLoading { get; set; }
+
+    [Parameter]
+    public bool DisableLoading { get; set; }
+
+    [CascadingParameter]
+    private ContentPageContext? CONTENT_CONTEXT { get; set; }
+
+    protected Anonymous? ContentContext { get; private set; }
+
+    protected bool IsLoading { get; private set; }
+
+    protected override void OnInitialized()
+    {
+        if (CONTENT_CONTEXT is null)
+            throw new InvalidOperationException(
+                $"{nameof(ContentSection)} must be placed inside a {nameof(ContentPage)}.");
+
+        CONTENT_CONTEXT.Register(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await RefreshAsync();
+    }
+
+    internal async Task RefreshAsync()
+    {
+        IsLoading = true;
+
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            Anonymous CONTEXT = await LoadContentAsync();
+
+            ContentContext = CONTEXT;
+        }
+        finally
+        {
+            IsLoading = false;
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task<Anonymous> LoadContentAsync()
+    {
+        return await contentService.LoadContentAsync(CONTENT_CONTEXT!, Key);
+    }
+
+    public void Dispose()
+    {
+        CONTENT_CONTEXT?.Unregister(this);
+    }
+}

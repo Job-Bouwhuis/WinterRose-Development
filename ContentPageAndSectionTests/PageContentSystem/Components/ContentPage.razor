@@ -1,0 +1,51 @@
+﻿@inherits ComponentBase
+@implements IAsyncDisposable
+
+<CascadingValue Value="CONTENT_CONTEXT" IsFixed="true">
+    @ChildContent
+</CascadingValue>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public string PageKey { get; set; } = string.Empty;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Inject]
+    public NavigationManager Nav { get; set; }
+
+    private ContentPageContext CONTENT_CONTEXT;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CONTENT_CONTEXT = new(Nav, "");
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        CONTENT_CONTEXT.PageKey = PageKey;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(!firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+            return;
+        }
+
+        await CONTENT_CONTEXT.NotifyInitialize();
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // SignalR subscription disposal will go here.
+        await Task.CompletedTask;
+    }
+}

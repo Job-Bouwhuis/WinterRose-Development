@@ -23,7 +23,7 @@ internal class Program
 
         ThreadLoom loom = new();
         loom.CreatePool("DiffPool", 10);
-        FileDiff ops = loom.ComputeOn("DiffPool", new DiffEngine().FileDiffAsync(orig, mod));
+        FileDiff ops = loom.ComputeOn("DiffPool", new DiffEngine().Diff(orig, mod));
         ops.Save("testOps.wfbin");
     }
 }

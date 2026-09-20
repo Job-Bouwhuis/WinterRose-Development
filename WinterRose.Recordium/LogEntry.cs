@@ -223,9 +223,9 @@ public class LogEntry
     }
 
     void ResolveText(
-string input,
-List<PrintableLogFragment> output,
-Dictionary<string, ILogFragment?> fragmentMap)
+        string input,
+        List<PrintableLogFragment> output,
+        Dictionary<string, ILogFragment?> fragmentMap)
     {
         int i = 0;
 
@@ -312,6 +312,21 @@ Dictionary<string, ILogFragment?> fragmentMap)
         }
     }
 
+    public string ToString(LogVerbosity verbosity)
+    {
+        var fragments = GetFragments(verbosity);
+
+        var output = new System.Text.StringBuilder();
+
+        for (int i = 0; i < fragments.Count; i++)
+        {
+            PrintableLogFragment? fragment = fragments[i];
+            output.Append(fragment);
+        }
+
+        return output.ToString().TrimEnd();
+    }
+
     void EmitLiteral(string text, List<PrintableLogFragment> output)
     {
         if (!string.IsNullOrEmpty(text))
@@ -342,20 +357,5 @@ Dictionary<string, ILogFragment?> fragmentMap)
         }
 
         return -1;
-    }
-
-    public string ToString(LogVerbosity verbosity)
-    {
-        var fragments = GetFragments(verbosity);
-
-        var output = new System.Text.StringBuilder();
-
-        for (int i = 0; i < fragments.Count; i++)
-        {
-            PrintableLogFragment? fragment = fragments[i];
-            output.Append(fragment);
-        }
-
-        return output.ToString().TrimEnd();
     }
 }

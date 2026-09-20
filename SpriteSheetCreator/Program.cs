@@ -10,6 +10,7 @@ using WinterRose.ForgeWarden;
 using WinterRose.ForgeWarden.UserInterface;
 using WinterRose.ForgeWarden.UserInterface.DialogBoxes;
 using WinterRose.ForgeWarden.UserInterface.ToastNotifications;
+using WinterRose.ForgeWarden.UserInterface.Windowing;
 using WinterRose.ForgeWarden.Worlds;
 
 internal class Program : ForgeWardenEngine
@@ -40,6 +41,12 @@ internal class Program : ForgeWardenEngine
         processToast.AddContent(progressBar);
         loom = new ThreadLoom();
         loom.RegisterWorkerThread("Processor", ThreadPriority.Highest, true, 24);
+
+        UIWindow w = new("yoru", 500, 500);
+        w.Show();
+
+        w.AddText("Hello, World! \e[]");
+
     }
 
     public void SplitDialog()
